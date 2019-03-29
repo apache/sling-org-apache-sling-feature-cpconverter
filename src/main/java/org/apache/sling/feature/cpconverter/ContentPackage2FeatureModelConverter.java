@@ -21,16 +21,13 @@ import java.io.FileWriter;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
-import java.util.Set;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
-import org.apache.jackrabbit.vault.packaging.Dependency;
 import org.apache.jackrabbit.vault.packaging.PackageManager;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
@@ -76,8 +73,6 @@ public class ContentPackage2FeatureModelConverter {
     private final ServiceLoader<EntryHandler> entryHandlers = ServiceLoader.load(EntryHandler.class);
 
     private final Map<String, Feature> runModes = new HashMap<>();
-
-    private final Set<String> dependencies = new HashSet<>();
 
     private final RegexBasedResourceFilter filter = new RegexBasedResourceFilter();
 
@@ -319,8 +314,13 @@ public class ContentPackage2FeatureModelConverter {
         Objects.requireNonNull(contentPackage, "Impossible to process a null vault package");
 
         try (VaultPackage vaultPackage = packageManager.open(contentPackage, strictValidation)) {
+            // scan the detected package, first
             process(vaultPackage);
 
+            // merge filters to the main new package
+            mainPackageAssembler.mergeFilters(vaultPackage.getMetaInf().getFilter());
+
+            // add the metadata-only package one to the main package
             File clonedPackage = VaultPackageAssembler.create(vaultPackage).createPackage();
             mainPackageAssembler.addEntry(path, clonedPackage);
         }
@@ -331,12 +331,6 @@ public class ContentPackage2FeatureModelConverter {
 
         if (getTargetFeature() == null) {
             throw new IllegalStateException("Target Feature not initialized yet, please make sure convert() method was invoked first.");
-        }
-
-        dependencies.remove(vaultPackage.getId().toString());
-
-        for (Dependency dependency : vaultPackage.getDependencies()) {
-            dependencies.add(dependency.toString());
         }
 
         Archive archive = vaultPackage.getArchive();

@@ -150,6 +150,7 @@ public class ContentPackage2FeatureModelConverterTest {
                 "META-INF/vault/properties.xml",
                 "META-INF/vault/config.xml",
                 "META-INF/vault/settings.xml",
+                "META-INF/vault/filter.xml",
                 "META-INF/vault/definition/.content.xml",
                 "jcr_root/etc/packages/asd/test-bundles.zip",
                 "jcr_root/etc/packages/asd/test-configurations.zip",

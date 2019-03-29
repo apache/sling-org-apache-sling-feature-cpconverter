@@ -27,8 +27,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
+import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
+import org.apache.jackrabbit.vault.fs.config.DefaultWorkspaceFilter;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
@@ -45,11 +49,15 @@ public final class VaultPackageAssembler implements EntryHandler {
 
     private static final String VAULT_PROPERTIES_FILE = META_INF_VAULT_DIRECTORY + "properties.xml";
 
+    private static final String VAULT_FILTER_FILE = META_INF_VAULT_DIRECTORY + "filter.xml";
+
     private static final String NAME_PATH = "path";
 
     private static final String[] INCLUDE_RESOURCES = { "definition/.content.xml", "config.xml", "settings.xml" };
 
     private static final File TMP_DIR = new File(System.getProperty("java.io.tmpdir"));
+
+    private static final Pattern OSGI_BUNDLE_PATTERN = Pattern.compile("(jcr_root)?/apps/[^/]+/install(\\.([^/]+))?/.+\\.jar");
 
     public static VaultPackageAssembler create(VaultPackage vaultPackage) {
         File storingDirectory = new File(TMP_DIR, vaultPackage.getFile().getName() + "-deflated");
@@ -82,8 +90,12 @@ public final class VaultPackageAssembler implements EntryHandler {
             }
         }
 
-        return new VaultPackageAssembler(storingDirectory, properties);
+        VaultPackageAssembler assembler = new VaultPackageAssembler(storingDirectory, properties);
+        assembler.mergeFilters(vaultPackage.getMetaInf().getFilter());
+        return assembler;
     }
+
+    private final DefaultWorkspaceFilter filter = new DefaultWorkspaceFilter();
 
     private final File storingDirectory;
 
@@ -102,12 +114,18 @@ public final class VaultPackageAssembler implements EntryHandler {
 
     /**
      * This class can not be instantiated from outside
-     *
-     * @param properties
      */
     private VaultPackageAssembler(File storingDirectory, Properties properties) {
         this.storingDirectory = storingDirectory;
         this.properties = properties;
+    }
+
+    public void mergeFilters(WorkspaceFilter filter) {
+        for (PathFilterSet pathFilterSet : filter.getFilterSets()) {
+            if (!OSGI_BUNDLE_PATTERN.matcher(pathFilterSet.getRoot()).matches()) {
+                this.filter.add(pathFilterSet);
+            }
+        }
     }
 
     public void addEntry(String path, Archive archive, Entry entry) throws IOException {
@@ -144,6 +162,13 @@ public final class VaultPackageAssembler implements EntryHandler {
 
         try (FileOutputStream fos = new FileOutputStream(xmlProperties)) {
             properties.storeToXML(fos, null);
+        }
+
+        // generate the Vault filter XML file
+        File xmlFilter = new File(storingDirectory, VAULT_FILTER_FILE);
+        try (InputStream input = filter.getSource();
+                FileOutputStream output = new FileOutputStream(xmlFilter)) {
+            IOUtils.copy(input, output);
         }
 
         // copy the required resources
