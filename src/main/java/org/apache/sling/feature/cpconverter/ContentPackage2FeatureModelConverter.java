@@ -92,6 +92,8 @@ public class ContentPackage2FeatureModelConverter {
 
     private VaultPackageAssembler mainPackageAssembler = null;
 
+    private String groupId;
+
     public ContentPackage2FeatureModelConverter setStrictValidation(boolean strictValidation) {
         this.strictValidation = strictValidation;
         return this;
@@ -142,6 +144,11 @@ public class ContentPackage2FeatureModelConverter {
         filter.addFilteringPattern(filteringPattern);
     }
 
+    public ContentPackage2FeatureModelConverter setGroupId(String groupId) {
+        this.groupId = groupId;
+        return this;
+    }
+
     public Feature getRunMode(String runMode) {
         if (getTargetFeature() == null) {
             throw new IllegalStateException("Target Feature not initialized yet, please make sure convert() method was invoked first.");
@@ -164,6 +171,20 @@ public class ContentPackage2FeatureModelConverter {
         return artifactDeployer;
     }
 
+    private static void checkDirectory(File directory, String name) {
+        if (directory == null) {
+            throw new IllegalStateException("Null " + name + " output directory not supported, it must be set before invoking the convert(File) method.");
+        }
+
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw new IllegalStateException("output directory "
+                                            + directory
+                                            + " does not exist and can not be created, please make sure current user '"
+                                            + System.getProperty("user.name")
+                                            + " has enough rights to write on the File System.");
+        }
+    }
+
     public void convert(File contentPackage) throws Exception {
         Objects.requireNonNull(contentPackage , "Null content-package can not be converted.");
 
@@ -173,29 +194,14 @@ public class ContentPackage2FeatureModelConverter {
                                             + " does not exist or it is not a valid file.");
         }
 
-        if (artifactsOutputDirectory == null) {
-            throw new IllegalStateException("Null artifacts output directory not supported, it must be set before invoking the convert(File) method.");
-        }
-
-        if (featureModelsOutputDirectory == null) {
-            throw new IllegalStateException("Null models output directory not supported, it must be set before invoking the convert(File) method.");
-        } else if (!featureModelsOutputDirectory.exists()) {
-            featureModelsOutputDirectory.mkdirs();
-        }
+        checkDirectory(artifactsOutputDirectory, "artifacts");
+        checkDirectory(featureModelsOutputDirectory, "models");
 
         Iterator<BundlesDeployer> artifactDeployerLoader = ServiceLoader.load(BundlesDeployer.class).iterator();
         if (!artifactDeployerLoader.hasNext()) {
             artifactDeployer = new DefaultBundlesDeployer(artifactsOutputDirectory);
         } else {
             artifactDeployer = artifactDeployerLoader.next();
-        }
-
-        if (!artifactsOutputDirectory.exists() && !artifactsOutputDirectory.mkdirs()) {
-            throw new IllegalStateException("output directory "
-                                            + artifactsOutputDirectory
-                                            + " does not exist and can not be created, please make sure current user '"
-                                            + System.getProperty("user.name")
-                                            + " has enough rights to write on the File System.");
         }
 
         logger.info("Reading content-package '{}'...", contentPackage);
@@ -206,11 +212,17 @@ public class ContentPackage2FeatureModelConverter {
             mainPackageAssembler = VaultPackageAssembler.create(vaultPackage);
 
             PackageProperties packageProperties = vaultPackage.getProperties();
-            String group = requireNonNull(packageProperties.getProperty(PackageProperties.NAME_GROUP),
-                                          PackageProperties.NAME_GROUP
-                                          + " property not found in content-package "
-                                          + contentPackage
-                                          + ", please check META-INF/vault/properties.xml");
+            String group;
+            if (groupId != null && !groupId.isEmpty()) {
+                group = groupId;
+            } else {
+                group = requireNonNull(packageProperties.getProperty(PackageProperties.NAME_GROUP),
+                                       "'packageGroupId' parameter not specified and "
+                                       + PackageProperties.NAME_GROUP
+                                       + " property not found in content-package "
+                                       + contentPackage
+                                       + ", please check META-INF/vault/properties.xml");
+            }
             String name = requireNonNull(packageProperties.getProperty(PackageProperties.NAME_NAME),
                                          PackageProperties.NAME_NAME
                                          + " property not found in content-package "
