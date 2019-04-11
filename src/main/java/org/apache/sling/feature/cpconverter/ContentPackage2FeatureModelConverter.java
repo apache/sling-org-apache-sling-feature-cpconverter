@@ -92,7 +92,7 @@ public class ContentPackage2FeatureModelConverter {
 
     private VaultPackageAssembler mainPackageAssembler = null;
 
-    private String groupId;
+    private String id;
 
     public ContentPackage2FeatureModelConverter setStrictValidation(boolean strictValidation) {
         this.strictValidation = strictValidation;
@@ -144,8 +144,8 @@ public class ContentPackage2FeatureModelConverter {
         filter.addFilteringPattern(filteringPattern);
     }
 
-    public ContentPackage2FeatureModelConverter setGroupId(String groupId) {
-        this.groupId = groupId;
+    public ContentPackage2FeatureModelConverter setId(String id) {
+        this.id = id;
         return this;
     }
 
@@ -210,34 +210,38 @@ public class ContentPackage2FeatureModelConverter {
             logger.info("content-package '{}' successfully read!", contentPackage);
 
             mainPackageAssembler = VaultPackageAssembler.create(vaultPackage);
-
             PackageProperties packageProperties = vaultPackage.getProperties();
-            String group;
-            if (groupId != null && !groupId.isEmpty()) {
-                group = groupId;
+
+            ArtifactId artifactId;
+            if (id != null && !id.isEmpty()) {
+                artifactId = ArtifactId.fromMvnId(id);
             } else {
-                group = requireNonNull(packageProperties.getProperty(PackageProperties.NAME_GROUP),
-                                       "'packageGroupId' parameter not specified and "
-                                       + PackageProperties.NAME_GROUP
-                                       + " property not found in content-package "
-                                       + contentPackage
-                                       + ", please check META-INF/vault/properties.xml");
-            }
-            String name = requireNonNull(packageProperties.getProperty(PackageProperties.NAME_NAME),
-                                         PackageProperties.NAME_NAME
-                                         + " property not found in content-package "
-                                         + contentPackage
-                                         + ", please check META-INF/vault/properties.xml");
-            String version = packageProperties.getProperty(PackageProperties.NAME_VERSION);
-            if (version == null || version.isEmpty()) {
-                version = DEFEAULT_VERSION;
+                String group = requireNonNull(packageProperties.getProperty(PackageProperties.NAME_GROUP),
+                                              PackageProperties.NAME_GROUP
+                                              + " property not found in content-package "
+                                              + contentPackage
+                                              + ", please check META-INF/vault/properties.xml")
+                               .replace('/', '.');
+
+                String name = requireNonNull(packageProperties.getProperty(PackageProperties.NAME_NAME),
+                                             PackageProperties.NAME_NAME
+                                             + " property not found in content-package "
+                                             + contentPackage
+                                             + ", please check META-INF/vault/properties.xml");
+
+                String version = packageProperties.getProperty(PackageProperties.NAME_VERSION);
+                if (version == null || version.isEmpty()) {
+                    version = DEFEAULT_VERSION;
+                }
+
+                artifactId = new ArtifactId(group,
+                                            name,
+                                            version,
+                                            FEATURE_CLASSIFIER,
+                                            SLING_OSGI_FEATURE_TILE_TYPE);
             }
 
-            targetFeature = new Feature(new ArtifactId(group.replace('/', '.'),
-                                                       name,
-                                                       version,
-                                                       FEATURE_CLASSIFIER,
-                                                       SLING_OSGI_FEATURE_TILE_TYPE));
+            targetFeature = new Feature(artifactId);
 
             targetFeature.setDescription(packageProperties.getDescription());
 
