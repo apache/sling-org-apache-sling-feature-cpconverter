@@ -179,6 +179,8 @@ public class ContentPackage2FeatureModelConverter {
 
         if (featureModelsOutputDirectory == null) {
             throw new IllegalStateException("Null models output directory not supported, it must be set before invoking the convert(File) method.");
+        } else if (!featureModelsOutputDirectory.exists()) {
+            featureModelsOutputDirectory.mkdirs();
         }
 
         Iterator<BundlesDeployer> artifactDeployerLoader = ServiceLoader.load(BundlesDeployer.class).iterator();
