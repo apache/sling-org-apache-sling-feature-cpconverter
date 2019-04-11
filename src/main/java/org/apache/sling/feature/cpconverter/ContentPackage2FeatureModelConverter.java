@@ -16,6 +16,8 @@
  */
 package org.apache.sling.feature.cpconverter;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.util.Dictionary;
@@ -56,15 +58,13 @@ public class ContentPackage2FeatureModelConverter {
 
     public static final String ZIP_TYPE = "zip";
 
-    public static final String NAME_GROUP_ID = "groupId";
-
-    public static final String NAME_ARTIFACT_ID = "artifactId";
-
     public static final String FEATURE_CLASSIFIER = "cp2fm-converted-feature";
 
     private static final String SLING_OSGI_FEATURE_TILE_TYPE = "slingosgifeature";
 
     private static final String JSON_FILE_EXTENSION = ".json";
+
+    private static final String DEFEAULT_VERSION = "0.0.0";
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -193,12 +193,23 @@ public class ContentPackage2FeatureModelConverter {
             mainPackageAssembler = VaultPackageAssembler.create(vaultPackage);
 
             PackageProperties packageProperties = vaultPackage.getProperties();
-            String groupId = packageProperties.getProperty(NAME_GROUP_ID);
-            String artifactId = packageProperties.getProperty(NAME_ARTIFACT_ID);
+            String group = requireNonNull(packageProperties.getProperty(PackageProperties.NAME_GROUP),
+                                          PackageProperties.NAME_GROUP
+                                          + " property not found in content-package "
+                                          + contentPackage
+                                          + ", please check META-INF/vault/properties.xml");
+            String name = requireNonNull(packageProperties.getProperty(PackageProperties.NAME_NAME),
+                                         PackageProperties.NAME_NAME
+                                         + " property not found in content-package "
+                                         + contentPackage
+                                         + ", please check META-INF/vault/properties.xml");
             String version = packageProperties.getProperty(PackageProperties.NAME_VERSION);
+            if (version == null || version.isEmpty()) {
+                version = DEFEAULT_VERSION;
+            }
 
-            targetFeature = new Feature(new ArtifactId(groupId,
-                                                       artifactId,
+            targetFeature = new Feature(new ArtifactId(group.replace('/', '.'),
+                                                       name,
                                                        version,
                                                        FEATURE_CLASSIFIER,
                                                        SLING_OSGI_FEATURE_TILE_TYPE));

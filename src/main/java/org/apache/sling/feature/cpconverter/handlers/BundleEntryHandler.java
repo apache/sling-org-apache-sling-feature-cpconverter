@@ -17,8 +17,6 @@
 package org.apache.sling.feature.cpconverter.handlers;
 
 import static org.apache.jackrabbit.vault.packaging.PackageProperties.NAME_VERSION;
-import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.NAME_ARTIFACT_ID;
-import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.NAME_GROUP_ID;
 import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.POM_TYPE;
 
 import java.io.ByteArrayInputStream;
@@ -42,6 +40,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class BundleEntryHandler extends AbstractRegexEntryHandler {
+
+    private static final String NAME_GROUP_ID = "groupId";
+
+    private static final String NAME_ARTIFACT_ID = "artifactId";
 
     private static final String JAR_TYPE = "jar";
 

@@ -17,8 +17,6 @@
 package org.apache.sling.feature.cpconverter.vltpkg;
 
 import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.FEATURE_CLASSIFIER;
-import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.NAME_ARTIFACT_ID;
-import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.NAME_GROUP_ID;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -80,8 +78,6 @@ public final class VaultPackageAssembler implements EntryHandler {
                 PackageProperties.NAME_REQUIRES_ROOT,
                 PackageProperties.NAME_PACKAGE_TYPE,
                 PackageProperties.NAME_AC_HANDLING,
-                NAME_GROUP_ID,
-                NAME_ARTIFACT_ID,
                 NAME_PATH
         }) {
             String value = packageProperties.getProperty(key);
