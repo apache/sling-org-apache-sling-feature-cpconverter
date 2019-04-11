@@ -68,7 +68,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     private File featureModelsOutputDirectory;
 
     @Option(names = { "-i", "--artifact-id" }, description = "The optional Artifact Id the Feature File will have, once generated; it will be derived, if not specified.", required = false)
-    private String groupId;
+    private String artifactId;
 
     @Override
     public void run() {
@@ -104,7 +104,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                                                              .setBundlesStartOrder(bundlesStartOrder)
                                                              .setArtifactsOutputDirectory(artifactsOutputDirectory)
                                                              .setFeatureModelsOutputDirectory(featureModelsOutputDirectory)
-                                                             .setId(groupId);
+                                                             .setId(artifactId);
 
             if (filteringPatterns != null && filteringPatterns.length > 0) {
                 for (String filteringPattern : filteringPatterns) {
