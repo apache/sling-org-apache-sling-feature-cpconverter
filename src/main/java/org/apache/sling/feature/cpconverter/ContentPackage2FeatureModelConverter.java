@@ -58,7 +58,7 @@ public class ContentPackage2FeatureModelConverter {
 
     public static final String ZIP_TYPE = "zip";
 
-    public static final String FEATURE_CLASSIFIER = "cp2fm-converted-feature";
+    public static final String PACKAGE_CLASSIFIER = "cp2fm-converted";
 
     private static final String SLING_OSGI_FEATURE_TILE_TYPE = "slingosgifeature";
 
@@ -159,11 +159,17 @@ public class ContentPackage2FeatureModelConverter {
         }
 
         ArtifactId id = getTargetFeature().getId();
+        final String classifier;
+        if (id.getClassifier() != null && !id.getClassifier().isEmpty()) {
+            classifier = id.getClassifier() + '-' + runMode;
+        } else {
+            classifier = runMode;
+        }
 
         return runModes.computeIfAbsent(runMode, k -> new Feature(new ArtifactId(id.getGroupId(),
                                                                                  id.getArtifactId(),
                                                                                  id.getVersion(),
-                                                                                 id.getClassifier() + '-' + runMode,
+                                                                                 classifier,
                                                                                  id.getType())));
     }
 
@@ -237,7 +243,7 @@ public class ContentPackage2FeatureModelConverter {
                 artifactId = new ArtifactId(group,
                                             name,
                                             version,
-                                            FEATURE_CLASSIFIER,
+                                            null,
                                             SLING_OSGI_FEATURE_TILE_TYPE);
             }
 
@@ -259,7 +265,7 @@ public class ContentPackage2FeatureModelConverter {
                                                            targetFeature.getId().getGroupId(),
                                                            targetFeature.getId().getArtifactId(),
                                                            targetFeature.getId().getVersion(),
-                                                           FEATURE_CLASSIFIER,
+                                                           PACKAGE_CLASSIFIER,
                                                            ZIP_TYPE);
 
             artifactDeployer.deploy(new MavenPomSupplierWriter(targetFeature.getId().getGroupId(),
@@ -276,7 +282,7 @@ public class ContentPackage2FeatureModelConverter {
                    targetFeature.getId().getGroupId(),
                    targetFeature.getId().getArtifactId(),
                    targetFeature.getId().getVersion(),
-                   FEATURE_CLASSIFIER,
+                   PACKAGE_CLASSIFIER,
                    ZIP_TYPE);
 
             // finally serialize the Feature Model(s) file(s)
@@ -331,8 +337,9 @@ public class ContentPackage2FeatureModelConverter {
     private void seralize(Feature feature) throws Exception {
         StringBuilder fileName = new StringBuilder().append(feature.getId().getArtifactId());
 
-        if (!FEATURE_CLASSIFIER.equals(feature.getId().getClassifier())) {
-            fileName.append(feature.getId().getClassifier().substring(FEATURE_CLASSIFIER.length()));
+        String classifier = feature.getId().getClassifier();
+        if (classifier != null && !classifier.isEmpty()) {
+            fileName.append('-').append(classifier);
         }
 
         fileName.append(JSON_FILE_EXTENSION);

@@ -128,24 +128,24 @@ public class ContentPackage2FeatureModelConverterTest {
 
         verifyFeatureFile(outputDirectory,
                           "asd.retail.all.json",
-                          "asd.sample:asd.retail.all:slingosgifeature:cp2fm-converted-feature:0.0.1",
+                          "asd.sample:asd.retail.all:slingosgifeature:0.0.1",
                           Arrays.asList("org.apache.felix:org.apache.felix.framework:6.0.1"),
                           Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config-asd-retail"),
-                          Arrays.asList("asd.sample:asd.retail.all:zip:cp2fm-converted-feature:0.0.1"));
+                          Arrays.asList("asd.sample:asd.retail.all:zip:cp2fm-converted:0.0.1"));
         verifyFeatureFile(outputDirectory,
                           "asd.retail.all-author.json",
-                          "asd.sample:asd.retail.all:slingosgifeature:cp2fm-converted-feature-author:0.0.1",
+                          "asd.sample:asd.retail.all:slingosgifeature:author:0.0.1",
                           Arrays.asList("org.apache.sling:org.apache.sling.api:2.20.0"),
                           Collections.emptyList(),
                           Collections.emptyList());
         verifyFeatureFile(outputDirectory,
                           "asd.retail.all-publish.json",
-                          "asd.sample:asd.retail.all:slingosgifeature:cp2fm-converted-feature-publish:0.0.1",
+                          "asd.sample:asd.retail.all:slingosgifeature:publish:0.0.1",
                           Arrays.asList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
                           Arrays.asList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended-asd-retail"),
                           Collections.emptyList());
 
-        ZipFile zipFile = new ZipFile(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted-feature.zip"));
+        ZipFile zipFile = new ZipFile(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip"));
         for (String expectedEntry : new String[] {
                 "jcr_root/content/asd/.content.xml",
                 "jcr_root/content/asd/resources.xml",

@@ -16,7 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.vltpkg;
 
-import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.FEATURE_CLASSIFIER;
+import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -67,7 +67,7 @@ public final class VaultPackageAssembler implements EntryHandler {
         properties.setProperty(PackageProperties.NAME_VERSION,
                                packageProperties.getProperty(PackageProperties.NAME_VERSION)
                                                              + '-'
-                                                             + FEATURE_CLASSIFIER);
+                                                             + PACKAGE_CLASSIFIER);
 
         for (String key : new String[] {
                 PackageProperties.NAME_GROUP,
