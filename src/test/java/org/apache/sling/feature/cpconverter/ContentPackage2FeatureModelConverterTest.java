@@ -121,7 +121,10 @@ public class ContentPackage2FeatureModelConverterTest {
 
         File outputDirectory = new File(System.getProperty("testDirectory"), getClass().getName() + '_' + System.currentTimeMillis());
 
-        converter.setBundlesStartOrder(5).setOutputDirectory(outputDirectory).convert(packageFile);
+        converter.setBundlesStartOrder(5)
+                 .setArtifactsOutputDirectory(outputDirectory)
+                 .setFeatureModelsOutputDirectory(outputDirectory)
+                 .convert(packageFile);
 
         verifyFeatureFile(outputDirectory,
                           "asd.retail.all.json",
@@ -142,7 +145,7 @@ public class ContentPackage2FeatureModelConverterTest {
                           Arrays.asList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended-asd-retail"),
                           Collections.emptyList());
 
-        ZipFile zipFile = new ZipFile(new File(outputDirectory, "bundles/asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted-feature.zip"));
+        ZipFile zipFile = new ZipFile(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted-feature.zip"));
         for (String expectedEntry : new String[] {
                 "jcr_root/content/asd/.content.xml",
                 "jcr_root/content/asd/resources.xml",
@@ -164,7 +167,7 @@ public class ContentPackage2FeatureModelConverterTest {
     private void verifyFeatureFile(File outputDirectory,
                                    String name,
                                    String expectedArtifactId,
-                                   List<String> expectedBundles,
+                                   List<String> expectedArtifacts,
                                    List<String> expectedConfigurations,
                                    List<String> expectedContentPackagesExtensions) throws Exception {
         File featureFile = new File(outputDirectory, name);
@@ -175,9 +178,9 @@ public class ContentPackage2FeatureModelConverterTest {
 
             assertEquals(expectedArtifactId, feature.getId().toMvnId());
 
-            for (String expectedBundle : expectedBundles) {
-                assertTrue(expectedBundle + " not found in Feature " + expectedArtifactId, feature.getBundles().containsExact(ArtifactId.fromMvnId(expectedBundle)));
-                verifyInstalledBundle(outputDirectory, expectedBundle);
+            for (String expectedArtifact : expectedArtifacts) {
+                assertTrue(expectedArtifact + " not found in Feature " + expectedArtifactId, feature.getBundles().containsExact(ArtifactId.fromMvnId(expectedArtifact)));
+                verifyInstalledArtifact(outputDirectory, expectedArtifact);
             }
 
             for (String expectedConfiguration : expectedConfigurations) {
@@ -187,23 +190,21 @@ public class ContentPackage2FeatureModelConverterTest {
             for (String expectedContentPackagesExtension : expectedContentPackagesExtensions) {
                 assertTrue(expectedContentPackagesExtension + " not found in Feature " + expectedArtifactId,
                            feature.getExtensions().getByName("content-packages").getArtifacts().containsExact(ArtifactId.fromMvnId(expectedContentPackagesExtension)));
-                verifyInstalledBundle(outputDirectory, expectedContentPackagesExtension);
+                verifyInstalledArtifact(outputDirectory, expectedContentPackagesExtension);
             }
         }
     }
 
-    private void verifyInstalledBundle(File outputDirectory, String coordinates) {
+    private void verifyInstalledArtifact(File outputDirectory, String coordinates) {
         ArtifactId bundleId = ArtifactId.fromMvnId(coordinates);
-
-        File bundleDirectory = new File(outputDirectory, "bundles");
 
         StringTokenizer tokenizer = new StringTokenizer(bundleId.getGroupId(), ".");
         while (tokenizer.hasMoreTokens()) {
-            bundleDirectory = new File(bundleDirectory, tokenizer.nextToken());
+            outputDirectory = new File(outputDirectory, tokenizer.nextToken());
         }
 
-        bundleDirectory = new File(bundleDirectory, bundleId.getArtifactId());
-        bundleDirectory = new File(bundleDirectory, bundleId.getVersion());
+        outputDirectory = new File(outputDirectory, bundleId.getArtifactId());
+        outputDirectory = new File(outputDirectory, bundleId.getVersion());
 
         StringBuilder bundleFileName = new StringBuilder()
                                        .append(bundleId.getArtifactId())
@@ -214,10 +215,10 @@ public class ContentPackage2FeatureModelConverterTest {
         }
         bundleFileName.append('.').append(bundleId.getType());
 
-        File bundleFile = new File(bundleDirectory, bundleFileName.toString());
+        File bundleFile = new File(outputDirectory, bundleFileName.toString());
         assertTrue("Bundle " + bundleFile + " does not exist", bundleFile.exists());
 
-        File pomFile = new File(bundleDirectory, String.format("%s-%s.pom", bundleId.getArtifactId(), bundleId.getVersion()));
+        File pomFile = new File(outputDirectory, String.format("%s-%s.pom", bundleId.getArtifactId(), bundleId.getVersion()));
         assertTrue("POM file " + pomFile + " does not exist", pomFile.exists());
     }
 
@@ -230,7 +231,10 @@ public class ContentPackage2FeatureModelConverterTest {
 
         File outputDirectory = new File(System.getProperty("testDirectory"), getClass().getName() + '_' + System.currentTimeMillis());
 
-        converter.setBundlesStartOrder(5).setOutputDirectory(outputDirectory).convert(packageFile);
+        converter.setBundlesStartOrder(5)
+                 .setArtifactsOutputDirectory(outputDirectory)
+                 .setFeatureModelsOutputDirectory(outputDirectory)
+                 .convert(packageFile);
     }
 
 }

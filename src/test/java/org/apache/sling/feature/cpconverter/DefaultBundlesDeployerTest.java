@@ -49,7 +49,6 @@ public class DefaultBundlesDeployerTest {
         assertNotNull(bundlesDirectory);
         assertTrue(bundlesDirectory.exists());
         assertTrue(bundlesDirectory.isDirectory());
-        assertEquals("bundles", bundlesDirectory.getName());
     }
 
     @Test(expected = NullPointerException.class)

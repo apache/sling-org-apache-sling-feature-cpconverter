@@ -84,7 +84,7 @@ public final class BundleEntryHandlerTest {
         ContentPackage2FeatureModelConverter converter = spy(ContentPackage2FeatureModelConverter.class);
 
         File testDirectory = new File(System.getProperty("testDirectory"), getClass().getName() + '_' + System.currentTimeMillis());
-        when(converter.getOutputDirectory()).thenReturn(testDirectory);
+        when(converter.getArtifactsOutputDirectory()).thenReturn(testDirectory);
 
         doCallRealMethod().when(converter).attach(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
         when(converter.getArtifactDeployer()).thenReturn(new DefaultBundlesDeployer(testDirectory));
@@ -95,8 +95,8 @@ public final class BundleEntryHandlerTest {
 
         bundleEntryHandler.handle(bundleLocation, archive, entry, converter);
 
-        assertTrue(new File(testDirectory, "bundles/org/apache/felix/org.apache.felix.framework/6.0.1/org.apache.felix.framework-6.0.1.pom").exists());
-        assertTrue(new File(testDirectory, "bundles/org/apache/felix/org.apache.felix.framework/6.0.1/org.apache.felix.framework-6.0.1.jar").exists());
+        assertTrue(new File(testDirectory, "org/apache/felix/org.apache.felix.framework/6.0.1/org.apache.felix.framework-6.0.1.pom").exists());
+        assertTrue(new File(testDirectory, "org/apache/felix/org.apache.felix.framework/6.0.1/org.apache.felix.framework-6.0.1.jar").exists());
 
         assertFalse(converter.getTargetFeature().getBundles().isEmpty());
         assertEquals(1, feature.getBundles().size());

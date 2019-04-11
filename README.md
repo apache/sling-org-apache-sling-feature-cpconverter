@@ -205,7 +205,7 @@ bundles are collected in an _Apache Maven repository_ compliant directory, all o
 
 ```
 $ tree bundles/
-bundles/
+artifacts/
 └── org
     └── apache
         ├── felix
@@ -265,8 +265,10 @@ new ContentPackage2FeatureModelConverter()
             .setMergeConfigurations(mergeConfigurations)
             // users can decide which is the bundles start order, declared in the generated Apache Sling Feature(s)
             .setBundlesStartOrder(bundlesStartOrder)
-            // a valid directory where the outputs will be generated (it will created, if not existing already)
-            .setOutputDirectory(outputDirectory)
+            // a valid directory where the artifacts will be deployed (it will created, if not existing already)
+            .setArtifactsOutputDirectory(outputDirectory)
+            // a valid directory where the Feature Models will be generated (it will created, if not existing already)
+            .setFeatureModelsOutputDirectory(sameOrDifferentOutputDirectory)
             // an existing and valid content-package file
             .convert(contentPackage);
 ```
@@ -348,9 +350,14 @@ once the package is decompressed, open the shell and type:
 
 ```
 $ ./bin/cp2sf -h
-Usage: cp2fm [-hmqsvX] [-b=<bundlesStartOrder>] -c=<contentPackage>
-             -o=<outputDirectory> [-f=<filteringPatterns>]...
+Missing required options [--content-package=<contentPackage>, --artifacts-output-directory=<artifactsOutputDirectory>, --features-output-directory=<featureModelsOutputDirectory>]
+Usage: cp2fm [-hmqsvX] -a=<artifactsOutputDirectory> [-b=<bundlesStartOrder>]
+             -c=<contentPackage> -o=<featureModelsOutputDirectory>
+             [-f=<filteringPatterns>]...
 Apache Sling Content Package to Sling Feature converter
+  -a, --artifacts-output-directory=<artifactsOutputDirectory>
+                            The output directory where the artifacts will be
+                              deployed.
   -b, --bundles-start-order=<bundlesStartOrder>
                             The order to start detected bundles.
   -c, --content-package=<contentPackage>
@@ -362,21 +369,22 @@ Apache Sling Content Package to Sling Feature converter
   -m, --merge-configurations
                             Flag to mark OSGi configurations with same PID will be
                               merged, the tool will fail otherwise.
-  -o, --output-directory=<outputDirectory>
-                            The output directory where the Feature File and the
-                              bundles will be deployed.
+  -o, --features-output-directory=<featureModelsOutputDirectory>
+                            The output directory where the Feature File will be
+                              generated.
   -q, --quiet               Log errors only.
   -s, --strict-validation   Flag to mark the content-package input file being strict
                               validated.
   -v, --version             Display version information.
   -X, --verbose             Produce execution debug output.
 Copyright(c) 2019 The Apache Software Foundation.
+
 ```
 
 to see all the available options; a sample execution could look like:
 
 ```
-$ ./bin/cp2sf -v -b 20 -c /content-package-2-feature-model/src/test/resources/org/apache/sling/cp2fm/test-content-package.zip -o /tmp
+$ ./bin/cp2sf -v -b 20 -c /content-package-2-feature-model/src/test/resources/org/apache/sling/cp2fm/test-content-package.zip -a /cache -o /tmp
 ```
 
 Argument Files for Long Command Lines:

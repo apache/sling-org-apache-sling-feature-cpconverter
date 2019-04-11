@@ -61,8 +61,11 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Option(names = { "-f", "--filtering-patterns" }, description = "Regex based pattern(s) to reject content-package archive entries.", required = false)
     private String[] filteringPatterns;
 
-    @Option(names = { "-o", "--output-directory" }, description = "The output directory where the Feature File and the bundles will be deployed.", required = true)
-    private File outputDirectory;
+    @Option(names = { "-a", "--artifacts-output-directory" }, description = "The output directory where the artifacts will be deployed.", required = true)
+    private File artifactsOutputDirectory;
+
+    @Option(names = { "-o", "--features-output-directory" }, description = "The output directory where the Feature File will be generated.", required = true)
+    private File featureModelsOutputDirectory;
 
     @Override
     public void run() {
@@ -96,7 +99,8 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                                                              .setStrictValidation(strictValidation)
                                                              .setMergeConfigurations(mergeConfigurations)
                                                              .setBundlesStartOrder(bundlesStartOrder)
-                                                             .setOutputDirectory(outputDirectory);
+                                                             .setArtifactsOutputDirectory(artifactsOutputDirectory)
+                                                             .setFeatureModelsOutputDirectory(featureModelsOutputDirectory);
 
             if (filteringPatterns != null && filteringPatterns.length > 0) {
                 for (String filteringPattern : filteringPatterns) {

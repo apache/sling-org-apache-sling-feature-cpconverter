@@ -84,7 +84,9 @@ public class ContentPackage2FeatureModelConverter {
 
     private int bundlesStartOrder = 0;
 
-    private File outputDirectory;
+    private File artifactsOutputDirectory;
+
+    private File featureModelsOutputDirectory;
 
     private Feature targetFeature = null;
 
@@ -113,13 +115,18 @@ public class ContentPackage2FeatureModelConverter {
         return this;
     }
 
-    public ContentPackage2FeatureModelConverter setOutputDirectory(File outputDirectory) {
-        this.outputDirectory = outputDirectory;
+    public ContentPackage2FeatureModelConverter setArtifactsOutputDirectory(File artifactsOutputDirectory) {
+        this.artifactsOutputDirectory = artifactsOutputDirectory;
         return this;
     }
 
-    public File getOutputDirectory() {
-        return outputDirectory;
+    public File getArtifactsOutputDirectory() {
+        return artifactsOutputDirectory;
+    }
+
+    public ContentPackage2FeatureModelConverter setFeatureModelsOutputDirectory(File featureModelsOutputDirectory) {
+        this.featureModelsOutputDirectory = featureModelsOutputDirectory;
+        return this;
     }
 
     public Feature getTargetFeature() {
@@ -166,20 +173,24 @@ public class ContentPackage2FeatureModelConverter {
                                             + " does not exist or it is not a valid file.");
         }
 
-        if (outputDirectory == null) {
-            throw new IllegalStateException("Null output directory not supported, it must be set before invoking the convert(File) method.");
+        if (artifactsOutputDirectory == null) {
+            throw new IllegalStateException("Null artifacts output directory not supported, it must be set before invoking the convert(File) method.");
+        }
+
+        if (featureModelsOutputDirectory == null) {
+            throw new IllegalStateException("Null models output directory not supported, it must be set before invoking the convert(File) method.");
         }
 
         Iterator<BundlesDeployer> artifactDeployerLoader = ServiceLoader.load(BundlesDeployer.class).iterator();
         if (!artifactDeployerLoader.hasNext()) {
-            artifactDeployer = new DefaultBundlesDeployer(outputDirectory);
+            artifactDeployer = new DefaultBundlesDeployer(artifactsOutputDirectory);
         } else {
             artifactDeployer = artifactDeployerLoader.next();
         }
 
-        if (!outputDirectory.exists() && !outputDirectory.mkdirs()) {
+        if (!artifactsOutputDirectory.exists() && !artifactsOutputDirectory.mkdirs()) {
             throw new IllegalStateException("output directory "
-                                            + outputDirectory
+                                            + artifactsOutputDirectory
                                             + " does not exist and can not be created, please make sure current user '"
                                             + System.getProperty("user.name")
                                             + " has enough rights to write on the File System.");
@@ -222,7 +233,7 @@ public class ContentPackage2FeatureModelConverter {
 
             // attach all unmatched resources as new content-package
 
-            File contentPackageArchive = mainPackageAssembler.createPackage(outputDirectory);
+            File contentPackageArchive = mainPackageAssembler.createPackage(artifactsOutputDirectory);
 
             // deploy the new zip content-package to the local mvn bundles dir
 
@@ -308,7 +319,7 @@ public class ContentPackage2FeatureModelConverter {
 
         fileName.append(JSON_FILE_EXTENSION);
 
-        File targetFile = new File(outputDirectory, fileName.toString());
+        File targetFile = new File(featureModelsOutputDirectory, fileName.toString());
 
         logger.info("Conversion complete!", targetFile);
         logger.info("Writing resulting Feature File to '{}'...", targetFile);

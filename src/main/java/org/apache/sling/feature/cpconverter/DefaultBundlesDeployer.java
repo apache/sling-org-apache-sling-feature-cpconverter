@@ -29,14 +29,12 @@ import org.slf4j.LoggerFactory;
 
 public final class DefaultBundlesDeployer implements BundlesDeployer {
 
-    private static final String BUNDLES_RIRECTORY_NAME = "bundles";
-
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final File artifactsDirectory;
 
     public DefaultBundlesDeployer(File outputDirectory) {
-        artifactsDirectory = new File(outputDirectory, BUNDLES_RIRECTORY_NAME);
+        artifactsDirectory = outputDirectory;
         if (!artifactsDirectory.exists()) {
             artifactsDirectory.mkdirs();
         }
