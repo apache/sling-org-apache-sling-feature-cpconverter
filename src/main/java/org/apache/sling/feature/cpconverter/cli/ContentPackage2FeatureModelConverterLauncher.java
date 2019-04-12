@@ -104,11 +104,11 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                                                              .setBundlesStartOrder(bundlesStartOrder)
                                                              .setArtifactsOutputDirectory(artifactsOutputDirectory)
                                                              .setFeatureModelsOutputDirectory(featureModelsOutputDirectory)
-                                                             .setId(artifactId);
+                                                             .setIdOverride(artifactId);
 
             if (filteringPatterns != null && filteringPatterns.length > 0) {
                 for (String filteringPattern : filteringPatterns) {
-                    converter.addFilteringPattern(filteringPattern);
+                    converter.addFilteringPattern(filteringPattern);    
                 }
             }
 

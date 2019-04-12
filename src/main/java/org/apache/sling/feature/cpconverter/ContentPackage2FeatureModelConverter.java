@@ -93,6 +93,8 @@ public class ContentPackage2FeatureModelConverter {
     private VaultPackageAssembler mainPackageAssembler = null;
 
     private String id;
+    
+    private String idOverride;
 
     public ContentPackage2FeatureModelConverter setStrictValidation(boolean strictValidation) {
         this.strictValidation = strictValidation;
@@ -148,6 +150,12 @@ public class ContentPackage2FeatureModelConverter {
         this.id = id;
         return this;
     }
+    
+    public ContentPackage2FeatureModelConverter setIdOverride(String id) {
+        this.idOverride = id;
+        return this;
+    }
+
 
     public Feature getRunMode(String runMode) {
         if (getTargetFeature() == null) {
@@ -158,19 +166,27 @@ public class ContentPackage2FeatureModelConverter {
             return getTargetFeature();
         }
 
-        ArtifactId id = getTargetFeature().getId();
-        final String classifier;
-        if (id.getClassifier() != null && !id.getClassifier().isEmpty()) {
-            classifier = id.getClassifier() + '-' + runMode;
-        } else {
-            classifier = runMode;
-        }
+        ArtifactId newId = appendRunmode(getTargetFeature().getId(), runMode);
 
-        return runModes.computeIfAbsent(runMode, k -> new Feature(new ArtifactId(id.getGroupId(),
-                                                                                 id.getArtifactId(),
-                                                                                 id.getVersion(),
-                                                                                 classifier,
-                                                                                 id.getType())));
+        return runModes.computeIfAbsent(runMode, k -> new Feature(newId));
+    }
+
+    private ArtifactId appendRunmode(ArtifactId id, String runMode) {
+
+        ArtifactId newId;
+        if (runMode == null) {
+            newId = id;
+        } else {
+            final String classifier;
+            if (id.getClassifier() != null && !id.getClassifier().isEmpty()) {
+                classifier = id.getClassifier() + '-' + runMode;
+            } else {
+                classifier = runMode;
+            }
+
+            newId = new ArtifactId(id.getGroupId(), id.getArtifactId(), id.getVersion(), classifier, id.getType());
+        }
+        return newId;
     }
 
     public BundlesDeployer getArtifactDeployer() {
@@ -287,11 +303,11 @@ public class ContentPackage2FeatureModelConverter {
 
             // finally serialize the Feature Model(s) file(s)
 
-            seralize(targetFeature);
+            seralize(targetFeature, null);
 
             if (!runModes.isEmpty()) {
-                for (Feature runMode : runModes.values()) {
-                    seralize(runMode);
+                for (java.util.Map.Entry<String, Feature> runmodeEntry : runModes.entrySet()) {
+                    seralize(runmodeEntry.getValue(), runmodeEntry.getKey());
                 }
             }
         }
@@ -334,7 +350,7 @@ public class ContentPackage2FeatureModelConverter {
         }
     }
 
-    private void seralize(Feature feature) throws Exception {
+    private void seralize(Feature feature, String runMode) throws Exception {
         StringBuilder fileName = new StringBuilder().append(feature.getId().getArtifactId());
 
         String classifier = feature.getId().getClassifier();
@@ -348,6 +364,11 @@ public class ContentPackage2FeatureModelConverter {
 
         logger.info("Conversion complete!", targetFile);
         logger.info("Writing resulting Feature File to '{}'...", targetFile);
+        
+        if ( idOverride != null ) {
+            ArtifactId idOverrride = appendRunmode(ArtifactId.parse(idOverride), runMode);
+            feature = feature.copy(idOverrride);
+        }
 
         try (FileWriter targetWriter = new FileWriter(targetFile)) {
             FeatureJSONWriter.write(targetWriter, feature);
