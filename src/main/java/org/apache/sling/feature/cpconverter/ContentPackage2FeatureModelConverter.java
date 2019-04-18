@@ -358,7 +358,7 @@ public class ContentPackage2FeatureModelConverter {
     private static void checkConfigurationExist(Feature feature, String pid) {
         if (feature != null) {
             if (feature.getConfigurations().getConfiguration(pid) != null) {
-                throw new IllegalStateException("Cinfiguration '"
+                throw new IllegalStateException("Configuration '"
                                                 + pid
                                                 + "' already defined in Feature Model '"
                                                 + feature.getId().toMvnId()
