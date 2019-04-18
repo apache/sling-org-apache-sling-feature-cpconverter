@@ -66,6 +66,8 @@ public class ContentPackage2FeatureModelConverter {
 
     private static final String DEFEAULT_VERSION = "0.0.0";
 
+    private static final String REPOINIT = "repoinit";
+
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final PackageManager packageManager = new PackageManagerImpl();
@@ -310,6 +312,21 @@ public class ContentPackage2FeatureModelConverter {
                     seralize(runmodeEntry.getValue(), runmodeEntry.getKey());
                 }
             }
+        }
+    }
+
+    public void addRepoinitStatement(String format, Object...args) {
+        Extension repoInitExtension = getTargetFeature().getExtensions().getByName(REPOINIT);
+        if (repoInitExtension == null) {
+            repoInitExtension = new Extension(ExtensionType.TEXT, REPOINIT, true);
+            getTargetFeature().getExtensions().add(repoInitExtension);
+        }
+
+        String statement = String.format(format, args);
+        if (repoInitExtension.getText() == null) {
+            repoInitExtension.setText(statement);
+        } else {
+            repoInitExtension.setText(repoInitExtension.getText() + '\n' + statement);
         }
     }
 

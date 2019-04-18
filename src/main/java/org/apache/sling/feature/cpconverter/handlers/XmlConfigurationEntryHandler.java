@@ -16,27 +16,15 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
-import static org.apache.jackrabbit.JcrConstants.JCR_PRIMARYTYPE;
-
 import java.io.InputStream;
 import java.util.Dictionary;
 import java.util.Hashtable;
 
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-
 import org.apache.jackrabbit.vault.util.DocViewProperty;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 public final class XmlConfigurationEntryHandler extends AbstractConfigurationEntryHandler {
-
-    private static final String JCR_ROOT = "jcr:root";
-
-    private static final String SLING_OSGICONFIG = "sling:OsgiConfig";
-
-    private final SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
 
     public XmlConfigurationEntryHandler() {
         super("xml");
@@ -44,13 +32,14 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
 
     @Override
     protected Dictionary<String, Object> parseConfiguration(String name, InputStream input) throws Exception {
-        SAXParser saxParser = saxParserFactory.newSAXParser();
         JcrConfigurationHandler configurationHandler = new JcrConfigurationHandler();
-        saxParser.parse(input, configurationHandler);
+        configurationHandler.parse(input);
         return configurationHandler.getConfiguration();
     }
 
-    private static final class JcrConfigurationHandler extends DefaultHandler {
+    private static final class JcrConfigurationHandler extends AbstractJcrNodeParser {
+
+        private static final String SLING_OSGICONFIG = "sling:OsgiConfig";
 
         private final Dictionary<String, Object> configuration = new Hashtable<>();
 
@@ -58,28 +47,27 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
             return configuration;
         }
 
+        public JcrConfigurationHandler() {
+            super(SLING_OSGICONFIG);
+        }
+
         @Override
-        public void startElement(String uri, String localName, String qName, Attributes attributes)
-                throws SAXException {
-            String primaryType = attributes.getValue(JCR_PRIMARYTYPE);
+        protected void onJcrRootElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+            for (int i = 0; i < attributes.getLength(); i++) {
+                String attributeQName = attributes.getQName(i);
 
-            if (JCR_ROOT.equals(qName) && SLING_OSGICONFIG.equals(primaryType)) {
-                for (int i = 0; i < attributes.getLength(); i++) {
-                    String attributeQName = attributes.getQName(i);
+                // ignore jcr: and similar properties
+                if (attributeQName.indexOf(':') == -1) {
+                    String attributeValue = attributes.getValue(i);
 
-                    // ignore jcr: and similar properties
-                    if (attributeQName.indexOf(':') == -1) {
-                        String attributeValue = attributes.getValue(i);
+                    if (attributeValue != null && !attributeValue.isEmpty()) {
+                        DocViewProperty property = DocViewProperty.parse(attributeQName, attributeValue);
 
-                        if (attributeValue != null && !attributeValue.isEmpty()) {
-                            DocViewProperty property = DocViewProperty.parse(attributeQName, attributeValue);
-
-                            if (property.values.length > 0) {
-                                if (property.isMulti) {
-                                    configuration.put(attributeQName, property.values);
-                                } else {
-                                    configuration.put(attributeQName, property.values[0]);
-                                }
+                        if (property.values.length > 0) {
+                            if (property.isMulti) {
+                                configuration.put(attributeQName, property.values);
+                            } else {
+                                configuration.put(attributeQName, property.values[0]);
                             }
                         }
                     }

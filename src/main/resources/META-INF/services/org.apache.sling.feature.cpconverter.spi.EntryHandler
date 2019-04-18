@@ -3,4 +3,5 @@ org.apache.sling.feature.cpconverter.handlers.ConfigurationEntryHandler
 org.apache.sling.feature.cpconverter.handlers.ContentPackageEntryHandler
 org.apache.sling.feature.cpconverter.handlers.JsonConfigurationEntryHandler
 org.apache.sling.feature.cpconverter.handlers.PropertiesConfigurationEntryHandler
+org.apache.sling.feature.cpconverter.handlers.SystemUsersEntryHandler
 org.apache.sling.feature.cpconverter.handlers.XmlConfigurationEntryHandler
