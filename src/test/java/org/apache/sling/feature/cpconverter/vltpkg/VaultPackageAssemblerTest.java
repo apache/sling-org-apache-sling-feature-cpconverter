@@ -81,7 +81,6 @@ public class VaultPackageAssemblerTest {
         return Arrays.asList(new Object[][] {
             { "jcr_root/.content.xml", assembler },
             { "jcr_root/asd/.content.xml", assembler },
-            { "jcr_root/asd/public/_rep_policy.xml", assembler },
             { "jcr_root/asd/public/license.txt", assembler }
         });
     }

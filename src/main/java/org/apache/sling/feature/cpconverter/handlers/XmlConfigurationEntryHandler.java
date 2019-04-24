@@ -34,18 +34,14 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
     protected Dictionary<String, Object> parseConfiguration(String name, InputStream input) throws Exception {
         JcrConfigurationHandler configurationHandler = new JcrConfigurationHandler();
         configurationHandler.parse(input);
-        return configurationHandler.getConfiguration();
+        return configurationHandler.getParsingResult();
     }
 
-    private static final class JcrConfigurationHandler extends AbstractJcrNodeParser {
+    private static final class JcrConfigurationHandler extends AbstractJcrNodeParser<Dictionary<String, Object>> {
 
         private static final String SLING_OSGICONFIG = "sling:OsgiConfig";
 
         private final Dictionary<String, Object> configuration = new Hashtable<>();
-
-        public Dictionary<String, Object> getConfiguration() {
-            return configuration;
-        }
 
         public JcrConfigurationHandler() {
             super(SLING_OSGICONFIG);
@@ -73,6 +69,11 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
                     }
                 }
             }
+        }
+
+        @Override
+        protected Dictionary<String, Object> getParsingResult() {
+            return configuration;
         }
 
     }

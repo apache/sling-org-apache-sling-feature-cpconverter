@@ -27,7 +27,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-abstract class AbstractJcrNodeParser extends DefaultHandler {
+abstract class AbstractJcrNodeParser<O> extends DefaultHandler {
 
     private static final String JCR_ROOT = "jcr:root";
 
@@ -45,7 +45,7 @@ abstract class AbstractJcrNodeParser extends DefaultHandler {
     }
 
     @Override
-    public final void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
         String primaryType = attributes.getValue(JCR_PRIMARYTYPE);
 
         if (JCR_ROOT.equals(qName) && this.primaryType.equals(primaryType)) {
@@ -54,5 +54,7 @@ abstract class AbstractJcrNodeParser extends DefaultHandler {
     }
 
     protected abstract void onJcrRootElement(String uri, String localName, String qName, Attributes attributes) throws SAXException;
+
+    protected abstract O getParsingResult();
 
 }

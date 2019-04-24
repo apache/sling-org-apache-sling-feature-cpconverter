@@ -67,7 +67,7 @@ public class SystemUsersEntryHandlerTest {
         assertNotNull(repoinitExtension);
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
         assertTrue(repoinitExtension.isRequired());
-        assertEquals("create service user asd-share-commons-asd-index-definition-reader-service", repoinitExtension.getText());
+        assertEquals("create service user asd-share-commons-asd-index-definition-reader-service\n", repoinitExtension.getText());
     }
 
     @Test
@@ -89,7 +89,8 @@ public class SystemUsersEntryHandlerTest {
 
         systemUsersEntryHandler.handle(path, archive, entry, converter);
 
-        return feature.getExtensions().getByName("repoinit");
+        converter.getAclManager().addRepoinitExtension(feature);
+        return feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
     }
 
 }

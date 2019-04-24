@@ -41,6 +41,7 @@ import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Extensions;
 import org.apache.sling.feature.Feature;
+import org.apache.sling.feature.cpconverter.acl.AclManager;
 import org.apache.sling.feature.cpconverter.spi.BundlesDeployer;
 import org.apache.sling.feature.cpconverter.spi.EntryHandler;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
@@ -66,8 +67,6 @@ public class ContentPackage2FeatureModelConverter {
 
     private static final String DEFEAULT_VERSION = "0.0.0";
 
-    private static final String REPOINIT = "repoinit";
-
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final PackageManager packageManager = new PackageManagerImpl();
@@ -75,6 +74,8 @@ public class ContentPackage2FeatureModelConverter {
     private final ServiceLoader<EntryHandler> entryHandlers = ServiceLoader.load(EntryHandler.class);
 
     private final Map<String, Feature> runModes = new HashMap<>();
+
+    private final AclManager aclManager = new AclManager();
 
     private final RegexBasedResourceFilter filter = new RegexBasedResourceFilter();
 
@@ -95,7 +96,7 @@ public class ContentPackage2FeatureModelConverter {
     private VaultPackageAssembler mainPackageAssembler = null;
 
     private String id;
-    
+
     private String idOverride;
 
     public ContentPackage2FeatureModelConverter setStrictValidation(boolean strictValidation) {
@@ -152,12 +153,15 @@ public class ContentPackage2FeatureModelConverter {
         this.id = id;
         return this;
     }
-    
+
     public ContentPackage2FeatureModelConverter setIdOverride(String id) {
         this.idOverride = id;
         return this;
     }
 
+    public AclManager getAclManager() {
+        return aclManager;
+    }
 
     public Feature getRunMode(String runMode) {
         if (getTargetFeature() == null) {
@@ -305,28 +309,15 @@ public class ContentPackage2FeatureModelConverter {
 
             // finally serialize the Feature Model(s) file(s)
 
-            seralize(targetFeature, null);
+            aclManager.addRepoinitExtension(getTargetFeature());
+
+            seralize(getTargetFeature(), null);
 
             if (!runModes.isEmpty()) {
                 for (java.util.Map.Entry<String, Feature> runmodeEntry : runModes.entrySet()) {
                     seralize(runmodeEntry.getValue(), runmodeEntry.getKey());
                 }
             }
-        }
-    }
-
-    public void addRepoinitStatement(String format, Object...args) {
-        Extension repoInitExtension = getTargetFeature().getExtensions().getByName(REPOINIT);
-        if (repoInitExtension == null) {
-            repoInitExtension = new Extension(ExtensionType.TEXT, REPOINIT, true);
-            getTargetFeature().getExtensions().add(repoInitExtension);
-        }
-
-        String statement = String.format(format, args);
-        if (repoInitExtension.getText() == null) {
-            repoInitExtension.setText(statement);
-        } else {
-            repoInitExtension.setText(repoInitExtension.getText() + '\n' + statement);
         }
     }
 

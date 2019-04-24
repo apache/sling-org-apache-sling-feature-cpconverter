@@ -38,7 +38,7 @@ public final class SystemUsersEntryHandler extends AbstractRegexEntryHandler {
         }
     }
 
-    private static final class SystemUserParser extends AbstractJcrNodeParser {
+    private static final class SystemUserParser extends AbstractJcrNodeParser<Void> {
 
         private final static String REP_SYSTEM_USER = "rep:SystemUser";
 
@@ -55,8 +55,13 @@ public final class SystemUsersEntryHandler extends AbstractRegexEntryHandler {
         protected void onJcrRootElement(String uri, String localName, String qName, Attributes attributes) {
             String authorizableId = attributes.getValue(REP_AUTHORIZABLE_ID);
             if (authorizableId != null && !authorizableId.isEmpty()) {
-                converter.addRepoinitStatement("create service user %s", authorizableId);
+                converter.getAclManager().addSystemUser(authorizableId);
             }
+        }
+
+        @Override
+        protected Void getParsingResult() {
+            return null;
         }
 
     }
