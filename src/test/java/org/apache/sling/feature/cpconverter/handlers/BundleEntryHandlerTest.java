@@ -67,6 +67,11 @@ public final class BundleEntryHandlerTest {
     }
 
     @Test
+    public void matchesOnLibsDir() {
+        assertTrue(bundleEntryHandler.matches(bundleLocation.replace("/apps/", "/libs/")));
+    }
+
+    @Test
     public void deployBundle() throws Exception {
         Archive archive = mock(Archive.class);
         Entry entry = mock(Entry.class);
