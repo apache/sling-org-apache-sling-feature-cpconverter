@@ -19,7 +19,6 @@ package org.apache.sling.feature.cpconverter.handlers;
 import static java.util.Objects.requireNonNull;
 import static org.apache.jackrabbit.vault.packaging.PackageProperties.NAME_VERSION;
 
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.Properties;
 import java.util.jar.JarEntry;
@@ -56,8 +55,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
 
         Properties properties = new Properties();
 
-        try (JarInputStream jarInput = new JarInputStream(archive.openInputStream(entry));
-                ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+        try (JarInputStream jarInput = new JarInputStream(archive.openInputStream(entry))) {
             JarEntry jarEntry;
             while ((jarEntry = jarInput.getNextJarEntry()) != null) {
                 String entryName = jarEntry.getName();
