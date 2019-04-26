@@ -35,6 +35,7 @@ import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
 import org.apache.sling.feature.Artifact;
 import org.apache.sling.feature.ArtifactId;
+import org.apache.sling.feature.Artifacts;
 import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
@@ -467,6 +468,7 @@ public class ContentPackage2FeatureModelConverter {
         Artifact artifact = new Artifact(new ArtifactId(groupId, artifactId, version, classifier, type));
 
         Feature targetFeature = getRunMode(runMode);
+        Artifacts artifacts;
 
         if (ZIP_TYPE.equals(type) ) {
             Extensions extensions = targetFeature.getExtensions();
@@ -477,11 +479,13 @@ public class ContentPackage2FeatureModelConverter {
                 extensions.add(extension);
             }
 
-            extension.getArtifacts().add(artifact);
+            artifacts = extension.getArtifacts();
         } else {
             artifact.setStartOrder(bundlesStartOrder);
-            targetFeature.getBundles().add(artifact);
+            artifacts = targetFeature.getBundles();
         }
+
+        artifacts.add(artifact);
     }
 
 }
