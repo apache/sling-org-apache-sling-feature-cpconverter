@@ -27,7 +27,7 @@ import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter
 abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandler {
 
     public AbstractConfigurationEntryHandler(String extension) {
-        super("(jcr_root)?/apps/[^/]+/config(\\.([^/]+))?/.+\\." + extension);
+        super("(jcr_root)?/(?:apps|libs)/.+/config(\\.([^/]+))?/.+\\." + extension);
     }
 
     @Override

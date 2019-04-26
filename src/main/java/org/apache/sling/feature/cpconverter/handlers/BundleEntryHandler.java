@@ -46,7 +46,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
     private final Pattern pomPropertiesPattern = Pattern.compile("META-INF/maven/[^/]+/[^/]+/pom.properties");
 
     public BundleEntryHandler() {
-        super("(jcr_root)?/(?:apps|libs)/[^/]+/install(\\.([^/]+))?/.+\\.jar");
+        super("(jcr_root)?/(?:apps|libs)/.+/install(\\.([^/]+))?/.+\\.jar");
     }
 
     @Override
