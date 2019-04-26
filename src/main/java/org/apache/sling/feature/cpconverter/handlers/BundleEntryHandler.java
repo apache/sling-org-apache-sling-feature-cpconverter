@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.util.Properties;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
+import java.util.jar.Manifest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,6 +40,12 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
 
     private static final String NAME_ARTIFACT_ID = "artifactId";
 
+    private static final String BUNDLE_SYMBOLIC_NAME = "Bundle-SymbolicName";
+
+    private static final String BUNDLE_NAME = "Bundle-Name";
+
+    private static final String BUNDLE_VERSION = "Bundle-Version";
+
     private static final String JAR_TYPE = "jar";
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -53,9 +60,14 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
     public void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter) throws Exception {
         logger.info("Processing bundle {}...", entry.getName());
 
-        Properties properties = new Properties();
+        String groupId;
+        String artifactId;
+        String version;
 
         try (JarInputStream jarInput = new JarInputStream(archive.openInputStream(entry))) {
+            Properties properties = new Properties();
+            Manifest manifest = jarInput.getManifest();
+
             JarEntry jarEntry;
             while ((jarEntry = jarInput.getNextJarEntry()) != null) {
                 String entryName = jarEntry.getName();
@@ -66,11 +78,17 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
                     properties.load(jarInput);
                 }
             }
-        }
 
-        String groupId = getCheckedProperty(properties, NAME_GROUP_ID);
-        String artifactId = getCheckedProperty(properties, NAME_ARTIFACT_ID);
-        String version = getCheckedProperty(properties, NAME_VERSION);
+            if (!properties.isEmpty()) {
+                groupId = getCheckedProperty(properties, NAME_GROUP_ID);
+                artifactId = getCheckedProperty(properties, NAME_ARTIFACT_ID);
+                version = getCheckedProperty(properties, NAME_VERSION);
+            } else { // maybe the included jar is just an OSGi bundle but not a valid Maven artifact
+                groupId = getCheckedProperty(manifest, BUNDLE_SYMBOLIC_NAME);
+                artifactId = getCheckedProperty(manifest, BUNDLE_NAME);
+                version = getCheckedProperty(manifest, BUNDLE_VERSION);
+            }
+        }
 
         Matcher matcher = getPattern().matcher(path);
         String runMode = null;
@@ -103,9 +121,16 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         }
     }
 
+    private static String getCheckedProperty(Manifest manifest, String name) {
+        String property = manifest.getMainAttributes().getValue(name).trim();
+        return requireNonNull(property, "Jar file can not be defined as a valid OSGi bundle without specifying a valid '"
+                                         + name
+                                         + "' property.");
+    }
+
     private static String getCheckedProperty(Properties properties, String name) {
         String property = properties.getProperty(name).trim();
-        return requireNonNull(property, "Bundle can not be defined as a valid Maven artifact without specifying a valid '"
+        return requireNonNull(property, "Jar file can not be defined as a valid Maven artifact without specifying a valid '"
                                          + name
                                          + "' property.");
     }
