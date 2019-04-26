@@ -41,6 +41,12 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
             configurationProperties = parseConfiguration(pid, input);
         }
 
+        if (configurationProperties == null) {
+            logger.info("{} entry does not contain a valid OSGi configuration, treating it as a regular resource", path);
+            converter.getMainPackageAssembler().addEntry(path, archive, entry);
+            return;
+        }
+
         if (configurationProperties.isEmpty()) {
             logger.info("No configuration properties found for configuration {}", path);
             return;

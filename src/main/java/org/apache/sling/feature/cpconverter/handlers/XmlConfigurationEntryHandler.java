@@ -33,15 +33,20 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
     @Override
     protected Dictionary<String, Object> parseConfiguration(String name, InputStream input) throws Exception {
         JcrConfigurationHandler configurationHandler = new JcrConfigurationHandler();
-        configurationHandler.parse(input);
-        return configurationHandler.getParsingResult();
+        try {
+            configurationHandler.parse(input);
+            return configurationHandler.getParsingResult();
+        } catch (Exception e) {
+            logger.warn("Current OSGi configuration does not represent a valid XML document, see nested exceptions", e);
+            return null;
+        }
     }
 
     private static final class JcrConfigurationHandler extends AbstractJcrNodeParser<Dictionary<String, Object>> {
 
         private static final String SLING_OSGICONFIG = "sling:OsgiConfig";
 
-        private final Dictionary<String, Object> configuration = new Hashtable<>();
+        private Dictionary<String, Object> configuration = null;
 
         public JcrConfigurationHandler() {
             super(SLING_OSGICONFIG);
@@ -49,6 +54,8 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
 
         @Override
         protected void onJcrRootElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+            configuration = new Hashtable<>();
+
             for (int i = 0; i < attributes.getLength(); i++) {
                 String attributeQName = attributes.getQName(i);
 

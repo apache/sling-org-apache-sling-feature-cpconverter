@@ -38,15 +38,15 @@ final class RegexBasedResourceFilter {
             logger.debug("Checking if path '{}' matches against '{}' pattern...", path, pattern);
 
             if (pattern.matcher(path).matches()) {
-                logger.debug("Path '{}' matches against '{}' pattern.", path, pattern);
+                logger.debug("Path '{}' matches against '{}' filtering pattern.", path, pattern);
 
                 return true;
             } else {
-                logger.debug("Path '{}' does not matches against '{}' pattern.", path, pattern);
+                logger.debug("Path '{}' does not matches against '{}' filtering pattern.", path, pattern);
             }
         }
 
-        logger.debug("Path '{}' does not match against any configured pattern.", path);
+        logger.debug("Path '{}' does not match against any configured filtering pattern.", path);
 
         return false;
     }

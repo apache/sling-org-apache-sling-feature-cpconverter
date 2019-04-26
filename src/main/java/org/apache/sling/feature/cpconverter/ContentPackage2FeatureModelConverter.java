@@ -160,6 +160,10 @@ public class ContentPackage2FeatureModelConverter {
         return aclManager;
     }
 
+    public VaultPackageAssembler getMainPackageAssembler() {
+        return mainPackageAssembler;
+    }
+
     public Feature getRunMode(String runMode) {
         if (getTargetFeature() == null) {
             throw new IllegalStateException("Target Feature not initialized yet, please make sure convert() method was invoked first.");
