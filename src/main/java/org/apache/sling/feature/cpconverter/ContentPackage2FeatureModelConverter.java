@@ -309,20 +309,18 @@ public class ContentPackage2FeatureModelConverter {
     }
 
     public void addConfiguration(String runMode, String pid, Dictionary<String, Object> configurationProperties) {
-        if (!mergeConfigurations) {
-            checkConfigurationExist(getTargetFeature(), pid);
-
-            for (Feature runModeFeature : runModes.values()) {
-                checkConfigurationExist(runModeFeature, pid);
-            }
-        }
-
         Feature feature = getRunMode(runMode);
         Configuration configuration = feature.getConfigurations().getConfiguration(pid);
 
         if (configuration == null) {
             configuration = new Configuration(pid);
             feature.getConfigurations().add(configuration);
+        } else if (!mergeConfigurations) {
+            throw new IllegalStateException("Configuration '"
+                                            + pid
+                                            + "' already defined in Feature Model '"
+                                            + feature.getId().toMvnId()
+                                            + "', set the 'mergeConfigurations' flag to 'true' if you want to merge multiple configurations with same PID");
         }
 
         Enumeration<String> keys = configurationProperties.keys();
@@ -330,18 +328,6 @@ public class ContentPackage2FeatureModelConverter {
             String key = keys.nextElement();
             Object value = configurationProperties.get(key);
             configuration.getProperties().put(key, value);
-        }
-    }
-
-    private static void checkConfigurationExist(Feature feature, String pid) {
-        if (feature != null) {
-            if (feature.getConfigurations().getConfiguration(pid) != null) {
-                throw new IllegalStateException("Configuration '"
-                                                + pid
-                                                + "' already defined in Feature Model '"
-                                                + feature.getId().toMvnId()
-                                                + "', can not be added");
-            }
         }
     }
 

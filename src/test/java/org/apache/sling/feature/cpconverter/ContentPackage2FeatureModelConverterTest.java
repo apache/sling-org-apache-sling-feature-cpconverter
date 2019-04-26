@@ -27,6 +27,7 @@ import java.io.Reader;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.zip.ZipFile;
@@ -237,7 +238,30 @@ public class ContentPackage2FeatureModelConverterTest {
                  .convert(packageFile);
     }
 
-    
+    @Test(expected = IllegalStateException.class)
+    public void doesNotAllowSameConfigurationPidForSameRunmode() throws Exception {
+        addSamePidConfiguration(null, null);
+    }
+
+    @Test
+    public void allowSameConfigurationPidForDifferentRunmode() throws Exception {
+        addSamePidConfiguration(null, "test");
+    }
+
+    private void addSamePidConfiguration(String runmodeA, String runmodeB) throws Exception {
+        File outputDirectory = new File(System.getProperty("testDirectory"), getClass().getName() + '_' + System.currentTimeMillis());
+        URL packageUrl = getClass().getResource("test-content-package.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+
+        converter.setArtifactsOutputDirectory(outputDirectory)
+                 .setFeatureModelsOutputDirectory(outputDirectory)
+                 .convert(packageFile);
+
+        String pid = "this.is.just.a.pid";
+        converter.addConfiguration(runmodeA, pid, new Hashtable<String, Object>());
+        converter.addConfiguration(runmodeB, pid, new Hashtable<String, Object>());
+    }
+
     @Test
     public void overrideFeatureId() throws Exception {
         URL packageUrl = getClass().getResource("test-content-package.zip");
