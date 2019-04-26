@@ -16,26 +16,21 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import static java.util.Objects.requireNonNull;
 import static org.apache.jackrabbit.vault.packaging.PackageProperties.NAME_VERSION;
-import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.POM_TYPE;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.spi.ArtifactWriter;
 import org.apache.sling.feature.cpconverter.writers.InputStreamArtifactWriter;
-import org.apache.sling.feature.cpconverter.writers.MavenPomSupplierWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,8 +46,6 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
 
     private final Pattern pomPropertiesPattern = Pattern.compile("META-INF/maven/[^/]+/[^/]+/pom.properties");
 
-    private final Pattern pomXmlPattern = Pattern.compile("META-INF/maven/[^/]+/[^/]+/pom.xml");
-
     public BundleEntryHandler() {
         super("(jcr_root)?/apps/[^/]+/install(\\.([^/]+))?/.+\\.jar");
     }
@@ -62,7 +55,6 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         logger.info("Processing bundle {}...", entry.getName());
 
         Properties properties = new Properties();
-        byte[] pomXml = null;
 
         try (JarInputStream jarInput = new JarInputStream(archive.openInputStream(entry));
                 ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
@@ -74,11 +66,6 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
                     logger.info("Reading '{}' bundle GAV from {}...", entry.getName(), entryName);
 
                     properties.load(jarInput);
-                } else if (pomXmlPattern.matcher(entryName).matches()) {
-                    logger.info("Reading '{}' POM file from {}...", entry.getName(), entryName);
-
-                    IOUtils.copy(jarInput, baos);
-                    pomXml = baos.toByteArray();
                 }
             }
         }
@@ -116,23 +103,13 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
                              null,
                              JAR_TYPE);
         }
-
-        ArtifactWriter pomWriter;
-        if (pomXml == null) {
-            pomWriter = new MavenPomSupplierWriter(groupId, artifactId, version, JAR_TYPE);
-        } else {
-            pomWriter = new InputStreamArtifactWriter(new ByteArrayInputStream(pomXml));
-        }
-
-        converter.getArtifactDeployer().deploy(pomWriter, groupId, artifactId, version, null, POM_TYPE);
     }
 
     private static String getCheckedProperty(Properties properties, String name) {
         String property = properties.getProperty(name).trim();
-        Objects.requireNonNull(property, "Bundle can not be defined as a valid Maven artifact without specifying a valid '"
+        return requireNonNull(property, "Bundle can not be defined as a valid Maven artifact without specifying a valid '"
                                          + name
                                          + "' property.");
-        return property;
     }
 
 }

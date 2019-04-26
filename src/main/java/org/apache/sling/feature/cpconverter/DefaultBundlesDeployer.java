@@ -16,14 +16,16 @@
  */
 package org.apache.sling.feature.cpconverter;
 
+import static java.util.Objects.requireNonNull;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Objects;
 import java.util.StringTokenizer;
 
 import org.apache.sling.feature.cpconverter.spi.ArtifactWriter;
 import org.apache.sling.feature.cpconverter.spi.BundlesDeployer;
+import org.apache.sling.feature.cpconverter.writers.MavenPomSupplierWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,16 +49,16 @@ public final class DefaultBundlesDeployer implements BundlesDeployer {
 
     @Override
     public void deploy(ArtifactWriter artifactWriter,
-                              String groupId,
-                              String artifactId,
-                              String version,
-                              String classifier,
-                              String type) throws IOException {
-        Objects.requireNonNull(artifactWriter, "Null ArtifactWriter can not install an artifact to a Maven repository.");
-        Objects.requireNonNull(groupId, "Bundle can not be installed to a Maven repository without specifying a valid 'groupId'.");
-        Objects.requireNonNull(artifactId, "Bundle can not be installed to a Maven repository without specifying a valid 'artifactId'.");
-        Objects.requireNonNull(version, "Bundle can not be installed to a Maven repository without specifying a valid 'version'.");
-        Objects.requireNonNull(type, "Bundle can not be installed to a Maven repository without specifying a valid 'type'.");
+                       String groupId,
+                       String artifactId,
+                       String version,
+                       String classifier,
+                       String type) throws IOException {
+        requireNonNull(artifactWriter, "Null ArtifactWriter can not install an artifact to a Maven repository.");
+        requireNonNull(groupId, "Bundle can not be installed to a Maven repository without specifying a valid 'groupId'.");
+        requireNonNull(artifactId, "Bundle can not be installed to a Maven repository without specifying a valid 'artifactId'.");
+        requireNonNull(version, "Bundle can not be installed to a Maven repository without specifying a valid 'version'.");
+        requireNonNull(type, "Bundle can not be installed to a Maven repository without specifying a valid 'type'.");
 
         File targetDir = artifactsDirectory;
 
@@ -67,10 +69,10 @@ public final class DefaultBundlesDeployer implements BundlesDeployer {
         }
 
         targetDir = new File(targetDir, artifactId);
-
         targetDir = new File(targetDir, version);
-
         targetDir.mkdirs();
+
+        // deploy the main artifact
 
         StringBuilder nameBuilder = new StringBuilder()
                                     .append(artifactId)
@@ -92,6 +94,14 @@ public final class DefaultBundlesDeployer implements BundlesDeployer {
         }
 
         logger.info("Data successfully written to {}.", targetFile);
+
+        // automatically deploy the supplied POM file
+
+        targetFile = new File(targetDir, String.format("%s-%s.pom", artifactId, version));
+
+        try (FileOutputStream targetStream = new FileOutputStream(targetFile)) {
+            new MavenPomSupplierWriter(groupId, artifactId, version, type).write(targetStream);
+        }
     }
 
 }

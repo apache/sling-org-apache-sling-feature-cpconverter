@@ -25,7 +25,6 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Objects;
 import java.util.ServiceLoader;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
@@ -46,7 +45,6 @@ import org.apache.sling.feature.cpconverter.spi.BundlesDeployer;
 import org.apache.sling.feature.cpconverter.spi.EntryHandler;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.feature.cpconverter.writers.FileArtifactWriter;
-import org.apache.sling.feature.cpconverter.writers.MavenPomSupplierWriter;
 import org.apache.sling.feature.io.json.FeatureJSONWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,8 +52,6 @@ import org.slf4j.LoggerFactory;
 public class ContentPackage2FeatureModelConverter {
 
     private static final String CONTENT_PACKAGES = "content-packages";
-
-    public static final String POM_TYPE = "pom";
 
     public static final String ZIP_TYPE = "zip";
 
@@ -141,7 +137,7 @@ public class ContentPackage2FeatureModelConverter {
     }
 
     public void addFilteringPattern(String filteringPattern) {
-        Objects.requireNonNull(filteringPattern, "Null pattern to filter resources out is not a valid filtering pattern");
+        requireNonNull(filteringPattern, "Null pattern to filter resources out is not a valid filtering pattern");
         if (filteringPattern.isEmpty()) {
             throw new IllegalArgumentException("Empty pattern to filter resources out is not a valid filtering pattern");
         }
@@ -214,7 +210,7 @@ public class ContentPackage2FeatureModelConverter {
     }
 
     public void convert(File contentPackage) throws Exception {
-        Objects.requireNonNull(contentPackage , "Null content-package can not be converted.");
+        requireNonNull(contentPackage , "Null content-package can not be converted.");
 
         if (!contentPackage.exists() || !contentPackage.isFile()) {
             throw new IllegalArgumentException("Content-package "
@@ -284,21 +280,11 @@ public class ContentPackage2FeatureModelConverter {
             // deploy the new zip content-package to the local mvn bundles dir
 
             artifactDeployer.deploy(new FileArtifactWriter(contentPackageArchive),
-                                                           targetFeature.getId().getGroupId(),
-                                                           targetFeature.getId().getArtifactId(),
-                                                           targetFeature.getId().getVersion(),
-                                                           PACKAGE_CLASSIFIER,
-                                                           ZIP_TYPE);
-
-            artifactDeployer.deploy(new MavenPomSupplierWriter(targetFeature.getId().getGroupId(),
-                                                               targetFeature.getId().getArtifactId(),
-                                                               targetFeature.getId().getVersion(),
-                                                               ZIP_TYPE),
                                     targetFeature.getId().getGroupId(),
                                     targetFeature.getId().getArtifactId(),
                                     targetFeature.getId().getVersion(),
-                                    null,
-                                    POM_TYPE);
+                                    PACKAGE_CLASSIFIER,
+                                    ZIP_TYPE);
 
             attach(null,
                    targetFeature.getId().getGroupId(),
@@ -386,8 +372,8 @@ public class ContentPackage2FeatureModelConverter {
     }
 
     public void processSubPackage(String path, File contentPackage) throws Exception {
-        Objects.requireNonNull(path, "Impossible to process a null vault package");
-        Objects.requireNonNull(contentPackage, "Impossible to process a null vault package");
+        requireNonNull(path, "Impossible to process a null vault package");
+        requireNonNull(contentPackage, "Impossible to process a null vault package");
 
         try (VaultPackage vaultPackage = packageManager.open(contentPackage, strictValidation)) {
             // scan the detected package, first
@@ -403,7 +389,7 @@ public class ContentPackage2FeatureModelConverter {
     }
 
     private void process(VaultPackage vaultPackage) throws Exception {
-        Objects.requireNonNull(vaultPackage, "Impossible to process a null vault package");
+        requireNonNull(vaultPackage, "Impossible to process a null vault package");
 
         if (getTargetFeature() == null) {
             throw new IllegalStateException("Target Feature not initialized yet, please make sure convert() method was invoked first.");
@@ -473,10 +459,10 @@ public class ContentPackage2FeatureModelConverter {
                        String version,
                        String classifier,
                        String type) {
-        Objects.requireNonNull(groupId, "Artifact can not be attached to a feature without specifying a valid 'groupId'.");
-        Objects.requireNonNull(artifactId, "Artifact can not be attached to a feature without specifying a valid 'artifactId'.");
-        Objects.requireNonNull(version, "Artifact can not be attached to a feature without specifying a valid 'version'.");
-        Objects.requireNonNull(type, "Artifact can not be attached to a feature without specifying a valid 'type'.");
+        requireNonNull(groupId, "Artifact can not be attached to a feature without specifying a valid 'groupId'.");
+        requireNonNull(artifactId, "Artifact can not be attached to a feature without specifying a valid 'artifactId'.");
+        requireNonNull(version, "Artifact can not be attached to a feature without specifying a valid 'version'.");
+        requireNonNull(type, "Artifact can not be attached to a feature without specifying a valid 'type'.");
 
         Artifact artifact = new Artifact(new ArtifactId(groupId, artifactId, version, classifier, type));
 
