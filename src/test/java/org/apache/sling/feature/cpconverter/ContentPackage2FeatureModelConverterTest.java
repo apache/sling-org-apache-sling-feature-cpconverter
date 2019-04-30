@@ -17,11 +17,13 @@
 package org.apache.sling.feature.cpconverter;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.Reader;
 import java.net.URL;
@@ -29,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.zip.ZipFile;
 
@@ -145,6 +148,20 @@ public class ContentPackage2FeatureModelConverterTest {
                           Arrays.asList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
                           Arrays.asList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended-asd-retail"),
                           Collections.emptyList());
+
+        // verify the runmode.mapper integrity
+        File runmodeMapperFile = new File(outputDirectory, "runmode.mapping");
+        assertTrue(runmodeMapperFile.exists());
+        assertTrue(runmodeMapperFile.isFile());
+        Properties runModes = new Properties();
+        try (FileInputStream input = new FileInputStream(runmodeMapperFile)) {
+            runModes.load(input);
+        }
+        assertFalse(runModes.isEmpty());
+        assertTrue(runModes.containsKey("(default)"));
+        assertEquals("asd.retail.all.json", runModes.getProperty("(default)"));
+        assertEquals("asd.retail.all-author.json", runModes.getProperty("author"));
+        assertEquals("asd.retail.all-publish.json", runModes.getProperty("publish"));
 
         ZipFile zipFile = new ZipFile(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip"));
         for (String expectedEntry : new String[] {
