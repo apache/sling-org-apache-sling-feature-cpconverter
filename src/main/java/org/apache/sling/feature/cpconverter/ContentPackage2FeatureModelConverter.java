@@ -179,7 +179,6 @@ public class ContentPackage2FeatureModelConverter {
     }
 
     private ArtifactId appendRunmode(ArtifactId id, String runMode) {
-
         ArtifactId newId;
         if (runMode == null) {
             newId = id;
@@ -302,13 +301,20 @@ public class ContentPackage2FeatureModelConverter {
 
             aclManager.addRepoinitExtension(getTargetFeature());
 
-            seralize(getTargetFeature(), null);
+            RunmodeMapper runmodeMapper = RunmodeMapper.open(featureModelsOutputDirectory);
+
+            File featureModel = seralize(getTargetFeature(), null);
+            runmodeMapper.addOrUpdate(null, featureModel);
 
             if (!runModes.isEmpty()) {
                 for (java.util.Map.Entry<String, Feature> runmodeEntry : runModes.entrySet()) {
-                    seralize(runmodeEntry.getValue(), runmodeEntry.getKey());
+                    String runmode = runmodeEntry.getKey();
+                    featureModel = seralize(runmodeEntry.getValue(), runmode);
+                    runmodeMapper.addOrUpdate(runmode, featureModel);
                 }
             }
+
+            runmodeMapper.save();
         }
     }
 
@@ -335,7 +341,7 @@ public class ContentPackage2FeatureModelConverter {
         }
     }
 
-    private void seralize(Feature feature, String runMode) throws Exception {
+    private File seralize(Feature feature, String runMode) throws Exception {
         StringBuilder fileName = new StringBuilder().append(feature.getId().getArtifactId());
 
         String classifier = feature.getId().getClassifier();
@@ -349,7 +355,7 @@ public class ContentPackage2FeatureModelConverter {
 
         logger.info("Conversion complete!", targetFile);
         logger.info("Writing resulting Feature File to '{}'...", targetFile);
-        
+
         if ( idOverride != null ) {
             ArtifactId idOverrride = appendRunmode(ArtifactId.parse(idOverride), runMode);
             feature = feature.copy(idOverrride);
@@ -360,6 +366,8 @@ public class ContentPackage2FeatureModelConverter {
 
             logger.info("'{}' Feature File successfully written!", targetFile);
         }
+
+        return targetFile;
     }
 
     public void processSubPackage(String path, File contentPackage) throws Exception {
