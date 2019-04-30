@@ -301,16 +301,16 @@ public class ContentPackage2FeatureModelConverter {
 
             aclManager.addRepoinitExtension(getTargetFeature());
 
+            logger.info("Conversion complete!");
+
             RunmodeMapper runmodeMapper = RunmodeMapper.open(featureModelsOutputDirectory);
 
-            File featureModel = seralize(getTargetFeature(), null);
-            runmodeMapper.addOrUpdate(null, featureModel);
+            seralize(getTargetFeature(), null, runmodeMapper);
 
             if (!runModes.isEmpty()) {
                 for (java.util.Map.Entry<String, Feature> runmodeEntry : runModes.entrySet()) {
                     String runmode = runmodeEntry.getKey();
-                    featureModel = seralize(runmodeEntry.getValue(), runmode);
-                    runmodeMapper.addOrUpdate(runmode, featureModel);
+                    seralize(runmodeEntry.getValue(), runmode, runmodeMapper);
                 }
             }
 
@@ -341,22 +341,23 @@ public class ContentPackage2FeatureModelConverter {
         }
     }
 
-    private File seralize(Feature feature, String runMode) throws Exception {
-        StringBuilder fileName = new StringBuilder().append(feature.getId().getArtifactId());
+    private void seralize(Feature feature, String runMode, RunmodeMapper runmodeMapper) throws Exception {
+        StringBuilder fileNameBuilder = new StringBuilder().append(feature.getId().getArtifactId());
 
         String classifier = feature.getId().getClassifier();
         if (classifier != null && !classifier.isEmpty()) {
-            fileName.append('-').append(classifier);
+            fileNameBuilder.append('-').append(classifier);
         }
 
-        fileName.append(JSON_FILE_EXTENSION);
+        fileNameBuilder.append(JSON_FILE_EXTENSION);
 
-        File targetFile = new File(featureModelsOutputDirectory, fileName.toString());
+        String fileName = fileNameBuilder.toString();
 
-        logger.info("Conversion complete!", targetFile);
-        logger.info("Writing resulting Feature File to '{}'...", targetFile);
+        File targetFile = new File(featureModelsOutputDirectory, fileName);
 
-        if ( idOverride != null ) {
+        logger.info("Writing resulting Feature Model '{}' to file '{}'...", feature.getId(), targetFile);
+
+        if (idOverride != null && !idOverride.isEmpty()) {
             ArtifactId idOverrride = appendRunmode(ArtifactId.parse(idOverride), runMode);
             feature = feature.copy(idOverrride);
         }
@@ -365,9 +366,9 @@ public class ContentPackage2FeatureModelConverter {
             FeatureJSONWriter.write(targetWriter, feature);
 
             logger.info("'{}' Feature File successfully written!", targetFile);
-        }
 
-        return targetFile;
+            runmodeMapper.addOrUpdate(runMode, fileName);
+        }
     }
 
     public void processSubPackage(String path, File contentPackage) throws Exception {

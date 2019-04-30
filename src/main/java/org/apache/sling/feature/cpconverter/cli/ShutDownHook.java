@@ -33,7 +33,6 @@ final class ShutDownHook extends Thread {
 
     @Override
     public void run() {
-        logger.info("+-----------------------------------------------------+");
         logger.info("");
 
         // format the uptime string
@@ -76,6 +75,7 @@ final class ShutDownHook extends Thread {
         logger.info("Final Memory: {}M/{}M",
                     (runtime.totalMemory() - runtime.freeMemory()) / megaUnit,
                     runtime.totalMemory() / megaUnit);
+        logger.info("+-----------------------------------------------------+");
     }
 
 }

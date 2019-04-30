@@ -50,13 +50,12 @@ final class RunmodeMapper {
         this.properties = properties;
     }
 
-    public void addOrUpdate(String runmode, File jsonFile) {
-        if (runmode == null) {
-            runmode = DEFAULT;
+    public void addOrUpdate(String runMode, String jsonFileName) {
+        if (runMode == null) {
+            runMode = DEFAULT;
         }
 
-        String jsonFileName = jsonFile.getName();
-        String value = properties.getProperty(runmode);
+        String value = properties.getProperty(runMode);
 
         if (value != null && !value.contains(jsonFileName)) {
             value += ',' + jsonFileName;
@@ -64,7 +63,7 @@ final class RunmodeMapper {
             value = jsonFileName;
         }
 
-        properties.setProperty(runmode, value);
+        properties.setProperty(runMode, value);
     }
 
     public void save() throws IOException {
