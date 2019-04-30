@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.vltpkg;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.File;
@@ -26,9 +27,11 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.jackrabbit.vault.fs.api.ImportMode;
+import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
+import org.apache.jackrabbit.vault.fs.config.DefaultWorkspaceFilter;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
-import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -61,12 +64,28 @@ public class VaultPackageAssemblerTest {
 
     @Test
     public void packageResource() throws Exception {
-        assembler.addEntry(resourceLocation, getClass().getResourceAsStream("../handlers/" + resourceLocation));
+        if (resourceLocation != null) {
+            assembler.addEntry(resourceLocation, getClass().getResourceAsStream("../handlers/" + resourceLocation));
+        }
         File contentPackage = assembler.createPackage(testDirectory);
 
         ZipFile zipFile = new ZipFile(contentPackage);
-        ZipEntry entry = zipFile.getEntry(resourceLocation);
-        assertNotNull(entry);
+        ZipEntry resourceEntry;
+        if (resourceLocation != null) {
+            resourceEntry = zipFile.getEntry(resourceLocation);
+        } else {
+            resourceEntry = zipFile.getEntry("jcr_root");
+        }
+        assertNotNull(resourceEntry);
+
+        DefaultWorkspaceFilter filter = new DefaultWorkspaceFilter();
+        ZipEntry filtersEntry = zipFile.getEntry("META-INF/vault/filter.xml");
+        filter.load(zipFile.getInputStream(filtersEntry));
+
+        for (PathFilterSet filterSet : filter.getFilterSets()) {
+            assertEquals(ImportMode.MERGE, filterSet.getImportMode());
+        }
+
         zipFile.close();
     }
 
@@ -79,6 +98,7 @@ public class VaultPackageAssemblerTest {
         VaultPackageAssembler assembler = VaultPackageAssembler.create(vaultPackage);
 
         return Arrays.asList(new Object[][] {
+            { null, assembler },
             { "jcr_root/.content.xml", assembler },
             { "jcr_root/asd/.content.xml", assembler },
             { "jcr_root/asd/public/license.txt", assembler }

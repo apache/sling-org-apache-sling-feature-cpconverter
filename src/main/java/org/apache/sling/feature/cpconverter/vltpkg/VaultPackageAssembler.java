@@ -28,6 +28,7 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.jackrabbit.vault.fs.api.ImportMode;
 import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
 import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
 import org.apache.jackrabbit.vault.fs.config.DefaultWorkspaceFilter;
@@ -42,6 +43,8 @@ import org.codehaus.plexus.archiver.jar.JarArchiver;
 import org.codehaus.plexus.archiver.util.DefaultFileSet;
 
 public final class VaultPackageAssembler implements EntryHandler {
+
+    private static final String JCR_ROOT_DIR_NAME = "jcr_root";
 
     private static final String META_INF_VAULT_DIRECTORY = "META-INF/vault/";
 
@@ -59,7 +62,9 @@ public final class VaultPackageAssembler implements EntryHandler {
 
     public static VaultPackageAssembler create(VaultPackage vaultPackage) {
         File storingDirectory = new File(TMP_DIR, vaultPackage.getFile().getName() + "-deflated");
-        storingDirectory.mkdirs();
+        // avoid any possible Stream is not a content package. Missing 'jcr_root' error
+        File jcrRootDirectory = new File(storingDirectory, JCR_ROOT_DIR_NAME);
+        jcrRootDirectory.mkdirs();
 
         PackageProperties packageProperties = vaultPackage.getProperties();
 
@@ -119,6 +124,8 @@ public final class VaultPackageAssembler implements EntryHandler {
     public void mergeFilters(WorkspaceFilter filter) {
         for (PathFilterSet pathFilterSet : filter.getFilterSets()) {
             if (!OSGI_BUNDLE_PATTERN.matcher(pathFilterSet.getRoot()).matches()) {
+                // make sure (empty sub-)content-packages override existing content
+                pathFilterSet.setImportMode(ImportMode.MERGE);
                 this.filter.add(pathFilterSet);
             }
         }
