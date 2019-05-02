@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.util.Collection;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -337,6 +338,11 @@ public class ContentPackage2FeatureModelConverter {
         while (keys.hasMoreElements()) {
             String key = keys.nextElement();
             Object value = configurationProperties.get(key);
+
+            if (value != null && Collection.class.isInstance(value)) {
+                value = ((Collection<?>) value).toArray();
+            }
+
             configuration.getProperties().put(key, value);
         }
     }
