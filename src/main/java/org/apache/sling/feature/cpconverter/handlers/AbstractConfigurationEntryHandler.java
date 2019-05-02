@@ -34,11 +34,22 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
     public final void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter) throws Exception {
         String pid = entry.getName().substring(0, entry.getName().lastIndexOf('.'));
 
-        logger.info("Processing configuration '{}'.", pid);
+        String id;
+        int n = pid.indexOf('~');
+        if (n == -1) {
+            n = pid.indexOf('-');
+        }
+        if (n > 0) {
+            id = pid.substring(0, n).concat("~").concat(pid.substring(n + 1));
+        } else {
+            id = pid;
+        }
+
+        logger.info("Processing configuration '{}'.", id);
 
         Dictionary<String, Object> configurationProperties;
         try (InputStream input = archive.openInputStream(entry)) {
-            configurationProperties = parseConfiguration(pid, input);
+            configurationProperties = parseConfiguration(id, input);
         }
 
         if (configurationProperties == null) {
@@ -66,7 +77,7 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
                                             + "' but it does not, currently");
         }
 
-        converter.addConfiguration(runMode, pid, configurationProperties);
+        converter.addConfiguration(runMode, id, configurationProperties);
     }
 
     protected abstract Dictionary<String, Object> parseConfiguration(String name, InputStream input) throws Exception;

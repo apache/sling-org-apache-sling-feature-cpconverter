@@ -134,7 +134,7 @@ public class ContentPackage2FeatureModelConverterTest {
                           "asd.retail.all.json",
                           "asd.sample:asd.retail.all:slingosgifeature:0.0.1",
                           Arrays.asList("org.apache.felix:org.apache.felix.framework:6.0.1"),
-                          Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config-asd-retail"),
+                          Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
                           Arrays.asList("asd.sample:asd.retail.all:zip:cp2fm-converted:0.0.1"));
         verifyFeatureFile(outputDirectory,
                           "asd.retail.all-author.json",
@@ -146,7 +146,7 @@ public class ContentPackage2FeatureModelConverterTest {
                           "asd.retail.all-publish.json",
                           "asd.sample:asd.retail.all:slingosgifeature:publish:0.0.1",
                           Arrays.asList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
-                          Arrays.asList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended-asd-retail"),
+                          Arrays.asList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
                           Collections.emptyList());
 
         // verify the runmode.mapper integrity
@@ -297,7 +297,7 @@ public class ContentPackage2FeatureModelConverterTest {
                           "asd.retail.all.json",
                           "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0:${project.version}",
                           Arrays.asList("org.apache.felix:org.apache.felix.framework:6.0.1"),
-                          Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config-asd-retail"),
+                          Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
                           Arrays.asList("asd.sample:asd.retail.all:zip:cp2fm-converted:0.0.1"));
         verifyFeatureFile(outputDirectory,
                           "asd.retail.all-author.json",
@@ -309,7 +309,7 @@ public class ContentPackage2FeatureModelConverterTest {
                           "asd.retail.all-publish.json",
                           "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0-publish:${project.version}",
                           Arrays.asList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
-                          Arrays.asList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended-asd-retail"),
+                          Arrays.asList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
                           Collections.emptyList());
 
         ZipFile zipFile = new ZipFile(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip"));
