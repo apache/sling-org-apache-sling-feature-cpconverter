@@ -316,6 +316,7 @@ public class ContentPackage2FeatureModelConverter {
             }
 
             runmodeMapper.save();
+            aclManager.reset();
         }
     }
 
