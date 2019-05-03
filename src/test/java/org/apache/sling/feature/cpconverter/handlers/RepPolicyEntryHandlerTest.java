@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -25,6 +26,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import java.io.File;
+
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.ArtifactId;
@@ -32,6 +35,7 @@ import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -72,7 +76,9 @@ public final class RepPolicyEntryHandlerTest {
         assertNotNull(repoinitExtension);
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
-        String expected = "create service user acs-commons-ensure-oak-index-service\n" + 
+        String expected = "create path (sling:Folder) /asd\n" + 
+                "create path (sling:Folder) /asd/public\n" + 
+                "create service user acs-commons-ensure-oak-index-service\n" + 
                 "set ACL for acs-commons-ensure-oak-index-service\n" + 
                 "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/public restriction(*/oak:index/*)\n" + 
                 "end\n" + 
@@ -109,7 +115,9 @@ public final class RepPolicyEntryHandlerTest {
         assertNotNull(repoinitExtension);
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
-        String expected = "create service user acs-commons-package-replication-status-event-service\n" + 
+        String expected = "create path (sling:Folder) /asd\n" + 
+                "create path (sling:Folder) /asd/public\n" + 
+                "create service user acs-commons-package-replication-status-event-service\n" + 
                 "set ACL for acs-commons-package-replication-status-event-service\n" + 
                 "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" + 
                 "end\n" + 
@@ -139,6 +147,7 @@ public final class RepPolicyEntryHandlerTest {
         String path = "jcr_root/asd/public/_rep_policy.xml";
         Archive archive = mock(Archive.class);
         Entry entry = mock(Entry.class);
+        VaultPackageAssembler packageAssembler = mock(VaultPackageAssembler.class);
 
         when(archive.openInputStream(entry)).thenReturn(getClass().getResourceAsStream(path));
 
@@ -154,7 +163,9 @@ public final class RepPolicyEntryHandlerTest {
             }
         }
 
-        converter.getAclManager().addRepoinitExtension(feature);
+        when(packageAssembler.getEntry(anyString())).thenReturn(new File("itdoesnotexist"));
+
+        converter.getAclManager().addRepoinitExtension(packageAssembler, feature);
         return feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
     }
 

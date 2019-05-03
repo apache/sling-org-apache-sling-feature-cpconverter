@@ -42,7 +42,7 @@ import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.jar.JarArchiver;
 import org.codehaus.plexus.archiver.util.DefaultFileSet;
 
-public final class VaultPackageAssembler implements EntryHandler {
+public class VaultPackageAssembler implements EntryHandler {
 
     private static final String JCR_ROOT_DIR_NAME = "jcr_root";
 
@@ -151,6 +151,14 @@ public final class VaultPackageAssembler implements EntryHandler {
         try (OutputStream output = new FileOutputStream(target)) {
             IOUtils.copy(input, output);
         }
+    }
+
+    public File getEntry(String path) {
+        if (!path.startsWith(JCR_ROOT_DIR_NAME)) {
+            path = JCR_ROOT_DIR_NAME + path;
+        }
+
+        return new File(storingDirectory, path);
     }
 
     public File createPackage() throws IOException {

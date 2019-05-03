@@ -14,7 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.sling.feature.cpconverter.handlers;
+package org.apache.sling.feature.cpconverter.shared;
 
 import static org.apache.jackrabbit.JcrConstants.JCR_PRIMARYTYPE;
 
@@ -27,7 +27,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-abstract class AbstractJcrNodeParser<O> extends DefaultHandler {
+public abstract class AbstractJcrNodeParser<O> extends DefaultHandler {
 
     private static final String JCR_ROOT = "jcr:root";
 
@@ -39,16 +39,26 @@ abstract class AbstractJcrNodeParser<O> extends DefaultHandler {
         this.primaryType = primaryType;
     }
 
-    public void parse(InputStream input) throws Exception {
+    public O parse(InputStream input) throws Exception {
         SAXParser saxParser = saxParserFactory.newSAXParser();
         saxParser.parse(input, this);
+        return getParsingResult();
     }
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-        String primaryType = attributes.getValue(JCR_PRIMARYTYPE);
+        if (JCR_ROOT.equals(qName)) {
+            String primaryType = attributes.getValue(JCR_PRIMARYTYPE);
+            onJcrRootNode(uri, localName, qName, attributes, primaryType);
+        }
+    }
 
-        if (JCR_ROOT.equals(qName) && this.primaryType.equals(primaryType)) {
+    protected final String getPrimaryType() {
+        return primaryType;
+    }
+
+    protected void onJcrRootNode(String uri, String localName, String qName, Attributes attributes, String primaryType) throws SAXException {
+        if (this.primaryType.equals(primaryType)) {
             onJcrRootElement(uri, localName, qName, attributes);
         }
     }

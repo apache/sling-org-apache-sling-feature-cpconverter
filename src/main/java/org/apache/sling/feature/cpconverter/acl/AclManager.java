@@ -16,6 +16,8 @@
  */
 package org.apache.sling.feature.cpconverter.acl;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -23,17 +25,25 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Feature;
+import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 
 /**
  * The Manager able to collect and build System Users and related ACL policies.
  */
 public final class AclManager {
 
+    private static final String CONTENT_XML_FILE_NAME = ".content.xml";
+
+    private static final String DEFAULT_TYPE = "sling:Folder";
+
     private final Set<String> systemUsers = new LinkedHashSet<>();
+
+    private final Set<String> paths = new TreeSet<String>();
 
     private final Map<String, List<Acl>> acls = new HashMap<>();
 
@@ -45,12 +55,23 @@ public final class AclManager {
     }
 
     public Acl addAcl(String systemUser, String operation, String privileges, String path) {
+        addPath(path);
+
         Acl acl = new Acl(operation, privileges, path);
         acls.computeIfAbsent(systemUser, k -> new LinkedList<>()).add(acl);
         return acl;
     }
 
-    public void addRepoinitExtension(Feature feature) {
+    private void addPath(String path) {
+        paths.add(path);
+
+        int endIndex = path.lastIndexOf('/');
+        if (endIndex > 0) {
+            addPath(path.substring(0, endIndex));
+        }
+    }
+
+    public void addRepoinitExtension(VaultPackageAssembler packageAssembler, Feature feature) {
         if (systemUsers.isEmpty()) {
             return;
         }
@@ -59,8 +80,37 @@ public final class AclManager {
 
         Formatter formatter = new Formatter();
 
+        // make sure all paths are created first
+
+        for (String path : paths) {
+            File currentDir = packageAssembler.getEntry(path);
+            String type = DEFAULT_TYPE;
+
+            if (currentDir.exists()) {
+                File currentContent = new File(currentDir, CONTENT_XML_FILE_NAME);
+                if (currentContent.exists()) {
+                    try (FileInputStream input = new FileInputStream(currentContent)) {
+                        type = new PrimaryTypeParser(DEFAULT_TYPE).parse(input);
+                    } catch (Exception e) {
+                        throw new RuntimeException("A fatal error occurred while parsing the '"
+                                                   + currentContent
+                                                   + "' file, see nested exceptions: "
+                                                   + e);
+                    } finally {
+                        formatter.close();
+                    }
+                }
+            }
+
+            formatter.format("create path (%s) %s%n", type, path);
+        }
+
         for (String systemUser : systemUsers) {
+            // create then the users
+
             formatter.format("create service user %s%n", systemUser);
+
+            // ACL can now be set
 
             List<Acl> authorizations = acls.get(systemUser);
             if (authorizations != null && !authorizations.isEmpty()) {

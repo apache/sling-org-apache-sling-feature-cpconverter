@@ -21,7 +21,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
+
+import java.io.File;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
@@ -30,6 +33,7 @@ import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -80,6 +84,7 @@ public class SystemUsersEntryHandlerTest {
     private Extension parseAndSetRepoinit(String path) throws Exception {
         Archive archive = mock(Archive.class);
         Entry entry = mock(Entry.class);
+        VaultPackageAssembler packageAssembler = mock(VaultPackageAssembler.class);
 
         when(archive.openInputStream(entry)).thenReturn(getClass().getResourceAsStream(path));
 
@@ -89,7 +94,9 @@ public class SystemUsersEntryHandlerTest {
 
         systemUsersEntryHandler.handle(path, archive, entry, converter);
 
-        converter.getAclManager().addRepoinitExtension(feature);
+        when(packageAssembler.getEntry(anyString())).thenReturn(new File("itdoesnotexist"));
+
+        converter.getAclManager().addRepoinitExtension(packageAssembler, feature);
         return feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
     }
 

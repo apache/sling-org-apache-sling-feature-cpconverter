@@ -21,6 +21,7 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 
 import org.apache.jackrabbit.vault.util.DocViewProperty;
+import org.apache.sling.feature.cpconverter.shared.AbstractJcrNodeParser;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -34,8 +35,7 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
     protected Dictionary<String, Object> parseConfiguration(String name, InputStream input) throws Exception {
         JcrConfigurationHandler configurationHandler = new JcrConfigurationHandler();
         try {
-            configurationHandler.parse(input);
-            return configurationHandler.getParsingResult();
+            return configurationHandler.parse(input);
         } catch (Exception e) {
             logger.warn("Current OSGi configuration does not represent a valid XML document, see nested exceptions", e);
             return null;

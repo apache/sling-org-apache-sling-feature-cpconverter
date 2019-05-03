@@ -300,7 +300,7 @@ public class ContentPackage2FeatureModelConverter {
 
             // finally serialize the Feature Model(s) file(s)
 
-            aclManager.addRepoinitExtension(getTargetFeature());
+            aclManager.addRepoinitExtension(mainPackageAssembler, getTargetFeature());
 
             logger.info("Conversion complete!");
 
