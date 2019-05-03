@@ -17,6 +17,7 @@
 package org.apache.sling.feature.cpconverter.cli;
 
 import java.io.File;
+import java.util.List;
 import java.util.TimeZone;
 
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
@@ -26,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
 @Command(
     name = "cp2fm",
@@ -45,9 +47,6 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
 
     @Option(names = { "-v", "--version" }, description = "Display version information.")
     private boolean printVersion;
-
-    @Option(names = { "-c", "--content-package" }, description = "The content-package input file.", required = true)
-    private File contentPackage;
 
     @Option(names = { "-s", "--strict-validation" }, description = "Flag to mark the content-package input file being strict validated.", required = false, defaultValue = "false")
     private boolean strictValidation = false;
@@ -69,6 +68,9 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
 
     @Option(names = { "-i", "--artifact-id" }, description = "The optional Artifact Id the Feature File will have, once generated; it will be derived, if not specified.", required = false)
     private String artifactId;
+
+    @Parameters(arity = "1..*", paramLabel = "content-packages", description = "The content-package input file(s).")
+    private List<File> contentPackages;
 
     @Override
     public void run() {
@@ -112,7 +114,11 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                 }
             }
 
-            converter.convert(contentPackage);
+            List<File> orderedContentPackages = order(contentPackages);
+
+            for (File contentPackage : orderedContentPackages) {
+                converter.convert(contentPackage);
+            }
 
             logger.info( "+-----------------------------------------------------+" );
             logger.info("{} SUCCESS", appName);
@@ -122,9 +128,9 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
             logger.info( "+-----------------------------------------------------+" );
 
             if (debug) {
-                logger.error("Unable to convert content-package {}:", contentPackage, t);
+                logger.error("Unable to convert content-package {}:", contentPackages, t);
             } else {
-                logger.error("Unable to convert content-package {}: {}", contentPackage, t.getMessage());
+                logger.error("Unable to convert content-package {}: {}", contentPackages, t.getMessage());
             }
 
             logger.info( "" );
@@ -133,6 +139,11 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
         }
 
         logger.info( "+-----------------------------------------------------+" );
+    }
+
+    private List<File> order(List<File> contentPackages) {
+        // TODO
+        return null;
     }
 
     private static void printVersion(final Logger logger) {
