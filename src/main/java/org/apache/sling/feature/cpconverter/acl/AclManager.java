@@ -76,59 +76,61 @@ public final class AclManager {
             return;
         }
 
-        Extension repoInitExtension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, true);
+        Formatter formatter = null;
+        try {
 
-        Formatter formatter = new Formatter();
+            Extension repoInitExtension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, true);
 
-        // make sure all paths are created first
+            formatter = new Formatter();
 
-        for (String path : paths) {
-            File currentDir = packageAssembler.getEntry(path);
-            String type = DEFAULT_TYPE;
+            // make sure all paths are created first
 
-            if (currentDir.exists()) {
-                File currentContent = new File(currentDir, CONTENT_XML_FILE_NAME);
-                if (currentContent.exists()) {
-                    try (FileInputStream input = new FileInputStream(currentContent)) {
-                        type = new PrimaryTypeParser(DEFAULT_TYPE).parse(input);
-                    } catch (Exception e) {
-                        throw new RuntimeException("A fatal error occurred while parsing the '"
-                                                   + currentContent
-                                                   + "' file, see nested exceptions: "
-                                                   + e);
-                    } finally {
-                        formatter.close();
+            for (String path : paths) {
+                File currentDir = packageAssembler.getEntry(path);
+                String type = DEFAULT_TYPE;
+
+                if (currentDir.exists()) {
+                    File currentContent = new File(currentDir, CONTENT_XML_FILE_NAME);
+                    if (currentContent.exists()) {
+                        try (FileInputStream input = new FileInputStream(currentContent)) {
+                            type = new PrimaryTypeParser(DEFAULT_TYPE).parse(input);
+                        } catch (Exception e) {
+                            throw new RuntimeException("A fatal error occurred while parsing the '"
+                                + currentContent
+                                + "' file, see nested exceptions: "
+                                + e);
+                        }
                     }
                 }
+
+                formatter.format("create path (%s) %s%n", type, path);
             }
 
-            formatter.format("create path (%s) %s%n", type, path);
-        }
+            for (String systemUser : systemUsers) {
+                // create then the users
 
-        for (String systemUser : systemUsers) {
-            // create then the users
+                formatter.format("create service user %s%n", systemUser);
 
-            formatter.format("create service user %s%n", systemUser);
+                // ACL can now be set
 
-            // ACL can now be set
+                List<Acl> authorizations = acls.get(systemUser);
+                if (authorizations != null && !authorizations.isEmpty()) {
+                    formatter.format("set ACL for %s%n", systemUser);
 
-            List<Acl> authorizations = acls.get(systemUser);
-            if (authorizations != null && !authorizations.isEmpty()) {
-                formatter.format("set ACL for %s%n", systemUser);
+                    for (Acl authorization : authorizations) {
+                        authorization.addAclStatement(formatter);
+                    }
 
-                for (Acl authorization : authorizations) {
-                    authorization.addAclStatement(formatter);
+                    formatter.format("end%n");
                 }
-
-                formatter.format("end%n");
             }
+
+            String text = formatter.toString();
+            repoInitExtension.setText(text);
+
+            feature.getExtensions().add(repoInitExtension);
+        } finally {
+            if(formatter != null) { formatter.close(); }
         }
-
-        String text = formatter.toString();
-        formatter.close();
-        repoInitExtension.setText(text);
-
-        feature.getExtensions().add(repoInitExtension);
     }
-
 }
