@@ -78,7 +78,6 @@ public final class AclManager {
 
         Formatter formatter = null;
         try {
-
             Extension repoInitExtension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, true);
 
             formatter = new Formatter();
@@ -130,7 +129,9 @@ public final class AclManager {
 
             feature.getExtensions().add(repoInitExtension);
         } finally {
-            if(formatter != null) { formatter.close(); }
+            if (formatter != null) {
+                formatter.close();
+            }
         }
     }
 }
