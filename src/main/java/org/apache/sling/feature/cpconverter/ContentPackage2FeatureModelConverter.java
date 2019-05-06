@@ -77,6 +77,8 @@ public class ContentPackage2FeatureModelConverter {
 
     private final RegexBasedResourceFilter filter = new RegexBasedResourceFilter();
 
+    private final SimpleVariablesInterpolator interpolator = new SimpleVariablesInterpolator();
+
     private BundlesDeployer artifactDeployer;
 
     private boolean strictValidation = false;
@@ -96,6 +98,8 @@ public class ContentPackage2FeatureModelConverter {
     private String id;
 
     private String idOverride;
+
+    private Map<String, String> properties;
 
     public ContentPackage2FeatureModelConverter setStrictValidation(boolean strictValidation) {
         this.strictValidation = strictValidation;
@@ -154,6 +158,11 @@ public class ContentPackage2FeatureModelConverter {
 
     public ContentPackage2FeatureModelConverter setIdOverride(String id) {
         this.idOverride = id;
+        return this;
+    }
+
+    public ContentPackage2FeatureModelConverter setProperties(Map<String, String> properties) {
+        this.properties = properties;
         return this;
     }
 
@@ -356,6 +365,10 @@ public class ContentPackage2FeatureModelConverter {
             fileNameBuilder.append('-').append(classifier);
         }
 
+        if (properties != null) {
+            properties.put("filename", fileNameBuilder.toString());
+        }
+
         fileNameBuilder.append(JSON_FILE_EXTENSION);
 
         String fileName = fileNameBuilder.toString();
@@ -365,7 +378,8 @@ public class ContentPackage2FeatureModelConverter {
         logger.info("Writing resulting Feature Model '{}' to file '{}'...", feature.getId(), targetFile);
 
         if (idOverride != null && !idOverride.isEmpty()) {
-            ArtifactId idOverrride = appendRunmode(ArtifactId.parse(idOverride), runMode);
+            String interpolatedIdOverride = interpolator.interpolate(idOverride, properties);
+            ArtifactId idOverrride = appendRunmode(ArtifactId.parse(interpolatedIdOverride), runMode);
             feature = feature.copy(idOverrride);
         }
 
