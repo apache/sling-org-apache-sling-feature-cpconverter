@@ -152,45 +152,44 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
         logger.info( "+-----------------------------------------------------+" );
     }
 
-    protected List<File> order(List<File> contentPackages, final Logger logger) throws CyclicDependencyException {
-        
-        LinkedHashMap<PackageId, File> idFileMap = new LinkedHashMap<>();
-        
+    protected List<File> order(List<File> contentPackages, final Logger logger) throws Exception {
+        Map<PackageId, File> idFileMap = new LinkedHashMap<>();
         Map<ZipVaultPackage, File> packageFileMapping = new HashMap<>();
         Map<PackageId, ZipVaultPackage> idPackageMapping = new HashMap<>();
-        
+
         for (File file : contentPackages) {
             try {
                 ZipVaultPackage pack = new ZipVaultPackage(file, false, true);
                 packageFileMapping.put(pack, file);
                 idPackageMapping.put(pack.getId(), pack);
             } catch (IOException e) {
-                String msg = String.format("Package couldn't be parsed as ZipVaultPackage %s", file.getAbsolutePath());
-                logger.error(msg);
-                System.exit(1);
+                String errorMessage = String.format("Package couldn't be parsed as ZipVaultPackage %s", file.getAbsolutePath());
+                throw new Exception(errorMessage);
             }
         }
-        
 
         for (ZipVaultPackage pack : packageFileMapping.keySet()) {
             orderDependencies(idFileMap, packageFileMapping, idPackageMapping, pack, new HashSet<PackageId>());
         }
-        
+
         return new LinkedList<>(idFileMap.values());
     }
 
-    private void orderDependencies(LinkedHashMap<PackageId, File> idFileMap,
-            Map<ZipVaultPackage, File> packageFileMapping, Map<PackageId, ZipVaultPackage> idPackageMapping,
-            ZipVaultPackage pack, Set<PackageId> visited) throws CyclicDependencyException {
-        if(visited.contains(pack.getId())) {
-            throw new CyclicDependencyException();
+    private void orderDependencies(Map<PackageId, File> idFileMap,
+                                   Map<ZipVaultPackage, File> packageFileMapping,
+                                   Map<PackageId, ZipVaultPackage> idPackageMapping,
+                                   ZipVaultPackage pack,
+                                   Set<PackageId> visited) throws CyclicDependencyException {
+        if (visited.contains(pack.getId())) {
+            throw new CyclicDependencyException("Cyclic dependency detected, " + pack.getId() + " was previously visited already");
         }
         visited.add(pack.getId());
         Dependency[] deps = pack.getDependencies();
         for (Dependency dep : deps) {
             for (PackageId id : new HashSet<>(idPackageMapping.keySet())) {
                 if (dep.matches(id)) {
-                    orderDependencies(idFileMap, packageFileMapping, idPackageMapping, idPackageMapping.get(id), visited);
+                    orderDependencies(idFileMap, packageFileMapping, idPackageMapping, idPackageMapping.get(id),
+                            visited);
                     break;
                 }
             }
