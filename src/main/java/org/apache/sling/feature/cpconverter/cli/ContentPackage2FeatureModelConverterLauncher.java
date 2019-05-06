@@ -180,20 +180,19 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                                    Map<PackageId, ZipVaultPackage> idPackageMapping,
                                    ZipVaultPackage pack,
                                    Set<PackageId> visited) throws CyclicDependencyException {
-        if (visited.contains(pack.getId())) {
+        if (!visited.add(pack.getId())) {
             throw new CyclicDependencyException("Cyclic dependency detected, " + pack.getId() + " was previously visited already");
         }
-        visited.add(pack.getId());
-        Dependency[] deps = pack.getDependencies();
-        for (Dependency dep : deps) {
-            for (PackageId id : new HashSet<>(idPackageMapping.keySet())) {
+
+        for (Dependency dep : pack.getDependencies()) {
+            for (PackageId id : idPackageMapping.keySet()) {
                 if (dep.matches(id)) {
-                    orderDependencies(idFileMap, packageFileMapping, idPackageMapping, idPackageMapping.get(id),
-                            visited);
+                    orderDependencies(idFileMap, packageFileMapping, idPackageMapping, idPackageMapping.get(id), visited);
                     break;
                 }
             }
         }
+
         idFileMap.put(pack.getId(), packageFileMapping.get(pack));
         idPackageMapping.remove(pack.getId());
     }
