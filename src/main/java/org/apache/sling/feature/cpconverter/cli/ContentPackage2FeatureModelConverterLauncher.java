@@ -17,9 +17,20 @@
 package org.apache.sling.feature.cpconverter.cli;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 
+import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
+import org.apache.jackrabbit.vault.packaging.Dependency;
+import org.apache.jackrabbit.vault.packaging.PackageId;
+import org.apache.jackrabbit.vault.packaging.impl.ZipVaultPackage;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -114,7 +125,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                 }
             }
 
-            List<File> orderedContentPackages = order(contentPackages);
+            List<File> orderedContentPackages = order(contentPackages, logger);
 
             for (File contentPackage : orderedContentPackages) {
                 converter.convert(contentPackage);
@@ -141,9 +152,51 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
         logger.info( "+-----------------------------------------------------+" );
     }
 
-    private List<File> order(List<File> contentPackages) {
-        // TODO
-        return null;
+    protected List<File> order(List<File> contentPackages, final Logger logger) throws CyclicDependencyException {
+        
+        LinkedHashMap<PackageId, File> idFileMap = new LinkedHashMap<>();
+        
+        Map<ZipVaultPackage, File> packageFileMapping = new HashMap<>();
+        Map<PackageId, ZipVaultPackage> idPackageMapping = new HashMap<>();
+        
+        for (File file : contentPackages) {
+            try {
+                ZipVaultPackage pack = new ZipVaultPackage(file, false, true);
+                packageFileMapping.put(pack, file);
+                idPackageMapping.put(pack.getId(), pack);
+            } catch (IOException e) {
+                String msg = String.format("Package couldn't be parsed as ZipVaultPackage %s", file.getAbsolutePath());
+                logger.error(msg);
+                System.exit(1);
+            }
+        }
+        
+
+        for (ZipVaultPackage pack : packageFileMapping.keySet()) {
+            orderDependencies(idFileMap, packageFileMapping, idPackageMapping, pack, new HashSet<PackageId>());
+        }
+        
+        return new LinkedList<>(idFileMap.values());
+    }
+
+    private void orderDependencies(LinkedHashMap<PackageId, File> idFileMap,
+            Map<ZipVaultPackage, File> packageFileMapping, Map<PackageId, ZipVaultPackage> idPackageMapping,
+            ZipVaultPackage pack, Set<PackageId> visited) throws CyclicDependencyException {
+        if(visited.contains(pack.getId())) {
+            throw new CyclicDependencyException();
+        }
+        visited.add(pack.getId());
+        Dependency[] deps = pack.getDependencies();
+        for (Dependency dep : deps) {
+            for (PackageId id : new HashSet<>(idPackageMapping.keySet())) {
+                if (dep.matches(id)) {
+                    orderDependencies(idFileMap, packageFileMapping, idPackageMapping, idPackageMapping.get(id), visited);
+                    break;
+                }
+            }
+        }
+        idFileMap.put(pack.getId(), packageFileMapping.get(pack));
+        idPackageMapping.remove(pack.getId());
     }
 
     private static void printVersion(final Logger logger) {
