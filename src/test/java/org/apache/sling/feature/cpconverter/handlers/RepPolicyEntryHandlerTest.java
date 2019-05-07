@@ -107,7 +107,7 @@ public final class RepPolicyEntryHandlerTest {
     }
 
     @Test
-    public void notDeclaredSystemUsersWontHaveAclSettings() throws Exception {
+    public void notDeclaredSystemUsersWillHaveAclSettings() throws Exception {
         Extension repoinitExtension = parseAndSetRepoinit("acs-commons-package-replication-status-event-service",
                                                           "acs-commons-ensure-service-user-service",
                                                           "acs-commons-automatic-package-replicator-service",
@@ -132,6 +132,12 @@ public final class RepPolicyEntryHandlerTest {
                 "create service user acs-commons-on-deploy-scripts-service\n" + 
                 "set ACL for acs-commons-on-deploy-scripts-service\n" + 
                 "allow jcr:read on /asd/public\n" + 
+                "end\n" + 
+                "set ACL for acs-commons-dispatcher-flush-service\n" + 
+                "allow jcr:read,crx:replicate,jcr:removeNode on /asd/public\n" + 
+                "end\n" + 
+                "set ACL for acs-commons-ensure-oak-index-service\n" + 
+                "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/public restriction(*/oak:index/*)\n" + 
                 "end\n";
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);

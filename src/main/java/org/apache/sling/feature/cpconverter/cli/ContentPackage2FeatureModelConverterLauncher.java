@@ -17,8 +17,20 @@
 package org.apache.sling.feature.cpconverter.cli;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 
+import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
+import org.apache.jackrabbit.vault.packaging.Dependency;
+import org.apache.jackrabbit.vault.packaging.PackageId;
+import org.apache.jackrabbit.vault.packaging.impl.ZipVaultPackage;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
 @Command(
     name = "cp2fm",
@@ -45,9 +58,6 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
 
     @Option(names = { "-v", "--version" }, description = "Display version information.")
     private boolean printVersion;
-
-    @Option(names = { "-c", "--content-package" }, description = "The content-package input file.", required = true)
-    private File contentPackage;
 
     @Option(names = { "-s", "--strict-validation" }, description = "Flag to mark the content-package input file being strict validated.", required = false, defaultValue = "false")
     private boolean strictValidation = false;
@@ -69,6 +79,12 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
 
     @Option(names = { "-i", "--artifact-id" }, description = "The optional Artifact Id the Feature File will have, once generated; it will be derived, if not specified.", required = false)
     private String artifactId;
+
+    @Option(names = {"-D", "--define"}, description = "Define a system property", required = false)
+    private Map<String, String> properties = new HashMap<>();
+
+    @Parameters(arity = "1..*", paramLabel = "content-packages", description = "The content-package input file(s).")
+    private List<File> contentPackages;
 
     @Override
     public void run() {
@@ -104,7 +120,8 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                                                              .setBundlesStartOrder(bundlesStartOrder)
                                                              .setArtifactsOutputDirectory(artifactsOutputDirectory)
                                                              .setFeatureModelsOutputDirectory(featureModelsOutputDirectory)
-                                                             .setIdOverride(artifactId);
+                                                             .setIdOverride(artifactId)
+                                                             .setProperties(properties);
 
             if (filteringPatterns != null && filteringPatterns.length > 0) {
                 for (String filteringPattern : filteringPatterns) {
@@ -112,7 +129,11 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                 }
             }
 
-            converter.convert(contentPackage);
+            List<File> orderedContentPackages = order(contentPackages, logger);
+
+            for (File contentPackage : orderedContentPackages) {
+                converter.convert(contentPackage);
+            }
 
             logger.info( "+-----------------------------------------------------+" );
             logger.info("{} SUCCESS", appName);
@@ -122,9 +143,9 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
             logger.info( "+-----------------------------------------------------+" );
 
             if (debug) {
-                logger.error("Unable to convert content-package {}:", contentPackage, t);
+                logger.error("Unable to convert content-package {}:", contentPackages, t);
             } else {
-                logger.error("Unable to convert content-package {}: {}", contentPackage, t.getMessage());
+                logger.error("Unable to convert content-package {}: {}", contentPackages, t.getMessage());
             }
 
             logger.info( "" );
@@ -133,6 +154,51 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
         }
 
         logger.info( "+-----------------------------------------------------+" );
+    }
+
+    protected List<File> order(List<File> contentPackages, final Logger logger) throws Exception {
+        Map<PackageId, File> idFileMap = new LinkedHashMap<>();
+        Map<ZipVaultPackage, File> packageFileMapping = new HashMap<>();
+        Map<PackageId, ZipVaultPackage> idPackageMapping = new HashMap<>();
+
+        for (File file : contentPackages) {
+            try {
+                ZipVaultPackage pack = new ZipVaultPackage(file, false, true);
+                packageFileMapping.put(pack, file);
+                idPackageMapping.put(pack.getId(), pack);
+            } catch (IOException e) {
+                String errorMessage = String.format("Package couldn't be parsed as ZipVaultPackage %s", file.getAbsolutePath());
+                throw new Exception(errorMessage);
+            }
+        }
+
+        for (ZipVaultPackage pack : packageFileMapping.keySet()) {
+            orderDependencies(idFileMap, packageFileMapping, idPackageMapping, pack, new HashSet<PackageId>());
+        }
+
+        return new LinkedList<>(idFileMap.values());
+    }
+
+    private void orderDependencies(Map<PackageId, File> idFileMap,
+                                   Map<ZipVaultPackage, File> packageFileMapping,
+                                   Map<PackageId, ZipVaultPackage> idPackageMapping,
+                                   ZipVaultPackage pack,
+                                   Set<PackageId> visited) throws CyclicDependencyException {
+        if (!visited.add(pack.getId())) {
+            throw new CyclicDependencyException("Cyclic dependency detected, " + pack.getId() + " was previously visited already");
+        }
+
+        for (Dependency dep : pack.getDependencies()) {
+            for (PackageId id : idPackageMapping.keySet()) {
+                if (dep.matches(id)) {
+                    orderDependencies(idFileMap, packageFileMapping, idPackageMapping, idPackageMapping.get(id), visited);
+                    break;
+                }
+            }
+        }
+
+        idFileMap.put(pack.getId(), packageFileMapping.get(pack));
+        idPackageMapping.remove(pack.getId());
     }
 
     private static void printVersion(final Logger logger) {
