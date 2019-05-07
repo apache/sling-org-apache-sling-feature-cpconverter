@@ -14,7 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.sling.feature.cpconverter;
+package org.apache.sling.feature.cpconverter.artifacts;
 
 import static java.util.Objects.requireNonNull;
 
@@ -23,19 +23,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.StringTokenizer;
 
-import org.apache.sling.feature.cpconverter.spi.ArtifactWriter;
-import org.apache.sling.feature.cpconverter.spi.BundlesDeployer;
-import org.apache.sling.feature.cpconverter.writers.MavenPomSupplierWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class DefaultBundlesDeployer implements BundlesDeployer {
+public final class DefaultArtifactsDeployer implements ArtifactsDeployer {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final File artifactsDirectory;
 
-    public DefaultBundlesDeployer(File outputDirectory) {
+    public DefaultArtifactsDeployer(File outputDirectory) {
         artifactsDirectory = outputDirectory;
         if (!artifactsDirectory.exists()) {
             artifactsDirectory.mkdirs();

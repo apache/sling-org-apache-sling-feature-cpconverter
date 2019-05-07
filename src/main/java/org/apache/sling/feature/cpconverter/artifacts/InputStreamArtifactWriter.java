@@ -14,8 +14,25 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+package org.apache.sling.feature.cpconverter.artifacts;
 
-/**
- * Default implementations of the <i>org.apache.sling.feature.cpconverter.spi.ArtifactWriter</i>.
- */
-package org.apache.sling.feature.cpconverter.writers;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+import org.apache.commons.io.IOUtils;
+
+public class InputStreamArtifactWriter implements ArtifactWriter {
+
+    private final InputStream input;
+
+    public InputStreamArtifactWriter(InputStream input) {
+        this.input = input;
+    }
+
+    @Override
+    public void write(OutputStream output) throws IOException {
+        IOUtils.copy(input, output);
+    }
+
+}

@@ -14,7 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.sling.feature.cpconverter;
+package org.apache.sling.feature.cpconverter.artifacts;
 
 import static org.junit.Assert.*;
 
@@ -22,20 +22,21 @@ import static org.mockito.Mockito.mock;
 
 import java.io.File;
 
-import org.apache.sling.feature.cpconverter.spi.ArtifactWriter;
-import org.apache.sling.feature.cpconverter.spi.BundlesDeployer;
+import org.apache.sling.feature.cpconverter.artifacts.ArtifactWriter;
+import org.apache.sling.feature.cpconverter.artifacts.ArtifactsDeployer;
+import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 public class DefaultBundlesDeployerTest {
 
-    private BundlesDeployer artifactDeployer;
+    private ArtifactsDeployer artifactDeployer;
 
     @Before
     public void setUp() {
         File outputDirectory = new File(System.getProperty("testDirectory"), getClass().getName() + '_' + System.currentTimeMillis());
-        artifactDeployer = new DefaultBundlesDeployer(outputDirectory);
+        artifactDeployer = new DefaultArtifactsDeployer(outputDirectory);
     }
 
     @After

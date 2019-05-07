@@ -32,6 +32,7 @@ import org.apache.jackrabbit.vault.packaging.Dependency;
 import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.impl.ZipVaultPackage;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,10 +120,10 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                                                              .setStrictValidation(strictValidation)
                                                              .setMergeConfigurations(mergeConfigurations)
                                                              .setBundlesStartOrder(bundlesStartOrder)
-                                                             .setArtifactsOutputDirectory(artifactsOutputDirectory)
                                                              .setFeatureModelsOutputDirectory(featureModelsOutputDirectory)
                                                              .setIdOverride(artifactId)
-                                                             .setProperties(properties);
+                                                             .setProperties(properties)
+                                                             .setBundlesDeployer(new DefaultArtifactsDeployer(artifactsOutputDirectory));
 
             if (filteringPatterns != null && filteringPatterns.length > 0) {
                 RegexBasedResourceFilter filter = new RegexBasedResourceFilter();
@@ -130,6 +131,8 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                 for (String filteringPattern : filteringPatterns) {
                     filter.addFilteringPattern(filteringPattern);
                 }
+
+                converter.setResourceFilter(filter);
             }
 
             List<File> orderedContentPackages = order(contentPackages, logger);

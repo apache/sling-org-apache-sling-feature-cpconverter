@@ -38,6 +38,7 @@ import java.util.zip.ZipFile;
 import org.apache.commons.io.FileUtils;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Feature;
+import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.junit.After;
@@ -127,7 +128,7 @@ public class ContentPackage2FeatureModelConverterTest {
         File outputDirectory = new File(System.getProperty("testDirectory"), getClass().getName() + '_' + System.currentTimeMillis());
 
         converter.setBundlesStartOrder(5)
-                 .setArtifactsOutputDirectory(outputDirectory)
+                 .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
                  .setFeatureModelsOutputDirectory(outputDirectory)
                  .convert(packageFile);
 
@@ -253,7 +254,7 @@ public class ContentPackage2FeatureModelConverterTest {
         File outputDirectory = new File(System.getProperty("testDirectory"), getClass().getName() + '_' + System.currentTimeMillis());
 
         converter.setBundlesStartOrder(5)
-                 .setArtifactsOutputDirectory(outputDirectory)
+                 .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
                  .setFeatureModelsOutputDirectory(outputDirectory)
                  .convert(packageFile);
     }
@@ -273,7 +274,7 @@ public class ContentPackage2FeatureModelConverterTest {
         URL packageUrl = getClass().getResource("test-content-package.zip");
         File packageFile = FileUtils.toFile(packageUrl);
 
-        converter.setArtifactsOutputDirectory(outputDirectory)
+        converter.setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
                  .setFeatureModelsOutputDirectory(outputDirectory)
                  .convert(packageFile);
 
@@ -291,7 +292,7 @@ public class ContentPackage2FeatureModelConverterTest {
 
         String overrideId = "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0:${project.version}";
         converter.setBundlesStartOrder(5)
-                 .setArtifactsOutputDirectory(outputDirectory)
+                 .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
                  .setFeatureModelsOutputDirectory(outputDirectory)
                  .setIdOverride(overrideId)
                  .convert(packageFile);

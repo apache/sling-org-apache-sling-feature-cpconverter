@@ -43,13 +43,13 @@ import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Extensions;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.acl.AclManager;
+import org.apache.sling.feature.cpconverter.artifacts.ArtifactsDeployer;
+import org.apache.sling.feature.cpconverter.artifacts.FileArtifactWriter;
 import org.apache.sling.feature.cpconverter.filtering.ResourceFilter;
 import org.apache.sling.feature.cpconverter.interpolator.SimpleVariablesInterpolator;
 import org.apache.sling.feature.cpconverter.interpolator.VariablesInterpolator;
-import org.apache.sling.feature.cpconverter.spi.BundlesDeployer;
 import org.apache.sling.feature.cpconverter.spi.EntryHandler;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
-import org.apache.sling.feature.cpconverter.writers.FileArtifactWriter;
 import org.apache.sling.feature.io.json.FeatureJSONWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,15 +82,13 @@ public class ContentPackage2FeatureModelConverter {
 
     private ResourceFilter resourceFilter;
 
-    private BundlesDeployer artifactDeployer;
+    private ArtifactsDeployer artifactsDeployer;
 
     private boolean strictValidation = false;
 
     private boolean mergeConfigurations = false;
 
     private int bundlesStartOrder = 0;
-
-    private File artifactsOutputDirectory;
 
     private File featureModelsOutputDirectory;
 
@@ -127,15 +125,6 @@ public class ContentPackage2FeatureModelConverter {
         return this;
     }
 
-    public ContentPackage2FeatureModelConverter setArtifactsOutputDirectory(File artifactsOutputDirectory) {
-        this.artifactsOutputDirectory = artifactsOutputDirectory;
-        return this;
-    }
-
-    public File getArtifactsOutputDirectory() {
-        return artifactsOutputDirectory;
-    }
-
     public ContentPackage2FeatureModelConverter setFeatureModelsOutputDirectory(File featureModelsOutputDirectory) {
         this.featureModelsOutputDirectory = featureModelsOutputDirectory;
         return this;
@@ -160,8 +149,18 @@ public class ContentPackage2FeatureModelConverter {
         return this;
     }
 
-    public void setResourceFilter(ResourceFilter resourceFilter) {
+    public ContentPackage2FeatureModelConverter setResourceFilter(ResourceFilter resourceFilter) {
         this.resourceFilter = resourceFilter;
+        return this;
+    }
+
+    public ArtifactsDeployer getArtifactsDeployer() {
+        return artifactsDeployer;
+    }
+
+    public ContentPackage2FeatureModelConverter setBundlesDeployer(ArtifactsDeployer bundlesDeployer) {
+        this.artifactsDeployer = bundlesDeployer;
+        return this;
     }
 
     public AclManager getAclManager() {
@@ -203,10 +202,6 @@ public class ContentPackage2FeatureModelConverter {
         return newId;
     }
 
-    public BundlesDeployer getArtifactDeployer() {
-        return artifactDeployer;
-    }
-
     private static void checkDirectory(File directory, String name) {
         if (directory == null) {
             throw new IllegalStateException("Null " + name + " output directory not supported, it must be set before invoking the convert(File) method.");
@@ -230,15 +225,7 @@ public class ContentPackage2FeatureModelConverter {
                                             + " does not exist or it is not a valid file.");
         }
 
-        checkDirectory(artifactsOutputDirectory, "artifacts");
         checkDirectory(featureModelsOutputDirectory, "models");
-
-        Iterator<BundlesDeployer> artifactDeployerLoader = ServiceLoader.load(BundlesDeployer.class).iterator();
-        if (!artifactDeployerLoader.hasNext()) {
-            artifactDeployer = new DefaultBundlesDeployer(artifactsOutputDirectory);
-        } else {
-            artifactDeployer = artifactDeployerLoader.next();
-        }
 
         logger.info("Reading content-package '{}'...", contentPackage);
 
@@ -287,16 +274,16 @@ public class ContentPackage2FeatureModelConverter {
 
             // attach all unmatched resources as new content-package
 
-            File contentPackageArchive = mainPackageAssembler.createPackage(artifactsOutputDirectory);
+            File contentPackageArchive = mainPackageAssembler.createPackage();
 
             // deploy the new zip content-package to the local mvn bundles dir
 
-            artifactDeployer.deploy(new FileArtifactWriter(contentPackageArchive),
-                                    targetFeature.getId().getGroupId(),
-                                    targetFeature.getId().getArtifactId(),
-                                    targetFeature.getId().getVersion(),
-                                    PACKAGE_CLASSIFIER,
-                                    ZIP_TYPE);
+            artifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive),
+                                   targetFeature.getId().getGroupId(),
+                                   targetFeature.getId().getArtifactId(),
+                                   targetFeature.getId().getVersion(),
+                                   PACKAGE_CLASSIFIER,
+                                   ZIP_TYPE);
 
             attach(null,
                    targetFeature.getId().getGroupId(),

@@ -14,14 +14,13 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.sling.feature.cpconverter.writers;
+package org.apache.sling.feature.cpconverter.artifacts;
 
 import java.io.IOException;
 import java.io.OutputStream;
 
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
-import org.apache.sling.feature.cpconverter.spi.ArtifactWriter;
 
 public final class MavenPomSupplierWriter implements ArtifactWriter {
 

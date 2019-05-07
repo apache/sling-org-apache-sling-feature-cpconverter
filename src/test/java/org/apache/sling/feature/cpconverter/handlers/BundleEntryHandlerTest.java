@@ -35,7 +35,7 @@ import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.DefaultBundlesDeployer;
+import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.spi.EntryHandler;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -89,10 +89,9 @@ public final class BundleEntryHandlerTest {
         ContentPackage2FeatureModelConverter converter = spy(ContentPackage2FeatureModelConverter.class);
 
         File testDirectory = new File(System.getProperty("testDirectory"), getClass().getName() + '_' + System.currentTimeMillis());
-        when(converter.getArtifactsOutputDirectory()).thenReturn(testDirectory);
 
         doCallRealMethod().when(converter).attach(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
-        when(converter.getArtifactDeployer()).thenReturn(new DefaultBundlesDeployer(testDirectory));
+        when(converter.getArtifactsDeployer()).thenReturn(new DefaultArtifactsDeployer(testDirectory));
 
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
         when(converter.getTargetFeature()).thenReturn(feature);

@@ -31,7 +31,7 @@ import java.util.regex.Pattern;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.writers.InputStreamArtifactWriter;
+import org.apache.sling.feature.cpconverter.artifacts.InputStreamArtifactWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -99,12 +99,12 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         }
 
         try (InputStream input = archive.openInputStream(entry)) {
-            converter.getArtifactDeployer().deploy(new InputStreamArtifactWriter(input),
-                                                   groupId,
-                                                   artifactId,
-                                                   version,
-                                                   classifier,
-                                                   JAR_TYPE);
+            converter.getArtifactsDeployer().deploy(new InputStreamArtifactWriter(input),
+                                                  groupId,
+                                                  artifactId,
+                                                  version,
+                                                  classifier,
+                                                  JAR_TYPE);
 
             converter.attach(runMode,
                              groupId,

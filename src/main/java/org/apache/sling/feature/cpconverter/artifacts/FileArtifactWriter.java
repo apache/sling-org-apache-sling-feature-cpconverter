@@ -14,20 +14,27 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.sling.feature.cpconverter.spi;
+package org.apache.sling.feature.cpconverter.artifacts;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
-public interface BundlesDeployer {
+public final class FileArtifactWriter implements ArtifactWriter {
 
-    File getBundlesDirectory();
+    private final File fileArtifact;
 
-    void deploy(ArtifactWriter artifactWriter,
-                String groupId,
-                String artifactId,
-                String version,
-                String classifier,
-                String type) throws IOException;
+    public FileArtifactWriter(File fileArtifact) {
+        this.fileArtifact = fileArtifact;
+    }
+
+    @Override
+    public void write(OutputStream output) throws IOException {
+        try (InputStream input = new FileInputStream(fileArtifact)) {
+            new InputStreamArtifactWriter(input).write(output);
+        }
+    }
 
 }

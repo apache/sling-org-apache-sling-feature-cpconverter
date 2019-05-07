@@ -14,29 +14,8 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.sling.feature.cpconverter.writers;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-
-import org.apache.sling.feature.cpconverter.spi.ArtifactWriter;
-
-public final class FileArtifactWriter implements ArtifactWriter {
-
-    private final File fileArtifact;
-
-    public FileArtifactWriter(File fileArtifact) {
-        this.fileArtifact = fileArtifact;
-    }
-
-    @Override
-    public void write(OutputStream output) throws IOException {
-        try (InputStream input = new FileInputStream(fileArtifact)) {
-            new InputStreamArtifactWriter(input).write(output);
-        }
-    }
-
-}
+/**
+ * Maven2 alike repository manager.
+ */
+package org.apache.sling.feature.cpconverter.artifacts;
