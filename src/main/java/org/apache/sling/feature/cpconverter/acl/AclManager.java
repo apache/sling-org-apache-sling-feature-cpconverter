@@ -24,7 +24,6 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -42,8 +41,6 @@ public final class AclManager {
 
     private static final String DEFAULT_TYPE = "sling:Folder";
 
-    private final Set<String> preProvidedSystemUsers = new LinkedHashSet<>();
-
     private final Set<String> systemUsers = new LinkedHashSet<>();
 
     private final Set<String> paths = new TreeSet<String>();
@@ -51,7 +48,7 @@ public final class AclManager {
     private final Map<String, List<Acl>> acls = new HashMap<>();
 
     public boolean addSystemUser(String systemUser) {
-        if (systemUser != null && !systemUser.isEmpty() && preProvidedSystemUsers.add(systemUser)) {
+        if (systemUser != null && !systemUser.isEmpty()) {
             return systemUsers.add(systemUser);
         }
         return false;
@@ -79,77 +76,62 @@ public final class AclManager {
             return;
         }
 
-        Extension repoInitExtension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, true);
+        Formatter formatter = null;
+        try {
+            Extension repoInitExtension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, true);
 
-        Formatter formatter = new Formatter();
+            formatter = new Formatter();
 
-        // make sure all paths are created first
+            // make sure all paths are created first
 
-        for (String path : paths) {
-            File currentDir = packageAssembler.getEntry(path);
-            String type = DEFAULT_TYPE;
+            for (String path : paths) {
+                File currentDir = packageAssembler.getEntry(path);
+                String type = DEFAULT_TYPE;
 
-            if (currentDir.exists()) {
-                File currentContent = new File(currentDir, CONTENT_XML_FILE_NAME);
-                if (currentContent.exists()) {
-                    try (FileInputStream input = new FileInputStream(currentContent)) {
-                        type = new PrimaryTypeParser(DEFAULT_TYPE).parse(input);
-                    } catch (Exception e) {
-                        throw new RuntimeException("A fatal error occurred while parsing the '"
-                                                   + currentContent
-                                                   + "' file, see nested exceptions: "
-                                                   + e);
-                    } finally {
-                        formatter.close();
+                if (currentDir.exists()) {
+                    File currentContent = new File(currentDir, CONTENT_XML_FILE_NAME);
+                    if (currentContent.exists()) {
+                        try (FileInputStream input = new FileInputStream(currentContent)) {
+                            type = new PrimaryTypeParser(DEFAULT_TYPE).parse(input);
+                        } catch (Exception e) {
+                            throw new RuntimeException("A fatal error occurred while parsing the '"
+                                + currentContent
+                                + "' file, see nested exceptions: "
+                                + e);
+                        }
                     }
+                }
+
+                formatter.format("create path (%s) %s%n", type, path);
+            }
+
+            for (String systemUser : systemUsers) {
+                // create then the users
+
+                formatter.format("create service user %s%n", systemUser);
+
+                // ACL can now be set
+
+                List<Acl> authorizations = acls.get(systemUser);
+                if (authorizations != null && !authorizations.isEmpty()) {
+                    formatter.format("set ACL for %s%n", systemUser);
+
+                    for (Acl authorization : authorizations) {
+                        authorization.addAclStatement(formatter);
+                    }
+
+                    formatter.format("end%n");
                 }
             }
 
-            formatter.format("create path (%s) %s%n", type, path);
-        }
+            String text = formatter.toString();
+            repoInitExtension.setText(text);
 
-        // create then the users
-
-        for (String systemUser : systemUsers) {
-            formatter.format("create service user %s%n", systemUser);
-
-            List<Acl> authorizations = acls.remove(systemUser);
-
-            addAclStatement(formatter, systemUser, authorizations);
-        }
-
-        // all the resting ACLs can now be set
-
-        for (Entry<String, List<Acl>> currentAcls : acls.entrySet()) {
-            String systemUser = currentAcls.getKey();
-            List<Acl> authorizations = currentAcls.getValue();
-
-            addAclStatement(formatter, systemUser, authorizations);
-        }
-
-        String text = formatter.toString();
-        formatter.close();
-        repoInitExtension.setText(text);
-
-        feature.getExtensions().add(repoInitExtension);
-    }
-
-    public void reset() {
-        systemUsers.clear();
-        paths.clear();
-        acls.clear();
-    }
-
-    private void addAclStatement(Formatter formatter, String systemUser, List<Acl> authorizations) {
-        if (authorizations != null && !authorizations.isEmpty()) {
-            formatter.format("set ACL for %s%n", systemUser);
-
-            for (Acl authorization : authorizations) {
-                authorization.addAclStatement(formatter);
+            feature.getExtensions().add(repoInitExtension);
+        } finally {
+            if (formatter != null) {
+                formatter.close();
             }
-
-            formatter.format("end%n");
         }
     }
-
 }
