@@ -43,6 +43,8 @@ import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Extensions;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.acl.AclManager;
+import org.apache.sling.feature.cpconverter.interpolator.SimpleVariablesInterpolator;
+import org.apache.sling.feature.cpconverter.interpolator.VariablesInterpolator;
 import org.apache.sling.feature.cpconverter.spi.BundlesDeployer;
 import org.apache.sling.feature.cpconverter.spi.EntryHandler;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
@@ -77,7 +79,7 @@ public class ContentPackage2FeatureModelConverter {
 
     private final RegexBasedResourceFilter filter = new RegexBasedResourceFilter();
 
-    private final SimpleVariablesInterpolator interpolator = new SimpleVariablesInterpolator();
+    private final VariablesInterpolator interpolator = new SimpleVariablesInterpolator();
 
     private BundlesDeployer artifactDeployer;
 

@@ -14,7 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.sling.feature.cpconverter;
+package org.apache.sling.feature.cpconverter.interpolator;
 
 import static java.util.Objects.requireNonNull;
 
@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-final class SimpleVariablesInterpolator {
+public final class SimpleVariablesInterpolator implements VariablesInterpolator {
 
     private final Pattern replacementPattern = Pattern.compile("\\$\\{\\{(.+?)\\}\\}");
 

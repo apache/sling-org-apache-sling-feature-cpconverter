@@ -14,7 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.sling.feature.cpconverter;
+package org.apache.sling.feature.cpconverter.interpolator;
 
 import static org.junit.Assert.assertEquals;
 
@@ -27,7 +27,7 @@ import org.junit.Test;
 
 public class SimpleVariablesInterpolatorTest {
 
-    private SimpleVariablesInterpolator interpolator;
+    private VariablesInterpolator interpolator;
 
     @Before
     public void setUp() {
