@@ -24,6 +24,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -41,6 +42,8 @@ public final class AclManager {
 
     private static final String DEFAULT_TYPE = "sling:Folder";
 
+    private final Set<String> preProvidedSystemUsers = new LinkedHashSet<>();
+
     private final Set<String> systemUsers = new LinkedHashSet<>();
 
     private final Set<String> paths = new TreeSet<String>();
@@ -48,7 +51,7 @@ public final class AclManager {
     private final Map<String, List<Acl>> acls = new HashMap<>();
 
     public boolean addSystemUser(String systemUser) {
-        if (systemUser != null && !systemUser.isEmpty()) {
+        if (systemUser != null && !systemUser.isEmpty() && preProvidedSystemUsers.add(systemUser)) {
             return systemUsers.add(systemUser);
         }
         return false;
@@ -105,23 +108,23 @@ public final class AclManager {
                 formatter.format("create path (%s) %s%n", type, path);
             }
 
-            for (String systemUser : systemUsers) {
-                // create then the users
+         // create then the users
 
+            for (String systemUser : systemUsers) {
                 formatter.format("create service user %s%n", systemUser);
 
-                // ACL can now be set
+                List<Acl> authorizations = acls.remove(systemUser);
 
-                List<Acl> authorizations = acls.get(systemUser);
-                if (authorizations != null && !authorizations.isEmpty()) {
-                    formatter.format("set ACL for %s%n", systemUser);
+                addAclStatement(formatter, systemUser, authorizations);
+            }
 
-                    for (Acl authorization : authorizations) {
-                        authorization.addAclStatement(formatter);
-                    }
+            // all the resting ACLs can now be set
 
-                    formatter.format("end%n");
-                }
+            for (Entry<String, List<Acl>> currentAcls : acls.entrySet()) {
+                String systemUser = currentAcls.getKey();
+                List<Acl> authorizations = currentAcls.getValue();
+
+                addAclStatement(formatter, systemUser, authorizations);
             }
 
             String text = formatter.toString();
@@ -134,4 +137,23 @@ public final class AclManager {
             }
         }
     }
+
+    public void reset() {
+        systemUsers.clear();
+        paths.clear();
+        acls.clear();
+    }
+
+    private void addAclStatement(Formatter formatter, String systemUser, List<Acl> authorizations) {
+        if (authorizations != null && !authorizations.isEmpty()) {
+            formatter.format("set ACL for %s%n", systemUser);
+
+            for (Acl authorization : authorizations) {
+                authorization.addAclStatement(formatter);
+            }
+
+            formatter.format("end%n");
+        }
+    }
+
 }
