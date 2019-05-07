@@ -14,7 +14,9 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.sling.feature.cpconverter;
+package org.apache.sling.feature.cpconverter.filtering;
+
+import static java.util.Objects.requireNonNull;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -23,13 +25,19 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-final class RegexBasedResourceFilter {
+public final class RegexBasedResourceFilter implements ResourceFilter {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final List<Pattern> patterns = new LinkedList<>();
 
     public void addFilteringPattern(String filteringPattern) {
+        requireNonNull(filteringPattern, "Null pattern to filter resources out is not a valid filtering pattern");
+
+        if (filteringPattern.isEmpty()) {
+            throw new IllegalArgumentException("Empty pattern to filter resources out is not a valid filtering pattern");
+        }
+
         patterns.add(Pattern.compile(filteringPattern));
     }
 

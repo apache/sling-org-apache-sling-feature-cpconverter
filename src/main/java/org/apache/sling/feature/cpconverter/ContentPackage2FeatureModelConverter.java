@@ -43,6 +43,7 @@ import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Extensions;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.acl.AclManager;
+import org.apache.sling.feature.cpconverter.filtering.ResourceFilter;
 import org.apache.sling.feature.cpconverter.interpolator.SimpleVariablesInterpolator;
 import org.apache.sling.feature.cpconverter.interpolator.VariablesInterpolator;
 import org.apache.sling.feature.cpconverter.spi.BundlesDeployer;
@@ -77,9 +78,9 @@ public class ContentPackage2FeatureModelConverter {
 
     private final AclManager aclManager = new AclManager();
 
-    private final RegexBasedResourceFilter filter = new RegexBasedResourceFilter();
-
     private final VariablesInterpolator interpolator = new SimpleVariablesInterpolator();
+
+    private ResourceFilter resourceFilter;
 
     private BundlesDeployer artifactDeployer;
 
@@ -144,15 +145,6 @@ public class ContentPackage2FeatureModelConverter {
         return targetFeature;
     }
 
-    public void addFilteringPattern(String filteringPattern) {
-        requireNonNull(filteringPattern, "Null pattern to filter resources out is not a valid filtering pattern");
-        if (filteringPattern.isEmpty()) {
-            throw new IllegalArgumentException("Empty pattern to filter resources out is not a valid filtering pattern");
-        }
-
-        filter.addFilteringPattern(filteringPattern);
-    }
-
     public ContentPackage2FeatureModelConverter setId(String id) {
         this.id = id;
         return this;
@@ -166,6 +158,10 @@ public class ContentPackage2FeatureModelConverter {
     public ContentPackage2FeatureModelConverter setProperties(Map<String, String> properties) {
         this.properties = properties;
         return this;
+    }
+
+    public void setResourceFilter(ResourceFilter resourceFilter) {
+        this.resourceFilter = resourceFilter;
     }
 
     public AclManager getAclManager() {
@@ -442,7 +438,7 @@ public class ContentPackage2FeatureModelConverter {
 
         logger.info("Processing entry {}...", entryPath);
 
-        if (filter.isFilteredOut(entryPath)) {
+        if (resourceFilter != null && resourceFilter.isFilteredOut(entryPath)) {
             throw new IllegalArgumentException("Path '"
                                                + entryPath
                                                + "' in archive "

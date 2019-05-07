@@ -38,6 +38,7 @@ import java.util.zip.ZipFile;
 import org.apache.commons.io.FileUtils;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Feature;
+import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.junit.After;
 import org.junit.Before;
@@ -242,7 +243,9 @@ public class ContentPackage2FeatureModelConverterTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void verifyFilteringOutUndesiredPackages() throws Exception {
-        converter.addFilteringPattern(".*\\/install(?!(\\.runMode1\\/|\\.runMode2\\/|\\/))(.*)(?=\\.zip$).*");
+        RegexBasedResourceFilter resourceFilter = new RegexBasedResourceFilter();
+        resourceFilter.addFilteringPattern(".*\\/install(?!(\\.runMode1\\/|\\.runMode2\\/|\\/))(.*)(?=\\.zip$).*");
+        converter.setResourceFilter(resourceFilter);
 
         URL packageUrl = getClass().getResource("test-content-package-unacceptable.zip");
         File packageFile = FileUtils.toFile(packageUrl);
