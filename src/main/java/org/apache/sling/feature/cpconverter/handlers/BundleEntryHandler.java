@@ -19,6 +19,7 @@ package org.apache.sling.feature.cpconverter.handlers;
 import static java.util.Objects.requireNonNull;
 import static org.apache.jackrabbit.vault.packaging.PackageProperties.NAME_VERSION;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import java.util.jar.JarEntry;
@@ -39,6 +40,8 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
     private static final String NAME_GROUP_ID = "groupId";
 
     private static final String NAME_ARTIFACT_ID = "artifactId";
+
+    private static final String NAME_CLASSIFIER = "classifier";
 
     private static final String BUNDLE_SYMBOLIC_NAME = "Bundle-SymbolicName";
 
@@ -63,26 +66,17 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         String groupId;
         String artifactId;
         String version;
+        String classifier = null;
 
         try (JarInputStream jarInput = new JarInputStream(archive.openInputStream(entry))) {
-            Properties properties = new Properties();
+            Properties properties = readGav(entry.getName(), jarInput);
             Manifest manifest = jarInput.getManifest();
-
-            JarEntry jarEntry;
-            while ((jarEntry = jarInput.getNextJarEntry()) != null) {
-                String entryName = jarEntry.getName();
-
-                if (pomPropertiesPattern.matcher(entryName).matches()) {
-                    logger.info("Reading '{}' bundle GAV from {}...", entry.getName(), entryName);
-
-                    properties.load(jarInput);
-                }
-            }
 
             if (!properties.isEmpty()) {
                 groupId = getCheckedProperty(properties, NAME_GROUP_ID);
                 artifactId = getCheckedProperty(properties, NAME_ARTIFACT_ID);
                 version = getCheckedProperty(properties, NAME_VERSION);
+                classifier = properties.getProperty(NAME_CLASSIFIER);
             } else { // maybe the included jar is just an OSGi bundle but not a valid Maven artifact
                 groupId = getCheckedProperty(manifest, BUNDLE_SYMBOLIC_NAME);
                 artifactId = getCheckedProperty(manifest, BUNDLE_NAME);
@@ -109,16 +103,76 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
                                                    groupId,
                                                    artifactId,
                                                    version,
-                                                   null,
+                                                   classifier,
                                                    JAR_TYPE);
 
             converter.attach(runMode,
                              groupId,
                              artifactId,
                              version,
-                             null,
+                             classifier,
                              JAR_TYPE);
         }
+    }
+
+    // method visibility set to 'protected' fot testing purposes
+    protected Properties readGav(String bundleName, JarInputStream jarInput) throws IOException {
+        Properties properties = new Properties();
+
+        JarEntry jarEntry;
+        dance : while ((jarEntry = jarInput.getNextJarEntry()) != null) {
+            String entryName = jarEntry.getName();
+
+            if (pomPropertiesPattern.matcher(entryName).matches()) {
+                logger.info("Reading '{}' bundle GAV from {}...", bundleName, entryName);
+
+                properties.load(jarInput);
+
+                String artifactId = properties.getProperty(NAME_ARTIFACT_ID);
+                String version = properties.getProperty(NAME_VERSION);
+
+                if (artifactId == null || version == null) {
+                    continue;
+                }
+
+                int idx = bundleName.lastIndexOf('/');
+                if (idx >= 0) {
+                    bundleName = bundleName.substring(idx + 1);
+                }
+
+                int edx = bundleName.lastIndexOf('.');
+                if (edx > 0) {
+                    bundleName = bundleName.substring(0, edx);
+                }
+
+                // bundleName is now the bare name without extension
+                String synthesized = artifactId + "-" + version;
+
+                // it was the pom.properties  we were looking for
+                if (bundleName.startsWith(synthesized)) {
+
+                    // check the artifact has a classifier in the bundle file name
+                    if (synthesized.length() < bundleName.length()) {
+                        String suffix = bundleName.substring(synthesized.length());
+                        if (suffix.length() > 1 && suffix.startsWith("-")) {
+                            String classifier = suffix.substring(1);
+                            logger.info("Inferred classifier of '"
+                                        + artifactId
+                                        + ":"
+                                        + version
+                                        + "' to be '"
+                                        + classifier
+                                        + "'");
+                            properties.setProperty(NAME_CLASSIFIER, classifier);
+                        }
+                    }
+
+                    break dance;
+                }
+            }
+        }
+
+        return properties;
     }
 
     private static String getCheckedProperty(Manifest manifest, String name) {

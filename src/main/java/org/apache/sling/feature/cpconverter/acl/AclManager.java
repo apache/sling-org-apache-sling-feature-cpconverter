@@ -108,7 +108,7 @@ public final class AclManager {
                 formatter.format("create path (%s) %s%n", type, path);
             }
 
-         // create then the users
+            // create then the users
 
             for (String systemUser : systemUsers) {
                 formatter.format("create service user %s%n", systemUser);
