@@ -35,6 +35,8 @@ import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
+import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.junit.After;
 import org.junit.Before;
@@ -158,8 +160,10 @@ public final class RepPolicyEntryHandlerTest {
         when(archive.openInputStream(entry)).thenReturn(getClass().getResourceAsStream(path));
 
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
+        FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);
+        when(featuresManager.getTargetFeature()).thenReturn(feature);
         ContentPackage2FeatureModelConverter converter = spy(ContentPackage2FeatureModelConverter.class);
-        when(converter.getTargetFeature()).thenReturn(feature);
+        when(converter.getFeaturesManager()).thenReturn(featuresManager);
 
         handler.handle(path, archive, entry, converter);
 

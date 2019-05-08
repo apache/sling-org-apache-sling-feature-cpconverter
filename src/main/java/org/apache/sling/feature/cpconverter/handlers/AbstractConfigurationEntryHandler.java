@@ -77,7 +77,7 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
                                             + "' but it does not, currently");
         }
 
-        converter.addConfiguration(runMode, id, configurationProperties);
+        converter.getFeaturesManager().addConfiguration(runMode, id, configurationProperties);
     }
 
     protected abstract Dictionary<String, Object> parseConfiguration(String name, InputStream input) throws Exception;

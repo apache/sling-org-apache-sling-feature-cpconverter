@@ -106,12 +106,12 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
                                                   classifier,
                                                   JAR_TYPE);
 
-            converter.attach(runMode,
-                             groupId,
-                             artifactId,
-                             version,
-                             classifier,
-                             JAR_TYPE);
+            converter.getFeaturesManager().addArtifact(runMode,
+                                                       groupId,
+                                                       artifactId,
+                                                       version,
+                                                       classifier,
+                                                       JAR_TYPE);
         }
     }
 

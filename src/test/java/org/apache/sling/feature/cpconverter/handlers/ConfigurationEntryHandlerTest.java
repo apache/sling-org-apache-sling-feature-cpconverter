@@ -36,6 +36,8 @@ import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.Configurations;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
+import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -79,14 +81,16 @@ public class ConfigurationEntryHandlerTest {
         when(archive.openInputStream(entry)).thenReturn(getClass().getResourceAsStream(resourceConfiguration));
 
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
-        ContentPackage2FeatureModelConverter converter = spy(ContentPackage2FeatureModelConverter.class);
-        when(converter.getTargetFeature()).thenReturn(feature);
-        doCallRealMethod().when(converter).addConfiguration(anyString(), anyString(), any());
-        when(converter.getRunMode(anyString())).thenReturn(feature);
+        FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);
+        when(featuresManager.getTargetFeature()).thenReturn(feature);
+        doCallRealMethod().when(featuresManager).addConfiguration(anyString(), anyString(), any());
+        when(featuresManager.getRunMode(anyString())).thenReturn(feature);
+        ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
+        when(converter.getFeaturesManager()).thenReturn(featuresManager);
 
         configurationEntryHandler.handle(resourceConfiguration, archive, entry, converter);
 
-        Configurations configurations = converter.getTargetFeature().getConfigurations();
+        Configurations configurations = featuresManager.getTargetFeature().getConfigurations();
 
         assertEquals(expectedConfigurationsSize, configurations.size());
 

@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,6 +38,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
+import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.junit.After;
@@ -75,49 +75,9 @@ public class ContentPackage2FeatureModelConverterTest {
         converter.convert(testDirectory);
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void getRunModeRequiresConvertInvoked() {
-        converter.getRunMode(null);
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void addConfigurationRequiresConvertInvoked() {
-        converter.setMergeConfigurations(true).getRunMode(null);
-    }
-
     @Test(expected = NullPointerException.class)
     public void processRequiresNotNullPackage() throws Exception {
         converter.processSubPackage("", null);
-    }
-
-    @Test(expected = IllegalStateException.class)
-    public void processRequiresConvertInvoked() throws Exception {
-        converter.processSubPackage("", mock(File.class));
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void deployLocallyAndAttachRequiresNonNullInput() throws Exception {
-        converter.attach(null, null, null, null, null, null);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void deployLocallyAndAttachRequiresNonNullGroupId() throws Exception {
-        converter.attach(null, null, null, null, null, null);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void deployLocallyAndAttachRequiresNonNullArtifactId() throws Exception {
-        converter.attach(null, "org.apache.sling", null, null, null, null);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void deployLocallyAndAttachRequiresNonNullVersion() throws Exception {
-        converter.attach(null, "org.apache.sling", "org.apache.sling.cm2fm", null, null, null);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void deployLocallyAndAttachRequiresNonNullType() throws Exception {
-        converter.attach(null, "org.apache.sling", "org.apache.sling.cm2fm", "0.0.1", null, null);
     }
 
     @Test
@@ -127,9 +87,8 @@ public class ContentPackage2FeatureModelConverterTest {
 
         File outputDirectory = new File(System.getProperty("testDirectory"), getClass().getName() + '_' + System.currentTimeMillis());
 
-        converter.setBundlesStartOrder(5)
+        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null))
                  .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
-                 .setFeatureModelsOutputDirectory(outputDirectory)
                  .convert(packageFile);
 
         verifyFeatureFile(outputDirectory,
@@ -253,9 +212,8 @@ public class ContentPackage2FeatureModelConverterTest {
 
         File outputDirectory = new File(System.getProperty("testDirectory"), getClass().getName() + '_' + System.currentTimeMillis());
 
-        converter.setBundlesStartOrder(5)
+        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null))
                  .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
-                 .setFeatureModelsOutputDirectory(outputDirectory)
                  .convert(packageFile);
     }
 
@@ -275,12 +233,12 @@ public class ContentPackage2FeatureModelConverterTest {
         File packageFile = FileUtils.toFile(packageUrl);
 
         converter.setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
-                 .setFeatureModelsOutputDirectory(outputDirectory)
+                 .setFeaturesManager(new DefaultFeaturesManager(false, 5, outputDirectory, null, null))
                  .convert(packageFile);
 
         String pid = "this.is.just.a.pid";
-        converter.addConfiguration(runmodeA, pid, new Hashtable<String, Object>());
-        converter.addConfiguration(runmodeB, pid, new Hashtable<String, Object>());
+        converter.getFeaturesManager().addConfiguration(runmodeA, pid, new Hashtable<String, Object>());
+        converter.getFeaturesManager().addConfiguration(runmodeB, pid, new Hashtable<String, Object>());
     }
 
     @Test
@@ -291,10 +249,8 @@ public class ContentPackage2FeatureModelConverterTest {
         File outputDirectory = new File(System.getProperty("testDirectory"), getClass().getName() + '_' + System.currentTimeMillis());
 
         String overrideId = "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0:${project.version}";
-        converter.setBundlesStartOrder(5)
+        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, overrideId, null))
                  .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
-                 .setFeatureModelsOutputDirectory(outputDirectory)
-                 .setIdOverride(overrideId)
                  .convert(packageFile);
 
         verifyFeatureFile(outputDirectory,

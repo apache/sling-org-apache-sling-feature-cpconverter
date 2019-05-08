@@ -21,6 +21,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -35,6 +38,8 @@ import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
+import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.apache.sling.feature.io.json.FeatureJSONWriter;
 import org.junit.Test;
@@ -52,8 +57,12 @@ public class ConfigEntryHandlerTest {
         when(archive.openInputStream(entry)).thenReturn(getClass().getResourceAsStream(resourceConfiguration));
 
         Feature expected = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
-        ContentPackage2FeatureModelConverter converter = spy(ContentPackage2FeatureModelConverter.class);
-        when(converter.getTargetFeature()).thenReturn(expected);
+        FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);
+        when(featuresManager.getTargetFeature()).thenReturn(expected);
+        doCallRealMethod().when(featuresManager).addConfiguration(anyString(), anyString(), any());
+
+        ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
+        when(converter.getFeaturesManager()).thenReturn(featuresManager);
 
         new ConfigurationEntryHandler().handle(resourceConfiguration, archive, entry, converter);
 

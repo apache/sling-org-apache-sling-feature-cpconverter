@@ -14,7 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.sling.feature.cpconverter;
+package org.apache.sling.feature.cpconverter.features;
 
 import java.io.File;
 import java.io.FileInputStream;

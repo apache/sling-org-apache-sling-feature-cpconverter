@@ -33,6 +33,7 @@ import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.impl.ZipVaultPackage;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
+import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,7 +81,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     private File featureModelsOutputDirectory;
 
     @Option(names = { "-i", "--artifact-id" }, description = "The optional Artifact Id the Feature File will have, once generated; it will be derived, if not specified.", required = false)
-    private String artifactId;
+    private String artifactIdOverride;
 
     @Option(names = {"-D", "--define"}, description = "Define a system property", required = false)
     private Map<String, String> properties = new HashMap<>();
@@ -116,13 +117,12 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
         logger.info("");
 
         try {
-            ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()
-                                                             .setStrictValidation(strictValidation)
-                                                             .setMergeConfigurations(mergeConfigurations)
-                                                             .setBundlesStartOrder(bundlesStartOrder)
-                                                             .setFeatureModelsOutputDirectory(featureModelsOutputDirectory)
-                                                             .setIdOverride(artifactId)
-                                                             .setProperties(properties)
+            ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation)
+                                                             .setFeaturesManager(new DefaultFeaturesManager(mergeConfigurations,
+                                                                                                            bundlesStartOrder,
+                                                                                                            featureModelsOutputDirectory,
+                                                                                                            artifactIdOverride,
+                                                                                                            properties))
                                                              .setBundlesDeployer(new DefaultArtifactsDeployer(artifactsOutputDirectory));
 
             if (filteringPatterns != null && filteringPatterns.length > 0) {

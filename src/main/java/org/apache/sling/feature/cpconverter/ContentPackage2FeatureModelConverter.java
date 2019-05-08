@@ -19,13 +19,7 @@ package org.apache.sling.feature.cpconverter;
 import static java.util.Objects.requireNonNull;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.util.Collection;
-import java.util.Dictionary;
-import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.ServiceLoader;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
@@ -34,37 +28,21 @@ import org.apache.jackrabbit.vault.packaging.PackageManager;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
-import org.apache.sling.feature.Artifact;
-import org.apache.sling.feature.ArtifactId;
-import org.apache.sling.feature.Artifacts;
-import org.apache.sling.feature.Configuration;
-import org.apache.sling.feature.Extension;
-import org.apache.sling.feature.ExtensionType;
-import org.apache.sling.feature.Extensions;
-import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.acl.AclManager;
 import org.apache.sling.feature.cpconverter.artifacts.ArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.artifacts.FileArtifactWriter;
+import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.ResourceFilter;
-import org.apache.sling.feature.cpconverter.interpolator.SimpleVariablesInterpolator;
-import org.apache.sling.feature.cpconverter.interpolator.VariablesInterpolator;
 import org.apache.sling.feature.cpconverter.spi.EntryHandler;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
-import org.apache.sling.feature.io.json.FeatureJSONWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ContentPackage2FeatureModelConverter {
 
-    private static final String CONTENT_PACKAGES = "content-packages";
-
     public static final String ZIP_TYPE = "zip";
 
     public static final String PACKAGE_CLASSIFIER = "cp2fm-converted";
-
-    private static final String SLING_OSGI_FEATURE_TILE_TYPE = "slingosgifeature";
-
-    private static final String JSON_FILE_EXTENSION = ".json";
 
     private static final String DEFEAULT_VERSION = "0.0.0";
 
@@ -72,80 +50,38 @@ public class ContentPackage2FeatureModelConverter {
 
     private final PackageManager packageManager = new PackageManagerImpl();
 
-    private final ServiceLoader<EntryHandler> entryHandlers = ServiceLoader.load(EntryHandler.class);
+    private final boolean strictValidation;
 
-    private final Map<String, Feature> runModes = new HashMap<>();
+    private final ServiceLoader<EntryHandler> entryHandlers = ServiceLoader.load(EntryHandler.class);
 
     private final AclManager aclManager = new AclManager();
 
-    private final VariablesInterpolator interpolator = new SimpleVariablesInterpolator();
+    private FeaturesManager featuresManager;
 
     private ResourceFilter resourceFilter;
 
     private ArtifactsDeployer artifactsDeployer;
 
-    private boolean strictValidation = false;
-
-    private boolean mergeConfigurations = false;
-
-    private int bundlesStartOrder = 0;
-
-    private File featureModelsOutputDirectory;
-
-    private Feature targetFeature = null;
-
     private VaultPackageAssembler mainPackageAssembler = null;
 
-    private String id;
+    public ContentPackage2FeatureModelConverter() {
+        this(false);
+    }
 
-    private String idOverride;
-
-    private Map<String, String> properties;
-
-    public ContentPackage2FeatureModelConverter setStrictValidation(boolean strictValidation) {
+    public ContentPackage2FeatureModelConverter(boolean strictValidation) {
         this.strictValidation = strictValidation;
-        return this;
     }
 
     public boolean isStrictValidation() {
         return strictValidation;
     }
 
-    public boolean isMergeConfigurations() {
-        return mergeConfigurations;
+    public FeaturesManager getFeaturesManager() {
+        return featuresManager;
     }
 
-    public ContentPackage2FeatureModelConverter setMergeConfigurations(boolean mergeConfigurations) {
-        this.mergeConfigurations = mergeConfigurations;
-        return this;
-    }
-
-    public ContentPackage2FeatureModelConverter setBundlesStartOrder(int bundlesStartOrder) {
-        this.bundlesStartOrder = bundlesStartOrder;
-        return this;
-    }
-
-    public ContentPackage2FeatureModelConverter setFeatureModelsOutputDirectory(File featureModelsOutputDirectory) {
-        this.featureModelsOutputDirectory = featureModelsOutputDirectory;
-        return this;
-    }
-
-    public Feature getTargetFeature() {
-        return targetFeature;
-    }
-
-    public ContentPackage2FeatureModelConverter setId(String id) {
-        this.id = id;
-        return this;
-    }
-
-    public ContentPackage2FeatureModelConverter setIdOverride(String id) {
-        this.idOverride = id;
-        return this;
-    }
-
-    public ContentPackage2FeatureModelConverter setProperties(Map<String, String> properties) {
-        this.properties = properties;
+    public ContentPackage2FeatureModelConverter setFeaturesManager(FeaturesManager featuresManager) {
+        this.featuresManager = featuresManager;
         return this;
     }
 
@@ -171,51 +107,6 @@ public class ContentPackage2FeatureModelConverter {
         return mainPackageAssembler;
     }
 
-    public Feature getRunMode(String runMode) {
-        if (getTargetFeature() == null) {
-            throw new IllegalStateException("Target Feature not initialized yet, please make sure convert() method was invoked first.");
-        }
-
-        if (runMode == null) {
-            return getTargetFeature();
-        }
-
-        ArtifactId newId = appendRunmode(getTargetFeature().getId(), runMode);
-
-        return runModes.computeIfAbsent(runMode, k -> new Feature(newId));
-    }
-
-    private ArtifactId appendRunmode(ArtifactId id, String runMode) {
-        ArtifactId newId;
-        if (runMode == null) {
-            newId = id;
-        } else {
-            final String classifier;
-            if (id.getClassifier() != null && !id.getClassifier().isEmpty()) {
-                classifier = id.getClassifier() + '-' + runMode;
-            } else {
-                classifier = runMode;
-            }
-
-            newId = new ArtifactId(id.getGroupId(), id.getArtifactId(), id.getVersion(), classifier, id.getType());
-        }
-        return newId;
-    }
-
-    private static void checkDirectory(File directory, String name) {
-        if (directory == null) {
-            throw new IllegalStateException("Null " + name + " output directory not supported, it must be set before invoking the convert(File) method.");
-        }
-
-        if (!directory.exists() && !directory.mkdirs()) {
-            throw new IllegalStateException("output directory "
-                                            + directory
-                                            + " does not exist and can not be created, please make sure current user '"
-                                            + System.getProperty("user.name")
-                                            + " has enough rights to write on the File System.");
-        }
-    }
-
     public void convert(File contentPackage) throws Exception {
         requireNonNull(contentPackage , "Null content-package can not be converted.");
 
@@ -225,8 +116,6 @@ public class ContentPackage2FeatureModelConverter {
                                             + " does not exist or it is not a valid file.");
         }
 
-        checkDirectory(featureModelsOutputDirectory, "models");
-
         logger.info("Reading content-package '{}'...", contentPackage);
 
         try (VaultPackage vaultPackage = packageManager.open(contentPackage, strictValidation)) {
@@ -235,40 +124,32 @@ public class ContentPackage2FeatureModelConverter {
             mainPackageAssembler = VaultPackageAssembler.create(vaultPackage);
             PackageProperties packageProperties = vaultPackage.getProperties();
 
-            ArtifactId artifactId;
-            if (id != null && !id.isEmpty()) {
-                artifactId = ArtifactId.fromMvnId(id);
-            } else {
-                String group = requireNonNull(packageProperties.getProperty(PackageProperties.NAME_GROUP),
-                                              PackageProperties.NAME_GROUP
-                                              + " property not found in content-package "
-                                              + contentPackage
-                                              + ", please check META-INF/vault/properties.xml")
-                               .replace('/', '.');
+            String group = requireNonNull(packageProperties.getProperty(PackageProperties.NAME_GROUP),
+                                          PackageProperties.NAME_GROUP
+                                          + " property not found in content-package "
+                                          + contentPackage
+                                          + ", please check META-INF/vault/properties.xml")
+                                          .replace('/', '.');
 
-                String name = requireNonNull(packageProperties.getProperty(PackageProperties.NAME_NAME),
-                                             PackageProperties.NAME_NAME
-                                             + " property not found in content-package "
-                                             + contentPackage
-                                             + ", please check META-INF/vault/properties.xml");
+            String name = requireNonNull(packageProperties.getProperty(PackageProperties.NAME_NAME),
+                                        PackageProperties.NAME_NAME
+                                        + " property not found in content-package "
+                                        + contentPackage
+                                        + ", please check META-INF/vault/properties.xml");
 
-                String version = packageProperties.getProperty(PackageProperties.NAME_VERSION);
-                if (version == null || version.isEmpty()) {
-                    version = DEFEAULT_VERSION;
-                }
-
-                artifactId = new ArtifactId(group,
-                                            name,
-                                            version,
-                                            null,
-                                            SLING_OSGI_FEATURE_TILE_TYPE);
+            String version = packageProperties.getProperty(PackageProperties.NAME_VERSION);
+            if (version == null || version.isEmpty()) {
+                version = DEFEAULT_VERSION;
             }
 
-            targetFeature = new Feature(artifactId);
+            String description = packageProperties.getDescription();
 
-            targetFeature.setDescription(packageProperties.getDescription());
+            featuresManager.init(group,
+                                 name,
+                                 version,
+                                 description);
 
-            logger.info("Converting content-package '{}' to Feature File '{}'...", vaultPackage.getId(), targetFeature.getId());
+            logger.info("Converting content-package '{}'...", vaultPackage.getId());
 
             process(vaultPackage);
 
@@ -279,101 +160,28 @@ public class ContentPackage2FeatureModelConverter {
             // deploy the new zip content-package to the local mvn bundles dir
 
             artifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive),
-                                   targetFeature.getId().getGroupId(),
-                                   targetFeature.getId().getArtifactId(),
-                                   targetFeature.getId().getVersion(),
-                                   PACKAGE_CLASSIFIER,
-                                   ZIP_TYPE);
+                                     featuresManager.getTargetFeature().getId().getGroupId(),
+                                     featuresManager.getTargetFeature().getId().getArtifactId(),
+                                     featuresManager.getTargetFeature().getId().getVersion(),
+                                     PACKAGE_CLASSIFIER,
+                                     ZIP_TYPE);
 
-            attach(null,
-                   targetFeature.getId().getGroupId(),
-                   targetFeature.getId().getArtifactId(),
-                   targetFeature.getId().getVersion(),
-                   PACKAGE_CLASSIFIER,
-                   ZIP_TYPE);
+            featuresManager.addArtifact(null,
+                                        featuresManager.getTargetFeature().getId().getGroupId(),
+                                        featuresManager.getTargetFeature().getId().getArtifactId(),
+                                        featuresManager.getTargetFeature().getId().getVersion(),
+                                        PACKAGE_CLASSIFIER,
+                                        ZIP_TYPE);
 
             // finally serialize the Feature Model(s) file(s)
 
-            aclManager.addRepoinitExtension(mainPackageAssembler, getTargetFeature());
+            aclManager.addRepoinitExtension(mainPackageAssembler, featuresManager.getTargetFeature());
 
             logger.info("Conversion complete!");
 
-            RunmodeMapper runmodeMapper = RunmodeMapper.open(featureModelsOutputDirectory);
+            featuresManager.serialize();
 
-            seralize(getTargetFeature(), null, runmodeMapper);
-
-            if (!runModes.isEmpty()) {
-                for (java.util.Map.Entry<String, Feature> runmodeEntry : runModes.entrySet()) {
-                    String runmode = runmodeEntry.getKey();
-                    seralize(runmodeEntry.getValue(), runmode, runmodeMapper);
-                }
-            }
-
-            runmodeMapper.save();
             aclManager.reset();
-        }
-    }
-
-    public void addConfiguration(String runMode, String pid, Dictionary<String, Object> configurationProperties) {
-        Feature feature = getRunMode(runMode);
-        Configuration configuration = feature.getConfigurations().getConfiguration(pid);
-
-        if (configuration == null) {
-            configuration = new Configuration(pid);
-            feature.getConfigurations().add(configuration);
-        } else if (!mergeConfigurations) {
-            throw new IllegalStateException("Configuration '"
-                                            + pid
-                                            + "' already defined in Feature Model '"
-                                            + feature.getId().toMvnId()
-                                            + "', set the 'mergeConfigurations' flag to 'true' if you want to merge multiple configurations with same PID");
-        }
-
-        Enumeration<String> keys = configurationProperties.keys();
-        while (keys.hasMoreElements()) {
-            String key = keys.nextElement();
-            Object value = configurationProperties.get(key);
-
-            if (value != null && Collection.class.isInstance(value)) {
-                value = ((Collection<?>) value).toArray();
-            }
-
-            configuration.getProperties().put(key, value);
-        }
-    }
-
-    private void seralize(Feature feature, String runMode, RunmodeMapper runmodeMapper) throws Exception {
-        StringBuilder fileNameBuilder = new StringBuilder().append(feature.getId().getArtifactId());
-
-        String classifier = feature.getId().getClassifier();
-        if (classifier != null && !classifier.isEmpty()) {
-            fileNameBuilder.append('-').append(classifier);
-        }
-
-        if (properties != null) {
-            properties.put("filename", fileNameBuilder.toString());
-        }
-
-        fileNameBuilder.append(JSON_FILE_EXTENSION);
-
-        String fileName = fileNameBuilder.toString();
-
-        File targetFile = new File(featureModelsOutputDirectory, fileName);
-
-        logger.info("Writing resulting Feature Model '{}' to file '{}'...", feature.getId(), targetFile);
-
-        if (idOverride != null && !idOverride.isEmpty()) {
-            String interpolatedIdOverride = interpolator.interpolate(idOverride, properties);
-            ArtifactId idOverrride = appendRunmode(ArtifactId.parse(interpolatedIdOverride), runMode);
-            feature = feature.copy(idOverrride);
-        }
-
-        try (FileWriter targetWriter = new FileWriter(targetFile)) {
-            FeatureJSONWriter.write(targetWriter, feature);
-
-            logger.info("'{}' Feature File successfully written!", targetFile);
-
-            runmodeMapper.addOrUpdate(runMode, fileName);
         }
     }
 
@@ -396,10 +204,6 @@ public class ContentPackage2FeatureModelConverter {
 
     private void process(VaultPackage vaultPackage) throws Exception {
         requireNonNull(vaultPackage, "Impossible to process a null vault package");
-
-        if (getTargetFeature() == null) {
-            throw new IllegalStateException("Target Feature not initialized yet, please make sure convert() method was invoked first.");
-        }
 
         Archive archive = vaultPackage.getArchive();
         try {
@@ -457,40 +261,6 @@ public class ContentPackage2FeatureModelConverter {
         }
 
         return mainPackageAssembler;
-    }
-
-    public void attach(String runMode,
-                       String groupId,
-                       String artifactId,
-                       String version,
-                       String classifier,
-                       String type) {
-        requireNonNull(groupId, "Artifact can not be attached to a feature without specifying a valid 'groupId'.");
-        requireNonNull(artifactId, "Artifact can not be attached to a feature without specifying a valid 'artifactId'.");
-        requireNonNull(version, "Artifact can not be attached to a feature without specifying a valid 'version'.");
-        requireNonNull(type, "Artifact can not be attached to a feature without specifying a valid 'type'.");
-
-        Artifact artifact = new Artifact(new ArtifactId(groupId, artifactId, version, classifier, type));
-
-        Feature targetFeature = getRunMode(runMode);
-        Artifacts artifacts;
-
-        if (ZIP_TYPE.equals(type) ) {
-            Extensions extensions = targetFeature.getExtensions();
-            Extension extension = extensions.getByName(CONTENT_PACKAGES);
-
-            if (extension == null) {
-                extension = new Extension(ExtensionType.ARTIFACTS, CONTENT_PACKAGES, true);
-                extensions.add(extension);
-            }
-
-            artifacts = extension.getArtifacts();
-        } else {
-            artifact.setStartOrder(bundlesStartOrder);
-            artifacts = targetFeature.getBundles();
-        }
-
-        artifacts.add(artifact);
     }
 
 }

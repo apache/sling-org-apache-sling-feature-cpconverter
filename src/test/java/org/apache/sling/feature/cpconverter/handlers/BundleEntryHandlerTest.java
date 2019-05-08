@@ -36,6 +36,8 @@ import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
+import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
+import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.spi.EntryHandler;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -86,23 +88,24 @@ public final class BundleEntryHandlerTest {
 
         });
 
+        Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
+        FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);
+        when(featuresManager.getTargetFeature()).thenReturn(feature);
+        when(featuresManager.getRunMode(anyString())).thenReturn(feature);
+        doCallRealMethod().when(featuresManager).addArtifact(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
+
         ContentPackage2FeatureModelConverter converter = spy(ContentPackage2FeatureModelConverter.class);
 
         File testDirectory = new File(System.getProperty("testDirectory"), getClass().getName() + '_' + System.currentTimeMillis());
-
-        doCallRealMethod().when(converter).attach(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
         when(converter.getArtifactsDeployer()).thenReturn(new DefaultArtifactsDeployer(testDirectory));
-
-        Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
-        when(converter.getTargetFeature()).thenReturn(feature);
-        when(converter.getRunMode(anyString())).thenReturn(feature);
+        when(converter.getFeaturesManager()).thenReturn(featuresManager);
 
         bundleEntryHandler.handle(bundleLocation, archive, entry, converter);
 
         assertTrue(new File(testDirectory, "org/apache/felix/org.apache.felix.framework/6.0.1/org.apache.felix.framework-6.0.1.pom").exists());
         assertTrue(new File(testDirectory, "org/apache/felix/org.apache.felix.framework/6.0.1/org.apache.felix.framework-6.0.1.jar").exists());
 
-        assertFalse(converter.getTargetFeature().getBundles().isEmpty());
+        assertFalse(featuresManager.getTargetFeature().getBundles().isEmpty());
         assertEquals(1, feature.getBundles().size());
         assertEquals("org.apache.felix:org.apache.felix.framework:6.0.1", feature.getBundles().get(0).getId().toMvnId());
     }
