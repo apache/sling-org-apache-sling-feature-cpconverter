@@ -90,6 +90,7 @@ public class DefaultFeaturesManager implements FeaturesManager {
                      String description) {
         targetFeature = new Feature(new ArtifactId(groupId, artifactId, version, null, SLING_OSGI_FEATURE_TILE_TYPE));
         targetFeature.setDescription(description);
+        runModes.clear();
     }
 
     public Feature getTargetFeature() {
