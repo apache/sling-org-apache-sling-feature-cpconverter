@@ -44,6 +44,8 @@ import org.slf4j.LoggerFactory;
 
 public class DefaultFeaturesManager implements FeaturesManager {
 
+    private static final String JAVA_IO_TMPDIR_PROPERTY = "java.io.tmpdir";
+
     private static final String CONTENT_PACKAGES = "content-packages";
 
     private static final String SLING_OSGI_FEATURE_TILE_TYPE = "slingosgifeature";
@@ -69,7 +71,7 @@ public class DefaultFeaturesManager implements FeaturesManager {
     private Feature targetFeature = null;
 
     public DefaultFeaturesManager() {
-        this(true, 20, new File(System.getProperty("java.io.tmpdir")), null, null);
+        this(true, 20, new File(System.getProperty(JAVA_IO_TMPDIR_PROPERTY)), null, null);
     }
 
     public DefaultFeaturesManager(boolean mergeConfigurations,
