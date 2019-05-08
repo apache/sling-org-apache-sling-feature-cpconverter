@@ -32,6 +32,7 @@ import org.apache.jackrabbit.vault.packaging.Dependency;
 import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.impl.ZipVaultPackage;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.acl.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
@@ -123,7 +124,8 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                                                                                                             featureModelsOutputDirectory,
                                                                                                             artifactIdOverride,
                                                                                                             properties))
-                                                             .setBundlesDeployer(new DefaultArtifactsDeployer(artifactsOutputDirectory));
+                                                             .setBundlesDeployer(new DefaultArtifactsDeployer(artifactsOutputDirectory))
+                                                             .setAclManager(new DefaultAclManager());
 
             if (filteringPatterns != null && filteringPatterns.length > 0) {
                 RegexBasedResourceFilter filter = new RegexBasedResourceFilter();

@@ -37,6 +37,7 @@ import java.util.zip.ZipFile;
 import org.apache.commons.io.FileUtils;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Feature;
+import org.apache.sling.feature.cpconverter.acl.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
@@ -51,7 +52,8 @@ public class ContentPackage2FeatureModelConverterTest {
 
     @Before
     public void setUp() {
-        converter = new ContentPackage2FeatureModelConverter();
+        converter = new ContentPackage2FeatureModelConverter()
+                   .setAclManager(new DefaultAclManager());
     }
 
     @After

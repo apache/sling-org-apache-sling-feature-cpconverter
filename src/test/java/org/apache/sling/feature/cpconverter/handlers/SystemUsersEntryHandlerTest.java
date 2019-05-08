@@ -33,6 +33,7 @@ import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.acl.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
@@ -95,6 +96,7 @@ public class SystemUsersEntryHandlerTest {
         when(featuresManager.getTargetFeature()).thenReturn(feature);
         ContentPackage2FeatureModelConverter converter = spy(ContentPackage2FeatureModelConverter.class);
         when(converter.getFeaturesManager()).thenReturn(featuresManager);
+        when(converter.getAclManager()).thenReturn(new DefaultAclManager());
 
         systemUsersEntryHandler.handle(path, archive, entry, converter);
 

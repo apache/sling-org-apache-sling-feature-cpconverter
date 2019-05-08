@@ -54,7 +54,7 @@ public class ContentPackage2FeatureModelConverter {
 
     private final ServiceLoader<EntryHandler> entryHandlers = ServiceLoader.load(EntryHandler.class);
 
-    private final AclManager aclManager = new AclManager();
+    private AclManager aclManager;
 
     private FeaturesManager featuresManager;
 
@@ -101,6 +101,11 @@ public class ContentPackage2FeatureModelConverter {
 
     public AclManager getAclManager() {
         return aclManager;
+    }
+
+    public ContentPackage2FeatureModelConverter setAclManager(AclManager aclManager) {
+        this.aclManager = aclManager;
+        return this;
     }
 
     public VaultPackageAssembler getMainPackageAssembler() {

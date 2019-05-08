@@ -38,7 +38,7 @@ public class AclManagerTest {
 
     @Before
     public void setUp() {
-        aclManager = new AclManager();
+        aclManager = new DefaultAclManager();
     }
 
     @After
