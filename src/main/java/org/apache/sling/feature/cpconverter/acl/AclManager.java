@@ -122,9 +122,12 @@ public final class AclManager {
 
             for (Entry<String, List<Acl>> currentAcls : acls.entrySet()) {
                 String systemUser = currentAcls.getKey();
-                List<Acl> authorizations = currentAcls.getValue();
 
-                addAclStatement(formatter, systemUser, authorizations);
+                if (preProvidedSystemUsers.contains(systemUser)) {
+                    List<Acl> authorizations = currentAcls.getValue();
+
+                    addAclStatement(formatter, systemUser, authorizations);
+                }
             }
 
             String text = formatter.toString();
