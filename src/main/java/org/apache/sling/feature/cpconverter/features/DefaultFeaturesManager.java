@@ -224,14 +224,17 @@ public class DefaultFeaturesManager implements FeaturesManager {
         String fileName = fileNameBuilder.toString();
 
         File targetFile = new File(featureModelsOutputDirectory, fileName);
-
-        logger.info("Writing resulting Feature Model '{}' to file '{}'...", feature.getId(), targetFile);
+        if (!targetFile.getParentFile().exists()) {
+            targetFile.getParentFile().mkdirs();
+        }
 
         if (artifactIdOverride != null && !artifactIdOverride.isEmpty()) {
             String interpolatedIdOverride = interpolator.interpolate(artifactIdOverride, properties);
             ArtifactId idOverrride = appendRunmode(ArtifactId.parse(interpolatedIdOverride), runMode);
             feature = feature.copy(idOverrride);
         }
+
+        logger.info("Writing resulting Feature Model '{}' to file '{}'...", feature.getId(), targetFile);
 
         try (FileWriter targetWriter = new FileWriter(targetFile)) {
             FeatureJSONWriter.write(targetWriter, feature);
