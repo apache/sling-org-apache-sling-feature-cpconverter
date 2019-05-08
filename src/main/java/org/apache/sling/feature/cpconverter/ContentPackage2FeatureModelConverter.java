@@ -19,8 +19,6 @@ package org.apache.sling.feature.cpconverter;
 import static java.util.Objects.requireNonNull;
 
 import java.io.File;
-import java.util.Iterator;
-import java.util.ServiceLoader;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
@@ -33,7 +31,8 @@ import org.apache.sling.feature.cpconverter.artifacts.ArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.artifacts.FileArtifactWriter;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.ResourceFilter;
-import org.apache.sling.feature.cpconverter.spi.EntryHandler;
+import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
+import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +51,7 @@ public class ContentPackage2FeatureModelConverter {
 
     private final boolean strictValidation;
 
-    private final ServiceLoader<EntryHandler> entryHandlers = ServiceLoader.load(EntryHandler.class);
+    private EntryHandlersManager handlersManager;
 
     private AclManager aclManager;
 
@@ -74,6 +73,11 @@ public class ContentPackage2FeatureModelConverter {
 
     public boolean isStrictValidation() {
         return strictValidation;
+    }
+
+    public ContentPackage2FeatureModelConverter setEntryHandlersManager(EntryHandlersManager handlersManager) {
+        this.handlersManager = handlersManager;
+        return this;
     }
 
     public FeaturesManager getFeaturesManager() {
@@ -242,7 +246,12 @@ public class ContentPackage2FeatureModelConverter {
                                                + " not allowed by user configuration, please check configured filtering patterns");
         }
 
-        getEntryHandlerByEntryPath(entryPath).handle(entryPath, archive, entry, this);
+        EntryHandler entryHandler = handlersManager.getEntryHandlerByEntryPath(entryPath);
+        if (entryHandler == null) {
+            entryHandler = mainPackageAssembler;
+        }
+
+        entryHandler.handle(entryPath, archive, entry, this);
 
         logger.info("Entry {} successfully processed.", entryPath);
     }
@@ -253,19 +262,6 @@ public class ContentPackage2FeatureModelConverter {
         }
 
         return path + '/' + entryName;
-    }
-
-    private EntryHandler getEntryHandlerByEntryPath(String path) {
-        Iterator<EntryHandler> entryHandlersIterator = entryHandlers.iterator();
-        while (entryHandlersIterator.hasNext()) {
-            EntryHandler entryHandler = entryHandlersIterator.next();
-
-            if (entryHandler.matches(path)) {
-                return entryHandler;
-            }
-        }
-
-        return mainPackageAssembler;
     }
 
 }

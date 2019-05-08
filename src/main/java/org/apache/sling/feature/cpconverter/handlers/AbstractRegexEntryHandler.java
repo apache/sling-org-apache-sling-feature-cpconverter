@@ -18,7 +18,6 @@ package org.apache.sling.feature.cpconverter.handlers;
 
 import java.util.regex.Pattern;
 
-import org.apache.sling.feature.cpconverter.spi.EntryHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

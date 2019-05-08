@@ -14,10 +14,10 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
-/**
- * Definition and default implementations of the <i>org.apache.sling.feature.cpconverter.handlers.EntryHandler</i>
- * service to handle resources while scanning Apache Jackrabbit Vault packages,
- * such as ACLs, OSGi bundles &amp; configurations and nested content packages.
- */
 package org.apache.sling.feature.cpconverter.handlers;
+
+public interface EntryHandlersManager {
+
+    EntryHandler getEntryHandlerByEntryPath(String path);
+
+}

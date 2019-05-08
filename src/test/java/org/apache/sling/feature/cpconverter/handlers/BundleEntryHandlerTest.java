@@ -38,7 +38,6 @@ import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter
 import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
-import org.apache.sling.feature.cpconverter.spi.EntryHandler;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;

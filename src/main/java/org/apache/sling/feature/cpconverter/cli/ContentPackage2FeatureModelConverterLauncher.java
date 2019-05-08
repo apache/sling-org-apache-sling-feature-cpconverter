@@ -36,6 +36,7 @@ import org.apache.sling.feature.cpconverter.acl.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
+import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,6 +126,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                                                                                                             artifactIdOverride,
                                                                                                             properties))
                                                              .setBundlesDeployer(new DefaultArtifactsDeployer(artifactsOutputDirectory))
+                                                             .setEntryHandlersManager(new DefaultEntryHandlersManager())
                                                              .setAclManager(new DefaultAclManager());
 
             if (filteringPatterns != null && filteringPatterns.length > 0) {

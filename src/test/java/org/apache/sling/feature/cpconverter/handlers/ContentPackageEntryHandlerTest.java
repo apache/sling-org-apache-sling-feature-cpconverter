@@ -19,7 +19,6 @@ package org.apache.sling.feature.cpconverter.handlers;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import org.apache.sling.feature.cpconverter.spi.EntryHandler;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

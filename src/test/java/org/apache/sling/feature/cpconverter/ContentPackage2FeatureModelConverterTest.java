@@ -41,6 +41,7 @@ import org.apache.sling.feature.cpconverter.acl.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
+import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.junit.After;
 import org.junit.Before;
@@ -53,7 +54,8 @@ public class ContentPackage2FeatureModelConverterTest {
     @Before
     public void setUp() {
         converter = new ContentPackage2FeatureModelConverter()
-                   .setAclManager(new DefaultAclManager());
+                    .setEntryHandlersManager(new DefaultEntryHandlersManager())
+                    .setAclManager(new DefaultAclManager());
     }
 
     @After
