@@ -74,10 +74,6 @@ public final class DefaultAclManager implements AclManager {
     }
 
     public void addRepoinitExtension(VaultPackageAssembler packageAssembler, Feature feature) {
-        if (systemUsers.isEmpty()) {
-            return;
-        }
-
         Formatter formatter = null;
         try {
             Extension repoInitExtension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, true);
