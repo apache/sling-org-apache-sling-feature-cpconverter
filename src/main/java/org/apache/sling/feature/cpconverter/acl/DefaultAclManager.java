@@ -101,7 +101,13 @@ public final class DefaultAclManager implements AclManager {
 
                 if (preProvidedSystemUsers.contains(systemUser)) {
                     List<Acl> authorizations = currentAcls.getValue();
+
+                    // make sure all paths are created first
+
                     addPaths(authorizations, packageAssembler, formatter);
+
+                    // finally add ACLs
+
                     addAclStatement(formatter, systemUser, authorizations);
                 }
             }
