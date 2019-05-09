@@ -33,8 +33,6 @@ final class ShutDownHook extends Thread {
 
     @Override
     public void run() {
-        logger.info("");
-
         // format the uptime string
         Formatter uptimeFormatter = new Formatter();
         uptimeFormatter.format("Total time:");

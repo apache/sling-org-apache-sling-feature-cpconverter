@@ -27,8 +27,6 @@ import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ContentPackage2FeatureModelConverterLauncherTest {
 
@@ -49,14 +47,13 @@ public class ContentPackage2FeatureModelConverterLauncherTest {
     @Test
     public void testPackageOrdering() throws Exception {
         ContentPackage2FeatureModelConverterLauncher launcher = new ContentPackage2FeatureModelConverterLauncher();
-        Logger logger = LoggerFactory.getLogger("test");
         List<File> contentPackages = new ArrayList<File>();
 
         for (String pkgName : TEST_PACKAGES_INPUT) {
             URL packageUrl = getClass().getResource(pkgName);
             contentPackages.add(FileUtils.toFile(packageUrl));
         }
-        List<File> ordered = launcher.order(contentPackages, logger);
+        List<File> ordered = launcher.order(contentPackages);
         Iterator<File> fileIt = ordered.iterator();
         for (String expected : TEST_PACKAGES_OUTPUT) {
             File next = fileIt.next();
@@ -67,14 +64,13 @@ public class ContentPackage2FeatureModelConverterLauncherTest {
     @Test(expected = CyclicDependencyException.class)
     public void testDependencyCycle() throws Exception {
         ContentPackage2FeatureModelConverterLauncher launcher = new ContentPackage2FeatureModelConverterLauncher();
-        Logger logger = LoggerFactory.getLogger("test");
         List<File> contentPackages = new ArrayList<File>();
 
         for (String pkgName : TEST_PACKAGES_CYCLIC_DEPENDENCY) {
             URL packageUrl = getClass().getResource(pkgName);
             contentPackages.add(FileUtils.toFile(packageUrl));
         }
-        launcher.order(contentPackages, logger);
+        launcher.order(contentPackages);
     }
 
 }

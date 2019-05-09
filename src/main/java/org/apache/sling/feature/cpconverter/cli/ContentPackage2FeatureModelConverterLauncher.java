@@ -139,7 +139,11 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                 converter.setResourceFilter(filter);
             }
 
-            List<File> orderedContentPackages = order(contentPackages, logger);
+            logger.info("Ordering input content-package(s) {}...", contentPackages);
+
+            List<File> orderedContentPackages = order(contentPackages);
+
+            logger.info("New content-package(s) order: {}", orderedContentPackages);
 
             for (File contentPackage : orderedContentPackages) {
                 converter.convert(contentPackage);
@@ -158,20 +162,22 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                 logger.error("Unable to convert content-package {}: {}", contentPackages, t.getMessage());
             }
 
-            logger.info( "" );
+            logger.info( "+-----------------------------------------------------+" );
 
             System.exit(1);
         }
-
-        logger.info( "+-----------------------------------------------------+" );
     }
 
-    protected List<File> order(List<File> contentPackages, final Logger logger) throws Exception {
+    protected List<File> order(List<File> contentPackages) throws Exception {
         Map<PackageId, File> idFileMap = new LinkedHashMap<>();
         Map<ZipVaultPackage, File> packageFileMapping = new HashMap<>();
         Map<PackageId, ZipVaultPackage> idPackageMapping = new HashMap<>();
 
         for (File file : contentPackages) {
+            if (!file.exists() || file.isDirectory()) {
+                throw new Exception("File " + file + " does not exist or it is a directory");
+            }
+
             try {
                 ZipVaultPackage pack = new ZipVaultPackage(file, false, true);
                 packageFileMapping.put(pack, file);
