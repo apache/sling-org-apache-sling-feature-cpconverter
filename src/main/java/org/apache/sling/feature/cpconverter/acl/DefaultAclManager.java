@@ -20,13 +20,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.Formatter;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
@@ -41,9 +43,9 @@ public final class DefaultAclManager implements AclManager {
 
     private final Set<String> preProvidedSystemUsers = new LinkedHashSet<>();
 
-    private final Set<String> systemUsers = new LinkedHashSet<>();
+    private final Set<String> preProvidedPaths = new HashSet<String>();
 
-    private final Set<String> paths = new TreeSet<String>();
+    private final Set<String> systemUsers = new LinkedHashSet<>();
 
     private final Map<String, List<Acl>> acls = new HashMap<>();
 
@@ -55,19 +57,19 @@ public final class DefaultAclManager implements AclManager {
     }
 
     public Acl addAcl(String systemUser, String operation, String privileges, String path) {
-        addPath(path);
-
         Acl acl = new Acl(operation, privileges, path);
         acls.computeIfAbsent(systemUser, k -> new LinkedList<>()).add(acl);
         return acl;
     }
 
-    private void addPath(String path) {
-        paths.add(path);
+    private void addPath(String path, Set<String> paths) {
+        if (preProvidedPaths.add(path)) {
+            paths.add(path);
+        }
 
         int endIndex = path.lastIndexOf('/');
         if (endIndex > 0) {
-            addPath(path.substring(0, endIndex));
+            addPath(path.substring(0, endIndex), paths);
         }
     }
 
@@ -82,35 +84,18 @@ public final class DefaultAclManager implements AclManager {
 
             formatter = new Formatter();
 
-            // make sure all paths are created first
-
-            for (String path : paths) {
-                File currentDir = packageAssembler.getEntry(path);
-                String type = DEFAULT_TYPE;
-
-                if (currentDir.exists()) {
-                    File currentContent = new File(currentDir, CONTENT_XML_FILE_NAME);
-                    if (currentContent.exists()) {
-                        try (FileInputStream input = new FileInputStream(currentContent)) {
-                            type = new PrimaryTypeParser(DEFAULT_TYPE).parse(input);
-                        } catch (Exception e) {
-                            throw new RuntimeException("A fatal error occurred while parsing the '"
-                                + currentContent
-                                + "' file, see nested exceptions: "
-                                + e);
-                        }
-                    }
-                }
-
-                formatter.format("create path (%s) %s%n", type, path);
-            }
-
-            // create then the users
-
             for (String systemUser : systemUsers) {
+                List<Acl> authorizations = acls.remove(systemUser);
+
+                // make sure all paths are created first
+
+                addPaths(authorizations, packageAssembler, formatter);
+
+                // create then the users
+
                 formatter.format("create service user %s%n", systemUser);
 
-                List<Acl> authorizations = acls.remove(systemUser);
+                // finally add ACLs
 
                 addAclStatement(formatter, systemUser, authorizations);
             }
@@ -122,7 +107,7 @@ public final class DefaultAclManager implements AclManager {
 
                 if (preProvidedSystemUsers.contains(systemUser)) {
                     List<Acl> authorizations = currentAcls.getValue();
-
+                    addPaths(authorizations, packageAssembler, formatter);
                     addAclStatement(formatter, systemUser, authorizations);
                 }
             }
@@ -140,20 +125,67 @@ public final class DefaultAclManager implements AclManager {
 
     public void reset() {
         systemUsers.clear();
-        paths.clear();
         acls.clear();
     }
 
-    private void addAclStatement(Formatter formatter, String systemUser, List<Acl> authorizations) {
-        if (authorizations != null && !authorizations.isEmpty()) {
-            formatter.format("set ACL for %s%n", systemUser);
+    private void addPaths(List<Acl> authorizations, VaultPackageAssembler packageAssembler, Formatter formatter) {
+        if (areEmpty(authorizations)) {
+            return;
+        }
 
-            for (Acl authorization : authorizations) {
-                authorization.addAclStatement(formatter);
+        Set<String> paths = new TreeSet<String>();
+        for (Acl authorization : authorizations) {
+            addPath(authorization.getPath(), paths);
+        }
+
+        for (String path : paths) {
+            File currentDir = packageAssembler.getEntry(path);
+            String type = DEFAULT_TYPE;
+
+            if (currentDir.exists()) {
+                File currentContent = new File(currentDir, CONTENT_XML_FILE_NAME);
+                if (currentContent.exists()) {
+                    try (FileInputStream input = new FileInputStream(currentContent)) {
+                        type = new PrimaryTypeParser(DEFAULT_TYPE).parse(input);
+                    } catch (Exception e) {
+                        throw new RuntimeException("A fatal error occurred while parsing the '"
+                            + currentContent
+                            + "' file, see nested exceptions: "
+                            + e);
+                    }
+                }
             }
 
-            formatter.format("end%n");
+            formatter.format("create path (%s) %s%n", type, path);
         }
+    }
+
+    private static void addAclStatement(Formatter formatter, String systemUser, List<Acl> authorizations) {
+        if (areEmpty(authorizations)) {
+            return;
+        }
+
+        formatter.format("set ACL for %s%n", systemUser);
+
+        for (Acl authorization : authorizations) {
+            formatter.format("%s %s on %s",
+                             authorization.getOperation(),
+                             authorization.getPrivileges(),
+                             authorization.getPath());
+
+            if (!authorization.getRestrictions().isEmpty()) {
+                formatter.format(" restriction(%s)",
+                                 authorization.getRestrictions().stream().collect(Collectors.joining(",")));
+            }
+
+            formatter.format("%n");
+        }
+
+        formatter.format("end%n");
+    }
+
+    private static boolean areEmpty(List<Acl> authorizations) {
+        return authorizations == null || authorizations.isEmpty();
     }
 
 }

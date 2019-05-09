@@ -16,10 +16,8 @@
  */
 package org.apache.sling.feature.cpconverter.acl;
 
-import java.util.Formatter;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Simple single ACL statement representation.
@@ -46,14 +44,20 @@ public final class Acl {
         }
     }
 
-    protected void addAclStatement(Formatter formatter) {
-        formatter.format("%s %s on %s", operation, privileges, path);
+    public String getOperation() {
+        return operation;
+    }
 
-        if (!restrictions.isEmpty()) {
-            formatter.format(" restriction(%s)", restrictions.stream().collect(Collectors.joining(",")));
-        }
+    public String getPrivileges() {
+        return privileges;
+    }
 
-        formatter.format("%n");
+    public String getPath() {
+        return path;
+    }
+
+    public List<String> getRestrictions() {
+        return restrictions;
     }
 
 }
