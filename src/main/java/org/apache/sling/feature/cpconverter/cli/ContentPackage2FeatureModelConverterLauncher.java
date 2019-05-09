@@ -18,10 +18,10 @@ package org.apache.sling.feature.cpconverter.cli;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -141,7 +141,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
 
             logger.info("Ordering input content-package(s) {}...", contentPackages);
 
-            List<File> orderedContentPackages = order(contentPackages);
+            Collection<File> orderedContentPackages = order(contentPackages);
 
             logger.info("New content-package(s) order: {}", orderedContentPackages);
 
@@ -168,7 +168,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
         }
     }
 
-    protected List<File> order(List<File> contentPackages) throws Exception {
+    protected Collection<File> order(List<File> contentPackages) throws Exception {
         Map<PackageId, File> idFileMap = new LinkedHashMap<>();
         Map<ZipVaultPackage, File> packageFileMapping = new HashMap<>();
         Map<PackageId, ZipVaultPackage> idPackageMapping = new HashMap<>();
@@ -192,7 +192,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
             orderDependencies(idFileMap, packageFileMapping, idPackageMapping, pack, new HashSet<PackageId>());
         }
 
-        return new LinkedList<>(idFileMap.values());
+        return idFileMap.values();
     }
 
     private void orderDependencies(Map<PackageId, File> idFileMap,

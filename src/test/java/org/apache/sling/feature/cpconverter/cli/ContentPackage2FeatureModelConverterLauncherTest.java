@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -53,7 +54,7 @@ public class ContentPackage2FeatureModelConverterLauncherTest {
             URL packageUrl = getClass().getResource(pkgName);
             contentPackages.add(FileUtils.toFile(packageUrl));
         }
-        List<File> ordered = launcher.order(contentPackages);
+        Collection<File> ordered = launcher.order(contentPackages);
         Iterator<File> fileIt = ordered.iterator();
         for (String expected : TEST_PACKAGES_OUTPUT) {
             File next = fileIt.next();
