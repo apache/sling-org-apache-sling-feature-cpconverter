@@ -76,8 +76,6 @@ public final class DefaultAclManager implements AclManager {
     public void addRepoinitExtension(VaultPackageAssembler packageAssembler, Feature feature) {
         Formatter formatter = null;
         try {
-            Extension repoInitExtension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, true);
-
             formatter = new Formatter();
 
             for (String systemUser : systemUsers) {
@@ -109,9 +107,12 @@ public final class DefaultAclManager implements AclManager {
             }
 
             String text = formatter.toString();
-            repoInitExtension.setText(text);
 
-            feature.getExtensions().add(repoInitExtension);
+            if (!text.isEmpty()) {
+                Extension repoInitExtension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, true);
+                repoInitExtension.setText(text);
+                feature.getExtensions().add(repoInitExtension);
+            }
         } finally {
             if (formatter != null) {
                 formatter.close();
