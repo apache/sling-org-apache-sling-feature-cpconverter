@@ -135,25 +135,26 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
                     continue;
                 }
 
-                int idx = bundleName.lastIndexOf('/');
+                String currentName = bundleName;
+                int idx = currentName.lastIndexOf('/');
                 if (idx >= 0) {
-                    bundleName = bundleName.substring(idx + 1);
+                    currentName = currentName.substring(idx + 1);
                 }
 
-                int edx = bundleName.lastIndexOf('.');
+                int edx = currentName.lastIndexOf('.');
                 if (edx > 0) {
-                    bundleName = bundleName.substring(0, edx);
+                    currentName = currentName.substring(0, edx);
                 }
 
                 // bundleName is now the bare name without extension
                 String synthesized = artifactId + "-" + version;
 
                 // it was the pom.properties  we were looking for
-                if (bundleName.startsWith(synthesized)) {
+                if (currentName.startsWith(synthesized)) {
 
                     // check the artifact has a classifier in the bundle file name
-                    if (synthesized.length() < bundleName.length()) {
-                        String suffix = bundleName.substring(synthesized.length());
+                    if (synthesized.length() < currentName.length()) {
+                        String suffix = currentName.substring(synthesized.length());
                         if (suffix.length() > 1 && suffix.startsWith("-")) {
                             String classifier = suffix.substring(1);
                             logger.info("Inferred classifier of '"
