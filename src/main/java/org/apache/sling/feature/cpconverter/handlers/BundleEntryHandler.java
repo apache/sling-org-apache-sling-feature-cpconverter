@@ -116,15 +116,27 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
     }
 
     // method visibility set to 'protected' fot testing purposes
-    protected Properties readGav(String bundleName, JarInputStream jarInput) throws IOException {
+    protected Properties readGav(String entryName, JarInputStream jarInput) throws IOException {
         Properties properties = new Properties();
+
+        String bundleName = entryName;
+        // Remove the leading path
+        int idx = bundleName.lastIndexOf('/');
+        if (idx >= 0) {
+            bundleName = bundleName.substring(idx + 1);
+        }
+        // Remove the extension
+        int edx = bundleName.lastIndexOf('.');
+        if (edx > 0) {
+            bundleName = bundleName.substring(0, edx);
+        }
 
         JarEntry jarEntry;
         dance : while ((jarEntry = jarInput.getNextJarEntry()) != null) {
-            String entryName = jarEntry.getName();
+            String nextEntryName = jarEntry.getName();
 
-            if (pomPropertiesPattern.matcher(entryName).matches()) {
-                logger.info("Reading '{}' bundle GAV from {}...", bundleName, entryName);
+            if (pomPropertiesPattern.matcher(nextEntryName).matches()) {
+                logger.info("Reading '{}' bundle GAV from {}...", bundleName, nextEntryName);
 
                 properties.load(jarInput);
 
@@ -135,26 +147,15 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
                     continue;
                 }
 
-                String currentName = bundleName;
-                int idx = currentName.lastIndexOf('/');
-                if (idx >= 0) {
-                    currentName = currentName.substring(idx + 1);
-                }
-
-                int edx = currentName.lastIndexOf('.');
-                if (edx > 0) {
-                    currentName = currentName.substring(0, edx);
-                }
-
                 // bundleName is now the bare name without extension
                 String synthesized = artifactId + "-" + version;
 
                 // it was the pom.properties  we were looking for
-                if (currentName.startsWith(synthesized)) {
+                if (bundleName.startsWith(synthesized)) {
 
                     // check the artifact has a classifier in the bundle file name
-                    if (synthesized.length() < currentName.length()) {
-                        String suffix = currentName.substring(synthesized.length());
+                    if (synthesized.length() < bundleName.length()) {
+                        String suffix = bundleName.substring(synthesized.length());
                         if (suffix.length() > 1 && suffix.startsWith("-")) {
                             String classifier = suffix.substring(1);
                             logger.info("Inferred classifier of '"
