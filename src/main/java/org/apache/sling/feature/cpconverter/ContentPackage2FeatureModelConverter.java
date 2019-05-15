@@ -33,11 +33,12 @@ import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.ResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
+import org.apache.sling.feature.cpconverter.vltpkg.BaseVaultPackageScanner;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ContentPackage2FeatureModelConverter {
+public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanner {
 
     public static final String ZIP_TYPE = "zip";
 
@@ -48,8 +49,6 @@ public class ContentPackage2FeatureModelConverter {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final PackageManager packageManager = new PackageManagerImpl();
-
-    private final boolean strictValidation;
 
     private EntryHandlersManager handlersManager;
 
@@ -68,11 +67,7 @@ public class ContentPackage2FeatureModelConverter {
     }
 
     public ContentPackage2FeatureModelConverter(boolean strictValidation) {
-        this.strictValidation = strictValidation;
-    }
-
-    public boolean isStrictValidation() {
-        return strictValidation;
+        super(strictValidation);
     }
 
     public ContentPackage2FeatureModelConverter setEntryHandlersManager(EntryHandlersManager handlersManager) {
@@ -127,7 +122,7 @@ public class ContentPackage2FeatureModelConverter {
 
         logger.info("Reading content-package '{}'...", contentPackage);
 
-        try (VaultPackage vaultPackage = packageManager.open(contentPackage, strictValidation)) {
+        try (VaultPackage vaultPackage = packageManager.open(contentPackage, isStrictValidation())) {
             logger.info("content-package '{}' successfully read!", contentPackage);
 
             mainPackageAssembler = VaultPackageAssembler.create(vaultPackage);
@@ -160,7 +155,7 @@ public class ContentPackage2FeatureModelConverter {
 
             logger.info("Converting content-package '{}'...", vaultPackage.getId());
 
-            process(vaultPackage);
+            traverse(vaultPackage);
 
             // attach all unmatched resources as new content-package
 
@@ -198,9 +193,9 @@ public class ContentPackage2FeatureModelConverter {
         requireNonNull(path, "Impossible to process a null vault package");
         requireNonNull(contentPackage, "Impossible to process a null vault package");
 
-        try (VaultPackage vaultPackage = packageManager.open(contentPackage, strictValidation)) {
+        try (VaultPackage vaultPackage = packageManager.open(contentPackage, isStrictValidation())) {
             // scan the detected package, first
-            process(vaultPackage);
+            traverse(vaultPackage);
 
             // merge filters to the main new package
             mainPackageAssembler.mergeFilters(vaultPackage.getMetaInf().getFilter());
@@ -211,33 +206,8 @@ public class ContentPackage2FeatureModelConverter {
         }
     }
 
-    private void process(VaultPackage vaultPackage) throws Exception {
-        requireNonNull(vaultPackage, "Impossible to process a null vault package");
-
-        Archive archive = vaultPackage.getArchive();
-        try {
-            archive.open(strictValidation);
-
-            Entry jcrRoot = archive.getJcrRoot();
-            traverse(null, archive, jcrRoot);
-        } finally {
-            archive.close();
-        }
-    }
-
-    private void traverse(String path, Archive archive, Entry entry) throws Exception {
-        String entryPath = newPath(path, entry.getName());
-
-        if (entry.isDirectory()) {
-            for (Entry child : entry.getChildren()) {
-                traverse(entryPath, archive, child);
-            }
-
-            return;
-        }
-
-        logger.info("Processing entry {}...", entryPath);
-
+    @Override
+    protected void onFile(String entryPath, Archive archive, Entry entry) throws Exception {
         if (resourceFilter != null && resourceFilter.isFilteredOut(entryPath)) {
             throw new IllegalArgumentException("Path '"
                                                + entryPath
@@ -252,16 +222,6 @@ public class ContentPackage2FeatureModelConverter {
         }
 
         entryHandler.handle(entryPath, archive, entry, this);
-
-        logger.info("Entry {} successfully processed.", entryPath);
-    }
-
-    private static String newPath(String path, String entryName) {
-        if (path == null) {
-            return entryName;
-        }
-
-        return path + '/' + entryName;
     }
 
 }
