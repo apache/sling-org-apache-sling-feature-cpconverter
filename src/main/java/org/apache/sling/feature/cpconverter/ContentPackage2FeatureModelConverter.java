@@ -19,7 +19,6 @@ package org.apache.sling.feature.cpconverter;
 import static java.util.Objects.requireNonNull;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -124,11 +123,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     public void convert(File...contentPackages) throws Exception {
         requireNonNull(contentPackages , "Null content-package(s) can not be converted.");
 
-        logger.info("Ordering input content-package(s) {}...", Arrays.toString(contentPackages));
-
         Collection<VaultPackage> orderedContentPackages = firstPass(contentPackages);
-
-        logger.info("New content-package(s) order: {}", orderedContentPackages);
 
         for (VaultPackage vaultPackage : orderedContentPackages) {
             try {
@@ -222,9 +217,13 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             logger.info("content-package '{}' successfully read!", contentPackage);
         }
 
+        logger.info("Ordering input content-package(s) {}...", idFileMap.keySet());
+
         for (VaultPackage pack : new HashSet<VaultPackage>(idPackageMapping.values())) {
             orderDependencies(idFileMap, idPackageMapping, pack, new HashSet<PackageId>());
         }
+
+        logger.info("New content-package(s) order: {}", idFileMap.keySet());
 
         return idFileMap.values();
     }
