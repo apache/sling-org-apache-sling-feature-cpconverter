@@ -186,9 +186,9 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 logger.info("Conversion complete!");
 
                 featuresManager.serialize();
-
-                aclManager.reset();
             } finally {
+                aclManager.reset();
+
                 try {
                     vaultPackage.close();
                 } catch (Exception e) {
