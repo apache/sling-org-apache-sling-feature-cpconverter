@@ -27,14 +27,18 @@ import java.io.FileReader;
 import java.io.Reader;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.zip.ZipFile;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
+import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.acl.DefaultAclManager;
@@ -48,6 +52,20 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class ContentPackage2FeatureModelConverterTest {
+
+    /**
+     * Test package A-1.0. Depends on B and C-1.X
+     * Test package B-1.0. Depends on C
+     */
+    private static String[] TEST_PACKAGES_INPUT = { "test_c-1.0.zip", "test_a-1.0.zip", "test_b-1.0.zip" }; 
+
+    private static String[] TEST_PACKAGES_OUTPUT = { "my_packages:test_c:1.0", "my_packages:test_b:1.0", "my_packages:test_a:1.0" }; 
+
+    private static String[] TEST_PACKAGES_CYCLIC_DEPENDENCY = { "test_d-1.0.zip",
+                                                                "test_c-1.0.zip",
+                                                                "test_a-1.0.zip",
+                                                                "test_b-1.0.zip",
+                                                                "test_e-1.0.zip" };
 
     private ContentPackage2FeatureModelConverter converter;
 
@@ -65,7 +83,12 @@ public class ContentPackage2FeatureModelConverterTest {
 
     @Test(expected = NullPointerException.class)
     public void convertRequiresNonNullPackage() throws Exception {
-        converter.convert(null);
+        converter.convert((File)null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void convertRequiresNonNullPackages() throws Exception {
+        converter.convert((File[])null);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -294,4 +317,36 @@ public class ContentPackage2FeatureModelConverterTest {
         }
         zipFile.close();
     }
+
+    @Test
+    public void testPackageOrdering() throws Exception {
+        File[] contentPackages = load(TEST_PACKAGES_INPUT);
+
+        Collection<VaultPackage> ordered = converter.firstPass(contentPackages);
+
+        Iterator<VaultPackage> fileIt = ordered.iterator();
+        for (String expected : TEST_PACKAGES_OUTPUT) {
+            VaultPackage next = fileIt.next();
+            assertEquals(expected, next.getId().toString());
+        }
+    }
+
+    @Test(expected = CyclicDependencyException.class)
+    public void testDependencyCycle() throws Exception {
+        File[] contentPackages = load(TEST_PACKAGES_CYCLIC_DEPENDENCY);
+        converter.firstPass(contentPackages);
+    }
+
+    private File[] load(String...resources) {
+        File[] loadedResources = new File[resources.length];
+
+        for (int i = 0; i < resources.length; i++) {
+            String resourceName = resources[i];
+            URL resourceUrl = getClass().getResource(resourceName);
+            loadedResources[i] = FileUtils.toFile(resourceUrl);
+        }
+
+        return loadedResources;
+    }
+
 }

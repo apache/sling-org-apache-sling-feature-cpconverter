@@ -17,20 +17,10 @@
 package org.apache.sling.feature.cpconverter.cli;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TimeZone;
 
-import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
-import org.apache.jackrabbit.vault.packaging.Dependency;
-import org.apache.jackrabbit.vault.packaging.PackageId;
-import org.apache.jackrabbit.vault.packaging.impl.ZipVaultPackage;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.acl.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
@@ -89,7 +79,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     private Map<String, String> properties = new HashMap<>();
 
     @Parameters(arity = "1..*", paramLabel = "content-packages", description = "The content-package input file(s).")
-    private List<File> contentPackages;
+    private File[] contentPackages;
 
     @Override
     public void run() {
@@ -139,15 +129,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                 converter.setResourceFilter(filter);
             }
 
-            logger.info("Ordering input content-package(s) {}...", contentPackages);
-
-            Collection<File> orderedContentPackages = order(contentPackages);
-
-            logger.info("New content-package(s) order: {}", orderedContentPackages);
-
-            for (File contentPackage : orderedContentPackages) {
-                converter.convert(contentPackage);
-            }
+            converter.convert(contentPackages);
 
             logger.info( "+-----------------------------------------------------+" );
             logger.info("{} SUCCESS", appName);
@@ -166,55 +148,6 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
 
             System.exit(1);
         }
-    }
-
-    protected Collection<File> order(List<File> contentPackages) throws Exception {
-        Map<PackageId, File> idFileMap = new LinkedHashMap<>();
-        Map<ZipVaultPackage, File> packageFileMapping = new HashMap<>();
-        Map<PackageId, ZipVaultPackage> idPackageMapping = new HashMap<>();
-
-        for (File file : contentPackages) {
-            if (!file.exists() || file.isDirectory()) {
-                throw new Exception("File " + file + " does not exist or it is a directory");
-            }
-
-            try {
-                ZipVaultPackage pack = new ZipVaultPackage(file, false, true);
-                packageFileMapping.put(pack, file);
-                idPackageMapping.put(pack.getId(), pack);
-            } catch (IOException e) {
-                String errorMessage = String.format("Package couldn't be parsed as ZipVaultPackage %s", file.getAbsolutePath());
-                throw new Exception(errorMessage);
-            }
-        }
-
-        for (ZipVaultPackage pack : packageFileMapping.keySet()) {
-            orderDependencies(idFileMap, packageFileMapping, idPackageMapping, pack, new HashSet<PackageId>());
-        }
-
-        return idFileMap.values();
-    }
-
-    private void orderDependencies(Map<PackageId, File> idFileMap,
-                                   Map<ZipVaultPackage, File> packageFileMapping,
-                                   Map<PackageId, ZipVaultPackage> idPackageMapping,
-                                   ZipVaultPackage pack,
-                                   Set<PackageId> visited) throws CyclicDependencyException {
-        if (!visited.add(pack.getId())) {
-            throw new CyclicDependencyException("Cyclic dependency detected, " + pack.getId() + " was previously visited already");
-        }
-
-        for (Dependency dep : pack.getDependencies()) {
-            for (PackageId id : idPackageMapping.keySet()) {
-                if (dep.matches(id)) {
-                    orderDependencies(idFileMap, packageFileMapping, idPackageMapping, idPackageMapping.get(id), visited);
-                    break;
-                }
-            }
-        }
-
-        idFileMap.put(pack.getId(), packageFileMapping.get(pack));
-        idPackageMapping.remove(pack.getId());
     }
 
     private static void printVersion(final Logger logger) {

@@ -19,9 +19,19 @@ package org.apache.sling.feature.cpconverter;
 import static java.util.Objects.requireNonNull;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
+import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
+import org.apache.jackrabbit.vault.packaging.Dependency;
+import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageManager;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
@@ -111,82 +121,133 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return mainPackageAssembler;
     }
 
-    public void convert(File contentPackage) throws Exception {
-        requireNonNull(contentPackage , "Null content-package can not be converted.");
+    public void convert(File...contentPackages) throws Exception {
+        requireNonNull(contentPackages , "Null content-package(s) can not be converted.");
 
-        if (!contentPackage.exists() || !contentPackage.isFile()) {
-            throw new IllegalArgumentException("Content-package "
-                                            + contentPackage
-                                            + " does not exist or it is not a valid file.");
+        logger.info("Ordering input content-package(s) {}...", Arrays.toString(contentPackages));
+
+        Collection<VaultPackage> orderedContentPackages = firstPass(contentPackages);
+
+        logger.info("New content-package(s) order: {}", orderedContentPackages);
+
+        for (VaultPackage vaultPackage : orderedContentPackages) {
+            try {
+                mainPackageAssembler = VaultPackageAssembler.create(vaultPackage);
+                PackageProperties packageProperties = vaultPackage.getProperties();
+
+                String group = requireNonNull(packageProperties.getProperty(PackageProperties.NAME_GROUP),
+                                              PackageProperties.NAME_GROUP
+                                              + " property not found in content-package "
+                                              + vaultPackage
+                                              + ", please check META-INF/vault/properties.xml")
+                                              .replace('/', '.');
+
+                String name = requireNonNull(packageProperties.getProperty(PackageProperties.NAME_NAME),
+                                            PackageProperties.NAME_NAME
+                                            + " property not found in content-package "
+                                            + vaultPackage
+                                            + ", please check META-INF/vault/properties.xml");
+
+                String version = packageProperties.getProperty(PackageProperties.NAME_VERSION);
+                if (version == null || version.isEmpty()) {
+                    version = DEFEAULT_VERSION;
+                }
+
+                String description = packageProperties.getDescription();
+
+                featuresManager.init(group,
+                                     name,
+                                     version,
+                                     description);
+
+                logger.info("Converting content-package '{}'...", vaultPackage.getId());
+
+                traverse(vaultPackage);
+
+                // attach all unmatched resources as new content-package
+
+                File contentPackageArchive = mainPackageAssembler.createPackage();
+
+                // deploy the new zip content-package to the local mvn bundles dir
+
+                artifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive),
+                                         featuresManager.getTargetFeature().getId().getGroupId(),
+                                         featuresManager.getTargetFeature().getId().getArtifactId(),
+                                         featuresManager.getTargetFeature().getId().getVersion(),
+                                         PACKAGE_CLASSIFIER,
+                                         ZIP_TYPE);
+
+                featuresManager.addArtifact(null,
+                                            featuresManager.getTargetFeature().getId().getGroupId(),
+                                            featuresManager.getTargetFeature().getId().getArtifactId(),
+                                            featuresManager.getTargetFeature().getId().getVersion(),
+                                            PACKAGE_CLASSIFIER,
+                                            ZIP_TYPE);
+
+                // finally serialize the Feature Model(s) file(s)
+
+                aclManager.addRepoinitExtension(mainPackageAssembler, featuresManager.getTargetFeature());
+
+                logger.info("Conversion complete!");
+
+                featuresManager.serialize();
+
+                aclManager.reset();
+            } finally {
+                try {
+                    vaultPackage.close();
+                } catch (Exception e) {
+                    // close quietly
+                }
+            }
         }
+    }
 
-        logger.info("Reading content-package '{}'...", contentPackage);
+    protected Collection<VaultPackage> firstPass(File...contentPackages) throws Exception {
+        Map<PackageId, VaultPackage> idFileMap = new LinkedHashMap<>();
+        Map<PackageId, VaultPackage> idPackageMapping = new HashMap<>();
 
-        try (VaultPackage vaultPackage = packageManager.open(contentPackage, isStrictValidation())) {
-            logger.info("content-package '{}' successfully read!", contentPackage);
+        for (File contentPackage : contentPackages) {
+            requireNonNull(contentPackage, "Null content-package can not be converted.");
 
-            mainPackageAssembler = VaultPackageAssembler.create(vaultPackage);
-            PackageProperties packageProperties = vaultPackage.getProperties();
-
-            String group = requireNonNull(packageProperties.getProperty(PackageProperties.NAME_GROUP),
-                                          PackageProperties.NAME_GROUP
-                                          + " property not found in content-package "
-                                          + contentPackage
-                                          + ", please check META-INF/vault/properties.xml")
-                                          .replace('/', '.');
-
-            String name = requireNonNull(packageProperties.getProperty(PackageProperties.NAME_NAME),
-                                        PackageProperties.NAME_NAME
-                                        + " property not found in content-package "
-                                        + contentPackage
-                                        + ", please check META-INF/vault/properties.xml");
-
-            String version = packageProperties.getProperty(PackageProperties.NAME_VERSION);
-            if (version == null || version.isEmpty()) {
-                version = DEFEAULT_VERSION;
+            if (!contentPackage.exists() || !contentPackage.isFile()) {
+                throw new IllegalArgumentException("File " + contentPackage + " does not exist or it is a directory");
             }
 
-            String description = packageProperties.getDescription();
+            logger.info("Reading content-package '{}'...", contentPackage);
 
-            featuresManager.init(group,
-                                 name,
-                                 version,
-                                 description);
+            VaultPackage pack = packageManager.open(contentPackage, isStrictValidation());
+            idPackageMapping.put(pack.getId(), pack);
 
-            logger.info("Converting content-package '{}'...", vaultPackage.getId());
-
-            traverse(vaultPackage);
-
-            // attach all unmatched resources as new content-package
-
-            File contentPackageArchive = mainPackageAssembler.createPackage();
-
-            // deploy the new zip content-package to the local mvn bundles dir
-
-            artifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive),
-                                     featuresManager.getTargetFeature().getId().getGroupId(),
-                                     featuresManager.getTargetFeature().getId().getArtifactId(),
-                                     featuresManager.getTargetFeature().getId().getVersion(),
-                                     PACKAGE_CLASSIFIER,
-                                     ZIP_TYPE);
-
-            featuresManager.addArtifact(null,
-                                        featuresManager.getTargetFeature().getId().getGroupId(),
-                                        featuresManager.getTargetFeature().getId().getArtifactId(),
-                                        featuresManager.getTargetFeature().getId().getVersion(),
-                                        PACKAGE_CLASSIFIER,
-                                        ZIP_TYPE);
-
-            // finally serialize the Feature Model(s) file(s)
-
-            aclManager.addRepoinitExtension(mainPackageAssembler, featuresManager.getTargetFeature());
-
-            logger.info("Conversion complete!");
-
-            featuresManager.serialize();
-
-            aclManager.reset();
+            logger.info("content-package '{}' successfully read!", contentPackage);
         }
+
+        for (VaultPackage pack : new HashSet<VaultPackage>(idPackageMapping.values())) {
+            orderDependencies(idFileMap, idPackageMapping, pack, new HashSet<PackageId>());
+        }
+
+        return idFileMap.values();
+    }
+
+    private void orderDependencies(Map<PackageId, VaultPackage> idFileMap,
+                                   Map<PackageId, VaultPackage> idPackageMapping,
+                                   VaultPackage pack,
+                                   Set<PackageId> visited) throws CyclicDependencyException {
+        if (!visited.add(pack.getId())) {
+            throw new CyclicDependencyException("Cyclic dependency detected, " + pack.getId() + " was previously visited already");
+        }
+
+        for (Dependency dep : pack.getDependencies()) {
+            for (PackageId id : idPackageMapping.keySet()) {
+                if (dep.matches(id)) {
+                    orderDependencies(idFileMap, idPackageMapping, idPackageMapping.get(id), visited);
+                    break;
+                }
+            }
+        }
+
+        idFileMap.put(pack.getId(), pack);
+        idPackageMapping.remove(pack.getId());
     }
 
     public void processSubPackage(String path, File contentPackage) throws Exception {
