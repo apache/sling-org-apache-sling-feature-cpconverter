@@ -78,14 +78,6 @@ public class VaultPackageAssemblerTest {
         }
         assertNotNull(resourceEntry);
 
-        DefaultWorkspaceFilter filter = new DefaultWorkspaceFilter();
-        ZipEntry filtersEntry = zipFile.getEntry("META-INF/vault/filter.xml");
-        filter.load(zipFile.getInputStream(filtersEntry));
-
-        for (PathFilterSet filterSet : filter.getFilterSets()) {
-            assertEquals(ImportMode.MERGE, filterSet.getImportMode());
-        }
-
         zipFile.close();
     }
 

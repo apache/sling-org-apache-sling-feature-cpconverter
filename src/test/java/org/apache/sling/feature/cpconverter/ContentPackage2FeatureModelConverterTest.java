@@ -255,8 +255,8 @@ public class ContentPackage2FeatureModelConverterTest {
     }
 
     private void addSamePidConfiguration(String runmodeA, String runmodeB) throws Exception {
-        File outputDirectory = new File(System.getProperty("testDirectory"), getClass().getName() + '_' + System.currentTimeMillis());
-        URL packageUrl = getClass().getResource("test-content-package.zip");
+            File outputDirectory = new File(System.getProperty("testDirectory"), getClass().getName() + '_' + System.currentTimeMillis());
+            URL packageUrl = getClass().getResource("test-content-package.zip");
         File packageFile = FileUtils.toFile(packageUrl);
 
         converter.setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
