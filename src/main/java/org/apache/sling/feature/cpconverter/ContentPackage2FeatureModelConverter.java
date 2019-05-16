@@ -20,6 +20,13 @@ import static java.util.Objects.requireNonNull;
 
 import java.io.File;
 
+import org.apache.jackrabbit.vault.fs.api.DumpContext;
+import org.apache.jackrabbit.vault.fs.api.ImportMode;
+import org.apache.jackrabbit.vault.fs.api.PathFilter;
+import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
+import org.apache.jackrabbit.vault.fs.api.PathMapping;
+import org.apache.jackrabbit.vault.fs.config.DefaultWorkspaceFilter;
+import org.apache.jackrabbit.vault.fs.filter.DefaultPathFilter;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.PackageManager;
@@ -205,8 +212,35 @@ public class ContentPackage2FeatureModelConverter {
             // merge filters to the main new package
             mainPackageAssembler.mergeFilters(vaultPackage.getMetaInf().getFilter());
 
-            // add the metadata-only package one to the main package
-            File clonedPackage = VaultPackageAssembler.create(vaultPackage).createPackage();
+            // add the metadata-only package one to the main package with overriden filter
+            DefaultWorkspaceFilter filter = new DefaultWorkspaceFilter();
+            PathFilterSet pfs = new PathFilterSet();
+            DefaultPathFilter dpf = new DefaultPathFilter() {
+                
+               @Override
+               public boolean matches(String path) {
+                   return true;
+               }
+
+               @Override
+               public void dump(DumpContext ctx, boolean isLast) {
+                   ctx.println(isLast, "ALL");
+               }
+
+               @Override
+               public boolean isAbsolute() {
+                   return true;
+               }
+               
+               @Override
+               public String getPattern() {
+                   return ".*";
+               }
+            };
+            pfs.addExclude(dpf);
+            pfs.setImportMode(ImportMode.MERGE);
+            filter.add(pfs);
+            File clonedPackage = VaultPackageAssembler.create(vaultPackage, filter).createPackage();
             mainPackageAssembler.addEntry(path, clonedPackage);
         }
     }
