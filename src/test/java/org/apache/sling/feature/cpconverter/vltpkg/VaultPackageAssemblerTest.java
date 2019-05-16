@@ -77,6 +77,8 @@ public class VaultPackageAssemblerTest {
             resourceEntry = zipFile.getEntry("jcr_root");
         }
         assertNotNull(resourceEntry);
+
+        zipFile.close();
     }
 
     @Parameters
