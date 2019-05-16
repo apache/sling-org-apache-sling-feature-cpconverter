@@ -240,9 +240,6 @@
           <systemPropertyVariables>
             <testDirectory>${project.build.directory}/unit-tests</testDirectory>
           </systemPropertyVariables>
-          <excludes>
-            <exclude></exclude>
-          </excludes>
         </configuration>
       </plugin>
 
