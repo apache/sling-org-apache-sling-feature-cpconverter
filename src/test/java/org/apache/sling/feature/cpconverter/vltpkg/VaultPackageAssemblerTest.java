@@ -50,7 +50,7 @@ public class VaultPackageAssemblerTest {
 
     @Before
     public void setUp() {
-        testDirectory = new File(System.getProperty("testDirectory"), getClass().getName() + '_' + System.currentTimeMillis());
+        testDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
     }
 
     @Test

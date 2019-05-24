@@ -35,7 +35,7 @@ public class DefaultBundlesDeployerTest {
 
     @Before
     public void setUp() {
-        File outputDirectory = new File(System.getProperty("testDirectory"), getClass().getName() + '_' + System.currentTimeMillis());
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
         artifactDeployer = new DefaultArtifactsDeployer(outputDirectory);
     }
 
