@@ -28,6 +28,7 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.jackrabbit.vault.fs.api.ImportMode;
 import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
 import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
 import org.apache.jackrabbit.vault.fs.config.DefaultWorkspaceFilter;
@@ -58,12 +59,22 @@ public class VaultPackageAssembler implements EntryHandler {
     private static final File TMP_DIR = new File(System.getProperty("java.io.tmpdir"), "syntethic-content-packages");
 
     private static final Pattern OSGI_BUNDLE_PATTERN = Pattern.compile("(jcr_root)?/apps/[^/]+/install(\\.([^/]+))?/.+\\.jar");
-    
+
     public static VaultPackageAssembler create(VaultPackage vaultPackage) {
         return create(vaultPackage, vaultPackage.getMetaInf().getFilter());
     }
 
-    public static VaultPackageAssembler create(VaultPackage vaultPackage, WorkspaceFilter filter) {
+    public static File createSynthetic(VaultPackage vaultPackage) throws Exception {
+        DefaultWorkspaceFilter filter = new DefaultWorkspaceFilter();
+        PathFilterSet filterSet = new PathFilterSet();
+        SyntheticPathFilter pathFilter = new SyntheticPathFilter();
+        filterSet.addExclude(pathFilter);
+        filterSet.setImportMode(ImportMode.MERGE);
+        filter.add(filterSet);
+        return create(vaultPackage, filter).createPackage();
+    }
+
+    private static VaultPackageAssembler create(VaultPackage vaultPackage, WorkspaceFilter filter) {
         File storingDirectory = new File(TMP_DIR, vaultPackage.getFile().getName() + "-deflated");
         // avoid any possible Stream is not a content package. Missing 'jcr_root' error
         File jcrRootDirectory = new File(storingDirectory, JCR_ROOT_DIR_NAME);
