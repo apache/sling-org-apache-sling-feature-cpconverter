@@ -16,38 +16,15 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-
-import org.apache.commons.io.IOUtils;
-import org.apache.jackrabbit.vault.fs.io.Archive;
-import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
+import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 
-public final class ContentPackageEntryHandler extends AbstractRegexEntryHandler {
-
-    public ContentPackageEntryHandler() {
-        super("(?:jcr_root)?/etc/packages/.+\\.zip");
-    }
+public final class ContentPackageEntryHandler extends AbstractContentPackageHandler {
 
     @Override
-    public void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter) throws Exception {
-        logger.info("Processing sub-content package '{}'...", entry.getName());
-
-        File temporaryContentPackage = File.createTempFile("content-package", entry.getName());
-
-        try (InputStream input = archive.openInputStream(entry);
-                OutputStream output = new FileOutputStream(temporaryContentPackage)) {
-            IOUtils.copy(input, output);
-        }
-
-        try {
-            converter.processSubPackage(path, temporaryContentPackage);
-        } finally {
-            temporaryContentPackage.delete();
-        }
+    protected void processSubPackage(String path, VaultPackage contentPackage, ContentPackage2FeatureModelConverter converter)
+            throws Exception {
+        converter.processSubPackage(path, contentPackage);
     }
 
 }

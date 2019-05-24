@@ -25,16 +25,15 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
 import org.apache.jackrabbit.vault.packaging.Dependency;
 import org.apache.jackrabbit.vault.packaging.PackageId;
-import org.apache.jackrabbit.vault.packaging.PackageManager;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
-import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
 import org.apache.sling.feature.cpconverter.acl.AclManager;
 import org.apache.sling.feature.cpconverter.artifacts.ArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.artifacts.FileArtifactWriter;
@@ -43,9 +42,8 @@ import org.apache.sling.feature.cpconverter.filtering.ResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
 import org.apache.sling.feature.cpconverter.vltpkg.BaseVaultPackageScanner;
+import org.apache.sling.feature.cpconverter.vltpkg.RecollectorVaultPackageScanner;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanner {
 
@@ -55,9 +53,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     private static final String DEFEAULT_VERSION = "0.0.0";
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
-
-    private final PackageManager packageManager = new PackageManagerImpl();
+    private final Map<PackageId, String> subContentPackages = new HashMap<>();
 
     private EntryHandlersManager handlersManager;
 
@@ -71,12 +67,15 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     private VaultPackageAssembler mainPackageAssembler = null;
 
+    private RecollectorVaultPackageScanner recollectorVaultPackageScanner;
+
     public ContentPackage2FeatureModelConverter() {
         this(false);
     }
 
     public ContentPackage2FeatureModelConverter(boolean strictValidation) {
         super(strictValidation);
+        this.recollectorVaultPackageScanner = new RecollectorVaultPackageScanner(this, this.packageManager, strictValidation, subContentPackages);
     }
 
     public ContentPackage2FeatureModelConverter setEntryHandlersManager(EntryHandlersManager handlersManager) {
@@ -122,38 +121,68 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     public void convert(File...contentPackages) throws Exception {
         requireNonNull(contentPackages , "Null content-package(s) can not be converted.");
+        secondPass(firstPass(contentPackages));
+    }
 
-        Collection<VaultPackage> orderedContentPackages = firstPass(contentPackages);
+    protected Collection<VaultPackage> firstPass(File...contentPackages) throws Exception {
+        Map<PackageId, VaultPackage> idFileMap = new LinkedHashMap<>();
+        Map<PackageId, VaultPackage> idPackageMapping = new ConcurrentHashMap<>();
 
+        for (File contentPackage : contentPackages) {
+            requireNonNull(contentPackage, "Null content-package can not be converted.");
+
+            if (!contentPackage.exists() || !contentPackage.isFile()) {
+                throw new IllegalArgumentException("File " + contentPackage + " does not exist or it is a directory");
+            }
+
+            logger.info("Reading content-package '{}'...", contentPackage);
+
+            VaultPackage pack = open(contentPackage);
+            idPackageMapping.put(pack.getId(), pack);
+
+            // analyze sub-content packages in order to filter out
+            // possible outdated conflictring packages
+            recollectorVaultPackageScanner.traverse(pack);
+
+            logger.info("content-package '{}' successfully read!", contentPackage);
+        }
+
+        logger.info("Ordering input content-package(s) {}...", idPackageMapping.keySet());
+
+        for (VaultPackage pack : idPackageMapping.values()) {
+            orderDependencies(idFileMap, idPackageMapping, pack, new HashSet<PackageId>());
+        }
+
+        logger.info("New content-package(s) order: {}", idFileMap.keySet());
+
+        return idFileMap.values();
+    }
+
+    protected void secondPass(Collection<VaultPackage> orderedContentPackages) throws Exception {
         for (VaultPackage vaultPackage : orderedContentPackages) {
             try {
                 mainPackageAssembler = VaultPackageAssembler.create(vaultPackage);
-                PackageProperties packageProperties = vaultPackage.getProperties();
+                PackageId packageProperties = vaultPackage.getId();
 
-                String group = requireNonNull(packageProperties.getProperty(PackageProperties.NAME_GROUP),
+                String group = requireNonNull(packageProperties.getGroup(),
                                               PackageProperties.NAME_GROUP
                                               + " property not found in content-package "
                                               + vaultPackage
                                               + ", please check META-INF/vault/properties.xml")
                                               .replace('/', '.');
 
-                String name = requireNonNull(packageProperties.getProperty(PackageProperties.NAME_NAME),
+                String name = requireNonNull(packageProperties.getName(),
                                             PackageProperties.NAME_NAME
                                             + " property not found in content-package "
                                             + vaultPackage
                                             + ", please check META-INF/vault/properties.xml");
 
-                String version = packageProperties.getProperty(PackageProperties.NAME_VERSION);
+                String version = packageProperties.getVersionString();
                 if (version == null || version.isEmpty()) {
                     version = DEFEAULT_VERSION;
                 }
 
-                String description = packageProperties.getDescription();
-
-                featuresManager.init(group,
-                                     name,
-                                     version,
-                                     description);
+                featuresManager.init(group, name, version);
 
                 logger.info("Converting content-package '{}'...", vaultPackage.getId());
 
@@ -198,36 +227,6 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         }
     }
 
-    protected Collection<VaultPackage> firstPass(File...contentPackages) throws Exception {
-        Map<PackageId, VaultPackage> idFileMap = new LinkedHashMap<>();
-        Map<PackageId, VaultPackage> idPackageMapping = new HashMap<>();
-
-        for (File contentPackage : contentPackages) {
-            requireNonNull(contentPackage, "Null content-package can not be converted.");
-
-            if (!contentPackage.exists() || !contentPackage.isFile()) {
-                throw new IllegalArgumentException("File " + contentPackage + " does not exist or it is a directory");
-            }
-
-            logger.info("Reading content-package '{}'...", contentPackage);
-
-            VaultPackage pack = packageManager.open(contentPackage, isStrictValidation());
-            idPackageMapping.put(pack.getId(), pack);
-
-            logger.info("content-package '{}' successfully read!", contentPackage);
-        }
-
-        logger.info("Ordering input content-package(s) {}...", idFileMap.keySet());
-
-        for (VaultPackage pack : new HashSet<VaultPackage>(idPackageMapping.values())) {
-            orderDependencies(idFileMap, idPackageMapping, pack, new HashSet<PackageId>());
-        }
-
-        logger.info("New content-package(s) order: {}", idFileMap.keySet());
-
-        return idFileMap.values();
-    }
-
     private void orderDependencies(Map<PackageId, VaultPackage> idFileMap,
                                    Map<PackageId, VaultPackage> idPackageMapping,
                                    VaultPackage pack,
@@ -249,21 +248,28 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         idPackageMapping.remove(pack.getId());
     }
 
-    public void processSubPackage(String path, File contentPackage) throws Exception {
+    public void processSubPackage(String path, VaultPackage vaultPackage) throws Exception {
         requireNonNull(path, "Impossible to process a null vault package");
-        requireNonNull(contentPackage, "Impossible to process a null vault package");
+        requireNonNull(vaultPackage, "Impossible to process a null vault package");
 
-        try (VaultPackage vaultPackage = packageManager.open(contentPackage, isStrictValidation())) {
-            // scan the detected package, first
-            traverse(vaultPackage);
-
-            // merge filters to the main new package
-            mainPackageAssembler.mergeFilters(vaultPackage.getMetaInf().getFilter());
-
-            // add the metadata-only package one to the main package
-            File clonedPackage = VaultPackageAssembler.create(vaultPackage).createPackage();
-            mainPackageAssembler.addEntry(path, clonedPackage);
+        if (!isSubContentPackageIncluded(path)) {
+            logger.info("Sub content-package {} is filtered out, so it won't be processed.", path);
+            return;
         }
+
+        // scan the detected package, first
+        traverse(vaultPackage);
+
+        // merge filters to the main new package
+        mainPackageAssembler.mergeFilters(vaultPackage.getMetaInf().getFilter());
+
+        // add the metadata-only package one to the main package
+        File clonedPackage = VaultPackageAssembler.create(vaultPackage).createPackage();
+        mainPackageAssembler.addEntry(path, clonedPackage);
+    }
+
+    protected boolean isSubContentPackageIncluded(String path) {
+        return subContentPackages.containsValue(path);
     }
 
     @Override

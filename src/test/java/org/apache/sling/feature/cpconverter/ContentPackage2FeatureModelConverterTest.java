@@ -112,7 +112,7 @@ public class ContentPackage2FeatureModelConverterTest {
         URL packageUrl = getClass().getResource("test-content-package.zip");
         File packageFile = FileUtils.toFile(packageUrl);
 
-        File outputDirectory = new File(System.getProperty("testDirectory"), getClass().getName() + '_' + System.currentTimeMillis());
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
         converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null))
                  .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
@@ -237,7 +237,7 @@ public class ContentPackage2FeatureModelConverterTest {
         URL packageUrl = getClass().getResource("test-content-package-unacceptable.zip");
         File packageFile = FileUtils.toFile(packageUrl);
 
-        File outputDirectory = new File(System.getProperty("testDirectory"), getClass().getName() + '_' + System.currentTimeMillis());
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
         converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null))
                  .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
@@ -255,7 +255,7 @@ public class ContentPackage2FeatureModelConverterTest {
     }
 
     private void addSamePidConfiguration(String runmodeA, String runmodeB) throws Exception {
-        File outputDirectory = new File(System.getProperty("testDirectory"), getClass().getName() + '_' + System.currentTimeMillis());
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
         URL packageUrl = getClass().getResource("test-content-package.zip");
         File packageFile = FileUtils.toFile(packageUrl);
 
@@ -273,7 +273,7 @@ public class ContentPackage2FeatureModelConverterTest {
         URL packageUrl = getClass().getResource("test-content-package.zip");
         File packageFile = FileUtils.toFile(packageUrl);
 
-        File outputDirectory = new File(System.getProperty("testDirectory"), getClass().getName() + '_' + System.currentTimeMillis());
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
         String overrideId = "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0:${project.version}";
         converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, overrideId, null))
@@ -335,6 +335,15 @@ public class ContentPackage2FeatureModelConverterTest {
     public void testDependencyCycle() throws Exception {
         File[] contentPackages = load(TEST_PACKAGES_CYCLIC_DEPENDENCY);
         converter.firstPass(contentPackages);
+    }
+
+    @Test
+    public void includeLatestUpdatedContentPackagesOnly() throws Exception {
+        File[] contentPackages = load("test-content-package.zip", "test-content-package-2.zip");
+        converter.firstPass(contentPackages);
+
+        assertTrue(converter.isSubContentPackageIncluded("jcr_root/etc/packages/asd/test-content-0.2.zip"));
+        assertFalse(converter.isSubContentPackageIncluded("jcr_root/etc/packages/asd/test-content.zip"));
     }
 
     private File[] load(String...resources) {

@@ -22,10 +22,7 @@ import org.apache.sling.feature.Feature;
 
 public interface FeaturesManager {
 
-    void init(String groupId,
-              String artifactId,
-              String version,
-              String description);
+    void init(String groupId, String artifactId, String version);
 
     Feature getTargetFeature();
 

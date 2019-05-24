@@ -95,7 +95,7 @@ public final class BundleEntryHandlerTest {
 
         ContentPackage2FeatureModelConverter converter = spy(ContentPackage2FeatureModelConverter.class);
 
-        File testDirectory = new File(System.getProperty("testDirectory"), getClass().getName() + '_' + System.currentTimeMillis());
+        File testDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
         when(converter.getArtifactsDeployer()).thenReturn(new DefaultArtifactsDeployer(testDirectory));
         when(converter.getFeaturesManager()).thenReturn(featuresManager);
 

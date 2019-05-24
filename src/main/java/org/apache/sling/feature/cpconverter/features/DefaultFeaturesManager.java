@@ -86,12 +86,8 @@ public class DefaultFeaturesManager implements FeaturesManager {
         this.properties = properties;
     }
 
-    public void init(String groupId,
-                     String artifactId,
-                     String version,
-                     String description) {
+    public void init(String groupId, String artifactId, String version) {
         targetFeature = new Feature(new ArtifactId(groupId, artifactId, version, null, SLING_OSGI_FEATURE_TILE_TYPE));
-        targetFeature.setDescription(description);
         runModes.clear();
     }
 

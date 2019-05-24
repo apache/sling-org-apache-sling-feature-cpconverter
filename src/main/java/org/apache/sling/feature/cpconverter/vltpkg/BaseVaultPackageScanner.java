@@ -14,29 +14,54 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-
 package org.apache.sling.feature.cpconverter.vltpkg;
 
 import static java.util.Objects.requireNonNull;
 
+import java.io.File;
+
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
+import org.apache.jackrabbit.vault.packaging.PackageManager;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
+import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class BaseVaultPackageScanner {
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
+    protected final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final boolean strictValidation;
+    protected final PackageManager packageManager;
+
+    protected final boolean strictValidation;
 
     public BaseVaultPackageScanner(boolean strictValidation) {
+        this(new PackageManagerImpl(), strictValidation);
+    }
+
+    public BaseVaultPackageScanner(PackageManager packageManager, boolean strictValidation) {
+        this.packageManager = packageManager;
         this.strictValidation = strictValidation;
     }
 
-    public final boolean isStrictValidation() {
-        return strictValidation;
+    public VaultPackage open(File vaultPackage) throws Exception {
+        requireNonNull(vaultPackage, "Impossible to process a null vault package");
+        return packageManager.open(vaultPackage, strictValidation);
+    }
+
+    public final void traverse(File vaultPackageFile, boolean closeOnTraversed) throws Exception {
+        VaultPackage vaultPackage = null;
+        try {
+            vaultPackage = open(vaultPackageFile);
+            traverse(vaultPackage);
+        } finally {
+            if (closeOnTraversed) {
+                if (vaultPackage != null) {
+                    vaultPackage.close();
+                }
+            }
+        }
     }
 
     public final void traverse(VaultPackage vaultPackage) throws Exception {
@@ -66,11 +91,11 @@ public abstract class BaseVaultPackageScanner {
             return;
         }
 
-        logger.info("Processing entry {}...", entryPath);
+        logger.debug("Processing entry {}...", entryPath);
 
         onFile(entryPath, archive, entry);
 
-        logger.info("Entry {} successfully processed.", entryPath);
+        logger.debug("Entry {} successfully processed.", entryPath);
     }
 
     private static String newPath(String path, String entryName) {
