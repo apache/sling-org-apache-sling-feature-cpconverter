@@ -16,46 +16,40 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
-import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Feature;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.acl.DefaultAclManager;
-import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
+import org.apache.sling.feature.cpconverter.acl.AclManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
+import org.apache.sling.feature.cpconverter.shared.AbstractContentPackage2FeatureModelConverterTest;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
-public final class RepPolicyEntryHandlerTest {
+import com.google.inject.Inject;
 
+public final class RepPolicyEntryHandlerTest extends AbstractContentPackage2FeatureModelConverterTest {
+
+    @Inject
     private RepPolicyEntryHandler handler;
 
-    @Before
-    public void setUp() {
-        handler = new RepPolicyEntryHandler();
-    }
+    @Inject
+    private FeaturesManager featuresManager;
 
-    @After
-    public void tearDown() {
-        handler = null;
-    }
+    @Inject
+    private AclManager aclManager;
 
     @Test
     public void doesNotMatch() {
@@ -154,24 +148,21 @@ public final class RepPolicyEntryHandlerTest {
 
         when(archive.openInputStream(entry)).thenReturn(getClass().getResourceAsStream(path));
 
-        Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
-        FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);
-        when(featuresManager.getTargetFeature()).thenReturn(feature);
-        ContentPackage2FeatureModelConverter converter = spy(ContentPackage2FeatureModelConverter.class);
-        when(converter.getFeaturesManager()).thenReturn(featuresManager);
-        when(converter.getAclManager()).thenReturn(new DefaultAclManager());
+        featuresManager.init("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1");
 
-        handler.handle(path, archive, entry, converter);
+        handler.handle(path, archive, entry);
+
+        Feature feature = featuresManager.getTargetFeature();
 
         if (systemUsers != null) {
             for (String systemUser : systemUsers) {
-                converter.getAclManager().addSystemUser(systemUser);
+                aclManager.addSystemUser(systemUser);
             }
         }
 
         when(packageAssembler.getEntry(anyString())).thenReturn(new File("itdoesnotexist"));
 
-        converter.getAclManager().addRepoinitExtension(packageAssembler, feature);
+        aclManager.addRepoinitExtension(packageAssembler, feature);
         return feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
     }
 

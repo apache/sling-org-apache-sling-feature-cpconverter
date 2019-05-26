@@ -14,27 +14,4 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.sling.feature.cpconverter.handlers;
-
-import java.util.Iterator;
-import java.util.ServiceLoader;
-
-public class DefaultEntryHandlersManager implements EntryHandlersManager {
-
-    private final ServiceLoader<EntryHandler> entryHandlers = ServiceLoader.load(EntryHandler.class);
-
-    @Override
-    public EntryHandler getEntryHandlerByEntryPath(String path) {
-        Iterator<EntryHandler> entryHandlersIterator = entryHandlers.iterator();
-        while (entryHandlersIterator.hasNext()) {
-            EntryHandler entryHandler = entryHandlersIterator.next();
-
-            if (entryHandler.matches(path)) {
-                return entryHandler;
-            }
-        }
-
-        return null;
-    }
-
-}
+package org.apache.sling.feature.cpconverter.inject;

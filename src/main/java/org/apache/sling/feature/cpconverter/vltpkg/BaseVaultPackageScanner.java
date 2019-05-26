@@ -24,26 +24,22 @@ import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.PackageManager;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
-import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 
 public abstract class BaseVaultPackageScanner {
 
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
-    protected final PackageManager packageManager;
+    @Inject
+    protected PackageManager packageManager;
 
-    protected final boolean strictValidation;
-
-    public BaseVaultPackageScanner(boolean strictValidation) {
-        this(new PackageManagerImpl(), strictValidation);
-    }
-
-    public BaseVaultPackageScanner(PackageManager packageManager, boolean strictValidation) {
-        this.packageManager = packageManager;
-        this.strictValidation = strictValidation;
-    }
+    @Inject
+    @Named("packagemanager.validation.strict")
+    protected boolean strictValidation;
 
     public VaultPackage open(File vaultPackage) throws Exception {
         requireNonNull(vaultPackage, "Impossible to process a null vault package");
@@ -53,7 +49,7 @@ public abstract class BaseVaultPackageScanner {
     public final void traverse(File vaultPackageFile, boolean closeOnTraversed) throws Exception {
         VaultPackage vaultPackage = null;
         try {
-            vaultPackage = open(vaultPackageFile);
+            vaultPackage = packageManager.open(vaultPackageFile, strictValidation);
             traverse(vaultPackage);
         } finally {
             if (closeOnTraversed) {

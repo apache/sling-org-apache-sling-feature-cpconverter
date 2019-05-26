@@ -53,6 +53,15 @@
     </dependency>
 
     <!--
+     | Dependency injection
+    -->
+    <dependency>
+      <groupId>com.google.inject</groupId>
+      <artifactId>guice</artifactId>
+      <version>4.2.2</version>
+    </dependency>
+
+    <!--
      | CLI
     -->
     <dependency>
@@ -226,7 +235,6 @@
         <artifactId>apache-rat-plugin</artifactId>
           <configuration>
           <excludes>
-            <exclude>src/main/resources/META-INF/services/org.apache.sling.feature.cpconverter.handlers.EntryHandler</exclude>
             <exclude>src/main/legal/NOTICE-with-deps</exclude>
           </excludes>
         </configuration>

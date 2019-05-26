@@ -22,38 +22,34 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
-import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Feature;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.acl.DefaultAclManager;
-import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
+import org.apache.sling.feature.cpconverter.acl.AclManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
+import org.apache.sling.feature.cpconverter.shared.AbstractContentPackage2FeatureModelConverterTest;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
-public class SystemUsersEntryHandlerTest {
+import com.google.inject.Inject;
 
+public class SystemUsersEntryHandlerTest extends AbstractContentPackage2FeatureModelConverterTest {
+
+    @Inject
     private SystemUsersEntryHandler systemUsersEntryHandler;
 
-    @Before
-    public void setUp() {
-        systemUsersEntryHandler = new SystemUsersEntryHandler();
-    }
+    @Inject
+    private FeaturesManager featuresManager;
 
-    @After
-    public void tearDown() {
-        systemUsersEntryHandler = null;
-    }
+    @Inject
+    private AclManager aclManager;
 
     @Test
     public void doesNotMatch() {
@@ -91,18 +87,14 @@ public class SystemUsersEntryHandlerTest {
 
         when(archive.openInputStream(entry)).thenReturn(getClass().getResourceAsStream(path));
 
-        Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
-        FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);
-        when(featuresManager.getTargetFeature()).thenReturn(feature);
-        ContentPackage2FeatureModelConverter converter = spy(ContentPackage2FeatureModelConverter.class);
-        when(converter.getFeaturesManager()).thenReturn(featuresManager);
-        when(converter.getAclManager()).thenReturn(new DefaultAclManager());
+        featuresManager.init("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1");
 
-        systemUsersEntryHandler.handle(path, archive, entry, converter);
+        systemUsersEntryHandler.handle(path, archive, entry);
 
         when(packageAssembler.getEntry(anyString())).thenReturn(new File("itdoesnotexist"));
 
-        converter.getAclManager().addRepoinitExtension(packageAssembler, feature);
+        Feature feature = featuresManager.getTargetFeature();
+        aclManager.addRepoinitExtension(packageAssembler, feature);
         return feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
     }
 

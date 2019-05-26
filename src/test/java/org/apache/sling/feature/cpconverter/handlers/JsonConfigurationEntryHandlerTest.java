@@ -23,7 +23,6 @@ import java.io.IOException;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.junit.Test;
 
 public class JsonConfigurationEntryHandlerTest {
@@ -38,9 +37,7 @@ public class JsonConfigurationEntryHandlerTest {
         when(entry.getName()).thenReturn(resourceConfiguration.substring(resourceConfiguration.lastIndexOf('/') + 1));
         when(archive.openInputStream(entry)).thenReturn(getClass().getResourceAsStream(resourceConfiguration));
 
-        ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
-
-        new JsonConfigurationEntryHandler().handle(resourceConfiguration, archive, entry, converter);
+        new JsonConfigurationEntryHandler().handle(resourceConfiguration, archive, entry);
     }
 
 }

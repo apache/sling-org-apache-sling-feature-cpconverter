@@ -20,20 +20,24 @@ import java.io.InputStream;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.acl.AclManager;
 import org.apache.sling.feature.cpconverter.shared.AbstractJcrNodeParser;
 import org.xml.sax.Attributes;
 
+import com.google.inject.Inject;
+
 public final class SystemUsersEntryHandler extends AbstractRegexEntryHandler {
+
+    @Inject
+    private AclManager aclManager;
 
     public SystemUsersEntryHandler() {
         super("(jcr_root)?/home/users/.*/\\.content.xml");
     }
 
     @Override
-    public void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter)
-            throws Exception {
-        SystemUserParser systemUserParser = new SystemUserParser(converter);
+    public void handle(String path, Archive archive, Entry entry) throws Exception {
+        SystemUserParser systemUserParser = new SystemUserParser(aclManager);
         try (InputStream input = archive.openInputStream(entry)) {
             systemUserParser.parse(input);
         }
@@ -45,18 +49,18 @@ public final class SystemUsersEntryHandler extends AbstractRegexEntryHandler {
 
         private final static String REP_AUTHORIZABLE_ID = "rep:authorizableId";
 
-        private final ContentPackage2FeatureModelConverter converter;
+        private final AclManager aclManager;
 
-        public SystemUserParser(ContentPackage2FeatureModelConverter converter) {
+        public SystemUserParser(AclManager aclManager) {
             super(REP_SYSTEM_USER);
-            this.converter = converter;
+            this.aclManager = aclManager;
         }
 
         @Override
         protected void onJcrRootElement(String uri, String localName, String qName, Attributes attributes) {
             String authorizableId = attributes.getValue(REP_AUTHORIZABLE_ID);
             if (authorizableId != null && !authorizableId.isEmpty()) {
-                converter.getAclManager().addSystemUser(authorizableId);
+                aclManager.addSystemUser(authorizableId);
             }
         }
 

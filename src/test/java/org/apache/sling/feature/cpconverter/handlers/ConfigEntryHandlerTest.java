@@ -21,11 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import java.io.StringReader;
@@ -34,17 +30,23 @@ import java.util.Dictionary;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
-import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.Feature;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
+import org.apache.sling.feature.cpconverter.shared.AbstractContentPackage2FeatureModelConverterTest;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.apache.sling.feature.io.json.FeatureJSONWriter;
 import org.junit.Test;
 
-public class ConfigEntryHandlerTest {
+import com.google.inject.Inject;
+
+public class ConfigEntryHandlerTest extends AbstractContentPackage2FeatureModelConverterTest {
+
+    @Inject
+    private FeaturesManager featuresManager;
+
+    @Inject
+    private ConfigurationEntryHandler handler;
 
     @Test
     public void collectionValuesIncluded() throws Exception {
@@ -56,15 +58,11 @@ public class ConfigEntryHandlerTest {
         when(entry.getName()).thenReturn(resourceConfiguration.substring(resourceConfiguration.lastIndexOf('/') + 1));
         when(archive.openInputStream(entry)).thenReturn(getClass().getResourceAsStream(resourceConfiguration));
 
-        Feature expected = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
-        FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);
-        when(featuresManager.getTargetFeature()).thenReturn(expected);
-        doCallRealMethod().when(featuresManager).addConfiguration(anyString(), anyString(), any());
+        featuresManager.init("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1");
 
-        ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
-        when(converter.getFeaturesManager()).thenReturn(featuresManager);
+        handler.handle(resourceConfiguration, archive, entry);
 
-        new ConfigurationEntryHandler().handle(resourceConfiguration, archive, entry, converter);
+        Feature expected = featuresManager.getTargetFeature();
 
         verifyConfiguration(expected);
 

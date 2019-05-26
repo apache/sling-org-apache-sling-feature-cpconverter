@@ -16,34 +16,21 @@
  */
 package org.apache.sling.feature.cpconverter.vltpkg;
 
-import java.util.Map;
-
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
-import org.apache.jackrabbit.vault.packaging.PackageId;
-import org.apache.jackrabbit.vault.packaging.PackageManager;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.handlers.VersionResolverContentPackageEntryHandler;
+
+import com.google.inject.Inject;
 
 public final class RecollectorVaultPackageScanner extends BaseVaultPackageScanner {
 
-    private final ContentPackage2FeatureModelConverter converter;
-
-    private final VersionResolverContentPackageEntryHandler handler;
-
-    public RecollectorVaultPackageScanner(ContentPackage2FeatureModelConverter converter,
-                                          PackageManager packageManager,
-                                          boolean strictValidation,
-                                          Map<PackageId, String> subContentPackages) {
-        super(packageManager, strictValidation);
-        this.converter = converter;
-        handler = new VersionResolverContentPackageEntryHandler(subContentPackages);
-    }
+    @Inject
+    private VersionResolverContentPackageEntryHandler handler;
 
     @Override
     protected void onFile(String path, Archive archive, Entry entry) throws Exception {
         if (handler.matches(path)) {
-            handler.handle(path, archive, entry, converter);
+            handler.handle(path, archive, entry);
         }
     }
 

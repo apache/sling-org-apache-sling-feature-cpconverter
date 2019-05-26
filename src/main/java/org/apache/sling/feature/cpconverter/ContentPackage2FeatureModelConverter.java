@@ -20,7 +20,6 @@ import static java.util.Objects.requireNonNull;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -40,10 +39,11 @@ import org.apache.sling.feature.cpconverter.artifacts.FileArtifactWriter;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.ResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
-import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
 import org.apache.sling.feature.cpconverter.vltpkg.BaseVaultPackageScanner;
 import org.apache.sling.feature.cpconverter.vltpkg.RecollectorVaultPackageScanner;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
+
+import com.google.inject.Inject;
 
 public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanner {
 
@@ -53,67 +53,28 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     private static final String DEFEAULT_VERSION = "0.0.0";
 
-    private final Map<PackageId, String> subContentPackages = new HashMap<>();
+    @Inject
+    private Map<PackageId, String> subContentPackages;
 
-    private EntryHandlersManager handlersManager;
-
+    @Inject
     private AclManager aclManager;
 
+    @Inject
     private FeaturesManager featuresManager;
 
+    @Inject
     private ResourceFilter resourceFilter;
 
+    @Inject
     private ArtifactsDeployer artifactsDeployer;
 
-    private VaultPackageAssembler mainPackageAssembler = null;
+    @Inject
+    private Set<EntryHandler> entryHandlers;
 
+    @Inject
     private RecollectorVaultPackageScanner recollectorVaultPackageScanner;
 
-    public ContentPackage2FeatureModelConverter() {
-        this(false);
-    }
-
-    public ContentPackage2FeatureModelConverter(boolean strictValidation) {
-        super(strictValidation);
-        this.recollectorVaultPackageScanner = new RecollectorVaultPackageScanner(this, this.packageManager, strictValidation, subContentPackages);
-    }
-
-    public ContentPackage2FeatureModelConverter setEntryHandlersManager(EntryHandlersManager handlersManager) {
-        this.handlersManager = handlersManager;
-        return this;
-    }
-
-    public FeaturesManager getFeaturesManager() {
-        return featuresManager;
-    }
-
-    public ContentPackage2FeatureModelConverter setFeaturesManager(FeaturesManager featuresManager) {
-        this.featuresManager = featuresManager;
-        return this;
-    }
-
-    public ContentPackage2FeatureModelConverter setResourceFilter(ResourceFilter resourceFilter) {
-        this.resourceFilter = resourceFilter;
-        return this;
-    }
-
-    public ArtifactsDeployer getArtifactsDeployer() {
-        return artifactsDeployer;
-    }
-
-    public ContentPackage2FeatureModelConverter setBundlesDeployer(ArtifactsDeployer bundlesDeployer) {
-        this.artifactsDeployer = bundlesDeployer;
-        return this;
-    }
-
-    public AclManager getAclManager() {
-        return aclManager;
-    }
-
-    public ContentPackage2FeatureModelConverter setAclManager(AclManager aclManager) {
-        this.aclManager = aclManager;
-        return this;
-    }
+    private VaultPackageAssembler mainPackageAssembler = null;
 
     public VaultPackageAssembler getMainPackageAssembler() {
         return mainPackageAssembler;
@@ -282,12 +243,20 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                                                + " not allowed by user configuration, please check configured filtering patterns");
         }
 
-        EntryHandler entryHandler = handlersManager.getEntryHandlerByEntryPath(entryPath);
+        EntryHandler entryHandler = null;
+
+        dance : for (EntryHandler currentHandler : entryHandlers) {
+            if (currentHandler.matches(entryPath)) {
+                entryHandler = currentHandler;
+                break dance;
+            }
+        }
+
         if (entryHandler == null) {
             entryHandler = mainPackageAssembler;
         }
 
-        entryHandler.handle(entryPath, archive, entry, this);
+        entryHandler.handle(entryPath, archive, entry);
     }
 
 }

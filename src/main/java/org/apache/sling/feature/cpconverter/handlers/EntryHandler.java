@@ -18,12 +18,11 @@ package org.apache.sling.feature.cpconverter.handlers;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 
 public interface EntryHandler {
 
     boolean matches(String path);
 
-    void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter) throws Exception;
+    void handle(String path, Archive archive, Entry entry) throws Exception;
 
 }

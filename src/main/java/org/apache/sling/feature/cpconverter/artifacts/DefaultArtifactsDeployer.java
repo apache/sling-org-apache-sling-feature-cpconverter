@@ -26,13 +26,17 @@ import java.util.StringTokenizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
+
 public final class DefaultArtifactsDeployer implements ArtifactsDeployer {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final File artifactsDirectory;
 
-    public DefaultArtifactsDeployer(File outputDirectory) {
+    @Inject
+    public DefaultArtifactsDeployer(@Named("features.artifacts.outdir") File outputDirectory) {
         artifactsDirectory = outputDirectory;
         if (!artifactsDirectory.exists()) {
             artifactsDirectory.mkdirs();

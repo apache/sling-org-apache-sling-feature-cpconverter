@@ -36,7 +36,6 @@ import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
 import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.jar.JarArchiver;
@@ -122,8 +121,7 @@ public class VaultPackageAssembler implements EntryHandler {
     }
 
     @Override
-    public void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter)
-            throws Exception {
+    public void handle(String path, Archive archive, Entry entry) throws Exception {
         addEntry(path, archive, entry);
     }
 

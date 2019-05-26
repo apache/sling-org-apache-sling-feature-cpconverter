@@ -26,22 +26,25 @@ import java.util.regex.Matcher;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.acl.Acl;
 import org.apache.sling.feature.cpconverter.acl.AclManager;
 import org.apache.sling.feature.cpconverter.shared.AbstractJcrNodeParser;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
+import com.google.inject.Inject;
+
 public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
+
+    @Inject
+    private AclManager aclManager;
 
     public RepPolicyEntryHandler() {
         super("(jcr_root)?(/.+)/_rep_policy.xml");
     }
 
     @Override
-    public void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter)
-            throws Exception {
+    public void handle(String path, Archive archive, Entry entry) throws Exception {
         Matcher matcher = getPattern().matcher(path);
         // we are pretty sure it matches, here
         if (matcher.matches()) {
@@ -54,7 +57,7 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
                                             + "' but it does not, currently");
         }
 
-        RepPolicyParser systemUserParser = new RepPolicyParser(path, converter.getAclManager());
+        RepPolicyParser systemUserParser = new RepPolicyParser(path, aclManager);
         try (InputStream input = archive.openInputStream(entry)) {
             systemUserParser.parse(input);
         }

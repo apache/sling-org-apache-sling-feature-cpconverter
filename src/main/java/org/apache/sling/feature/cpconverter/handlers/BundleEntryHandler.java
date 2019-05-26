@@ -30,10 +30,13 @@ import java.util.regex.Pattern;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.artifacts.ArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.artifacts.InputStreamArtifactWriter;
+import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.inject.Inject;
 
 public final class BundleEntryHandler extends AbstractRegexEntryHandler {
 
@@ -55,12 +58,18 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
 
     private final Pattern pomPropertiesPattern = Pattern.compile("META-INF/maven/[^/]+/[^/]+/pom.properties");
 
+    @Inject
+    private ArtifactsDeployer artifactsDeployer;
+
+    @Inject
+    private FeaturesManager featuresManager;
+
     public BundleEntryHandler() {
         super("(jcr_root)?/(?:apps|libs)/.+/install(\\.([^/]+))?/.+\\.jar");
     }
 
     @Override
-    public void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter) throws Exception {
+    public void handle(String path, Archive archive, Entry entry) throws Exception {
         logger.info("Processing bundle {}...", entry.getName());
 
         String groupId;
@@ -99,19 +108,19 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         }
 
         try (InputStream input = archive.openInputStream(entry)) {
-            converter.getArtifactsDeployer().deploy(new InputStreamArtifactWriter(input),
-                                                  groupId,
-                                                  artifactId,
-                                                  version,
-                                                  classifier,
-                                                  JAR_TYPE);
+            artifactsDeployer.deploy(new InputStreamArtifactWriter(input),
+                                     groupId,
+                                     artifactId,
+                                     version,
+                                     classifier,
+                                     JAR_TYPE);
 
-            converter.getFeaturesManager().addArtifact(runMode,
-                                                       groupId,
-                                                       artifactId,
-                                                       version,
-                                                       classifier,
-                                                       JAR_TYPE);
+            featuresManager.addArtifact(runMode,
+                                        groupId,
+                                        artifactId,
+                                        version,
+                                        classifier,
+                                        JAR_TYPE);
         }
     }
 

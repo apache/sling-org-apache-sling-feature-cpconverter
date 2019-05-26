@@ -36,15 +36,15 @@ import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Extensions;
 import org.apache.sling.feature.Feature;
-import org.apache.sling.feature.cpconverter.interpolator.SimpleVariablesInterpolator;
 import org.apache.sling.feature.cpconverter.interpolator.VariablesInterpolator;
 import org.apache.sling.feature.io.json.FeatureJSONWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DefaultFeaturesManager implements FeaturesManager {
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 
-    private static final String JAVA_IO_TMPDIR_PROPERTY = "java.io.tmpdir";
+public class DefaultFeaturesManager implements FeaturesManager {
 
     private static final String CONTENT_PACKAGES = "content-packages";
 
@@ -56,35 +56,29 @@ public class DefaultFeaturesManager implements FeaturesManager {
 
     private final Map<String, Feature> runModes = new HashMap<>();
 
-    private final VariablesInterpolator interpolator = new SimpleVariablesInterpolator();
+    @Inject
+    private VariablesInterpolator interpolator;
 
-    private final boolean mergeConfigurations;
+    @Inject
+    @Named("features.configurations.merge")
+    private boolean mergeConfigurations;
 
-    private final int bundlesStartOrder;
+    @Inject
+    @Named("features.bundles.startOrder")
+    private int bundlesStartOrder;
 
-    private final File featureModelsOutputDirectory;
+    @Inject
+    @Named("features.outdir")
+    private File featureModelsOutputDirectory;
 
-    private final String artifactIdOverride;
+    @Inject(optional = true)
+    @Named("features.artifacts.idoverride")
+    private String artifactIdOverride;
 
-    private final Map<String, String> properties;
+    @Inject(optional = true)
+    private Map<String, String> properties;
 
     private Feature targetFeature = null;
-
-    public DefaultFeaturesManager() {
-        this(true, 20, new File(System.getProperty(JAVA_IO_TMPDIR_PROPERTY)), null, null);
-    }
-
-    public DefaultFeaturesManager(boolean mergeConfigurations,
-                                  int bundlesStartOrder,
-                                  File featureModelsOutputDirectory,
-                                  String artifactIdOverride,
-                                  Map<String, String> properties) {
-        this.mergeConfigurations = mergeConfigurations;
-        this.bundlesStartOrder = bundlesStartOrder;
-        this.featureModelsOutputDirectory = featureModelsOutputDirectory;
-        this.artifactIdOverride = artifactIdOverride;
-        this.properties = properties;
-    }
 
     public void init(String groupId, String artifactId, String version) {
         targetFeature = new Feature(new ArtifactId(groupId, artifactId, version, null, SLING_OSGI_FEATURE_TILE_TYPE));

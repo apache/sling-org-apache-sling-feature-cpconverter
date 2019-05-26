@@ -24,24 +24,37 @@ import java.io.OutputStream;
 import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
+import org.apache.jackrabbit.vault.packaging.PackageManager;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 
 public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHandler {
 
-    private final File temporaryDir = new File(System.getProperty("java.io.tmpdir"), "sub-content-packages");
+    private final File subContentPackagesDir;
 
-    public AbstractContentPackageHandler() {
+    @Inject
+    private PackageManager packageManager;
+
+    @Inject
+    @Named("packagemanager.validation.strict")
+    protected boolean strictValidation;
+
+    public AbstractContentPackageHandler(File temporaryDir) {
         super("(?:jcr_root)?/etc/packages/.+\\.zip");
-        temporaryDir.mkdirs();
+
+        subContentPackagesDir = new File(temporaryDir, "sub-content-packages");
+        if (!subContentPackagesDir.exists()) {
+            subContentPackagesDir.mkdirs();
+        }
     }
 
     @Override
-    public final void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter)
-            throws Exception {
+    public final void handle(String path, Archive archive, Entry entry) throws Exception {
         logger.info("Processing sub-content package '{}'...", entry.getName());
 
-        File temporaryContentPackage = new File(temporaryDir, entry.getName());
+        File temporaryContentPackage = new File(subContentPackagesDir, entry.getName());
 
         if (!temporaryContentPackage.exists()) {
             logger.debug("Extracting sub-content package '{}' to {} for future analysis...", entry.getName(), temporaryContentPackage);
@@ -54,13 +67,13 @@ public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHa
             logger.debug("Sub-content package '{}' successfully extracted to {} ", entry.getName(), temporaryContentPackage);
         }
 
-        try (VaultPackage vaultPackage = converter.open(temporaryContentPackage)) {
-            processSubPackage(path, vaultPackage, converter);
+        try (VaultPackage vaultPackage = packageManager.open(temporaryContentPackage, strictValidation)) {
+            processSubPackage(path, vaultPackage);
         }
 
         logger.info("Sub-content package '{}' processing is over", entry.getName());
     }
 
-    protected abstract void processSubPackage(String path, VaultPackage contentPackage, ContentPackage2FeatureModelConverter converter) throws Exception;
+    protected abstract void processSubPackage(String path, VaultPackage contentPackage) throws Exception;
 
 }

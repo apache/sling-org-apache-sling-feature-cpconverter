@@ -16,19 +16,23 @@
  */
 package org.apache.sling.feature.cpconverter.cli;
 
+import static com.google.inject.Guice.createInjector;
+import static com.google.inject.name.Names.named;
+
 import java.io.File;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.TimeZone;
 
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.acl.DefaultAclManager;
-import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
-import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
-import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
-import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
+import org.apache.sling.feature.cpconverter.inject.ContentPackage2FeatureModelConverterModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.inject.AbstractModule;
+import com.google.inject.TypeLiteral;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -40,7 +44,7 @@ import picocli.CommandLine.Parameters;
     description = "Apache Sling Content Package to Sling Feature converter",
     footer = "Copyright(c) 2019 The Apache Software Foundation."
 )
-public final class ContentPackage2FeatureModelConverterLauncher implements Runnable {
+public final class ContentPackage2FeatureModelConverterLauncher extends AbstractModule implements Runnable {
 
     @Option(names = { "-h", "--help" }, usageHelp = true, description = "Display the usage message.")
     private boolean helpRequested;
@@ -64,7 +68,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     private int bundlesStartOrder = 0;
 
     @Option(names = { "-f", "--filtering-patterns" }, description = "Regex based pattern(s) to reject content-package archive entries.", required = false)
-    private String[] filteringPatterns;
+    private Collection<String> filteringPatterns = new LinkedList<>();
 
     @Option(names = { "-a", "--artifacts-output-directory" }, description = "The output directory where the artifacts will be deployed.", required = true)
     private File artifactsOutputDirectory;
@@ -109,27 +113,9 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
         logger.info("");
 
         try {
-            ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation)
-                                                             .setFeaturesManager(new DefaultFeaturesManager(mergeConfigurations,
-                                                                                                            bundlesStartOrder,
-                                                                                                            featureModelsOutputDirectory,
-                                                                                                            artifactIdOverride,
-                                                                                                            properties))
-                                                             .setBundlesDeployer(new DefaultArtifactsDeployer(artifactsOutputDirectory))
-                                                             .setEntryHandlersManager(new DefaultEntryHandlersManager())
-                                                             .setAclManager(new DefaultAclManager());
-
-            if (filteringPatterns != null && filteringPatterns.length > 0) {
-                RegexBasedResourceFilter filter = new RegexBasedResourceFilter();
-
-                for (String filteringPattern : filteringPatterns) {
-                    filter.addFilteringPattern(filteringPattern);
-                }
-
-                converter.setResourceFilter(filter);
-            }
-
-            converter.convert(contentPackages);
+            createInjector(this, new ContentPackage2FeatureModelConverterModule())
+            .getInstance(ContentPackage2FeatureModelConverter.class)
+            .convert(contentPackages);
 
             logger.info( "+-----------------------------------------------------+" );
             logger.info("{} SUCCESS", appName);
@@ -148,6 +134,20 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
 
             System.exit(1);
         }
+    }
+
+    @Override
+    protected void configure() {
+        bindConstant().annotatedWith(named("packagemanager.validation.strict")).to(strictValidation);
+        bindConstant().annotatedWith(named("features.configurations.merge")).to(mergeConfigurations);
+        bindConstant().annotatedWith(named("features.bundles.startOrder")).to(bundlesStartOrder);
+        bind(File.class).annotatedWith(named("features.outdir")).toInstance(featureModelsOutputDirectory);
+        bindConstant().annotatedWith(named("features.artifacts.idoverride")).to(artifactIdOverride);
+
+        bind(File.class).annotatedWith(named("features.artifacts.outdir")).toInstance(artifactsOutputDirectory);
+
+        bind(new TypeLiteral<Map<String, String>>() {}).toInstance(properties);
+        bind(new TypeLiteral<Collection<String>>() {}).toInstance(filteringPatterns);
     }
 
     private static void printVersion(final Logger logger) {

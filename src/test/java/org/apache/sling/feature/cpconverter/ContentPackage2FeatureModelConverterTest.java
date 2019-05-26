@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -23,35 +24,28 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.Reader;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Properties;
-import java.util.StringTokenizer;
 import java.util.zip.ZipFile;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
-import org.apache.sling.feature.ArtifactId;
-import org.apache.sling.feature.Feature;
-import org.apache.sling.feature.cpconverter.acl.DefaultAclManager;
-import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
-import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
-import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
-import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
-import org.apache.sling.feature.io.json.FeatureJSONReader;
+import org.apache.sling.feature.cpconverter.artifacts.ArtifactsDeployer;
+import org.apache.sling.feature.cpconverter.features.FeaturesManager;
+import org.apache.sling.feature.cpconverter.shared.AbstractContentPackage2FeatureModelConverterTest;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
-public class ContentPackage2FeatureModelConverterTest {
+import com.google.inject.Inject;
+import com.google.inject.TypeLiteral;
+
+public class ContentPackage2FeatureModelConverterTest extends AbstractContentPackage2FeatureModelConverterTest {
 
     /**
      * Test package A-1.0. Depends on B and C-1.X
@@ -67,13 +61,20 @@ public class ContentPackage2FeatureModelConverterTest {
                                                                 "test_b-1.0.zip",
                                                                 "test_e-1.0.zip" };
 
+    @Inject
     private ContentPackage2FeatureModelConverter converter;
 
-    @Before
-    public void setUp() {
-        converter = new ContentPackage2FeatureModelConverter()
-                    .setEntryHandlersManager(new DefaultEntryHandlersManager())
-                    .setAclManager(new DefaultAclManager());
+    @Inject
+    private ArtifactsDeployer artifactsDeployer;
+
+    @Inject
+    private FeaturesManager featuresManager;
+
+    @Override
+    protected void configure() {
+        super.configure();
+
+        bind(new TypeLiteral<Collection<String>>() {}).toInstance(asList(".*\\/install(?!(\\.runMode1\\/|\\.runMode2\\/|\\/))(.*)(?=\\.zip$).*"));
     }
 
     @After
@@ -112,11 +113,9 @@ public class ContentPackage2FeatureModelConverterTest {
         URL packageUrl = getClass().getResource("test-content-package.zip");
         File packageFile = FileUtils.toFile(packageUrl);
 
-        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+        File outputDirectory = artifactsDeployer.getBundlesDirectory();
 
-        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null))
-                 .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
-                 .convert(packageFile);
+        converter.convert(packageFile);
 
         verifyFeatureFile(outputDirectory,
                           "asd.retail.all.json",
@@ -170,78 +169,12 @@ public class ContentPackage2FeatureModelConverterTest {
         zipFile.close();
     }
 
-    private void verifyFeatureFile(File outputDirectory,
-                                   String name,
-                                   String expectedArtifactId,
-                                   List<String> expectedArtifacts,
-                                   List<String> expectedConfigurations,
-                                   List<String> expectedContentPackagesExtensions) throws Exception {
-        File featureFile = new File(outputDirectory, name);
-        assertTrue(featureFile + " was not correctly created", featureFile.exists());
-
-        try (Reader reader = new FileReader(featureFile)) {
-            Feature feature = FeatureJSONReader.read(reader, featureFile.getAbsolutePath());
-
-            assertEquals(expectedArtifactId, feature.getId().toMvnId());
-
-            for (String expectedArtifact : expectedArtifacts) {
-                assertTrue(expectedArtifact + " not found in Feature " + expectedArtifactId, feature.getBundles().containsExact(ArtifactId.fromMvnId(expectedArtifact)));
-                verifyInstalledArtifact(outputDirectory, expectedArtifact);
-            }
-
-            for (String expectedConfiguration : expectedConfigurations) {
-                assertNotNull(expectedConfiguration + " not found in Feature " + expectedArtifactId, feature.getConfigurations().getConfiguration(expectedConfiguration));
-            }
-
-            for (String expectedContentPackagesExtension : expectedContentPackagesExtensions) {
-                assertTrue(expectedContentPackagesExtension + " not found in Feature " + expectedArtifactId,
-                           feature.getExtensions().getByName("content-packages").getArtifacts().containsExact(ArtifactId.fromMvnId(expectedContentPackagesExtension)));
-                verifyInstalledArtifact(outputDirectory, expectedContentPackagesExtension);
-            }
-        }
-    }
-
-    private void verifyInstalledArtifact(File outputDirectory, String coordinates) {
-        ArtifactId bundleId = ArtifactId.fromMvnId(coordinates);
-
-        StringTokenizer tokenizer = new StringTokenizer(bundleId.getGroupId(), ".");
-        while (tokenizer.hasMoreTokens()) {
-            outputDirectory = new File(outputDirectory, tokenizer.nextToken());
-        }
-
-        outputDirectory = new File(outputDirectory, bundleId.getArtifactId());
-        outputDirectory = new File(outputDirectory, bundleId.getVersion());
-
-        StringBuilder bundleFileName = new StringBuilder()
-                                       .append(bundleId.getArtifactId())
-                                       .append('-')
-                                       .append(bundleId.getVersion());
-        if (bundleId.getClassifier() != null) {
-            bundleFileName.append('-').append(bundleId.getClassifier());
-        }
-        bundleFileName.append('.').append(bundleId.getType());
-
-        File bundleFile = new File(outputDirectory, bundleFileName.toString());
-        assertTrue("Bundle " + bundleFile + " does not exist", bundleFile.exists());
-
-        File pomFile = new File(outputDirectory, String.format("%s-%s.pom", bundleId.getArtifactId(), bundleId.getVersion()));
-        assertTrue("POM file " + pomFile + " does not exist", pomFile.exists());
-    }
-
     @Test(expected = IllegalArgumentException.class)
     public void verifyFilteringOutUndesiredPackages() throws Exception {
-        RegexBasedResourceFilter resourceFilter = new RegexBasedResourceFilter();
-        resourceFilter.addFilteringPattern(".*\\/install(?!(\\.runMode1\\/|\\.runMode2\\/|\\/))(.*)(?=\\.zip$).*");
-        converter.setResourceFilter(resourceFilter);
-
         URL packageUrl = getClass().getResource("test-content-package-unacceptable.zip");
         File packageFile = FileUtils.toFile(packageUrl);
 
-        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
-
-        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null))
-                 .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
-                 .convert(packageFile);
+        converter.convert(packageFile);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -255,67 +188,14 @@ public class ContentPackage2FeatureModelConverterTest {
     }
 
     private void addSamePidConfiguration(String runmodeA, String runmodeB) throws Exception {
-        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
         URL packageUrl = getClass().getResource("test-content-package.zip");
         File packageFile = FileUtils.toFile(packageUrl);
 
-        converter.setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
-                 .setFeaturesManager(new DefaultFeaturesManager(false, 5, outputDirectory, null, null))
-                 .convert(packageFile);
+        converter.convert(packageFile);
 
         String pid = "this.is.just.a.pid";
-        converter.getFeaturesManager().addConfiguration(runmodeA, pid, new Hashtable<String, Object>());
-        converter.getFeaturesManager().addConfiguration(runmodeB, pid, new Hashtable<String, Object>());
-    }
-
-    @Test
-    public void overrideFeatureId() throws Exception {
-        URL packageUrl = getClass().getResource("test-content-package.zip");
-        File packageFile = FileUtils.toFile(packageUrl);
-
-        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
-
-        String overrideId = "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0:${project.version}";
-        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, overrideId, null))
-                 .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
-                 .convert(packageFile);
-
-        verifyFeatureFile(outputDirectory,
-                          "asd.retail.all.json",
-                          "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0:${project.version}",
-                          Arrays.asList("org.apache.felix:org.apache.felix.framework:6.0.1"),
-                          Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
-                          Arrays.asList("asd.sample:asd.retail.all:zip:cp2fm-converted:0.0.1"));
-        verifyFeatureFile(outputDirectory,
-                          "asd.retail.all-author.json",
-                          "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0-author:${project.version}",
-                          Arrays.asList("org.apache.sling:org.apache.sling.api:2.20.0"),
-                          Collections.emptyList(),
-                          Collections.emptyList());
-        verifyFeatureFile(outputDirectory,
-                          "asd.retail.all-publish.json",
-                          "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0-publish:${project.version}",
-                          Arrays.asList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
-                          Arrays.asList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
-                          Collections.emptyList());
-
-        ZipFile zipFile = new ZipFile(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip"));
-        for (String expectedEntry : new String[] {
-                "jcr_root/content/asd/.content.xml",
-                "jcr_root/content/asd/resources.xml",
-                "jcr_root/apps/.content.xml",
-                "META-INF/vault/properties.xml",
-                "META-INF/vault/config.xml",
-                "META-INF/vault/settings.xml",
-                "META-INF/vault/filter.xml",
-                "META-INF/vault/definition/.content.xml",
-                "jcr_root/etc/packages/asd/test-bundles.zip",
-                "jcr_root/etc/packages/asd/test-configurations.zip",
-                "jcr_root/etc/packages/asd/test-content.zip",
-                }) {
-            assertNotNull(zipFile.getEntry(expectedEntry));
-        }
-        zipFile.close();
+        featuresManager.addConfiguration(runmodeA, pid, new Hashtable<String, Object>());
+        featuresManager.addConfiguration(runmodeB, pid, new Hashtable<String, Object>());
     }
 
     @Test

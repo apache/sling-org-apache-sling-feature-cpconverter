@@ -19,10 +19,7 @@ package org.apache.sling.feature.cpconverter.handlers;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
@@ -32,12 +29,9 @@ import java.util.Collection;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
-import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Feature;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
-import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
+import org.apache.sling.feature.cpconverter.shared.AbstractContentPackage2FeatureModelConverterTest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -45,16 +39,29 @@ import org.junit.runners.Parameterized.Parameters;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
+
 @RunWith(Parameterized.class)
-public final class BundleEntryHandlerTest {
+public final class BundleEntryHandlerTest extends AbstractContentPackage2FeatureModelConverterTest {
 
     private final String bundleLocation;
 
-    private final EntryHandler bundleEntryHandler;
+    private final String runMode;
 
-    public BundleEntryHandlerTest(String bundleLocation, EntryHandler bundleEntryHandler) {
+    @Inject
+    private BundleEntryHandler bundleEntryHandler;
+
+    @Inject
+    private FeaturesManager featuresManager;
+
+    @Inject
+    @Named("features.artifacts.outdir")
+    private File testDirectory;
+
+    public BundleEntryHandlerTest(String bundleLocation, String runMode) {
         this.bundleLocation = bundleLocation;
-        this.bundleEntryHandler = bundleEntryHandler;
+        this.runMode = runMode;
     }
 
     @Test
@@ -87,37 +94,26 @@ public final class BundleEntryHandlerTest {
 
         });
 
-        Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
-        FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);
-        when(featuresManager.getTargetFeature()).thenReturn(feature);
-        when(featuresManager.getRunMode(anyString())).thenReturn(feature);
-        doCallRealMethod().when(featuresManager).addArtifact(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
+        featuresManager.init("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1");
 
-        ContentPackage2FeatureModelConverter converter = spy(ContentPackage2FeatureModelConverter.class);
-
-        File testDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
-        when(converter.getArtifactsDeployer()).thenReturn(new DefaultArtifactsDeployer(testDirectory));
-        when(converter.getFeaturesManager()).thenReturn(featuresManager);
-
-        bundleEntryHandler.handle(bundleLocation, archive, entry, converter);
+        bundleEntryHandler.handle(bundleLocation, archive, entry);
 
         assertTrue(new File(testDirectory, "org/apache/felix/org.apache.felix.framework/6.0.1/org.apache.felix.framework-6.0.1.pom").exists());
         assertTrue(new File(testDirectory, "org/apache/felix/org.apache.felix.framework/6.0.1/org.apache.felix.framework-6.0.1.jar").exists());
 
-        assertFalse(featuresManager.getTargetFeature().getBundles().isEmpty());
+        Feature feature = featuresManager.getRunMode(runMode);
+        assertFalse(feature.getBundles().isEmpty());
         assertEquals(1, feature.getBundles().size());
         assertEquals("org.apache.felix:org.apache.felix.framework:6.0.1", feature.getBundles().get(0).getId().toMvnId());
     }
 
     @Parameters
     public static Collection<Object[]> data() {
-        final BundleEntryHandler bundleEntryHandler = new BundleEntryHandler();
-
         return Arrays.asList(new Object[][] {
-            { "jcr_root/apps/asd/install/test-framework-no-pom.jar", bundleEntryHandler },
-            { "jcr_root/apps/asd/install/test-framework.jar", bundleEntryHandler },
-            { "jcr_root/apps/asd/install.author/test-framework.jar", bundleEntryHandler },
-            { "jcr_root/apps/asd/install.publish/test-framework.jar", bundleEntryHandler }
+            { "jcr_root/apps/asd/install/test-framework-no-pom.jar", null },
+            { "jcr_root/apps/asd/install/test-framework.jar", null },
+            { "jcr_root/apps/asd/install.author/test-framework.jar", "author" },
+            { "jcr_root/apps/asd/install.publish/test-framework.jar", "publish" }
         });
     }
 

@@ -23,15 +23,24 @@ import java.util.regex.Matcher;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.features.FeaturesManager;
+
+import com.google.inject.Inject;
 
 abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandler {
+
+    @Inject
+    private ContentPackage2FeatureModelConverter converter;
+
+    @Inject
+    private FeaturesManager featuresManager;
 
     public AbstractConfigurationEntryHandler(String extension) {
         super("(jcr_root)?/(?:apps|libs)/.+/config(\\.([^/]+))?/.+\\." + extension);
     }
 
     @Override
-    public final void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter) throws Exception {
+    public final void handle(String path, Archive archive, Entry entry) throws Exception {
         String pid = entry.getName().substring(0, entry.getName().lastIndexOf('.'));
 
         String id;
@@ -77,7 +86,7 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
                                             + "' but it does not, currently");
         }
 
-        converter.getFeaturesManager().addConfiguration(runMode, id, configurationProperties);
+        featuresManager.addConfiguration(runMode, id, configurationProperties);
     }
 
     protected abstract Dictionary<String, Object> parseConfiguration(String name, InputStream input) throws Exception;

@@ -16,14 +16,26 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import java.io.File;
+
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
+
 public final class ContentPackageEntryHandler extends AbstractContentPackageHandler {
 
+    @Inject
+    private ContentPackage2FeatureModelConverter converter;
+
+    @Inject
+    public ContentPackageEntryHandler(@Named("java.io.tmpdir") File temporaryDir) {
+        super(temporaryDir);
+    }
+
     @Override
-    protected void processSubPackage(String path, VaultPackage contentPackage, ContentPackage2FeatureModelConverter converter)
-            throws Exception {
+    protected void processSubPackage(String path, VaultPackage contentPackage) throws Exception {
         converter.processSubPackage(path, contentPackage);
     }
 

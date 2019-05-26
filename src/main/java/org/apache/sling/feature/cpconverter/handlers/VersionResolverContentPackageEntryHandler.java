@@ -16,28 +16,31 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import java.io.File;
 import java.util.Map;
 
 import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 
 public final class VersionResolverContentPackageEntryHandler extends AbstractContentPackageHandler {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final Map<PackageId, String> subContentPackages;
-
-    public VersionResolverContentPackageEntryHandler(Map<PackageId, String> subContentPackages) {
-        this.subContentPackages = subContentPackages;
+    @Inject
+    public VersionResolverContentPackageEntryHandler(@Named("java.io.tmpdir") File temporaryDir) {
+        super(temporaryDir);
     }
 
-    @Override
-    protected void processSubPackage(String path, VaultPackage contentPackage, ContentPackage2FeatureModelConverter converter)
-            throws Exception {
+    @Inject
+    private Map<PackageId, String> subContentPackages;
 
+    @Override
+    protected void processSubPackage(String path, VaultPackage contentPackage) throws Exception {
         boolean addPackage = false;
         PackageId currentId = contentPackage.getId();
 

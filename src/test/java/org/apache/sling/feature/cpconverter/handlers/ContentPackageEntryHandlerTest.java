@@ -19,6 +19,8 @@ package org.apache.sling.feature.cpconverter.handlers;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,7 +31,7 @@ public final class ContentPackageEntryHandlerTest {
 
     @Before
     public void setUp() {
-        contentPackageEntryhandler = new ContentPackageEntryHandler();
+        contentPackageEntryhandler = new ContentPackageEntryHandler(new File(System.getProperty("java.io.tmpdir")));
     }
 
     @After
