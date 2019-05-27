@@ -17,6 +17,7 @@
 package org.apache.sling.feature.cpconverter;
 
 import static com.google.inject.name.Names.named;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.File;
 import java.net.URL;
@@ -24,11 +25,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.zip.ZipFile;
 
-import static org.junit.Assert.assertNotNull;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.sling.feature.cpconverter.artifacts.ArtifactsDeployer;
-import org.apache.sling.feature.cpconverter.inject.ContentPackage2FeatureModelConverterModule;
 import org.apache.sling.feature.cpconverter.shared.AbstractContentPackage2FeatureModelConverterTest;
 import org.junit.Test;
 
@@ -45,12 +43,6 @@ public class IdOverrideTest extends AbstractContentPackage2FeatureModelConverter
     @Override
     protected void configure() {
         super.configure();
-
-        install(new ContentPackage2FeatureModelConverterModule());
-
-        bindConstant().annotatedWith(named("packagemanager.validation.strict")).to(true);
-        bindConstant().annotatedWith(named("features.configurations.merge")).to(true);
-        bindConstant().annotatedWith(named("features.bundles.startOrder")).to(5);
 
         bindConstant().annotatedWith(named("features.artifacts.idoverride")).to("${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0:${project.version}");
     }
