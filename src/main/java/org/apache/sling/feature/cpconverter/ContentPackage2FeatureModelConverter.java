@@ -236,9 +236,9 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         }
 
         for (Dependency dep : pack.getDependencies()) {
-            for (PackageId id : idPackageMapping.keySet()) {
-                if (dep.matches(id)) {
-                    orderDependencies(idFileMap, idPackageMapping, idPackageMapping.get(id), visited);
+            for (java.util.Map.Entry<PackageId, VaultPackage> entry : idPackageMapping.entrySet()) {
+                if (dep.matches(entry.getKey())) {
+                    orderDependencies(idFileMap, idPackageMapping, entry.getValue(), visited);
                     break;
                 }
             }
