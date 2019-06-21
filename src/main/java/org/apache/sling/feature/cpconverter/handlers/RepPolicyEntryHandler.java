@@ -115,7 +115,10 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
                     acls.add(aclManager.addAcl(principalName, operation, privileges, path));
                 } else if (REP_RESTRICTIONS.equals(primaryType) && !acls.isEmpty()) {
                     String restriction = attributes.getValue(REP_GLOB);
-                    acls.peek().addRestriction(restriction);
+
+                    if (restriction != null && !restriction.isEmpty()) {
+                        acls.peek().addRestriction(REP_GLOB + ',' + restriction);
+                    }
                 }
             } else {
                 super.startElement(uri, localName, qName, attributes);

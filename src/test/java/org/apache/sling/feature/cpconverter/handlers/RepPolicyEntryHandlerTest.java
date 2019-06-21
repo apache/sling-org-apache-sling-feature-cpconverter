@@ -83,7 +83,7 @@ public final class RepPolicyEntryHandlerTest {
                 "create path (sling:Folder) /asd/public\n" + 
                 "create service user acs-commons-ensure-oak-index-service\n" + 
                 "set ACL for acs-commons-ensure-oak-index-service\n" + 
-                "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/public restriction(*/oak:index/*)\n" + 
+                "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/public restriction(rep:glob,*/oak:index/*)\n" + 
                 "end\n" + 
                 "create service user acs-commons-dispatcher-flush-service\n" + 
                 "set ACL for acs-commons-dispatcher-flush-service\n" + 
