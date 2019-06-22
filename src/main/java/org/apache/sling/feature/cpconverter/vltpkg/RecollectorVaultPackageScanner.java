@@ -37,7 +37,7 @@ public final class RecollectorVaultPackageScanner extends BaseVaultPackageScanne
                                           Map<PackageId, String> subContentPackages) {
         super(packageManager, strictValidation);
         this.converter = converter;
-        handler = new VersionResolverContentPackageEntryHandler(subContentPackages);
+        handler = new VersionResolverContentPackageEntryHandler(this, subContentPackages);
     }
 
     @Override

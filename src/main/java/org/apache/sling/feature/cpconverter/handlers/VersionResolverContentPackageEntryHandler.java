@@ -21,6 +21,7 @@ import java.util.Map;
 import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.vltpkg.RecollectorVaultPackageScanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,9 +29,12 @@ public final class VersionResolverContentPackageEntryHandler extends AbstractCon
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
+    private final RecollectorVaultPackageScanner scanner;
+
     private final Map<PackageId, String> subContentPackages;
 
-    public VersionResolverContentPackageEntryHandler(Map<PackageId, String> subContentPackages) {
+    public VersionResolverContentPackageEntryHandler(RecollectorVaultPackageScanner scanner, Map<PackageId, String> subContentPackages) {
+        this.scanner = scanner;
         this.subContentPackages = subContentPackages;
     }
 
@@ -65,6 +69,9 @@ public final class VersionResolverContentPackageEntryHandler extends AbstractCon
 
         if (addPackage) {
             subContentPackages.put(currentId, path);
+
+            // iteratively traverse the sub(-sub)*content-packages
+            scanner.traverse(contentPackage);
         }
     }
 
