@@ -19,15 +19,12 @@ package org.apache.sling.feature.cpconverter.artifacts;
 import java.io.File;
 import java.io.IOException;
 
+import org.apache.sling.feature.ArtifactId;
+
 public interface ArtifactsDeployer {
 
     File getBundlesDirectory();
 
-    void deploy(ArtifactWriter artifactWriter,
-                String groupId,
-                String artifactId,
-                String version,
-                String classifier,
-                String type) throws IOException;
+    void deploy(ArtifactWriter artifactWriter, ArtifactId id) throws IOException;
 
 }

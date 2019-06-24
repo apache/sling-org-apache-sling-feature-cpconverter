@@ -40,28 +40,8 @@ public class FeaturesManagerTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void deployLocallyAndaddArtifactRequiresNonNullInput() throws Exception {
-        featuresManager.addArtifact(null, null, null, null, null, null);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void deployLocallyAndaddArtifactRequiresNonNullGroupId() throws Exception {
-        featuresManager.addArtifact(null, null, null, null, null, null);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void deployLocallyAndaddArtifactRequiresNonNullArtifactId() throws Exception {
-        featuresManager.addArtifact(null, "org.apache.sling", null, null, null, null);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void deployLocallyAndaddArtifactRequiresNonNullVersion() throws Exception {
-        featuresManager.addArtifact(null, "org.apache.sling", "org.apache.sling.cm2fm", null, null, null);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void deployLocallyAndaddArtifactRequiresNonNullType() throws Exception {
-        featuresManager.addArtifact(null, "org.apache.sling", "org.apache.sling.cm2fm", "0.0.1", null, null);
+    public void deployLocallyAndaddArtifactRequiresNonNullId() throws Exception {
+        featuresManager.addArtifact(null, null);
     }
 
 }

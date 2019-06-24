@@ -18,6 +18,7 @@ package org.apache.sling.feature.cpconverter.features;
 
 import java.util.Dictionary;
 
+import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Feature;
 
 public interface FeaturesManager {
@@ -28,12 +29,7 @@ public interface FeaturesManager {
 
     Feature getRunMode(String runMode);
 
-    void addArtifact(String runMode,
-                     String groupId,
-                     String artifactId,
-                     String version,
-                     String classifier,
-                     String type);
+    void addArtifact(String runMode, ArtifactId id);
 
     void addConfiguration(String runMode, String pid, Dictionary<String, Object> configurationProperties);
 

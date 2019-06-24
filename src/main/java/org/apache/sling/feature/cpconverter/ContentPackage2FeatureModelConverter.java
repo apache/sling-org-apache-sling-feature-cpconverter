@@ -34,6 +34,7 @@ import org.apache.jackrabbit.vault.packaging.Dependency;
 import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
+import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.acl.AclManager;
 import org.apache.sling.feature.cpconverter.artifacts.ArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.artifacts.FileArtifactWriter;
@@ -162,27 +163,10 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         for (VaultPackage vaultPackage : orderedContentPackages) {
             try {
                 mainPackageAssembler = VaultPackageAssembler.create(vaultPackage);
-                PackageId packageProperties = vaultPackage.getId();
 
-                String group = requireNonNull(packageProperties.getGroup(),
-                                              PackageProperties.NAME_GROUP
-                                              + " property not found in content-package "
-                                              + vaultPackage
-                                              + ", please check META-INF/vault/properties.xml")
-                                              .replace('/', '.');
+                ArtifactId packageId = toArtifactId(vaultPackage);
 
-                String name = requireNonNull(packageProperties.getName(),
-                                            PackageProperties.NAME_NAME
-                                            + " property not found in content-package "
-                                            + vaultPackage
-                                            + ", please check META-INF/vault/properties.xml");
-
-                String version = packageProperties.getVersionString();
-                if (version == null || version.isEmpty()) {
-                    version = DEFEAULT_VERSION;
-                }
-
-                featuresManager.init(group, name, version);
+                featuresManager.init(packageId.getGroupId(), packageId.getArtifactId(), packageId.getVersion());
 
                 logger.info("Converting content-package '{}'...", vaultPackage.getId());
 
@@ -194,19 +178,9 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
                 // deploy the new zip content-package to the local mvn bundles dir
 
-                artifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive),
-                                         featuresManager.getTargetFeature().getId().getGroupId(),
-                                         featuresManager.getTargetFeature().getId().getArtifactId(),
-                                         featuresManager.getTargetFeature().getId().getVersion(),
-                                         PACKAGE_CLASSIFIER,
-                                         ZIP_TYPE);
+                artifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), packageId);
 
-                featuresManager.addArtifact(null,
-                                            featuresManager.getTargetFeature().getId().getGroupId(),
-                                            featuresManager.getTargetFeature().getId().getArtifactId(),
-                                            featuresManager.getTargetFeature().getId().getVersion(),
-                                            PACKAGE_CLASSIFIER,
-                                            ZIP_TYPE);
+                featuresManager.addArtifact(null, packageId);
 
                 // finally serialize the Feature Model(s) file(s)
 
@@ -257,15 +231,27 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             return;
         }
 
+        ArtifactId packageId = toArtifactId(vaultPackage);
+        VaultPackageAssembler clonedPackage = VaultPackageAssembler.create(vaultPackage);
+
+        // Please note: THIS IS A HACK to meet the new requirement without drastically change the original design
+        // temporary swap the main handler to collect stuff
+        VaultPackageAssembler handler = mainPackageAssembler;
+        mainPackageAssembler = clonedPackage;
+
         // scan the detected package, first
         traverse(vaultPackage);
 
-        // merge filters to the main new package
-        mainPackageAssembler.mergeFilters(vaultPackage.getMetaInf().getFilter());
+        File contentPackageArchive = clonedPackage.createPackage();
 
-        // add the metadata-only package one to the main package with overriden filter
-        File clonedPackage = VaultPackageAssembler.createSynthetic(vaultPackage);
-        mainPackageAssembler.addEntry(path, clonedPackage);
+        // deploy the new content-package to the local mvn bundles dir and attach it to the feature
+
+        artifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), packageId);
+
+        featuresManager.addArtifact(null, packageId);
+
+        // restore the previous assembler
+        mainPackageAssembler = handler;
     }
 
     protected boolean isSubContentPackageIncluded(String path) {
@@ -288,6 +274,28 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         }
 
         entryHandler.handle(entryPath, archive, entry, this);
+    }
+
+    private static ArtifactId toArtifactId(VaultPackage vaultPackage) {
+        PackageId packageId = vaultPackage.getId();
+        String groupId = requireNonNull(packageId.getGroup(),
+                                        PackageProperties.NAME_GROUP
+                                        + " property not found in content-package "
+                                        + vaultPackage
+                                        + ", please check META-INF/vault/properties.xml").replace('/', '.'); 
+
+        String artifactid = requireNonNull(packageId.getName(),
+                                           PackageProperties.NAME_NAME
+                                           + " property not found in content-package "
+                                           + vaultPackage
+                                           + ", please check META-INF/vault/properties.xml");
+
+        String version = packageId.getVersionString();
+        if (version == null || version.isEmpty()) {
+            version = DEFEAULT_VERSION;
+        }
+
+        return new ArtifactId(groupId, artifactid, version, PACKAGE_CLASSIFIER, ZIP_TYPE);
     }
 
 }
