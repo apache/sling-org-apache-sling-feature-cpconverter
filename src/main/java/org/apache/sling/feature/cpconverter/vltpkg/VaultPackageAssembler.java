@@ -16,6 +16,13 @@
  */
 package org.apache.sling.feature.cpconverter.vltpkg;
 
+import static org.apache.jackrabbit.vault.util.Constants.CONFIG_XML;
+import static org.apache.jackrabbit.vault.util.Constants.FILTER_XML;
+import static org.apache.jackrabbit.vault.util.Constants.META_DIR;
+import static org.apache.jackrabbit.vault.util.Constants.PACKAGE_DEFINITION_XML;
+import static org.apache.jackrabbit.vault.util.Constants.PROPERTIES_XML;
+import static org.apache.jackrabbit.vault.util.Constants.ROOT_DIR;
+import static org.apache.jackrabbit.vault.util.Constants.SETTINGS_XML;
 import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER;
 
 import java.io.File;
@@ -44,17 +51,9 @@ import org.codehaus.plexus.archiver.util.DefaultFileSet;
 
 public class VaultPackageAssembler implements EntryHandler {
 
-    private static final String JCR_ROOT_DIR_NAME = "jcr_root";
-
-    private static final String META_INF_VAULT_DIRECTORY = "META-INF/vault/";
-
-    private static final String VAULT_PROPERTIES_FILE = META_INF_VAULT_DIRECTORY + "properties.xml";
-
-    private static final String VAULT_FILTER_FILE = META_INF_VAULT_DIRECTORY + "filter.xml";
-
     private static final String NAME_PATH = "path";
 
-    private static final String[] INCLUDE_RESOURCES = { "definition/.content.xml", "config.xml", "settings.xml" };
+    private static final String[] INCLUDE_RESOURCES = { PACKAGE_DEFINITION_XML, CONFIG_XML, SETTINGS_XML };
 
     private static final File TMP_DIR = new File(System.getProperty("java.io.tmpdir"), "syntethic-content-packages");
 
@@ -77,7 +76,7 @@ public class VaultPackageAssembler implements EntryHandler {
     private static VaultPackageAssembler create(VaultPackage vaultPackage, WorkspaceFilter filter) {
         File storingDirectory = new File(TMP_DIR, vaultPackage.getFile().getName() + "-deflated");
         // avoid any possible Stream is not a content package. Missing 'jcr_root' error
-        File jcrRootDirectory = new File(storingDirectory, JCR_ROOT_DIR_NAME);
+        File jcrRootDirectory = new File(storingDirectory, ROOT_DIR);
         jcrRootDirectory.mkdirs();
 
         PackageProperties packageProperties = vaultPackage.getProperties();
@@ -166,8 +165,8 @@ public class VaultPackageAssembler implements EntryHandler {
     }
 
     public File getEntry(String path) {
-        if (!path.startsWith(JCR_ROOT_DIR_NAME)) {
-            path = JCR_ROOT_DIR_NAME + path;
+        if (!path.startsWith(ROOT_DIR)) {
+            path = ROOT_DIR + path;
         }
 
         return new File(storingDirectory, path);
@@ -180,15 +179,19 @@ public class VaultPackageAssembler implements EntryHandler {
     public File createPackage(File outputDirectory) throws IOException {
         // generate the Vault properties XML file
 
-        File xmlProperties = new File(storingDirectory, VAULT_PROPERTIES_FILE);
-        xmlProperties.getParentFile().mkdirs();
+        File metaDir = new File(storingDirectory, META_DIR);
+        if (!metaDir.exists()) {
+            metaDir.mkdirs();
+        }
+
+        File xmlProperties = new File(metaDir, PROPERTIES_XML);
 
         try (FileOutputStream fos = new FileOutputStream(xmlProperties)) {
             properties.storeToXML(fos, null);
         }
 
         // generate the Vault filter XML file
-        File xmlFilter = new File(storingDirectory, VAULT_FILTER_FILE);
+        File xmlFilter = new File(metaDir, FILTER_XML);
         try (InputStream input = filter.getSource();
                 FileOutputStream output = new FileOutputStream(xmlFilter)) {
             IOUtils.copy(input, output);
@@ -198,7 +201,7 @@ public class VaultPackageAssembler implements EntryHandler {
 
         for (String resource : INCLUDE_RESOURCES) {
             try (InputStream input = getClass().getResourceAsStream(resource)) {
-                addEntry(META_INF_VAULT_DIRECTORY + resource, input);
+                addEntry(ROOT_DIR + resource, input);
             }
         }
 

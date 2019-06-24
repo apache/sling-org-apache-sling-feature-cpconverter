@@ -30,6 +30,8 @@ public interface AclManager {
 
     void addRepoinitExtension(VaultPackageAssembler packageAssembler, Feature feature);
 
+    void addNodetypeRegistrationSentence(String nodetypeRegistrationSentence);
+
     void reset();
 
 }

@@ -16,13 +16,20 @@
  */
 package org.apache.sling.feature.cpconverter.vltpkg;
 
+import static org.apache.jackrabbit.vault.util.Constants.META_DIR;
+import static org.apache.jackrabbit.vault.util.Constants.NODETYPES_CND;
+import static org.apache.jackrabbit.vault.packaging.PackageProperties.NAME_CND_PATTERN;
 import static java.util.Objects.requireNonNull;
 
 import java.io.File;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
+import org.apache.jackrabbit.vault.fs.io.ImportOptions;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.PackageManager;
+import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
 import org.slf4j.Logger;
@@ -67,27 +74,50 @@ public abstract class BaseVaultPackageScanner {
     public final void traverse(VaultPackage vaultPackage) throws Exception {
         requireNonNull(vaultPackage, "Impossible to process a null vault package");
 
+        PackageProperties properties = vaultPackage.getProperties();
+        ImportOptions importOptions = new ImportOptions();
+        String cndPattern = properties.getProperty(NAME_CND_PATTERN);
+        if (cndPattern != null && !cndPattern.isEmpty()) {
+            importOptions.setCndPattern(cndPattern);
+        }
+
         Archive archive = vaultPackage.getArchive();
         try {
             archive.open(strictValidation);
 
+            String nodetypesPath = META_DIR + '/' + NODETYPES_CND;
+            Entry nodetypesEntry = archive.getEntry(nodetypesPath);
+            if (nodetypesEntry != null && !nodetypesEntry.isDirectory()) {
+                onCndEntry(nodetypesPath, archive, nodetypesEntry);
+            }
+
             Entry jcrRoot = archive.getJcrRoot();
-            traverse(null, archive, jcrRoot);
+            traverse(null, archive, jcrRoot, importOptions.getCndPattern());
         } finally {
             archive.close();
         }
     }
 
-    private void traverse(String path, Archive archive, Entry entry) throws Exception {
+    private void traverse(String path, Archive archive, Entry entry, Pattern cndPattern) throws Exception {
         String entryPath = newPath(path, entry.getName());
 
         if (entry.isDirectory()) {
             onDirectory(entryPath, archive, entry);
 
             for (Entry child : entry.getChildren()) {
-                traverse(entryPath, archive, child);
+                traverse(entryPath, archive, child, cndPattern);
             }
 
+            return;
+        }
+
+        Matcher cndMatcher = cndPattern.matcher(entryPath);
+        if (cndMatcher.matches()) {
+            logger.debug("Detected CND file {}, processing it...", entryPath);
+
+            onCndEntry(entryPath, archive, entry);
+
+            logger.debug("CND file {} processed.", entryPath);
             return;
         }
 
@@ -111,6 +141,10 @@ public abstract class BaseVaultPackageScanner {
     }
 
     protected void onFile(String path, Archive archive, Entry entry) throws Exception {
+        // do nothing by default
+    }
+
+    protected void onCndEntry(String path, Archive archive, Entry entry) throws Exception {
         // do nothing by default
     }
 
