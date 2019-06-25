@@ -74,7 +74,7 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
 
         private static final String REP_PRIVILEGES = "rep:privileges";
 
-        private static final String REP_GLOB = "rep:glob";
+        private static final String[] RESTRICTIONS = new String[] { "rep:glob" };
 
         private static final Map<String, String> operations = new HashMap<>();
 
@@ -114,10 +114,12 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
 
                     acls.add(aclManager.addAcl(principalName, operation, privileges, path));
                 } else if (REP_RESTRICTIONS.equals(primaryType) && !acls.isEmpty()) {
-                    String restriction = attributes.getValue(REP_GLOB);
+                    for (String restriction : RESTRICTIONS) {
+                        String path = attributes.getValue(restriction);
 
-                    if (restriction != null && !restriction.isEmpty()) {
-                        acls.peek().addRestriction(REP_GLOB + ',' + restriction);
+                        if (path != null && !path.isEmpty()) {
+                            acls.peek().addRestriction(restriction + ',' + path);
+                        }
                     }
                 }
             } else {
