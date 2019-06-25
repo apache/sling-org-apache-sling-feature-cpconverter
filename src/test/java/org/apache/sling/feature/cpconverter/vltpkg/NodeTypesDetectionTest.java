@@ -38,7 +38,7 @@ public class NodeTypesDetectionTest {
 
     @Before
     public void setUp() {
-        URL packageURL = getClass().getResource("test_a-1.0.zip");
+        URL packageURL = getClass().getResource("../test_a-1.0.zip");
         packageFile = toFile(packageURL);
     }
 
