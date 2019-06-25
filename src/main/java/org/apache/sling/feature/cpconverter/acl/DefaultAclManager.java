@@ -49,6 +49,8 @@ public final class DefaultAclManager implements AclManager {
 
     private final Map<String, List<Acl>> acls = new HashMap<>();
 
+    private List<String> nodetypeRegistrationSentences = new LinkedList<>();
+
     public boolean addSystemUser(String systemUser) {
         if (systemUser != null && !systemUser.isEmpty() && preProvidedSystemUsers.add(systemUser)) {
             return systemUsers.add(systemUser);
@@ -77,6 +79,23 @@ public final class DefaultAclManager implements AclManager {
         Formatter formatter = null;
         try {
             formatter = new Formatter();
+
+            if (!nodetypeRegistrationSentences.isEmpty()) {
+                formatter.format("register nodetypes%n")
+                         .format("<<===%n");
+
+                for (String nodetypeRegistrationSentence : nodetypeRegistrationSentences) {
+                    if (nodetypeRegistrationSentence.isEmpty()) {
+                        formatter.format("%n");
+                    } else {
+                        formatter.format("<< %s%n", nodetypeRegistrationSentence);
+                    }
+                }
+
+                formatter.format("===>>%n");
+            }
+
+            // system users
 
             for (String systemUser : systemUsers) {
                 List<Acl> authorizations = acls.remove(systemUser);
@@ -126,9 +145,17 @@ public final class DefaultAclManager implements AclManager {
         }
     }
 
+    @Override
+    public void addNodetypeRegistrationSentence(String nodetypeRegistrationSentence) {
+        if (nodetypeRegistrationSentence != null) {
+            nodetypeRegistrationSentences.add(nodetypeRegistrationSentence);
+        }
+    }
+
     public void reset() {
         systemUsers.clear();
         acls.clear();
+        nodetypeRegistrationSentences.clear();
     }
 
     private void addPaths(List<Acl> authorizations, VaultPackageAssembler packageAssembler, Formatter formatter) {

@@ -40,6 +40,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.ArtifactId;
+import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.acl.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
@@ -344,6 +345,43 @@ public class ContentPackage2FeatureModelConverterTest {
 
         assertTrue(converter.isSubContentPackageIncluded("jcr_root/etc/packages/asd/test-content-0.2.zip"));
         assertFalse(converter.isSubContentPackageIncluded("jcr_root/etc/packages/asd/test-content.zip"));
+    }
+
+    @Test
+    public void verifyRepoinitContainsNodetypesRegistration() throws Exception {
+        File[] contentPackages = load(TEST_PACKAGES_INPUT[1]);
+
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+
+        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null))
+                 .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                 .convert(contentPackages[0]);
+
+        File featureFile = new File(outputDirectory, "test_a.json");
+        try (Reader reader = new FileReader(featureFile)) {
+            Feature feature = FeatureJSONReader.read(reader, featureFile.getAbsolutePath());
+
+            Extension repoinitExtension = feature.getExtensions().getByName("repoinit");
+            assertNotNull(repoinitExtension);
+
+            String expected = "register nodetypes\n" +
+                    "<<===\n" +
+                    "<< <'sling'='http://sling.apache.org/jcr/sling/1.0'>\n" + 
+                    "<< <'nt'='http://www.jcp.org/jcr/nt/1.0'>\n" + 
+                    "<< <'rep'='internal'>\n" + 
+                    "\n" + 
+                    "<< [sling:Folder] > nt:folder\n" + 
+                    "<<   - * (undefined) multiple\n" + 
+                    "<<   - * (undefined)\n" + 
+                    "<<   + * (nt:base) = sling:Folder version\n" + 
+                    "\n" + 
+                    "<< [rep:RepoAccessControllable]\n" + 
+                    "<<   mixin\n" + 
+                    "<<   + rep:repoPolicy (rep:Policy) protected ignore\n" + 
+                    "\n===>>\n";
+            String actual = repoinitExtension.getText();
+            assertEquals(expected, actual);
+        }
     }
 
     private File[] load(String...resources) {

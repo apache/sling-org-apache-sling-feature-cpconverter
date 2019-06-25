@@ -18,7 +18,9 @@ package org.apache.sling.feature.cpconverter;
 
 import static java.util.Objects.requireNonNull;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -296,6 +298,16 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         }
 
         return new ArtifactId(groupId, artifactid, version, PACKAGE_CLASSIFIER, ZIP_TYPE);
+    }
+
+    @Override
+    protected void onCndEntry(String path, Archive archive, Entry entry) throws Exception {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(archive.openInputStream(entry)))) {
+            String nodetypeRegistrationSentence;
+            while ((nodetypeRegistrationSentence = reader.readLine()) != null) {
+                aclManager.addNodetypeRegistrationSentence(nodetypeRegistrationSentence);
+            }
+        }
     }
 
 }
