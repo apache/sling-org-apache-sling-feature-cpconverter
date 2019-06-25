@@ -29,6 +29,10 @@ import org.xml.sax.helpers.DefaultHandler;
 
 public class PrivilegesHandler extends AbstractRegexEntryHandler {
 
+    private static final String XMLNS_PREFIX = "xmlns:";
+
+    private static final String PRIVILEGES = "privileges";
+
     private static final String PRIVILEGE = "privilege";
 
     private static final String NAME = "name";
@@ -59,11 +63,29 @@ public class PrivilegesHandler extends AbstractRegexEntryHandler {
         @Override
         public void startElement(String uri, String localName, String qName, Attributes attributes)
                 throws SAXException {
-            if (PRIVILEGE.equals(qName)) {
-                String privilege = attributes.getValue(NAME);
-                if (privilege != null && !privilege.isEmpty()) {
-                    aclManager.addPrivilege(privilege);
-                }
+            switch (qName) {
+                case PRIVILEGES:
+                    for (int i = 0; i < attributes.getLength(); i++) {
+                        String attrName = attributes.getQName(i);
+
+                        if (attrName.startsWith(XMLNS_PREFIX)) {
+                            String prefix = attrName.substring(XMLNS_PREFIX.length());
+                            String url = attributes.getValue(i);
+                            aclManager.addNamespace(prefix, url);
+                        }
+                    }
+                    break;
+
+                case PRIVILEGE:
+                    String privilege = attributes.getValue(NAME);
+                    if (privilege != null && !privilege.isEmpty()) {
+                        aclManager.addPrivilege(privilege);
+                    }
+                    break;
+
+                default:
+                    // do nothing
+                    break;
             }
         }
 

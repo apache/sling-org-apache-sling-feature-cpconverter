@@ -49,6 +49,10 @@ public final class DefaultAclManager implements AclManager {
 
     private final Map<String, List<Acl>> acls = new HashMap<>();
 
+    private final Map<String, String> preProvidedNamespaces = new HashMap<>();
+
+    private final Map<String, String> namespaces = new HashMap<>();
+
     private List<String> nodetypeRegistrationSentences = new LinkedList<>();
 
     private Set<String> privileges = new LinkedHashSet<>();
@@ -82,11 +86,25 @@ public final class DefaultAclManager implements AclManager {
         try {
             formatter = new Formatter();
 
+            // namespaces first
+
+            if (!namespaces.isEmpty()) {
+                for (Entry<String, String> namespace : namespaces.entrySet()) {
+                    formatter.format("register namespace (%s) %s%n", namespace.getKey(), namespace.getValue());
+                }
+                formatter.format("%n");
+            }
+
+            // privileges
+
             if (!privileges.isEmpty()) {
                 for (String privilege : privileges) {
                     formatter.format("register privilege %s%n", privilege);
                 }
+                formatter.format("%n");
             }
+
+            // register then all node types
 
             if (!nodetypeRegistrationSentences.isEmpty()) {
                 formatter.format("register nodetypes%n")
@@ -100,25 +118,28 @@ public final class DefaultAclManager implements AclManager {
                     }
                 }
 
-                formatter.format("===>>%n");
+                formatter.format("===>>%n%n");
             }
 
             // system users
+            if (!systemUsers.isEmpty()) {
+                for (String systemUser : systemUsers) {
+                    List<Acl> authorizations = acls.remove(systemUser);
 
-            for (String systemUser : systemUsers) {
-                List<Acl> authorizations = acls.remove(systemUser);
+                    // make sure all paths are created first
 
-                // make sure all paths are created first
+                    addPaths(authorizations, packageAssembler, formatter);
 
-                addPaths(authorizations, packageAssembler, formatter);
+                    // create then the users
 
-                // create then the users
+                    formatter.format("create service user %s%n", systemUser);
 
-                formatter.format("create service user %s%n", systemUser);
+                    // finally add ACLs
 
-                // finally add ACLs
+                    addAclStatement(formatter, systemUser, authorizations);
+                }
 
-                addAclStatement(formatter, systemUser, authorizations);
+                formatter.format("%n");
             }
 
             // all the resting ACLs can now be set
@@ -154,6 +175,14 @@ public final class DefaultAclManager implements AclManager {
     }
 
     @Override
+    public void addNamespace(String prefix, String url) {
+        if (!preProvidedNamespaces.containsKey(prefix)) {
+            preProvidedNamespaces.put(prefix, url);
+            namespaces.put(prefix, url);
+        }
+    }
+
+    @Override
     public void addNodetypeRegistrationSentence(String nodetypeRegistrationSentence) {
         if (nodetypeRegistrationSentence != null) {
             nodetypeRegistrationSentences.add(nodetypeRegistrationSentence);
@@ -168,6 +197,7 @@ public final class DefaultAclManager implements AclManager {
     public void reset() {
         systemUsers.clear();
         acls.clear();
+        namespaces.clear();
         nodetypeRegistrationSentences.clear();
         privileges.clear();
     }
