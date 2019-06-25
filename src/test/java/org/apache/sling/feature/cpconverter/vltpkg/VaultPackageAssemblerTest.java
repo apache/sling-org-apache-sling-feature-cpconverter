@@ -61,14 +61,14 @@ public class VaultPackageAssemblerTest {
     @Test
     public void packageResource() throws Exception {
         if (resourceLocation != null) {
-            assembler.addEntry(resourceLocation, getClass().getResourceAsStream("../handlers/" + resourceLocation));
+            assembler.addEntry(resourceLocation, getClass().getResourceAsStream("../handlers" + resourceLocation));
         }
         File contentPackage = assembler.createPackage(testDirectory);
 
         ZipFile zipFile = new ZipFile(contentPackage);
         ZipEntry resourceEntry;
         if (resourceLocation != null) {
-            resourceEntry = zipFile.getEntry(resourceLocation);
+            resourceEntry = zipFile.getEntry(resourceLocation.substring(1));
         } else {
             resourceEntry = zipFile.getEntry("jcr_root");
         }
@@ -87,9 +87,9 @@ public class VaultPackageAssemblerTest {
 
         return Arrays.asList(new Object[][] {
             { null, assembler },
-            { "jcr_root/.content.xml", assembler },
-            { "jcr_root/asd/.content.xml", assembler },
-            { "jcr_root/asd/public/license.txt", assembler }
+            { "/jcr_root/.content.xml", assembler },
+            { "/jcr_root/asd/.content.xml", assembler },
+            { "/jcr_root/asd/public/license.txt", assembler }
         });
     }
 

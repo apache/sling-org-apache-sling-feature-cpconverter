@@ -60,12 +60,12 @@ public final class RepPolicyEntryHandlerTest {
     @Test
     public void doesNotMatch() {
         assertFalse(handler.matches("/this/is/a/path/not/pointing/to/a/valid/policy.xml"));
+        assertFalse(handler.matches("/home/users/system/asd-share-commons/asd-index-definition-reader/_rep_policy.xml"));
     }
 
     @Test
     public void matches() {
-        assertTrue(handler.matches("/home/users/system/asd-share-commons/asd-index-definition-reader/_rep_policy.xml"));
-        assertTrue(handler.matches("jcr_root/home/users/system/asd-share-commons/asd-index-definition-reader/_rep_policy.xml"));
+        assertTrue(handler.matches("/jcr_root/home/users/system/asd-share-commons/asd-index-definition-reader/_rep_policy.xml"));
     }
 
     @Test
@@ -147,12 +147,12 @@ public final class RepPolicyEntryHandlerTest {
     }
 
     private Extension parseAndSetRepoinit(String...systemUsers) throws Exception {
-        String path = "jcr_root/asd/public/_rep_policy.xml";
+        String path = "/jcr_root/asd/public/_rep_policy.xml";
         Archive archive = mock(Archive.class);
         Entry entry = mock(Entry.class);
         VaultPackageAssembler packageAssembler = mock(VaultPackageAssembler.class);
 
-        when(archive.openInputStream(entry)).thenReturn(getClass().getResourceAsStream(path));
+        when(archive.openInputStream(entry)).thenReturn(getClass().getResourceAsStream(path.substring(1)));
 
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
         FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);

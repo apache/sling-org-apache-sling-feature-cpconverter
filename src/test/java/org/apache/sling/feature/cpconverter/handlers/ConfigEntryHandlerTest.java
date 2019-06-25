@@ -48,13 +48,13 @@ public class ConfigEntryHandlerTest {
 
     @Test
     public void collectionValuesIncluded() throws Exception {
-        String resourceConfiguration = "jcr_root/apps/asd/config/org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~ims.config";
+        String resourceConfiguration = "/jcr_root/apps/asd/config/org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~ims.config";
 
         Archive archive = mock(Archive.class);
         Entry entry = mock(Entry.class);
 
         when(entry.getName()).thenReturn(resourceConfiguration.substring(resourceConfiguration.lastIndexOf('/') + 1));
-        when(archive.openInputStream(entry)).thenReturn(getClass().getResourceAsStream(resourceConfiguration));
+        when(archive.openInputStream(entry)).thenReturn(getClass().getResourceAsStream(resourceConfiguration.substring(1)));
 
         Feature expected = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
         FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);

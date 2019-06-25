@@ -20,4 +20,6 @@ public interface EntryHandlersManager {
 
     EntryHandler getEntryHandlerByEntryPath(String path);
 
+    void addEntryHandler(EntryHandler handler);
+
 }

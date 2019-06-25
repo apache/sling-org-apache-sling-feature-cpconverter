@@ -60,7 +60,7 @@ public final class BundleEntryHandlerTest {
 
     @Test
     public void doesNotMatch() {
-        assertFalse(bundleEntryHandler.matches("jcr_root/not/a/valid/recognised/bundle.jar"));
+        assertFalse(bundleEntryHandler.matches("/jcr_root/not/a/valid/recognised/bundle.jar"));
     }
 
     @Test
@@ -83,7 +83,7 @@ public final class BundleEntryHandlerTest {
 
             @Override
             public InputStream answer(InvocationOnMock invocation) throws Throwable {
-                return getClass().getResourceAsStream(bundleLocation);
+                return getClass().getResourceAsStream(bundleLocation.substring(1));
             }
 
         });
@@ -115,10 +115,10 @@ public final class BundleEntryHandlerTest {
         final BundleEntryHandler bundleEntryHandler = new BundleEntryHandler();
 
         return Arrays.asList(new Object[][] {
-            { "jcr_root/apps/asd/install/test-framework-no-pom.jar", bundleEntryHandler },
-            { "jcr_root/apps/asd/install/test-framework.jar", bundleEntryHandler },
-            { "jcr_root/apps/asd/install.author/test-framework.jar", bundleEntryHandler },
-            { "jcr_root/apps/asd/install.publish/test-framework.jar", bundleEntryHandler }
+            { "/jcr_root/apps/asd/install/test-framework-no-pom.jar", bundleEntryHandler },
+            { "/jcr_root/apps/asd/install/test-framework.jar", bundleEntryHandler },
+            { "/jcr_root/apps/asd/install.author/test-framework.jar", bundleEntryHandler },
+            { "/jcr_root/apps/asd/install.publish/test-framework.jar", bundleEntryHandler }
         });
     }
 

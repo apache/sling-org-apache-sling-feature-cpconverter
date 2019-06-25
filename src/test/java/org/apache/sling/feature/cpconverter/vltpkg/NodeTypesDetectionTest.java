@@ -16,19 +16,18 @@
  */
 package org.apache.sling.feature.cpconverter.vltpkg;
 
+import static org.apache.commons.io.FileUtils.toFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.apache.commons.io.FileUtils.toFile;
 
 import java.io.File;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.regex.Pattern;
 
-import org.apache.jackrabbit.vault.fs.io.Archive;
-import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
-import org.apache.sling.feature.cpconverter.vltpkg.BaseVaultPackageScanner;
+import org.apache.jackrabbit.vault.fs.io.ImportOptions;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -48,16 +47,15 @@ public class NodeTypesDetectionTest {
 
         new BaseVaultPackageScanner(true) {
 
-            @Override
-            protected void onCndEntry(String path, Archive archive, Entry entry) throws Exception {
-                detectedCndFiles.add(path);
+            protected void addCdnPattern(Pattern cndPattern) {
+                detectedCndFiles.add(cndPattern.pattern());
             }
 
         }.traverse(packageFile, true);
 
         assertFalse(detectedCndFiles.isEmpty());
         assertEquals(1, detectedCndFiles.size());
-        assertTrue(detectedCndFiles.contains("META-INF/vault/nodetypes.cnd"));
+        assertTrue(detectedCndFiles.contains(new ImportOptions().getCndPattern().pattern()));
     }
 
 }

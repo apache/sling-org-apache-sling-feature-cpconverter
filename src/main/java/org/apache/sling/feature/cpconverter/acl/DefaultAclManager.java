@@ -51,6 +51,8 @@ public final class DefaultAclManager implements AclManager {
 
     private List<String> nodetypeRegistrationSentences = new LinkedList<>();
 
+    private Set<String> privileges = new LinkedHashSet<>();
+
     public boolean addSystemUser(String systemUser) {
         if (systemUser != null && !systemUser.isEmpty() && preProvidedSystemUsers.add(systemUser)) {
             return systemUsers.add(systemUser);
@@ -79,6 +81,12 @@ public final class DefaultAclManager implements AclManager {
         Formatter formatter = null;
         try {
             formatter = new Formatter();
+
+            if (!privileges.isEmpty()) {
+                for (String privilege : privileges) {
+                    formatter.format("register privilege %s%n", privilege);
+                }
+            }
 
             if (!nodetypeRegistrationSentences.isEmpty()) {
                 formatter.format("register nodetypes%n")
@@ -152,10 +160,16 @@ public final class DefaultAclManager implements AclManager {
         }
     }
 
+    @Override
+    public void addPrivilege(String privilege) {
+        privileges.add(privilege);
+    }
+
     public void reset() {
         systemUsers.clear();
         acls.clear();
         nodetypeRegistrationSentences.clear();
+        privileges.clear();
     }
 
     private void addPaths(List<Acl> authorizations, VaultPackageAssembler packageAssembler, Formatter formatter) {

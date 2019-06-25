@@ -32,7 +32,7 @@ public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHa
     private final File temporaryDir = new File(System.getProperty("java.io.tmpdir"), "sub-content-packages");
 
     public AbstractContentPackageHandler() {
-        super("(?:jcr_root)?/etc/packages/.+\\.zip");
+        super("/jcr_root/etc/packages/.+\\.zip");
         temporaryDir.mkdirs();
     }
 
