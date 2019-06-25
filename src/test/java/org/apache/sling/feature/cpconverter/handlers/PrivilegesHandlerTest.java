@@ -23,6 +23,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import java.util.Arrays;
+
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.ArtifactId;
@@ -80,7 +82,7 @@ public class PrivilegesHandlerTest {
 
         handler.handle(path, archive, entry, converter);
 
-        converter.getAclManager().addRepoinitExtension(packageAssembler, feature);
+        converter.getAclManager().addRepoinitExtension(Arrays.asList(packageAssembler), feature);
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);

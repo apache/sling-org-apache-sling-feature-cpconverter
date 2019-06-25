@@ -23,6 +23,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,6 +59,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     private static final String DEFEAULT_VERSION = "0.0.0";
 
     private final Map<PackageId, String> subContentPackages = new HashMap<>();
+
+    private final List<VaultPackageAssembler> assemblers = new LinkedList<>();
 
     private EntryHandlersManager handlersManager;
 
@@ -165,6 +169,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         for (VaultPackage vaultPackage : orderedContentPackages) {
             try {
                 mainPackageAssembler = VaultPackageAssembler.create(vaultPackage);
+                assemblers.add(mainPackageAssembler);
 
                 ArtifactId packageId = toArtifactId(vaultPackage);
 
@@ -186,13 +191,14 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
                 // finally serialize the Feature Model(s) file(s)
 
-                aclManager.addRepoinitExtension(mainPackageAssembler, featuresManager.getTargetFeature());
+                aclManager.addRepoinitExtension(assemblers, featuresManager.getTargetFeature());
 
                 logger.info("Conversion complete!");
 
                 featuresManager.serialize();
             } finally {
                 aclManager.reset();
+                assemblers.clear();
 
                 try {
                     vaultPackage.close();
@@ -239,6 +245,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         // Please note: THIS IS A HACK to meet the new requirement without drastically change the original design
         // temporary swap the main handler to collect stuff
         VaultPackageAssembler handler = mainPackageAssembler;
+        assemblers.add(handler);
         mainPackageAssembler = clonedPackage;
 
         // scan the detected package, first

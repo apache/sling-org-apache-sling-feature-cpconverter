@@ -23,6 +23,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.util.Arrays;
 
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Extension;
@@ -65,7 +66,7 @@ public class AclManagerTest {
         when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
 
-        aclManager.addRepoinitExtension(assembler, feature);
+        aclManager.addRepoinitExtension(Arrays.asList(assembler), feature);
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);

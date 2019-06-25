@@ -27,6 +27,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.util.Arrays;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
@@ -171,7 +172,7 @@ public final class RepPolicyEntryHandlerTest {
 
         when(packageAssembler.getEntry(anyString())).thenReturn(new File("itdoesnotexist"));
 
-        converter.getAclManager().addRepoinitExtension(packageAssembler, feature);
+        converter.getAclManager().addRepoinitExtension(Arrays.asList(packageAssembler), feature);
         return feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
     }
 

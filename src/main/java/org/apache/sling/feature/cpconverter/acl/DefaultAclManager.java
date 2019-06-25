@@ -77,7 +77,7 @@ public final class DefaultAclManager implements AclManager {
         }
     }
 
-    public void addRepoinitExtension(VaultPackageAssembler packageAssembler, Feature feature) {
+    public void addRepoinitExtension(List<VaultPackageAssembler> packageAssemblers, Feature feature) {
         Formatter formatter = null;
         try {
             formatter = new Formatter();
@@ -110,7 +110,7 @@ public final class DefaultAclManager implements AclManager {
 
                 // make sure all paths are created first
 
-                addPaths(authorizations, packageAssembler, formatter);
+                addPaths(authorizations, packageAssemblers, formatter);
 
                 // create then the users
 
@@ -131,7 +131,7 @@ public final class DefaultAclManager implements AclManager {
 
                     // make sure all paths are created first
 
-                    addPaths(authorizations, packageAssembler, formatter);
+                    addPaths(authorizations, packageAssemblers, formatter);
 
                     // finally add ACLs
 
@@ -172,7 +172,7 @@ public final class DefaultAclManager implements AclManager {
         privileges.clear();
     }
 
-    private void addPaths(List<Acl> authorizations, VaultPackageAssembler packageAssembler, Formatter formatter) {
+    private void addPaths(List<Acl> authorizations, List<VaultPackageAssembler> packageAssemblers, Formatter formatter) {
         if (areEmpty(authorizations)) {
             return;
         }
@@ -182,25 +182,32 @@ public final class DefaultAclManager implements AclManager {
             addPath(authorization.getPath(), paths);
         }
 
-        for (String path : paths) {
-            File currentDir = packageAssembler.getEntry(path);
-            String type = DEFAULT_TYPE;
+        Set<String> visitedPaths = new HashSet<>();
+        for (VaultPackageAssembler packageAssembler: packageAssemblers) {
+            for (String path : paths) {
+                if (!visitedPaths.add(path)) {
+                    continue;
+                }
 
-            if (currentDir.exists()) {
-                File currentContent = new File(currentDir, CONTENT_XML_FILE_NAME);
-                if (currentContent.exists()) {
-                    try (FileInputStream input = new FileInputStream(currentContent)) {
-                        type = new PrimaryTypeParser(DEFAULT_TYPE).parse(input);
-                    } catch (Exception e) {
-                        throw new RuntimeException("A fatal error occurred while parsing the '"
-                            + currentContent
-                            + "' file, see nested exceptions: "
-                            + e);
+                File currentDir = packageAssembler.getEntry(path);
+                String type = DEFAULT_TYPE;
+
+                if (currentDir.exists()) {
+                    File currentContent = new File(currentDir, CONTENT_XML_FILE_NAME);
+                    if (currentContent.exists()) {
+                        try (FileInputStream input = new FileInputStream(currentContent)) {
+                            type = new PrimaryTypeParser(DEFAULT_TYPE).parse(input);
+                        } catch (Exception e) {
+                            throw new RuntimeException("A fatal error occurred while parsing the '"
+                                + currentContent
+                                + "' file, see nested exceptions: "
+                                + e);
+                        }
                     }
                 }
-            }
 
-            formatter.format("create path (%s) %s%n", type, path);
+                formatter.format("create path (%s) %s%n", type, path);
+            }
         }
     }
 
