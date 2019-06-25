@@ -16,31 +16,33 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.regex.Pattern;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.junit.Test;
 
-public class JsonConfigurationEntryHandlerTest {
+public class NodeTypesEntryHandler extends AbstractRegexEntryHandler {
 
-    @Test(expected = IOException.class)
-    public void invalidConfigurationThrowsException() throws Exception {
-        String resourceConfiguration = "/jcr_root/apps/asd/config/org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.INVALID.cfg.json";
+    public NodeTypesEntryHandler() {
+        super("/META-INF/vault/nodetypes\\.cnd");
+    }
 
-        Archive archive = mock(Archive.class);
-        Entry entry = mock(Entry.class);
+    public NodeTypesEntryHandler(Pattern pattern) {
+        super(pattern);
+    }
 
-        when(entry.getName()).thenReturn(resourceConfiguration.substring(resourceConfiguration.lastIndexOf('/') + 1));
-        when(archive.openInputStream(entry)).thenReturn(getClass().getResourceAsStream(resourceConfiguration.substring(1)));
-
-        ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
-
-        new JsonConfigurationEntryHandler().handle(resourceConfiguration, archive, entry, converter);
+    @Override
+    public void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter)
+            throws Exception {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(archive.openInputStream(entry)))) {
+            String nodetypeRegistrationSentence;
+            while ((nodetypeRegistrationSentence = reader.readLine()) != null) {
+                converter.getAclManager().addNodetypeRegistrationSentence(nodetypeRegistrationSentence);
+            }
+        }
     }
 
 }

@@ -17,18 +17,34 @@
 package org.apache.sling.feature.cpconverter.handlers;
 
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.ServiceLoader;
 
 public class DefaultEntryHandlersManager implements EntryHandlersManager {
 
-    private final ServiceLoader<EntryHandler> entryHandlers = ServiceLoader.load(EntryHandler.class);
+    private final List<EntryHandler> entryHandlers = new LinkedList<>();
 
-    @Override
-    public EntryHandler getEntryHandlerByEntryPath(String path) {
-        Iterator<EntryHandler> entryHandlersIterator = entryHandlers.iterator();
+    public DefaultEntryHandlersManager() {
+        ServiceLoader<EntryHandler> entryHandlersLoader = ServiceLoader.load(EntryHandler.class);
+        Iterator<EntryHandler> entryHandlersIterator = entryHandlersLoader.iterator();
         while (entryHandlersIterator.hasNext()) {
             EntryHandler entryHandler = entryHandlersIterator.next();
 
+            addEntryHandler(entryHandler);
+        }
+    }
+
+    @Override
+    public void addEntryHandler(EntryHandler handler) {
+        if (handler != null) {
+            entryHandlers.add(handler);
+        }
+    }
+
+    @Override
+    public EntryHandler getEntryHandlerByEntryPath(String path) {
+        for (EntryHandler entryHandler : entryHandlers) {
             if (entryHandler.matches(path)) {
                 return entryHandler;
             }

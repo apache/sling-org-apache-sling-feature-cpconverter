@@ -16,21 +16,17 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
-
-import java.io.File;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Extension;
-import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.acl.DefaultAclManager;
@@ -41,55 +37,39 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class SystemUsersEntryHandlerTest {
+public class PrivilegesHandlerTest {
 
-    private SystemUsersEntryHandler systemUsersEntryHandler;
+    private PrivilegesHandler handler;
 
     @Before
     public void setUp() {
-        systemUsersEntryHandler = new SystemUsersEntryHandler();
+        handler = new PrivilegesHandler();
     }
 
     @After
     public void tearDown() {
-        systemUsersEntryHandler = null;
+        handler = null;
     }
 
     @Test
     public void doesNotMatch() {
-        assertFalse(systemUsersEntryHandler.matches("/this/is/a/path/not/pointing/to/a/valid/configuration.asd"));
-        assertFalse(systemUsersEntryHandler.matches("/home/users/system/asd-share-commons/asd-index-definition-reader/.content.xml"));
+        assertFalse(handler.matches("/this/is/a/path/not/pointing/to/a/valid/privileges.xml"));
     }
 
     @Test
     public void matches() {
-        assertTrue(systemUsersEntryHandler.matches("/jcr_root/home/users/system/asd-share-commons/asd-index-definition-reader/.content.xml"));
+        assertTrue(handler.matches("META-INF/vault/privileges.xml"));
     }
 
     @Test
-    public void parseSystemUser() throws Exception {
-        String path = "/jcr_root/home/users/system/asd-share-commons/asd-index-definition-reader/.content.xml";
-        Extension repoinitExtension = parseAndSetRepoinit(path);
-
-        assertNotNull(repoinitExtension);
-        assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
-        assertTrue(repoinitExtension.isRequired());
-        assertEquals("create service user asd-share-commons-asd-index-definition-reader-service\n", repoinitExtension.getText());
-    }
-
-    @Test
-    public void unrecognisedSystemUserJcrNode() throws Exception {
-        String path = "/jcr_root/home/users/system/asd-share-commons/asd-index-definition-invalid/.content.xml";
-        Extension repoinitExtension = parseAndSetRepoinit(path);
-        assertNull(repoinitExtension);
-    }
-
-    private Extension parseAndSetRepoinit(String path) throws Exception {
+    public void parsePrivileges() throws Exception {
+        String path = "/META-INF/vault/privileges.xml";
         Archive archive = mock(Archive.class);
         Entry entry = mock(Entry.class);
-        VaultPackageAssembler packageAssembler = mock(VaultPackageAssembler.class);
 
         when(archive.openInputStream(entry)).thenReturn(getClass().getResourceAsStream(path.substring(1)));
+
+        VaultPackageAssembler packageAssembler = mock(VaultPackageAssembler.class);
 
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
         FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);
@@ -98,12 +78,13 @@ public class SystemUsersEntryHandlerTest {
         when(converter.getFeaturesManager()).thenReturn(featuresManager);
         when(converter.getAclManager()).thenReturn(new DefaultAclManager());
 
-        systemUsersEntryHandler.handle(path, archive, entry, converter);
-
-        when(packageAssembler.getEntry(anyString())).thenReturn(new File("itdoesnotexist"));
+        handler.handle(path, archive, entry, converter);
 
         converter.getAclManager().addRepoinitExtension(packageAssembler, feature);
-        return feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+
+        Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+        assertNotNull(repoinitExtension);
+        assertTrue(repoinitExtension.getText().contains("register privilege rx:replicate\n"));
     }
 
 }

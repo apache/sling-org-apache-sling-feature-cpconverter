@@ -16,18 +16,15 @@
  */
 package org.apache.sling.feature.cpconverter.vltpkg;
 
-import static org.apache.jackrabbit.vault.util.Constants.META_DIR;
-import static org.apache.jackrabbit.vault.util.Constants.NODETYPES_CND;
-import static org.apache.jackrabbit.vault.packaging.PackageProperties.NAME_CND_PATTERN;
 import static java.util.Objects.requireNonNull;
+import static org.apache.jackrabbit.vault.packaging.PackageProperties.NAME_CND_PATTERN;
 
 import java.io.File;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
-import org.apache.jackrabbit.vault.fs.io.ImportOptions;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
+import org.apache.jackrabbit.vault.fs.io.ImportOptions;
 import org.apache.jackrabbit.vault.packaging.PackageManager;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
@@ -80,44 +77,29 @@ public abstract class BaseVaultPackageScanner {
         if (cndPattern != null && !cndPattern.isEmpty()) {
             importOptions.setCndPattern(cndPattern);
         }
+        addCdnPattern(importOptions.getCndPattern());
 
         Archive archive = vaultPackage.getArchive();
         try {
             archive.open(strictValidation);
 
-            String nodetypesPath = META_DIR + '/' + NODETYPES_CND;
-            Entry nodetypesEntry = archive.getEntry(nodetypesPath);
-            if (nodetypesEntry != null && !nodetypesEntry.isDirectory()) {
-                onCndEntry(nodetypesPath, archive, nodetypesEntry);
-            }
-
-            Entry jcrRoot = archive.getJcrRoot();
-            traverse(null, archive, jcrRoot, importOptions.getCndPattern());
+            Entry root = archive.getRoot();
+            traverse(null, archive, root);
         } finally {
             archive.close();
         }
     }
 
-    private void traverse(String path, Archive archive, Entry entry, Pattern cndPattern) throws Exception {
+    private void traverse(String path, Archive archive, Entry entry) throws Exception {
         String entryPath = newPath(path, entry.getName());
 
         if (entry.isDirectory()) {
             onDirectory(entryPath, archive, entry);
 
             for (Entry child : entry.getChildren()) {
-                traverse(entryPath, archive, child, cndPattern);
+                traverse(entryPath, archive, child);
             }
 
-            return;
-        }
-
-        Matcher cndMatcher = cndPattern.matcher(entryPath);
-        if (cndMatcher.matches()) {
-            logger.debug("Detected CND file {}, processing it...", entryPath);
-
-            onCndEntry(entryPath, archive, entry);
-
-            logger.debug("CND file {} processed.", entryPath);
             return;
         }
 
@@ -144,7 +126,7 @@ public abstract class BaseVaultPackageScanner {
         // do nothing by default
     }
 
-    protected void onCndEntry(String path, Archive archive, Entry entry) throws Exception {
+    protected void addCdnPattern(Pattern cndPattern) {
         // do nothing by default
     }
 

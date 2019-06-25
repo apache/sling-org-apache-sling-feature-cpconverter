@@ -18,9 +18,7 @@ package org.apache.sling.feature.cpconverter;
 
 import static java.util.Objects.requireNonNull;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -28,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Pattern;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
@@ -43,6 +42,7 @@ import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.ResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
+import org.apache.sling.feature.cpconverter.handlers.NodeTypesEntryHandler;
 import org.apache.sling.feature.cpconverter.vltpkg.BaseVaultPackageScanner;
 import org.apache.sling.feature.cpconverter.vltpkg.RecollectorVaultPackageScanner;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
@@ -293,13 +293,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     }
 
     @Override
-    protected void onCndEntry(String path, Archive archive, Entry entry) throws Exception {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(archive.openInputStream(entry)))) {
-            String nodetypeRegistrationSentence;
-            while ((nodetypeRegistrationSentence = reader.readLine()) != null) {
-                aclManager.addNodetypeRegistrationSentence(nodetypeRegistrationSentence);
-            }
-        }
+    protected void addCdnPattern(Pattern cndPattern) {
+        handlersManager.addEntryHandler(new NodeTypesEntryHandler(cndPattern));
     }
 
 }

@@ -343,8 +343,8 @@ public class ContentPackage2FeatureModelConverterTest {
         File[] contentPackages = load("test-content-package.zip", "test-content-package-2.zip");
         converter.firstPass(contentPackages);
 
-        assertTrue(converter.isSubContentPackageIncluded("jcr_root/etc/packages/asd/test-content-0.2.zip"));
-        assertFalse(converter.isSubContentPackageIncluded("jcr_root/etc/packages/asd/test-content.zip"));
+        assertTrue(converter.isSubContentPackageIncluded("/jcr_root/etc/packages/asd/test-content-0.2.zip"));
+        assertFalse(converter.isSubContentPackageIncluded("/jcr_root/etc/packages/asd/test-content.zip"));
     }
 
     @Test

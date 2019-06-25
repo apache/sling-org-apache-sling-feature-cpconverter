@@ -78,7 +78,7 @@ public class ConfigurationEntryHandlerTest {
         Entry entry = mock(Entry.class);
 
         when(entry.getName()).thenReturn(resourceConfiguration.substring(resourceConfiguration.lastIndexOf('/') + 1));
-        when(archive.openInputStream(entry)).thenReturn(getClass().getResourceAsStream(resourceConfiguration));
+        when(archive.openInputStream(entry)).thenReturn(getClass().getResourceAsStream(resourceConfiguration.substring(1)));
 
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
         FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);
@@ -104,7 +104,7 @@ public class ConfigurationEntryHandlerTest {
 
     @Parameters
     public static Collection<Object[]> data() {
-        String path = "jcr_root/apps/asd/config/";
+        String path = "/jcr_root/apps/asd/config/";
 
         return Arrays.asList(new Object[][] {
             { path + EXPECTED_PID + ".empty.cfg", 0, new PropertiesConfigurationEntryHandler() },
@@ -123,8 +123,8 @@ public class ConfigurationEntryHandlerTest {
             { path + EXPECTED_PID + ".xml.cfg", 1, new PropertiesConfigurationEntryHandler() },
 
             // runmode aware folders
-            { "jcr_root/apps/asd/config.author/" + EXPECTED_PID + ".config", 1, new ConfigurationEntryHandler() },
-            { "jcr_root/apps/asd/config.publish/" + EXPECTED_PID + ".config", 1, new ConfigurationEntryHandler() },
+            { "/jcr_root/apps/asd/config.author/" + EXPECTED_PID + ".config", 1, new ConfigurationEntryHandler() },
+            { "/jcr_root/apps/asd/config.publish/" + EXPECTED_PID + ".config", 1, new ConfigurationEntryHandler() },
         });
     }
 

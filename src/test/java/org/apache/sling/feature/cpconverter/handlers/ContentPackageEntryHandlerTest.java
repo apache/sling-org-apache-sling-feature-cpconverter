@@ -44,7 +44,7 @@ public final class ContentPackageEntryHandlerTest {
 
     @Test
     public void matches() {
-        assertTrue(contentPackageEntryhandler.matches("jcr_root/etc/packages/asd/v6/sample/asd.content-1.0.zip"));
+        assertTrue(contentPackageEntryhandler.matches("/jcr_root/etc/packages/asd/v6/sample/asd.content-1.0.zip"));
     }
 
 }

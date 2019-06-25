@@ -36,7 +36,7 @@ import org.xml.sax.SAXException;
 public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
 
     public RepPolicyEntryHandler() {
-        super("(jcr_root)?(/.+)/_rep_policy.xml");
+        super("/jcr_root(/.+)/_rep_policy.xml");
     }
 
     @Override
@@ -45,7 +45,7 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
         Matcher matcher = getPattern().matcher(path);
         // we are pretty sure it matches, here
         if (matcher.matches()) {
-            path = matcher.group(2);
+            path = matcher.group(1);
         } else {
             throw new IllegalStateException("Something went terribly wrong: pattern '"
                                             + getPattern().pattern()

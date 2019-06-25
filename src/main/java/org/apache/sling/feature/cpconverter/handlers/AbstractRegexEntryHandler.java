@@ -28,7 +28,11 @@ abstract class AbstractRegexEntryHandler implements EntryHandler {
     private final Pattern pattern;
 
     public AbstractRegexEntryHandler(String regex) {
-        pattern = Pattern.compile(regex);
+        this(Pattern.compile(regex));
+    }
+
+    public AbstractRegexEntryHandler(Pattern pattern) {
+        this.pattern = pattern;
     }
 
     @Override

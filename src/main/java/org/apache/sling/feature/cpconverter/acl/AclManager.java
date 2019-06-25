@@ -32,6 +32,8 @@ public interface AclManager {
 
     void addNodetypeRegistrationSentence(String nodetypeRegistrationSentence);
 
+    void addPrivilege(String privilege);
+
     void reset();
 
 }

@@ -27,7 +27,7 @@ import org.xml.sax.Attributes;
 public final class SystemUsersEntryHandler extends AbstractRegexEntryHandler {
 
     public SystemUsersEntryHandler() {
-        super("(jcr_root)?/home/users/.*/\\.content.xml");
+        super("/jcr_root/home/users/.*/\\.content.xml");
     }
 
     @Override
