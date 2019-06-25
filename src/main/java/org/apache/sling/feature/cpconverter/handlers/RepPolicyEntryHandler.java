@@ -74,7 +74,7 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
 
         private static final String REP_PRIVILEGES = "rep:privileges";
 
-        private static final String[] RESTRICTIONS = new String[] { "rep:glob" };
+        private static final String[] RESTRICTIONS = new String[] { "rep:glob", "rep:ntNames", "rep:prefixes", "rep:itemNames" };
 
         private static final Map<String, String> operations = new HashMap<>();
 
