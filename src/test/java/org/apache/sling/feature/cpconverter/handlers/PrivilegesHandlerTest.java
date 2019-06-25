@@ -84,8 +84,7 @@ public class PrivilegesHandlerTest {
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
-        assertTrue(repoinitExtension.getText().contains("register namespace (rx) http://sling.apache.org/rx/1.0"));
-        assertTrue(repoinitExtension.getText().contains("register privilege rx:replicate"));
+        assertTrue(repoinitExtension.getText().contains("register privilege rx:replicate\n"));
     }
 
 }
