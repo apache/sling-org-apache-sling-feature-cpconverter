@@ -69,6 +69,11 @@ public final class RepPolicyEntryHandlerTest {
     }
 
     @Test
+    public void matchesRootPolicies() {
+        assertTrue(handler.matches("/jcr_root/_rep_policy.xml"));
+    }
+
+    @Test
     public void parseAcl() throws Exception {
         Extension repoinitExtension = parseAndSetRepoinit("acs-commons-ensure-oak-index-service",
                                                           "acs-commons-dispatcher-flush-service",
