@@ -18,6 +18,8 @@ package org.apache.sling.feature.cpconverter.acl;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,7 +45,7 @@ public final class DefaultAclManager implements AclManager {
 
     private final Set<String> preProvidedSystemUsers = new LinkedHashSet<>();
 
-    private final Set<String> preProvidedPaths = new HashSet<String>();
+    private final Set<Path> preProvidedPaths = new HashSet<>();
 
     private final Set<String> systemUsers = new LinkedHashSet<>();
 
@@ -61,19 +63,19 @@ public final class DefaultAclManager implements AclManager {
     }
 
     public Acl addAcl(String systemUser, String operation, String privileges, String path) {
-        Acl acl = new Acl(operation, privileges, path);
+        Acl acl = new Acl(operation, privileges, Paths.get(path));
         acls.computeIfAbsent(systemUser, k -> new LinkedList<>()).add(acl);
         return acl;
     }
 
-    private void addPath(String path, Set<String> paths) {
+    private void addPath(Path path, Set<Path> paths) {
         if (preProvidedPaths.add(path)) {
             paths.add(path);
         }
 
-        int endIndex = path.lastIndexOf('/');
-        if (endIndex > 0) {
-            addPath(path.substring(0, endIndex), paths);
+        Path parent = path.getParent();
+        if (parent != null && parent.getNameCount() > 0) {
+            addPath(parent, paths);
         }
     }
 
@@ -177,13 +179,13 @@ public final class DefaultAclManager implements AclManager {
             return;
         }
 
-        Set<String> paths = new TreeSet<String>();
+        Set<Path> paths = new TreeSet<>();
         for (Acl authorization : authorizations) {
             addPath(authorization.getPath(), paths);
         }
 
-        for (String path : paths) {
-            File currentDir = packageAssembler.getEntry(path);
+        for (Path path : paths) {
+            File currentDir = packageAssembler.getEntry(path.toString());
             String type = DEFAULT_TYPE;
 
             if (currentDir.exists()) {

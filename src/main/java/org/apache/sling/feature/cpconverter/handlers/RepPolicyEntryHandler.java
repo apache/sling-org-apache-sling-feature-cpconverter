@@ -36,7 +36,7 @@ import org.xml.sax.SAXException;
 public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
 
     public RepPolicyEntryHandler() {
-        super("/jcr_root(.*)/_rep_policy.xml");
+        super("/jcr_root(.*/)_rep_policy.xml");
     }
 
     @Override
