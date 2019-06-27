@@ -35,7 +35,7 @@ public final class Acl {
     protected Acl(String operation, String privileges, String path) {
         this.operation = operation;
         this.privileges = privileges;
-        this.path = path;
+        this.path = path != null && !path.isEmpty() ? path : "/";
     }
 
     public void addRestriction(String restriction) {
