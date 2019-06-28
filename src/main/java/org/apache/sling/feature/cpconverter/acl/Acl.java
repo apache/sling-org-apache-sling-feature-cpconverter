@@ -33,7 +33,7 @@ public final class Acl {
 
     private final List<String> restrictions = new LinkedList<>();
 
-    protected Acl(String operation, String privileges, Path path) {
+    public Acl(String operation, String privileges, Path path) {
         this.operation = operation;
         this.privileges = privileges;
         this.path = path;

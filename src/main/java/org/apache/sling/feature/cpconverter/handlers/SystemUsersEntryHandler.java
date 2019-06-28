@@ -17,10 +17,13 @@
 package org.apache.sling.feature.cpconverter.handlers;
 
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.acl.SystemUser;
 import org.apache.sling.feature.cpconverter.shared.AbstractJcrNodeParser;
 import org.xml.sax.Attributes;
 
@@ -33,7 +36,7 @@ public final class SystemUsersEntryHandler extends AbstractRegexEntryHandler {
     @Override
     public void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter)
             throws Exception {
-        SystemUserParser systemUserParser = new SystemUserParser(converter);
+        SystemUserParser systemUserParser = new SystemUserParser(converter, Paths.get(path).getParent());
         try (InputStream input = archive.openInputStream(entry)) {
             systemUserParser.parse(input);
         }
@@ -47,16 +50,19 @@ public final class SystemUsersEntryHandler extends AbstractRegexEntryHandler {
 
         private final ContentPackage2FeatureModelConverter converter;
 
-        public SystemUserParser(ContentPackage2FeatureModelConverter converter) {
+        private final Path path;
+
+        public SystemUserParser(ContentPackage2FeatureModelConverter converter, Path path) {
             super(REP_SYSTEM_USER);
             this.converter = converter;
+            this.path = path;
         }
 
         @Override
         protected void onJcrRootElement(String uri, String localName, String qName, Attributes attributes) {
             String authorizableId = attributes.getValue(REP_AUTHORIZABLE_ID);
             if (authorizableId != null && !authorizableId.isEmpty()) {
-                converter.getAclManager().addSystemUser(authorizableId);
+                converter.getAclManager().addSystemUser(new SystemUser(authorizableId, path));
             }
         }
 

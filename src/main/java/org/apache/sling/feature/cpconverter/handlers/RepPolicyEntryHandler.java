@@ -19,6 +19,7 @@ package org.apache.sling.feature.cpconverter.handlers;
 import static org.apache.jackrabbit.JcrConstants.JCR_PRIMARYTYPE;
 
 import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -112,7 +113,9 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
                     int endIndex = privileges.indexOf(']');
                     privileges = privileges.substring(beginIndex, endIndex);
 
-                    acls.add(aclManager.addAcl(principalName, operation, privileges, path));
+                    Acl acl = new Acl(operation, privileges, Paths.get(path));
+
+                    acls.add(aclManager.addAcl(principalName, acl));
                 } else if (REP_RESTRICTIONS.equals(primaryType) && !acls.isEmpty()) {
                     for (String restriction : RESTRICTIONS) {
                         String path = attributes.getValue(restriction);

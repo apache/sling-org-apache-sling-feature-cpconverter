@@ -19,7 +19,6 @@ package org.apache.sling.feature.cpconverter.acl;
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -43,11 +42,11 @@ public final class DefaultAclManager implements AclManager {
 
     private static final String DEFAULT_TYPE = "sling:Folder";
 
-    private final Set<String> preProvidedSystemUsers = new LinkedHashSet<>();
+    private final Set<SystemUser> preProvidedSystemUsers = new LinkedHashSet<>();
 
     private final Set<Path> preProvidedPaths = new HashSet<>();
 
-    private final Set<String> systemUsers = new LinkedHashSet<>();
+    private final Set<SystemUser> systemUsers = new LinkedHashSet<>();
 
     private final Map<String, List<Acl>> acls = new HashMap<>();
 
@@ -55,15 +54,14 @@ public final class DefaultAclManager implements AclManager {
 
     private Set<String> privileges = new LinkedHashSet<>();
 
-    public boolean addSystemUser(String systemUser) {
-        if (systemUser != null && !systemUser.isEmpty() && preProvidedSystemUsers.add(systemUser)) {
+    public boolean addSystemUser(SystemUser systemUser) {
+        if (preProvidedSystemUsers.add(systemUser)) {
             return systemUsers.add(systemUser);
         }
         return false;
     }
 
-    public Acl addAcl(String systemUser, String operation, String privileges, String path) {
-        Acl acl = new Acl(operation, privileges, Paths.get(path));
+    public Acl addAcl(String systemUser, Acl acl) {
         acls.computeIfAbsent(systemUser, k -> new LinkedList<>()).add(acl);
         return acl;
     }
@@ -107,8 +105,8 @@ public final class DefaultAclManager implements AclManager {
 
             // system users
 
-            for (String systemUser : systemUsers) {
-                List<Acl> authorizations = acls.remove(systemUser);
+            for (SystemUser systemUser : systemUsers) {
+                List<Acl> authorizations = acls.remove(systemUser.getId());
 
                 // make sure all paths are created first
 
@@ -116,11 +114,13 @@ public final class DefaultAclManager implements AclManager {
 
                 // create then the users
 
-                formatter.format("create service user %s%n", systemUser);
+                String path = systemUser.getPath().getName(systemUser.getPath().getNameCount() - 1).toString();
+                formatter.format("create path (rep:AuthorizableFolder) /home/users/system/%s%n", path);
+                formatter.format("create service user %s with path %s%n", systemUser.getId(), path);
 
                 // finally add ACLs
 
-                addAclStatement(formatter, systemUser, authorizations);
+                addAclStatement(formatter, systemUser.getId(), authorizations);
             }
 
             // all the resting ACLs can now be set
@@ -128,7 +128,7 @@ public final class DefaultAclManager implements AclManager {
             for (Entry<String, List<Acl>> currentAcls : acls.entrySet()) {
                 String systemUser = currentAcls.getKey();
 
-                if (preProvidedSystemUsers.contains(systemUser)) {
+                if (isKnownSystemUser(systemUser)) {
                     List<Acl> authorizations = currentAcls.getValue();
 
                     // make sure all paths are created first
@@ -153,6 +153,15 @@ public final class DefaultAclManager implements AclManager {
                 formatter.close();
             }
         }
+    }
+
+    private boolean isKnownSystemUser(String id) {
+        for (SystemUser systemUser : preProvidedSystemUsers) {
+            if (id.equals(systemUser.getId())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
