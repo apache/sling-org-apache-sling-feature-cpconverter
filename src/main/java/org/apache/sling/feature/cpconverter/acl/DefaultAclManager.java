@@ -108,15 +108,13 @@ public final class DefaultAclManager implements AclManager {
             for (SystemUser systemUser : systemUsers) {
                 List<Acl> authorizations = acls.remove(systemUser.getId());
 
-                // make sure all paths are created first
+                // make sure all users are created first
+
+                formatter.format("create service user %s with path %s%n", systemUser.getId(), systemUser.getPath().getFileName());
+
+                // create then the paths
 
                 addPaths(authorizations, packageAssembler, formatter);
-
-                // create then the users
-
-                String path = systemUser.getPath().getName(systemUser.getPath().getNameCount() - 1).toString();
-                formatter.format("create path (rep:AuthorizableFolder) /home/users/system/%s%n", path);
-                formatter.format("create service user %s with path %s%n", systemUser.getId(), path);
 
                 // finally add ACLs
 
