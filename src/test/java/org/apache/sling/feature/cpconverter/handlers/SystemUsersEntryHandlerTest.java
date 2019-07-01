@@ -76,7 +76,7 @@ public class SystemUsersEntryHandlerTest {
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
         assertTrue(repoinitExtension.isRequired());
 
-        String expected = "create service user asd-share-commons-asd-index-definition-reader-service with path asd-index-definition-reader\n";
+        String expected = "create service user asd-share-commons-asd-index-definition-reader-service with path /home/users/system/asd-index-definition-reader\n";
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
     }

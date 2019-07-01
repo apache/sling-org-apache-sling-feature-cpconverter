@@ -73,7 +73,7 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         // acs-commons-on-deploy-scripts-service will be missed
-        String expected = "create service user acs-commons-package-replication-status-event-service with path public\n" + 
+        String expected = "create service user acs-commons-package-replication-status-event-service with path /home/users/system/public\n" + 
                 "create path (sling:Folder) /asd\n" + 
                 "create path (sling:Folder) /asd/public\n" +
                 "set ACL for acs-commons-package-replication-status-event-service\n" + 
