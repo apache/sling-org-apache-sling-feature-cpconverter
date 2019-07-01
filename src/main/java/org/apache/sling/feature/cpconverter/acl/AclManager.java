@@ -26,9 +26,9 @@ import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
  */
 public interface AclManager {
 
-    boolean addSystemUser(String systemUser);
+    boolean addSystemUser(SystemUser systemUser);
 
-    Acl addAcl(String systemUser, String operation, String privileges, String path);
+    Acl addAcl(String systemUser, Acl acl);
 
     void addRepoinitExtension(List<VaultPackageAssembler> packageAssemblers, Feature feature);
 

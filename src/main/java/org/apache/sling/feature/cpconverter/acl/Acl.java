@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.acl;
 
+import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -28,11 +29,11 @@ public final class Acl {
 
     private final String privileges;
 
-    private final String path;
+    private final Path path;
 
     private final List<String> restrictions = new LinkedList<>();
 
-    protected Acl(String operation, String privileges, String path) {
+    public Acl(String operation, String privileges, Path path) {
         this.operation = operation;
         this.privileges = privileges;
         this.path = path;
@@ -52,12 +53,25 @@ public final class Acl {
         return privileges;
     }
 
-    public String getPath() {
+    public Path getPath() {
         return path;
     }
 
     public List<String> getRestrictions() {
         return restrictions;
+    }
+
+    @Override
+    public String toString() {
+        return "Acl [operation="
+               + operation
+               + ", privileges="
+               + privileges
+               + ", path="
+               + path
+               + ", restrictions="
+               + restrictions
+               + "]";
     }
 
 }

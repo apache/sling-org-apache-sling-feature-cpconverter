@@ -18,6 +18,7 @@ package org.apache.sling.feature.cpconverter.acl;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.file.Path;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -41,11 +42,11 @@ public final class DefaultAclManager implements AclManager {
 
     private static final String DEFAULT_TYPE = "sling:Folder";
 
-    private final Set<String> preProvidedSystemUsers = new LinkedHashSet<>();
+    private final Set<SystemUser> preProvidedSystemUsers = new LinkedHashSet<>();
 
-    private final Set<String> preProvidedPaths = new HashSet<String>();
+    private final Set<Path> preProvidedPaths = new HashSet<>();
 
-    private final Set<String> systemUsers = new LinkedHashSet<>();
+    private final Set<SystemUser> systemUsers = new LinkedHashSet<>();
 
     private final Map<String, List<Acl>> acls = new HashMap<>();
 
@@ -53,27 +54,26 @@ public final class DefaultAclManager implements AclManager {
 
     private Set<String> privileges = new LinkedHashSet<>();
 
-    public boolean addSystemUser(String systemUser) {
-        if (systemUser != null && !systemUser.isEmpty() && preProvidedSystemUsers.add(systemUser)) {
+    public boolean addSystemUser(SystemUser systemUser) {
+        if (preProvidedSystemUsers.add(systemUser)) {
             return systemUsers.add(systemUser);
         }
         return false;
     }
 
-    public Acl addAcl(String systemUser, String operation, String privileges, String path) {
-        Acl acl = new Acl(operation, privileges, path);
+    public Acl addAcl(String systemUser, Acl acl) {
         acls.computeIfAbsent(systemUser, k -> new LinkedList<>()).add(acl);
         return acl;
     }
 
-    private void addPath(String path, Set<String> paths) {
+    private void addPath(Path path, Set<Path> paths) {
         if (preProvidedPaths.add(path)) {
             paths.add(path);
         }
 
-        int endIndex = path.lastIndexOf('/');
-        if (endIndex > 0) {
-            addPath(path.substring(0, endIndex), paths);
+        Path parent = path.getParent();
+        if (parent != null && parent.getNameCount() > 0) {
+            addPath(parent, paths);
         }
     }
 
@@ -105,20 +105,20 @@ public final class DefaultAclManager implements AclManager {
 
             // system users
 
-            for (String systemUser : systemUsers) {
-                List<Acl> authorizations = acls.remove(systemUser);
+            for (SystemUser systemUser : systemUsers) {
+                List<Acl> authorizations = acls.remove(systemUser.getId());
 
-                // make sure all paths are created first
+                // make sure all users are created first
+
+                formatter.format("create service user %s with path %s%n", systemUser.getId(), systemUser.getPath().getFileName());
+
+                // create then the paths
 
                 addPaths(authorizations, packageAssemblers, formatter);
 
-                // create then the users
-
-                formatter.format("create service user %s%n", systemUser);
-
                 // finally add ACLs
 
-                addAclStatement(formatter, systemUser, authorizations);
+                addAclStatement(formatter, systemUser.getId(), authorizations);
             }
 
             // all the resting ACLs can now be set
@@ -126,7 +126,7 @@ public final class DefaultAclManager implements AclManager {
             for (Entry<String, List<Acl>> currentAcls : acls.entrySet()) {
                 String systemUser = currentAcls.getKey();
 
-                if (preProvidedSystemUsers.contains(systemUser)) {
+                if (isKnownSystemUser(systemUser)) {
                     List<Acl> authorizations = currentAcls.getValue();
 
                     // make sure all paths are created first
@@ -153,6 +153,15 @@ public final class DefaultAclManager implements AclManager {
         }
     }
 
+    private boolean isKnownSystemUser(String id) {
+        for (SystemUser systemUser : preProvidedSystemUsers) {
+            if (id.equals(systemUser.getId())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public void addNodetypeRegistrationSentence(String nodetypeRegistrationSentence) {
         if (nodetypeRegistrationSentence != null) {
@@ -177,19 +186,19 @@ public final class DefaultAclManager implements AclManager {
             return;
         }
 
-        Set<String> paths = new TreeSet<String>();
+        Set<Path> paths = new TreeSet<>();
         for (Acl authorization : authorizations) {
             addPath(authorization.getPath(), paths);
         }
 
-        Set<String> visitedPaths = new HashSet<>();
+        Set<Path> visitedPaths = new HashSet<>();
         for (VaultPackageAssembler packageAssembler: packageAssemblers) {
-            for (String path : paths) {
+            for (Path path : paths) {
                 if (!visitedPaths.add(path)) {
                     continue;
                 }
 
-                File currentDir = packageAssembler.getEntry(path);
+                File currentDir = packageAssembler.getEntry(path.toString());
                 String type = DEFAULT_TYPE;
 
                 if (currentDir.exists()) {

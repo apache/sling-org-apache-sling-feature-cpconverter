@@ -23,6 +23,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.Arrays;
 
 import org.apache.sling.feature.ArtifactId;
@@ -49,18 +50,18 @@ public class AclManagerTest {
 
     @Test
     public void makeSureAclsAreCreatedOnlyForKnownUsers() {
-        aclManager.addSystemUser("acs-commons-ensure-oak-index-service");
+        aclManager.addSystemUser(new SystemUser("acs-commons-ensure-oak-index-service", Paths.get("/asd/public")));
 
         // emulate a second iteration of conversion
         aclManager.reset();
 
-        aclManager.addSystemUser("acs-commons-package-replication-status-event-service");
+        aclManager.addSystemUser(new SystemUser("acs-commons-package-replication-status-event-service", Paths.get("/asd/public")));
 
-        aclManager.addAcl("acs-commons-ensure-oak-index-service", "allow", "jcr:read,rep:write,rep:indexDefinitionManagement", "/asd/public");
-        aclManager.addAcl("acs-commons-package-replication-status-event-service", "allow", "jcr:read,crx:replicate,jcr:removeNode", "/asd/public");
+        aclManager.addAcl("acs-commons-ensure-oak-index-service", new Acl("allow", "jcr:read,rep:write,rep:indexDefinitionManagement", Paths.get("/asd/public")));
+        aclManager.addAcl("acs-commons-package-replication-status-event-service", new Acl("allow", "jcr:read,crx:replicate,jcr:removeNode", Paths.get("/asd/public")));
 
         // add an ACL for unknown user
-        aclManager.addAcl("acs-commons-on-deploy-scripts-service", "allow", "jcr:read,crx:replicate,jcr:removeNode", "/asd/public");
+        aclManager.addAcl("acs-commons-on-deploy-scripts-service", new Acl("allow", "jcr:read,crx:replicate,jcr:removeNode", Paths.get("/asd/public")));
 
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
         when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
@@ -72,9 +73,9 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         // acs-commons-on-deploy-scripts-service will be missed
-        String expected = "create path (sling:Folder) /asd\n" + 
-                "create path (sling:Folder) /asd/public\n" + 
-                "create service user acs-commons-package-replication-status-event-service\n" + 
+        String expected = "create service user acs-commons-package-replication-status-event-service with path public\n" + 
+                "create path (sling:Folder) /asd\n" + 
+                "create path (sling:Folder) /asd/public\n" +
                 "set ACL for acs-commons-package-replication-status-event-service\n" + 
                 "allow jcr:read,crx:replicate,jcr:removeNode on /asd/public\n" + 
                 "end\n" + 
