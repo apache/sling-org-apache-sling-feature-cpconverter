@@ -27,8 +27,10 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.io.StringReader;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
@@ -42,6 +44,9 @@ import org.apache.sling.feature.cpconverter.acl.SystemUser;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
+import org.apache.sling.repoinit.parser.RepoInitParser;
+import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
+import org.apache.sling.repoinit.parser.operations.Operation;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -87,34 +92,38 @@ public final class RepPolicyEntryHandlerTest {
         assertNotNull(repoinitExtension);
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
-        String expected = "create service user acs-commons-ensure-oak-index-service with path /home/users/system/public\n" + 
+        String expected = "create service user acs-commons-ensure-oak-index-service with path /asd/public\n" + 
                 "create path (sling:Folder) /asd\n" + 
                 "create path (sling:Folder) /asd/public\n" + 
                 "set ACL for acs-commons-ensure-oak-index-service\n" + 
                 "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/public restriction(rep:glob,*/oak:index/*)\n" + 
                 "end\n" + 
-                "create service user acs-commons-dispatcher-flush-service with path /home/users/system/public\n" + 
+                "create service user acs-commons-dispatcher-flush-service with path /asd/public\n" + 
                 "set ACL for acs-commons-dispatcher-flush-service\n" + 
                 "allow jcr:read,crx:replicate,jcr:removeNode on /asd/public\n" + 
                 "end\n" + 
-                "create service user acs-commons-package-replication-status-event-service with path /home/users/system/public\n" + 
+                "create service user acs-commons-package-replication-status-event-service with path /asd/public\n" + 
                 "set ACL for acs-commons-package-replication-status-event-service\n" + 
                 "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" + 
                 "end\n" + 
-                "create service user acs-commons-ensure-service-user-service with path /home/users/system/public\n" + 
+                "create service user acs-commons-ensure-service-user-service with path /asd/public\n" + 
                 "set ACL for acs-commons-ensure-service-user-service\n" + 
                 "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" + 
                 "end\n" + 
-                "create service user acs-commons-automatic-package-replicator-service with path /home/users/system/public\n" + 
+                "create service user acs-commons-automatic-package-replicator-service with path /asd/public\n" + 
                 "set ACL for acs-commons-automatic-package-replicator-service\n" + 
                 "allow jcr:read on /asd/public\n" + 
                 "end\n" + 
-                "create service user acs-commons-on-deploy-scripts-service with path /home/users/system/public\n" + 
+                "create service user acs-commons-on-deploy-scripts-service with path /asd/public\n" + 
                 "set ACL for acs-commons-on-deploy-scripts-service\n" + 
                 "allow jcr:read on /asd/public\n" + 
                 "end\n";
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
+
+        RepoInitParser repoInitParser = new RepoInitParserService();
+        List<Operation> operations = repoInitParser.parse(new StringReader(actual));
+        assertFalse(operations.isEmpty());
     }
 
     @Test
@@ -126,26 +135,30 @@ public final class RepPolicyEntryHandlerTest {
         assertNotNull(repoinitExtension);
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
-        String expected = "create service user acs-commons-package-replication-status-event-service with path /home/users/system/public\n" + 
+        String expected = "create service user acs-commons-package-replication-status-event-service with path /asd/public\n" + 
                 "create path (sling:Folder) /asd\n" + 
                 "create path (sling:Folder) /asd/public\n" + 
                 "set ACL for acs-commons-package-replication-status-event-service\n" + 
                 "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" + 
                 "end\n" + 
-                "create service user acs-commons-ensure-service-user-service with path /home/users/system/public\n" + 
+                "create service user acs-commons-ensure-service-user-service with path /asd/public\n" + 
                 "set ACL for acs-commons-ensure-service-user-service\n" + 
                 "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" + 
                 "end\n" + 
-                "create service user acs-commons-automatic-package-replicator-service with path /home/users/system/public\n" + 
+                "create service user acs-commons-automatic-package-replicator-service with path /asd/public\n" + 
                 "set ACL for acs-commons-automatic-package-replicator-service\n" + 
                 "allow jcr:read on /asd/public\n" + 
                 "end\n" + 
-                "create service user acs-commons-on-deploy-scripts-service with path /home/users/system/public\n" + 
+                "create service user acs-commons-on-deploy-scripts-service with path /asd/public\n" + 
                 "set ACL for acs-commons-on-deploy-scripts-service\n" + 
                 "allow jcr:read on /asd/public\n" + 
                 "end\n";
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
+
+        RepoInitParser repoInitParser = new RepoInitParserService();
+        List<Operation> operations = repoInitParser.parse(new StringReader(actual));
+        assertFalse(operations.isEmpty());
     }
 
     @Test

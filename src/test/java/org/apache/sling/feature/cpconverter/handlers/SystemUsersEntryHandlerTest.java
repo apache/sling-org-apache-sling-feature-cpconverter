@@ -26,6 +26,8 @@ import static org.mockito.Mockito.*;
 
 import java.io.File;
 import java.util.Arrays;
+import java.io.StringReader;
+import java.util.List;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
@@ -38,6 +40,9 @@ import org.apache.sling.feature.cpconverter.acl.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
+import org.apache.sling.repoinit.parser.RepoInitParser;
+import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
+import org.apache.sling.repoinit.parser.operations.Operation;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -76,9 +81,13 @@ public class SystemUsersEntryHandlerTest {
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
         assertTrue(repoinitExtension.isRequired());
 
-        String expected = "create service user asd-share-commons-asd-index-definition-reader-service with path /home/users/system/asd-index-definition-reader\n";
+        String expected = "create service user asd-share-commons-asd-index-definition-reader-service with path /home/users/system/asd-share-commons\n";
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
+
+        RepoInitParser repoInitParser = new RepoInitParserService();
+        List<Operation> operations = repoInitParser.parse(new StringReader(actual));
+        assertFalse(operations.isEmpty());
     }
 
     @Test
