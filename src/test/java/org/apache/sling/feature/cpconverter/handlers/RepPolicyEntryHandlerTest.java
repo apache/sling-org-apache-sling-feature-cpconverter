@@ -16,18 +16,20 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.io.StringReader;
 import java.nio.file.Paths;
+import java.util.List;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
@@ -41,6 +43,9 @@ import org.apache.sling.feature.cpconverter.acl.SystemUser;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
+import org.apache.sling.repoinit.parser.RepoInitParser;
+import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
+import org.apache.sling.repoinit.parser.operations.Operation;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -114,6 +119,10 @@ public final class RepPolicyEntryHandlerTest {
                 "end\n";
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
+
+        RepoInitParser repoInitParser = new RepoInitParserService();
+        List<Operation> operations = repoInitParser.parse(new StringReader(actual));
+        assertFalse(operations.isEmpty());
     }
 
     @Test
@@ -145,6 +154,10 @@ public final class RepPolicyEntryHandlerTest {
                 "end\n";
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
+
+        RepoInitParser repoInitParser = new RepoInitParserService();
+        List<Operation> operations = repoInitParser.parse(new StringReader(actual));
+        assertFalse(operations.isEmpty());
     }
 
     @Test

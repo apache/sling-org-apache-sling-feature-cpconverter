@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
@@ -84,6 +85,8 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
             operations.put(REP_DENY_ACE, "deny");
         }
 
+        private static final Pattern typeIndicatorPattern = Pattern.compile("\\{[^\\}]+\\}\\[(.+)\\]");
+
         private final Stack<Acl> acls = new Stack<>();
 
         private final String path;
@@ -109,9 +112,10 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
                     String operation = operations.get(primaryType);
 
                     String privileges = attributes.getValue(REP_PRIVILEGES);
-                    int beginIndex = privileges.indexOf('[') + 1;
-                    int endIndex = privileges.indexOf(']');
-                    privileges = privileges.substring(beginIndex, endIndex);
+                    Matcher matcher = typeIndicatorPattern.matcher(privileges);
+                    if (matcher.matches()) {
+                        privileges = matcher.group(1);
+                    }
 
                     Acl acl = new Acl(operation, privileges, Paths.get(path));
 
