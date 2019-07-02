@@ -19,6 +19,7 @@ package org.apache.sling.feature.cpconverter.handlers;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.regex.Matcher;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
@@ -30,13 +31,20 @@ import org.xml.sax.Attributes;
 public final class SystemUsersEntryHandler extends AbstractRegexEntryHandler {
 
     public SystemUsersEntryHandler() {
-        super("/jcr_root/home/users/.*/\\.content.xml");
+        super("/jcr_root(/home/users/.*/)\\.content.xml");
     }
 
     @Override
     public void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter)
             throws Exception {
-        SystemUserParser systemUserParser = new SystemUserParser(converter, Paths.get(path).getParent());
+        Matcher matcher = getPattern().matcher(path);
+        if (matcher.matches()) {
+            path = matcher.group(1);
+        }
+
+        Path currentPath = Paths.get(path).getParent();
+
+        SystemUserParser systemUserParser = new SystemUserParser(converter, currentPath);
         try (InputStream input = archive.openInputStream(entry)) {
             systemUserParser.parse(input);
         }

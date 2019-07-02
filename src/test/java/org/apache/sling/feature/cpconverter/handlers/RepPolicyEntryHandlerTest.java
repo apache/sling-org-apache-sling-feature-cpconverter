@@ -91,29 +91,29 @@ public final class RepPolicyEntryHandlerTest {
         assertNotNull(repoinitExtension);
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
-        String expected = "create service user acs-commons-ensure-oak-index-service with path public\n" + 
+        String expected = "create service user acs-commons-ensure-oak-index-service with path /asd/public\n" + 
                 "create path (sling:Folder) /asd\n" + 
                 "create path (sling:Folder) /asd/public\n" + 
                 "set ACL for acs-commons-ensure-oak-index-service\n" + 
                 "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/public restriction(rep:glob,*/oak:index/*)\n" + 
                 "end\n" + 
-                "create service user acs-commons-dispatcher-flush-service with path public\n" + 
+                "create service user acs-commons-dispatcher-flush-service with path /asd/public\n" + 
                 "set ACL for acs-commons-dispatcher-flush-service\n" + 
                 "allow jcr:read,crx:replicate,jcr:removeNode on /asd/public\n" + 
                 "end\n" + 
-                "create service user acs-commons-package-replication-status-event-service with path public\n" + 
+                "create service user acs-commons-package-replication-status-event-service with path /asd/public\n" + 
                 "set ACL for acs-commons-package-replication-status-event-service\n" + 
                 "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" + 
                 "end\n" + 
-                "create service user acs-commons-ensure-service-user-service with path public\n" + 
+                "create service user acs-commons-ensure-service-user-service with path /asd/public\n" + 
                 "set ACL for acs-commons-ensure-service-user-service\n" + 
                 "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" + 
                 "end\n" + 
-                "create service user acs-commons-automatic-package-replicator-service with path public\n" + 
+                "create service user acs-commons-automatic-package-replicator-service with path /asd/public\n" + 
                 "set ACL for acs-commons-automatic-package-replicator-service\n" + 
                 "allow jcr:read on /asd/public\n" + 
                 "end\n" + 
-                "create service user acs-commons-on-deploy-scripts-service with path public\n" + 
+                "create service user acs-commons-on-deploy-scripts-service with path /asd/public\n" + 
                 "set ACL for acs-commons-on-deploy-scripts-service\n" + 
                 "allow jcr:read on /asd/public\n" + 
                 "end\n";
@@ -134,21 +134,21 @@ public final class RepPolicyEntryHandlerTest {
         assertNotNull(repoinitExtension);
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
-        String expected = "create service user acs-commons-package-replication-status-event-service with path public\n" + 
+        String expected = "create service user acs-commons-package-replication-status-event-service with path /asd/public\n" + 
                 "create path (sling:Folder) /asd\n" + 
                 "create path (sling:Folder) /asd/public\n" + 
                 "set ACL for acs-commons-package-replication-status-event-service\n" + 
                 "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" + 
                 "end\n" + 
-                "create service user acs-commons-ensure-service-user-service with path public\n" + 
+                "create service user acs-commons-ensure-service-user-service with path /asd/public\n" + 
                 "set ACL for acs-commons-ensure-service-user-service\n" + 
                 "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" + 
                 "end\n" + 
-                "create service user acs-commons-automatic-package-replicator-service with path public\n" + 
+                "create service user acs-commons-automatic-package-replicator-service with path /asd/public\n" + 
                 "set ACL for acs-commons-automatic-package-replicator-service\n" + 
                 "allow jcr:read on /asd/public\n" + 
                 "end\n" + 
-                "create service user acs-commons-on-deploy-scripts-service with path public\n" + 
+                "create service user acs-commons-on-deploy-scripts-service with path /asd/public\n" + 
                 "set ACL for acs-commons-on-deploy-scripts-service\n" + 
                 "allow jcr:read on /asd/public\n" + 
                 "end\n";

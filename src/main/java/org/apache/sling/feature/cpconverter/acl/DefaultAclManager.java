@@ -110,7 +110,7 @@ public final class DefaultAclManager implements AclManager {
 
                 // make sure all users are created first
 
-                formatter.format("create service user %s with path %s%n", systemUser.getId(), systemUser.getPath().getFileName());
+                formatter.format("create service user %s with path %s%n", systemUser.getId(), systemUser.getPath());
 
                 // create then the paths
 

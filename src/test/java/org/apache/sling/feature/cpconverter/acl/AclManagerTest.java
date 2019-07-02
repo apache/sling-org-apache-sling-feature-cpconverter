@@ -17,18 +17,24 @@
 package org.apache.sling.feature.cpconverter.acl;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.io.StringReader;
 import java.nio.file.Paths;
+import java.util.List;
 
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
+import org.apache.sling.repoinit.parser.RepoInitParser;
+import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
+import org.apache.sling.repoinit.parser.operations.Operation;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,7 +54,7 @@ public class AclManagerTest {
     }
 
     @Test
-    public void makeSureAclsAreCreatedOnlyForKnownUsers() {
+    public void makeSureAclsAreCreatedOnlyForKnownUsers() throws Exception {
         aclManager.addSystemUser(new SystemUser("acs-commons-ensure-oak-index-service", Paths.get("/asd/public")));
 
         // emulate a second iteration of conversion
@@ -72,9 +78,9 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         // acs-commons-on-deploy-scripts-service will be missed
-        String expected = "create service user acs-commons-package-replication-status-event-service with path public\n" + 
+        String expected = "create service user acs-commons-package-replication-status-event-service with path /asd/public\n" + 
                 "create path (sling:Folder) /asd\n" + 
-                "create path (sling:Folder) /asd/public\n" +
+                "create path (sling:Folder) /asd/public\n" + 
                 "set ACL for acs-commons-package-replication-status-event-service\n" + 
                 "allow jcr:read,crx:replicate,jcr:removeNode on /asd/public\n" + 
                 "end\n" + 
@@ -83,6 +89,10 @@ public class AclManagerTest {
                 "end\n";
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
+
+        RepoInitParser repoInitParser = new RepoInitParserService();
+        List<Operation> operations = repoInitParser.parse(new StringReader(actual));
+        assertFalse(operations.isEmpty());
     }
 
 }
