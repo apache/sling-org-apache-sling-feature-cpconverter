@@ -111,18 +111,14 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
 
                     String operation = operations.get(primaryType);
 
-                    String privileges = attributes.getValue(REP_PRIVILEGES);
-                    Matcher matcher = typeIndicatorPattern.matcher(privileges);
-                    if (matcher.matches()) {
-                        privileges = matcher.group(1);
-                    }
+                    String privileges = extractValue(attributes.getValue(REP_PRIVILEGES));
 
                     Acl acl = new Acl(operation, privileges, Paths.get(path));
 
                     acls.add(aclManager.addAcl(principalName, acl));
                 } else if (REP_RESTRICTIONS.equals(primaryType) && !acls.isEmpty()) {
                     for (String restriction : RESTRICTIONS) {
-                        String path = attributes.getValue(restriction);
+                        String path = extractValue(attributes.getValue(restriction));
 
                         if (path != null && !path.isEmpty()) {
                             acls.peek().addRestriction(restriction + ',' + path);
@@ -149,6 +145,19 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
         @Override
         protected Void getParsingResult() {
             return null;
+        }
+
+        private static String extractValue(String expression) {
+            if (expression == null || expression.isEmpty()) {
+                return expression;
+            }
+
+            Matcher matcher = typeIndicatorPattern.matcher(expression);
+            if (matcher.matches()) {
+                return matcher.group(1);
+            }
+
+            return expression;
         }
 
     }
