@@ -46,8 +46,8 @@ import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
 import org.codehaus.plexus.archiver.Archiver;
-import org.codehaus.plexus.archiver.jar.JarArchiver;
 import org.codehaus.plexus.archiver.util.DefaultFileSet;
+import org.codehaus.plexus.archiver.zip.ZipArchiver;
 
 public class VaultPackageAssembler implements EntryHandler {
 
@@ -201,13 +201,13 @@ public class VaultPackageAssembler implements EntryHandler {
 
         for (String resource : INCLUDE_RESOURCES) {
             try (InputStream input = getClass().getResourceAsStream(resource)) {
-                addEntry(ROOT_DIR + resource, input);
+                addEntry(ROOT_DIR + '/' + resource, input);
             }
         }
 
         // create the target archiver
 
-        Archiver archiver = new JarArchiver();
+        Archiver archiver = new ZipArchiver();
         archiver.setIncludeEmptyDirs(true);
 
         String destFileName = storingDirectory.getName().substring(0, storingDirectory.getName().lastIndexOf('-'));

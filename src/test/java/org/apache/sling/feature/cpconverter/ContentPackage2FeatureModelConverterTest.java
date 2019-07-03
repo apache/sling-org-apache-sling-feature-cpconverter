@@ -124,7 +124,10 @@ public class ContentPackage2FeatureModelConverterTest {
                           "asd.sample:asd.retail.all:slingosgifeature:0.0.1",
                           Arrays.asList("org.apache.felix:org.apache.felix.framework:6.0.1"),
                           Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
-                          Arrays.asList("asd.sample:asd.retail.all:zip:cp2fm-converted:0.0.1"));
+                          Arrays.asList("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1",
+                                        "asd.sample:Asd.Retail.ui.content:zip:cp2fm-converted:0.0.1",
+                                        "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1",
+                                        "asd.sample:asd.retail.all:zip:cp2fm-converted:0.0.1"));
         verifyFeatureFile(outputDirectory,
                           "asd.retail.all-author.json",
                           "asd.sample:asd.retail.all:slingosgifeature:author:0.0.1",
@@ -152,23 +155,43 @@ public class ContentPackage2FeatureModelConverterTest {
         assertEquals("asd.retail.all-author.json", runModes.getProperty("author"));
         assertEquals("asd.retail.all-publish.json", runModes.getProperty("publish"));
 
-        ZipFile zipFile = new ZipFile(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip"));
-        for (String expectedEntry : new String[] {
-                "jcr_root/content/asd/.content.xml",
-                "jcr_root/content/asd/resources.xml",
-                "jcr_root/apps/.content.xml",
-                "META-INF/vault/properties.xml",
-                "META-INF/vault/config.xml",
-                "META-INF/vault/settings.xml",
-                "META-INF/vault/filter.xml",
-                "META-INF/vault/definition/.content.xml",
-                "jcr_root/etc/packages/asd/test-bundles.zip",
-                "jcr_root/etc/packages/asd/test-configurations.zip",
-                "jcr_root/etc/packages/asd/test-content.zip",
-                }) {
-            assertNotNull(zipFile.getEntry(expectedEntry));
-        }
-        zipFile.close();
+        verifyContentPackage(new File(outputDirectory, "asd/Asd.Retail.config/0.0.1/Asd.Retail.config-0.0.1-cp2fm-converted.zip"),
+                             "META-INF/vault/settings.xml",
+                             "META-INF/vault/properties.xml",
+                             "META-INF/vault/config.xml",
+                             "META-INF/vault/filter.xml",
+                             "jcr_root/settings.xml",
+                             "jcr_root/config.xml",
+                             "jcr_root/definition/.content.xml",
+                             "jcr_root/apps/.content.xml");
+        verifyContentPackage(new File(outputDirectory, "asd/sample/Asd.Retail.ui.content/0.0.1/Asd.Retail.ui.content-0.0.1-cp2fm-converted.zip"),
+                             "META-INF/vault/settings.xml",
+                             "META-INF/vault/properties.xml",
+                             "META-INF/vault/config.xml",
+                             "META-INF/vault/filter.xml",
+                             "META-INF/vault/filter-plugin-generated.xml",
+                             "jcr_root/settings.xml",
+                             "jcr_root/content/asd/.content.xml",
+                             "jcr_root/content/asd/resources.xml",
+                             "jcr_root/config.xml",
+                             "jcr_root/definition/.content.xml");
+        verifyContentPackage(new File(outputDirectory, "asd/sample/asd.retail.apps/0.0.1/asd.retail.apps-0.0.1-cp2fm-converted.zip"),
+                             "META-INF/vault/settings.xml",
+                             "META-INF/vault/properties.xml",
+                             "META-INF/vault/config.xml",
+                             "META-INF/vault/filter.xml",
+                             "META-INF/vault/filter-plugin-generated.xml",
+                             "jcr_root/settings.xml",
+                             "jcr_root/config.xml",
+                             "jcr_root/definition/.content.xml");
+        verifyContentPackage(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip"),
+                             "META-INF/vault/settings.xml",
+                             "META-INF/vault/properties.xml",
+                             "META-INF/vault/config.xml",
+                             "META-INF/vault/filter.xml",
+                             "jcr_root/settings.xml",
+                             "jcr_root/config.xml",
+                             "jcr_root/definition/.content.xml");
     }
 
     private void verifyFeatureFile(File outputDirectory,
@@ -229,6 +252,15 @@ public class ContentPackage2FeatureModelConverterTest {
         assertTrue("POM file " + pomFile + " does not exist", pomFile.exists());
     }
 
+    private void verifyContentPackage(File contentPackage, String...expectedEntries) throws Exception {
+        try (ZipFile zipFile = new ZipFile(contentPackage)) {
+            for (String expectedEntry : expectedEntries) {
+                assertNotNull("Expected entry not found: " + expectedEntry + " in file " + contentPackage,
+                              zipFile.getEntry(expectedEntry));
+            }
+        }
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void verifyFilteringOutUndesiredPackages() throws Exception {
         RegexBasedResourceFilter resourceFilter = new RegexBasedResourceFilter();
@@ -286,7 +318,10 @@ public class ContentPackage2FeatureModelConverterTest {
                           "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0:${project.version}",
                           Arrays.asList("org.apache.felix:org.apache.felix.framework:6.0.1"),
                           Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
-                          Arrays.asList("asd.sample:asd.retail.all:zip:cp2fm-converted:0.0.1"));
+                          Arrays.asList("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1",
+                                        "asd.sample:Asd.Retail.ui.content:zip:cp2fm-converted:0.0.1",
+                                        "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1",
+                                        "asd.sample:asd.retail.all:zip:cp2fm-converted:0.0.1"));
         verifyFeatureFile(outputDirectory,
                           "asd.retail.all-author.json",
                           "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0-author:${project.version}",
@@ -300,23 +335,11 @@ public class ContentPackage2FeatureModelConverterTest {
                           Arrays.asList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
                           Collections.emptyList());
 
-        ZipFile zipFile = new ZipFile(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip"));
-        for (String expectedEntry : new String[] {
-                "jcr_root/content/asd/.content.xml",
-                "jcr_root/content/asd/resources.xml",
-                "jcr_root/apps/.content.xml",
-                "META-INF/vault/properties.xml",
-                "META-INF/vault/config.xml",
-                "META-INF/vault/settings.xml",
-                "META-INF/vault/filter.xml",
-                "META-INF/vault/definition/.content.xml",
-                "jcr_root/etc/packages/asd/test-bundles.zip",
-                "jcr_root/etc/packages/asd/test-configurations.zip",
-                "jcr_root/etc/packages/asd/test-content.zip",
-                }) {
-            assertNotNull(zipFile.getEntry(expectedEntry));
-        }
-        zipFile.close();
+        verifyContentPackage(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip"),
+                             "META-INF/vault/properties.xml",
+                             "META-INF/vault/config.xml",
+                             "META-INF/vault/settings.xml",
+                             "META-INF/vault/filter.xml");
     }
 
     @Test
