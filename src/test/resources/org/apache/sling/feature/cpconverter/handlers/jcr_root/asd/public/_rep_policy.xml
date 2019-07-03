@@ -23,7 +23,7 @@
             rep:privileges="{Name}[jcr:read,rep:write,rep:indexDefinitionManagement]">
         <rep:restrictions
                 jcr:primaryType="rep:Restrictions"
-                rep:glob="*/oak:index/*"/>
+                rep:glob="{Name}[*/oak:index/*]"/>
     </allow0>
     <allow1
             jcr:primaryType="rep:GrantACE"
