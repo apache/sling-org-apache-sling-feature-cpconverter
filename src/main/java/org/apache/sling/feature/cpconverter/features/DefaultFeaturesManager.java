@@ -109,23 +109,15 @@ public class DefaultFeaturesManager implements FeaturesManager {
         return runModes.computeIfAbsent(runMode, k -> new Feature(newId));
     }
 
-    public void addArtifact(String runMode,
-                            String groupId,
-                            String artifactId,
-                            String version,
-                            String classifier,
-                            String type) {
-        requireNonNull(groupId, "Artifact can not be attached to a feature without specifying a valid 'groupId'.");
-        requireNonNull(artifactId, "Artifact can not be attached to a feature without specifying a valid 'artifactId'.");
-        requireNonNull(version, "Artifact can not be attached to a feature without specifying a valid 'version'.");
-        requireNonNull(type, "Artifact can not be attached to a feature without specifying a valid 'type'.");
+    public void addArtifact(String runMode, ArtifactId id) {
+        requireNonNull(id, "Artifact can not be attached to a feature without specifying a valid ArtifactId.");
 
-        Artifact artifact = new Artifact(new ArtifactId(groupId, artifactId, version, classifier, type));
+        Artifact artifact = new Artifact(id);
 
         Feature targetFeature = getRunMode(runMode);
         Artifacts artifacts;
 
-        if (ZIP_TYPE.equals(type) ) {
+        if (ZIP_TYPE.equals(id.getType()) ) {
             Extensions extensions = targetFeature.getExtensions();
             Extension extension = extensions.getByName(CONTENT_PACKAGES);
 

@@ -23,6 +23,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.StringTokenizer;
 
+import org.apache.sling.feature.ArtifactId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,42 +46,34 @@ public final class DefaultArtifactsDeployer implements ArtifactsDeployer {
     }
 
     @Override
-    public void deploy(ArtifactWriter artifactWriter,
-                       String groupId,
-                       String artifactId,
-                       String version,
-                       String classifier,
-                       String type) throws IOException {
+    public void deploy(ArtifactWriter artifactWriter, ArtifactId id) throws IOException {
         requireNonNull(artifactWriter, "Null ArtifactWriter can not install an artifact to a Maven repository.");
-        requireNonNull(groupId, "Bundle can not be installed to a Maven repository without specifying a valid 'groupId'.");
-        requireNonNull(artifactId, "Bundle can not be installed to a Maven repository without specifying a valid 'artifactId'.");
-        requireNonNull(version, "Bundle can not be installed to a Maven repository without specifying a valid 'version'.");
-        requireNonNull(type, "Bundle can not be installed to a Maven repository without specifying a valid 'type'.");
+        requireNonNull(id, "Bundle can not be installed to a Maven repository without specifying a valid id.");
 
         File targetDir = artifactsDirectory;
 
-        StringTokenizer tokenizer = new StringTokenizer(groupId, ".");
+        StringTokenizer tokenizer = new StringTokenizer(id.getGroupId(), ".");
         while (tokenizer.hasMoreTokens()) {
             String current = tokenizer.nextToken();
             targetDir = new File(targetDir, current);
         }
 
-        targetDir = new File(targetDir, artifactId);
-        targetDir = new File(targetDir, version);
+        targetDir = new File(targetDir, id.getArtifactId());
+        targetDir = new File(targetDir, id.getVersion());
         targetDir.mkdirs();
 
         // deploy the main artifact
 
         StringBuilder nameBuilder = new StringBuilder()
-                                    .append(artifactId)
+                                    .append(id.getArtifactId())
                                     .append('-')
-                                    .append(version);
+                                    .append(id.getVersion());
 
-        if (classifier != null) {
-            nameBuilder.append('-').append(classifier);
+        if (id.getClassifier() != null) {
+            nameBuilder.append('-').append(id.getClassifier());
         }
 
-        nameBuilder.append('.').append(type);
+        nameBuilder.append('.').append(id.getType());
 
         File targetFile = new File(targetDir, nameBuilder.toString());
 
@@ -94,10 +87,10 @@ public final class DefaultArtifactsDeployer implements ArtifactsDeployer {
 
         // automatically deploy the supplied POM file
 
-        targetFile = new File(targetDir, String.format("%s-%s.pom", artifactId, version));
+        targetFile = new File(targetDir, String.format("%s-%s.pom", id.getArtifactId(), id.getVersion()));
 
         try (FileOutputStream targetStream = new FileOutputStream(targetFile)) {
-            new MavenPomSupplierWriter(groupId, artifactId, version, type).write(targetStream);
+            new MavenPomSupplierWriter(id).write(targetStream);
         }
     }
 

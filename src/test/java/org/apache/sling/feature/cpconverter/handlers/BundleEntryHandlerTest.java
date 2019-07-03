@@ -19,6 +19,7 @@ package org.apache.sling.feature.cpconverter.handlers;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.mock;
@@ -91,7 +92,7 @@ public final class BundleEntryHandlerTest {
         FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);
         when(featuresManager.getTargetFeature()).thenReturn(feature);
         when(featuresManager.getRunMode(anyString())).thenReturn(feature);
-        doCallRealMethod().when(featuresManager).addArtifact(anyString(), anyString(), anyString(), anyString(), anyString(), anyString());
+        doCallRealMethod().when(featuresManager).addArtifact(anyString(), any(ArtifactId.class));
 
         ContentPackage2FeatureModelConverter converter = spy(ContentPackage2FeatureModelConverter.class);
 

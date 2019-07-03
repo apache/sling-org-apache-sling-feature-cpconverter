@@ -54,27 +54,12 @@ public class DefaultBundlesDeployerTest {
 
     @Test(expected = NullPointerException.class)
     public void deployLocallyAndAttachRequiresNonNullInput() throws Exception {
-        artifactDeployer.deploy(null, null, null, null, null, null);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void deployLocallyAndAttachRequiresNonNullGroupId() throws Exception {
-        artifactDeployer.deploy(mock(ArtifactWriter.class), null, null, null, null, null);
+        artifactDeployer.deploy(null, null);
     }
 
     @Test(expected = NullPointerException.class)
     public void deployLocallyAndAttachRequiresNonNullArtifactId() throws Exception {
-        artifactDeployer.deploy(mock(ArtifactWriter.class), "org.apache.sling", null, null, null, null);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void deployLocallyAndAttachRequiresNonNullVersion() throws Exception {
-        artifactDeployer.deploy(mock(ArtifactWriter.class), "org.apache.sling", "org.apache.sling.cm2fm", null, null, null);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void deployLocallyAndAttachRequiresNonNullType() throws Exception {
-        artifactDeployer.deploy(mock(ArtifactWriter.class), "org.apache.sling", "org.apache.sling.cm2fm", "0.0.1", null, null);
+        artifactDeployer.deploy(mock(ArtifactWriter.class), null);
     }
 
 }

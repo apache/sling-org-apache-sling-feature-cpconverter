@@ -21,31 +21,23 @@ import java.io.OutputStream;
 
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
+import org.apache.sling.feature.ArtifactId;
 
 public final class MavenPomSupplierWriter implements ArtifactWriter {
 
-    private final String groupId;
+    private final ArtifactId id;
 
-    private final String artifactId;
-
-    private final String version;
-
-    private final String type;
-
-    public MavenPomSupplierWriter(String groupId, String artifactId, String version, String type) {
-        this.groupId = groupId;
-        this.artifactId = artifactId;
-        this.version = version;
-        this.type = type;
+    public MavenPomSupplierWriter(ArtifactId id) {
+        this.id = id;
     }
 
     @Override
     public void write(OutputStream outputStream) throws IOException {
         Model model = new Model();
-        model.setGroupId(groupId);
-        model.setArtifactId(artifactId);
-        model.setVersion(version);
-        model.setPackaging(type);
+        model.setGroupId(id.getGroupId());
+        model.setArtifactId(id.getArtifactId());
+        model.setVersion(id.getVersion());
+        model.setPackaging(id.getType());
 
         new MavenXpp3Writer().write(outputStream, model);
     }
