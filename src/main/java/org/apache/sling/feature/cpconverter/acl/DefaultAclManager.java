@@ -191,33 +191,33 @@ public final class DefaultAclManager implements AclManager {
             addPath(authorization.getPath(), paths);
         }
 
-        Set<Path> visitedPaths = new HashSet<>();
+        for (Path path : paths) {
+            String type = computePathType(path, packageAssemblers);
+
+            formatter.format("create path (%s) %s%n", type, path);
+        }
+    }
+
+    private static String computePathType(Path path, List<VaultPackageAssembler> packageAssemblers) {
         for (VaultPackageAssembler packageAssembler: packageAssemblers) {
-            for (Path path : paths) {
-                if (!visitedPaths.add(path)) {
-                    continue;
-                }
+            File currentDir = packageAssembler.getEntry(path.toString());
 
-                File currentDir = packageAssembler.getEntry(path.toString());
-                String type = DEFAULT_TYPE;
-
-                if (currentDir.exists()) {
-                    File currentContent = new File(currentDir, CONTENT_XML_FILE_NAME);
-                    if (currentContent.exists()) {
-                        try (FileInputStream input = new FileInputStream(currentContent)) {
-                            type = new PrimaryTypeParser(DEFAULT_TYPE).parse(input);
-                        } catch (Exception e) {
-                            throw new RuntimeException("A fatal error occurred while parsing the '"
-                                + currentContent
-                                + "' file, see nested exceptions: "
-                                + e);
-                        }
+            if (currentDir.exists()) {
+                File currentContent = new File(currentDir, CONTENT_XML_FILE_NAME);
+                if (currentContent.exists()) {
+                    try (FileInputStream input = new FileInputStream(currentContent)) {
+                        return new PrimaryTypeParser(DEFAULT_TYPE).parse(input);
+                    } catch (Exception e) {
+                        throw new RuntimeException("A fatal error occurred while parsing the '"
+                            + currentContent
+                            + "' file, see nested exceptions: "
+                            + e);
                     }
                 }
-
-                formatter.format("create path (%s) %s%n", type, path);
             }
         }
+
+        return DEFAULT_TYPE;
     }
 
     private static void addAclStatement(Formatter formatter, String systemUser, List<Acl> authorizations) {
