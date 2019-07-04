@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.StringReader;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
@@ -92,32 +93,33 @@ public final class RepPolicyEntryHandlerTest {
         assertNotNull(repoinitExtension);
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
+        // commented ACLs are due SLING-8561
         String expected = "create service user acs-commons-ensure-oak-index-service with path /asd/public\n" + 
-                "create path (sling:Folder) /asd\n" + 
-                "create path (sling:Folder) /asd/public\n" + 
-                "set ACL for acs-commons-ensure-oak-index-service\n" + 
-                "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/public restriction(rep:glob,*/oak:index/*)\n" + 
-                "end\n" + 
+                // "create path (sling:Folder) /asd\n" + 
+                // "create path (sling:Folder) /asd/public\n" + 
+                // "set ACL for acs-commons-ensure-oak-index-service\n" + 
+                // "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/public restriction(rep:glob,*/oak:index/*)\n" + 
+                // "end\n" + 
                 "create service user acs-commons-dispatcher-flush-service with path /asd/public\n" + 
-                "set ACL for acs-commons-dispatcher-flush-service\n" + 
-                "allow jcr:read,crx:replicate,jcr:removeNode on /asd/public\n" + 
-                "end\n" + 
+                // "set ACL for acs-commons-dispatcher-flush-service\n" + 
+                // "allow jcr:read,crx:replicate,jcr:removeNode on /asd/public\n" + 
+                // "end\n" + 
                 "create service user acs-commons-package-replication-status-event-service with path /asd/public\n" + 
-                "set ACL for acs-commons-package-replication-status-event-service\n" + 
-                "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" + 
-                "end\n" + 
+                // "set ACL for acs-commons-package-replication-status-event-service\n" + 
+                // "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" + 
+                // "end\n" + 
                 "create service user acs-commons-ensure-service-user-service with path /asd/public\n" + 
-                "set ACL for acs-commons-ensure-service-user-service\n" + 
-                "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" + 
-                "end\n" + 
+                // "set ACL for acs-commons-ensure-service-user-service\n" + 
+                // "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" + 
+                // "end\n" + 
                 "create service user acs-commons-automatic-package-replicator-service with path /asd/public\n" + 
-                "set ACL for acs-commons-automatic-package-replicator-service\n" + 
-                "allow jcr:read on /asd/public\n" + 
-                "end\n" + 
-                "create service user acs-commons-on-deploy-scripts-service with path /asd/public\n" + 
-                "set ACL for acs-commons-on-deploy-scripts-service\n" + 
-                "allow jcr:read on /asd/public\n" + 
-                "end\n";
+                // "set ACL for acs-commons-automatic-package-replicator-service\n" + 
+                // "allow jcr:read on /asd/public\n" + 
+                // "end\n" + 
+                "create service user acs-commons-on-deploy-scripts-service with path /asd/public\n"; 
+                // "set ACL for acs-commons-on-deploy-scripts-service\n" + 
+                // "allow jcr:read on /asd/public\n" + 
+                // "end\n";
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
 
@@ -135,23 +137,44 @@ public final class RepPolicyEntryHandlerTest {
         assertNotNull(repoinitExtension);
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
+        // commented ACLs are due SLING-8561
         String expected = "create service user acs-commons-package-replication-status-event-service with path /asd/public\n" + 
+                // "create path (sling:Folder) /asd\n" + 
+                // "create path (sling:Folder) /asd/public\n" + 
+                // "set ACL for acs-commons-package-replication-status-event-service\n" + 
+                // "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" + 
+                // "end\n" + 
+                "create service user acs-commons-ensure-service-user-service with path /asd/public\n" + 
+                // "set ACL for acs-commons-ensure-service-user-service\n" + 
+                // "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" + 
+                // "end\n" + 
+                "create service user acs-commons-automatic-package-replicator-service with path /asd/public\n" + 
+                // "set ACL for acs-commons-automatic-package-replicator-service\n" + 
+                // "allow jcr:read on /asd/public\n" + 
+                // "end\n" + 
+                "create service user acs-commons-on-deploy-scripts-service with path /asd/public\n";
+                //"set ACL for acs-commons-on-deploy-scripts-service\n" + 
+                //"allow jcr:read on /asd/public\n" + 
+                //"end\n";
+        String actual = repoinitExtension.getText();
+        assertEquals(expected, actual);
+
+        RepoInitParser repoInitParser = new RepoInitParserService();
+        List<Operation> operations = repoInitParser.parse(new StringReader(actual));
+        assertFalse(operations.isEmpty());
+    }
+
+    @Test
+    public void systemUserAclSetNotForUserPath() throws Exception {
+        Extension repoinitExtension = parseAndSetRepoinit(new SystemUser("acs-commons-package-replication-status-event-service", Paths.get("/this/is/a/completely/different/path")));
+        assertNotNull(repoinitExtension);
+        assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
+
+        String expected = "create service user acs-commons-package-replication-status-event-service with path /this/is/a/completely/different/path\n" + 
                 "create path (sling:Folder) /asd\n" + 
                 "create path (sling:Folder) /asd/public\n" + 
                 "set ACL for acs-commons-package-replication-status-event-service\n" + 
                 "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" + 
-                "end\n" + 
-                "create service user acs-commons-ensure-service-user-service with path /asd/public\n" + 
-                "set ACL for acs-commons-ensure-service-user-service\n" + 
-                "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" + 
-                "end\n" + 
-                "create service user acs-commons-automatic-package-replicator-service with path /asd/public\n" + 
-                "set ACL for acs-commons-automatic-package-replicator-service\n" + 
-                "allow jcr:read on /asd/public\n" + 
-                "end\n" + 
-                "create service user acs-commons-on-deploy-scripts-service with path /asd/public\n" + 
-                "set ACL for acs-commons-on-deploy-scripts-service\n" + 
-                "allow jcr:read on /asd/public\n" + 
                 "end\n";
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -163,11 +186,22 @@ public final class RepPolicyEntryHandlerTest {
 
     @Test
     public void parseEmptyAcl() throws Exception {
-        Extension repoinitExtension = parseAndSetRepoinit();
+        Extension repoinitExtension = parseAndSetRepoinit(new String[] {});
         assertNull(repoinitExtension);
     }
 
-    private Extension parseAndSetRepoinit(String...systemUsers) throws Exception {
+    private Extension parseAndSetRepoinit(String...systemUsersNames) throws Exception {
+        Path alwaysTheSamePath = Paths.get("/asd/public");
+
+        SystemUser[] systemUsers = new SystemUser[systemUsersNames.length];
+        for (int i = 0; i < systemUsersNames.length; i++) {
+            systemUsers[i] = new SystemUser(systemUsersNames[i], alwaysTheSamePath);
+        }
+
+        return parseAndSetRepoinit(systemUsers);
+    }
+
+    private Extension parseAndSetRepoinit(SystemUser...systemUsers) throws Exception {
         String path = "/jcr_root/asd/public/_rep_policy.xml";
         Archive archive = mock(Archive.class);
         Entry entry = mock(Entry.class);
@@ -185,8 +219,8 @@ public final class RepPolicyEntryHandlerTest {
         handler.handle(path, archive, entry, converter);
 
         if (systemUsers != null) {
-            for (String systemUser : systemUsers) {
-                converter.getAclManager().addSystemUser(new SystemUser(systemUser, Paths.get("/asd/public")));
+            for (SystemUser systemUser : systemUsers) {
+                converter.getAclManager().addSystemUser(systemUser);
             }
         }
 

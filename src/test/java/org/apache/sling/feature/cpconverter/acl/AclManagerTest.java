@@ -55,7 +55,7 @@ public class AclManagerTest {
     }
 
     @Test
-    public void makeSureAclsAreCreatedOnlyForKnownUsers() throws Exception {
+    public void makeSureAclsAreCreatedOnlyoutsideSytemUsersPaths() throws Exception {
         aclManager.addSystemUser(new SystemUser("acs-commons-ensure-oak-index-service", Paths.get("/asd/public")));
 
         // emulate a second iteration of conversion
@@ -81,10 +81,11 @@ public class AclManagerTest {
         // acs-commons-on-deploy-scripts-service will be missed
         String expected = "create service user acs-commons-package-replication-status-event-service with path /asd/public\n" +
                 "create path (sling:Folder) /asd\n" + 
-                "create path (sling:Folder) /asd/public\n" + 
-                "set ACL for acs-commons-package-replication-status-event-service\n" + 
-                "allow jcr:read,crx:replicate,jcr:removeNode on /asd/public\n" + 
-                "end\n" + 
+                "create path (sling:Folder) /asd/public\n" +
+                // see SLING-8561
+                // "set ACL for acs-commons-package-replication-status-event-service\n" + 
+                // "allow jcr:read,crx:replicate,jcr:removeNode on /asd/public\n" + 
+                // "end\n" + 
                 "set ACL for acs-commons-ensure-oak-index-service\n" + 
                 "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/public\n" + 
                 "end\n";

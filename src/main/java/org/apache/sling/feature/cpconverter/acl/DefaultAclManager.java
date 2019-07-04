@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -106,11 +107,23 @@ public final class DefaultAclManager implements AclManager {
             // system users
 
             for (SystemUser systemUser : systemUsers) {
-                List<Acl> authorizations = acls.remove(systemUser.getId());
-
                 // make sure all users are created first
 
                 formatter.format("create service user %s with path %s%n", systemUser.getId(), systemUser.getPath());
+
+                // clean the unneeded ACLs, see SLING-8561
+
+                List<Acl> authorizations = acls.remove(systemUser.getId());
+                if (authorizations != null) {
+                    Iterator<Acl> authorizationsIterator = authorizations.iterator();
+                    while (authorizationsIterator.hasNext()) {
+                        Acl acl = authorizationsIterator.next();
+
+                        if (acl.getPath().startsWith(systemUser.getPath())) {
+                            authorizationsIterator.remove();
+                        }
+                    }
+                }
 
                 // create then the paths
 
