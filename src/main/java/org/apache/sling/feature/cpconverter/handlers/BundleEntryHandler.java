@@ -33,6 +33,7 @@ import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.artifacts.InputStreamArtifactWriter;
+import org.codehaus.plexus.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,7 +58,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
     private final Pattern pomPropertiesPattern = Pattern.compile("META-INF/maven/[^/]+/[^/]+/pom.properties");
 
     public BundleEntryHandler() {
-        super("/jcr_root/(?:apps|libs)/.+/install(\\.([^/]+))?/.+\\.jar");
+        super("/jcr_root/(?:apps|libs)/.+/install(?:\\.([^/]+))?/(?:([0-9]+)/)?.+\\.jar");
     }
 
     @Override
@@ -87,11 +88,9 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
 
         Matcher matcher = getPattern().matcher(path);
         String runMode = null;
+        Integer startLevel = null;
         // we are pretty sure it matches, here
-        if (matcher.matches()) {
-            // there is a specified RunMode
-            runMode = matcher.group(2);
-        } else {
+        if (!matcher.matches()) {
             throw new IllegalStateException("Something went terribly wrong: pattern '"
                                             + getPattern().pattern()
                                             + "' should have matched already with path '"
@@ -99,12 +98,24 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
                                             + "' but it does not, currently");
         }
 
+        if (StringUtils.isNotBlank(matcher.group(1))) {
+            // there is a specified RunMode
+            runMode = matcher.group(1);
+            logger.debug("Runmode {} was extracted from path {}", runMode, path);
+        }
+
+        if (StringUtils.isNotBlank(matcher.group(2))) {
+            // there is a specified Start Level
+            startLevel = Integer.parseInt(matcher.group(2)); // NumberFormatException impossible due to RegEx
+            logger.debug("Start level {} was extracted from path {}", startLevel, path);
+        }
+
         try (InputStream input = archive.openInputStream(entry)) {
             ArtifactId id = new ArtifactId(groupId, artifactId, version, classifier, JAR_TYPE);
 
             converter.getArtifactsDeployer().deploy(new InputStreamArtifactWriter(input), id);
 
-            converter.getFeaturesManager().addArtifact(runMode, id);
+            converter.getFeaturesManager().addArtifact(runMode, id, startLevel);
         }
     }
 
