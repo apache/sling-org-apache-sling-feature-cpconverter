@@ -47,6 +47,7 @@ import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
 import org.apache.sling.feature.cpconverter.handlers.NodeTypesEntryHandler;
 import org.apache.sling.feature.cpconverter.vltpkg.BaseVaultPackageScanner;
+import org.apache.sling.feature.cpconverter.vltpkg.PackagesEventsEmitter;
 import org.apache.sling.feature.cpconverter.vltpkg.RecollectorVaultPackageScanner;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 
@@ -75,6 +76,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     private VaultPackageAssembler mainPackageAssembler = null;
 
     private RecollectorVaultPackageScanner recollectorVaultPackageScanner;
+
+    private PackagesEventsEmitter emitter;
 
     public ContentPackage2FeatureModelConverter() {
         this(false);
@@ -126,6 +129,11 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return mainPackageAssembler;
     }
 
+    public ContentPackage2FeatureModelConverter setEmitter(PackagesEventsEmitter emitter) {
+        this.emitter = emitter;
+        return this;
+    }
+
     public void convert(File...contentPackages) throws Exception {
         requireNonNull(contentPackages , "Null content-package(s) can not be converted.");
         secondPass(firstPass(contentPackages));
@@ -166,8 +174,11 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     }
 
     protected void secondPass(Collection<VaultPackage> orderedContentPackages) throws Exception {
+        emitter.start();
+
         for (VaultPackage vaultPackage : orderedContentPackages) {
             try {
+                emitter.startPackage(vaultPackage);
                 mainPackageAssembler = VaultPackageAssembler.create(vaultPackage);
                 assemblers.add(mainPackageAssembler);
 
@@ -196,6 +207,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 logger.info("Conversion complete!");
 
                 featuresManager.serialize();
+                emitter.endPackage();
             } finally {
                 aclManager.reset();
                 assemblers.clear();
@@ -207,6 +219,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 }
             }
         }
+
+        emitter.end();
     }
 
     private void orderDependencies(Map<PackageId, VaultPackage> idFileMap,
@@ -239,6 +253,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             return;
         }
 
+        emitter.startSubPackage(path, vaultPackage);
+
         ArtifactId packageId = toArtifactId(vaultPackage);
         VaultPackageAssembler clonedPackage = VaultPackageAssembler.create(vaultPackage);
 
@@ -261,6 +277,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
         // restore the previous assembler
         mainPackageAssembler = handler;
+
+        emitter.endSubPackage();
     }
 
     protected boolean isSubContentPackageIncluded(String path) {
