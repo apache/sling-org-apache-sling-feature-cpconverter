@@ -46,23 +46,31 @@ public class PackagesEventsEmitterTest {
         when(contentChild.getPackageType()).thenReturn(PackageType.CONTENT);
         when(contentChild.getId()).thenReturn(new PackageId("apache/sling", "content-child", "1.0.0"));
         emitter.startSubPackage("/jcr_root/etc/packages/org/apache/sling/content-child-1.0.zip", contentChild);
-        emitter.endPackage();
+        emitter.endSubPackage();
 
         VaultPackage applicationChild = mock(VaultPackage.class);
         when(applicationChild.getPackageType()).thenReturn(PackageType.APPLICATION);
         when(applicationChild.getId()).thenReturn(new PackageId("apache/sling", "application-child", "1.0.0"));
         emitter.startSubPackage("/jcr_root/etc/packages/org/apache/sling/application-child-1.0.zip", applicationChild);
-        emitter.endPackage();
+
+        VaultPackage nestedChild = mock(VaultPackage.class);
+        when(nestedChild.getPackageType()).thenReturn(PackageType.CONTAINER);
+        when(nestedChild.getId()).thenReturn(new PackageId("apache/sling", "nested-child", "1.0.0"));
+        emitter.startSubPackage("/jcr_root/etc/packages/org/apache/sling/nested-child-1.0.zip", nestedChild);
+        emitter.endSubPackage();
+
+        // applicationChild
+        emitter.endSubPackage();
 
         emitter.endPackage();
         emitter.end();
 
         String actual = stringWriter.toString();
 
-        String expected = "/org/apache/sling/content-package.zip,apache/sling:parent:1.0.0,MIXED,,\n" + 
-                "/org/apache/sling/content-package.zip,apache/sling:content-child:1.0.0,CONTENT,apache/sling:parent:1.0.0,/jcr_root/etc/packages/org/apache/sling/content-child-1.0.zip\n" + 
-                "/org/apache/sling/content-package.zip,apache/sling:application-child:1.0.0,APPLICATION,apache/sling:parent:1.0.0,/jcr_root/etc/packages/org/apache/sling/application-child-1.0.zip\n";
-
+        String expected = "/org/apache/sling/content-package.zip,apache/sling:parent:1.0.0,MIXED,,,\n" + 
+                "/org/apache/sling/content-package.zip,apache/sling:content-child:1.0.0,CONTENT,apache/sling:parent:1.0.0,/jcr_root/etc/packages/org/apache/sling/content-child-1.0.zip,/org/apache/sling/content-package.zip!/jcr_root/etc/packages/org/apache/sling/content-child-1.0.zip\n" + 
+                "/org/apache/sling/content-package.zip,apache/sling:application-child:1.0.0,APPLICATION,apache/sling:parent:1.0.0,/jcr_root/etc/packages/org/apache/sling/application-child-1.0.zip,/org/apache/sling/content-package.zip!/jcr_root/etc/packages/org/apache/sling/application-child-1.0.zip\n" + 
+                "/org/apache/sling/content-package.zip,apache/sling:nested-child:1.0.0,CONTAINER,apache/sling:application-child:1.0.0,/jcr_root/etc/packages/org/apache/sling/nested-child-1.0.zip,/org/apache/sling/content-package.zip!/jcr_root/etc/packages/org/apache/sling/application-child-1.0.zip!/jcr_root/etc/packages/org/apache/sling/nested-child-1.0.zip\n";
         assertTrue(actual.endsWith(expected));
     }
 
