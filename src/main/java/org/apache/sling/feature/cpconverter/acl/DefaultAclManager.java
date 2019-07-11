@@ -62,9 +62,12 @@ public final class DefaultAclManager implements AclManager {
         return false;
     }
 
-    public Acl addAcl(String systemUser, Acl acl) {
-        acls.computeIfAbsent(systemUser, k -> new LinkedList<>()).add(acl);
-        return acl;
+    public boolean addAcl(String systemUser, Acl acl) {
+        if (isKnownSystemUser(systemUser)) {
+            acls.computeIfAbsent(systemUser, k -> new LinkedList<>()).add(acl);
+            return true;
+        }
+        return false;
     }
 
     private void addPath(Path path, Set<Path> paths) {

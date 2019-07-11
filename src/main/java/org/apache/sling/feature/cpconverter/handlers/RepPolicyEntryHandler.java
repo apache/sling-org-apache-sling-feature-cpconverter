@@ -44,10 +44,11 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
     @Override
     public void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter)
             throws Exception {
+        String resourcePath;
         Matcher matcher = getPattern().matcher(path);
         // we are pretty sure it matches, here
         if (matcher.matches()) {
-            path = matcher.group(1);
+            resourcePath = matcher.group(1);
         } else {
             throw new IllegalStateException("Something went terribly wrong: pattern '"
                                             + getPattern().pattern()
@@ -56,13 +57,19 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
                                             + "' but it does not, currently");
         }
 
-        RepPolicyParser systemUserParser = new RepPolicyParser(path, converter.getAclManager());
+        RepPolicyParser systemUserParser = new RepPolicyParser(resourcePath, converter.getAclManager());
+        boolean accepted = false;
+
         try (InputStream input = archive.openInputStream(entry)) {
-            systemUserParser.parse(input);
+            accepted = systemUserParser.parse(input);
+        }
+
+        if (!accepted) {
+            converter.getMainPackageAssembler().addEntry(path, archive, entry);
         }
     }
 
-    private static final class RepPolicyParser extends AbstractJcrNodeParser<Void> {
+    private static final class RepPolicyParser extends AbstractJcrNodeParser<Boolean> {
 
         private static final String REP_ACL = "rep:ACL";
 
@@ -95,6 +102,8 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
 
         private boolean onRepAclNode = false;
 
+        private boolean accepted = true;
+
         public RepPolicyParser(String path, AclManager aclManager) {
             super(REP_ACL);
             this.path = path;
@@ -115,7 +124,12 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
 
                     Acl acl = new Acl(operation, privileges, Paths.get(path));
 
-                    acls.add(aclManager.addAcl(principalName, acl));
+                    if (aclManager.addAcl(principalName, acl)) {
+                        acls.add(acl);
+                    } else {
+                        accepted = false;
+                        onRepAclNode = false;
+                    }
                 } else if (REP_RESTRICTIONS.equals(primaryType) && !acls.isEmpty()) {
                     for (String restriction : RESTRICTIONS) {
                         String path = extractValue(attributes.getValue(restriction));
@@ -143,8 +157,8 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
         }
 
         @Override
-        protected Void getParsingResult() {
-            return null;
+        protected Boolean getParsingResult() {
+            return accepted;
         }
 
         private static String extractValue(String expression) {

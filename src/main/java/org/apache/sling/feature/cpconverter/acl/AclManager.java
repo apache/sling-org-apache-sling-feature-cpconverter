@@ -28,7 +28,7 @@ public interface AclManager {
 
     boolean addSystemUser(SystemUser systemUser);
 
-    Acl addAcl(String systemUser, Acl acl);
+    boolean addAcl(String systemUser, Acl acl);
 
     void addRepoinitExtension(List<VaultPackageAssembler> packageAssemblers, Feature feature);
 
