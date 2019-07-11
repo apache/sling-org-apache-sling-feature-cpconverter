@@ -155,13 +155,15 @@ public class VaultPackageAssembler implements EntryHandler {
     }
 
     public void addEntry(String path, InputStream input) throws IOException {
-        File target = new File(storingDirectory, path);
-
-        target.getParentFile().mkdirs();
-
-        try (OutputStream output = new FileOutputStream(target)) {
+        try (OutputStream output = createEntry(path)) {
             IOUtils.copy(input, output);
         }
+    }
+
+    public OutputStream createEntry(String path) throws IOException {
+        File target = new File(storingDirectory, path);
+        target.getParentFile().mkdirs();
+        return new FileOutputStream(target);
     }
 
     public File getEntry(String path) {
