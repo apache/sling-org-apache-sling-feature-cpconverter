@@ -31,6 +31,8 @@ public interface FeaturesManager {
 
     void addArtifact(String runMode, ArtifactId id);
 
+    void addArtifact(String runMode, ArtifactId id, Integer startOrder);
+
     void addConfiguration(String runMode, String pid, Dictionary<String, Object> configurationProperties);
 
     void serialize() throws Exception;
