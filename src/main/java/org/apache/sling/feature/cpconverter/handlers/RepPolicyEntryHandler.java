@@ -19,13 +19,25 @@ package org.apache.sling.feature.cpconverter.handlers;
 import static org.apache.jackrabbit.JcrConstants.JCR_PRIMARYTYPE;
 
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
+import javax.xml.transform.stream.StreamResult;
+
+import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
@@ -37,6 +49,8 @@ import org.xml.sax.SAXException;
 
 public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
 
+    private final SAXTransformerFactory saxTransformerFactory = (SAXTransformerFactory) TransformerFactory.newInstance();
+
     public RepPolicyEntryHandler() {
         super("/jcr_root(.*/)_rep_policy.xml");
     }
@@ -44,10 +58,11 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
     @Override
     public void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter)
             throws Exception {
+        String resourcePath;
         Matcher matcher = getPattern().matcher(path);
         // we are pretty sure it matches, here
         if (matcher.matches()) {
-            path = matcher.group(1);
+            resourcePath = matcher.group(1);
         } else {
             throw new IllegalStateException("Something went terribly wrong: pattern '"
                                             + getPattern().pattern()
@@ -56,13 +71,31 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
                                             + "' but it does not, currently");
         }
 
-        RepPolicyParser systemUserParser = new RepPolicyParser(path, converter.getAclManager());
+        Properties format = new Properties();
+        format.put(OutputKeys.INDENT, "yes");
+        format.put(OutputKeys.ENCODING, "utf-8");
+
+        TransformerHandler handler = saxTransformerFactory.newTransformerHandler();
+        handler.getTransformer().setOutputProperties(format);
+        StringWriter stringWriter = new StringWriter();
+        handler.setResult(new StreamResult(stringWriter));
+
+        RepPolicyParser systemUserParser = new RepPolicyParser(resourcePath, converter.getAclManager(), handler);
+        boolean hasRejectedAcls;
+
         try (InputStream input = archive.openInputStream(entry)) {
-            systemUserParser.parse(input);
+            hasRejectedAcls = systemUserParser.parse(input);
+        }
+
+        if (hasRejectedAcls) {
+            try (Reader reader = new StringReader(stringWriter.toString());
+                    OutputStreamWriter writer = new OutputStreamWriter(converter.getMainPackageAssembler().createEntry(path))) {
+                IOUtils.copy(reader, writer);
+            }
         }
     }
 
-    private static final class RepPolicyParser extends AbstractJcrNodeParser<Void> {
+    private static final class RepPolicyParser extends AbstractJcrNodeParser<Boolean> {
 
         private static final String REP_ACL = "rep:ACL";
 
@@ -76,14 +109,14 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
 
         private static final String REP_PRIVILEGES = "rep:privileges";
 
-        private static final String[] RESTRICTIONS = new String[] { "rep:glob", "rep:ntNames", "rep:prefixes", "rep:itemNames" };
-
         private static final Map<String, String> operations = new HashMap<>();
 
         static {
             operations.put(REP_GRANT_ACE, "allow");
             operations.put(REP_DENY_ACE, "deny");
         }
+
+        private static final String[] RESTRICTIONS = new String[] { "rep:glob", "rep:ntNames", "rep:prefixes", "rep:itemNames" };
 
         private static final Pattern typeIndicatorPattern = Pattern.compile("\\{[^\\}]+\\}\\[(.+)\\]");
 
@@ -93,12 +126,26 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
 
         private final AclManager aclManager;
 
+        private final TransformerHandler handler;
+
         private boolean onRepAclNode = false;
 
-        public RepPolicyParser(String path, AclManager aclManager) {
+        // ACL processing result
+        private boolean hasRejectedNodes = false;
+
+        // just internal pointer for every iteration
+        private boolean processCurrentAcl = false;
+
+        public RepPolicyParser(String path, AclManager aclManager, TransformerHandler handler) {
             super(REP_ACL);
             this.path = path;
             this.aclManager = aclManager;
+            this.handler = handler;
+        }
+
+        @Override
+        public void startDocument() throws SAXException {
+            handler.startDocument();
         }
 
         @Override
@@ -115,26 +162,45 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
 
                     Acl acl = new Acl(operation, privileges, Paths.get(path));
 
-                    acls.add(aclManager.addAcl(principalName, acl));
+                    processCurrentAcl = aclManager.addAcl(principalName, acl);
+                    if (processCurrentAcl) {
+                        acls.add(acl);
+                    } else {
+                        hasRejectedNodes = true;
+                    }
                 } else if (REP_RESTRICTIONS.equals(primaryType) && !acls.isEmpty()) {
-                    for (String restriction : RESTRICTIONS) {
-                        String path = extractValue(attributes.getValue(restriction));
+                    if (processCurrentAcl) {
+                        for (String restriction : RESTRICTIONS) {
+                            String path = extractValue(attributes.getValue(restriction));
 
-                        if (path != null && !path.isEmpty()) {
-                            acls.peek().addRestriction(restriction + ',' + path);
+                            if (path != null && !path.isEmpty()) {
+                                acls.peek().addRestriction(restriction + ',' + path);
+                            }
                         }
                     }
                 }
             } else {
                 super.startElement(uri, localName, qName, attributes);
             }
+
+            if (!onRepAclNode || !processCurrentAcl) {
+                handler.startElement(uri, localName, qName, attributes);
+            }
         }
 
         @Override
         public void endElement(String uri, String localName, String qName) throws SAXException {
-            if (onRepAclNode && !acls.isEmpty()) {
+            if (onRepAclNode && processCurrentAcl && !acls.isEmpty()) {
                 acls.pop();
+            } else {
+                processCurrentAcl = false;
+                handler.endElement(uri, localName, qName);
             }
+        }
+
+        @Override
+        public void endDocument() throws SAXException {
+            handler.endDocument();
         }
 
         @Override
@@ -143,8 +209,8 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
         }
 
         @Override
-        protected Void getParsingResult() {
-            return null;
+        protected Boolean getParsingResult() {
+            return hasRejectedNodes;
         }
 
         private static String extractValue(String expression) {

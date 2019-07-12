@@ -23,13 +23,15 @@ import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageManager;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
+import org.apache.sling.feature.cpconverter.handlers.SystemUsersEntryHandler;
 import org.apache.sling.feature.cpconverter.handlers.VersionResolverContentPackageEntryHandler;
 
 public final class RecollectorVaultPackageScanner extends BaseVaultPackageScanner {
 
     private final ContentPackage2FeatureModelConverter converter;
 
-    private final VersionResolverContentPackageEntryHandler handler;
+    private final EntryHandler[] handlers;
 
     public RecollectorVaultPackageScanner(ContentPackage2FeatureModelConverter converter,
                                           PackageManager packageManager,
@@ -37,13 +39,18 @@ public final class RecollectorVaultPackageScanner extends BaseVaultPackageScanne
                                           Map<PackageId, String> subContentPackages) {
         super(packageManager, strictValidation);
         this.converter = converter;
-        handler = new VersionResolverContentPackageEntryHandler(this, subContentPackages);
+        handlers = new EntryHandler[] {
+                new SystemUsersEntryHandler(),
+                new VersionResolverContentPackageEntryHandler(this, subContentPackages)
+        };
     }
 
     @Override
     protected void onFile(String path, Archive archive, Entry entry) throws Exception {
-        if (handler.matches(path)) {
-            handler.handle(path, archive, entry, converter);
+        for (EntryHandler handler : handlers) {
+            if (handler.matches(path)) {
+                handler.handle(path, archive, entry, converter);
+            }
         }
     }
 

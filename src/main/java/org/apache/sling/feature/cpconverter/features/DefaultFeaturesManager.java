@@ -110,6 +110,10 @@ public class DefaultFeaturesManager implements FeaturesManager {
     }
 
     public void addArtifact(String runMode, ArtifactId id) {
+        addArtifact(runMode, id, null);
+    }
+
+    public void addArtifact(String runMode, ArtifactId id, Integer startOrder) {
         requireNonNull(id, "Artifact can not be attached to a feature without specifying a valid ArtifactId.");
 
         Artifact artifact = new Artifact(id);
@@ -128,7 +132,8 @@ public class DefaultFeaturesManager implements FeaturesManager {
 
             artifacts = extension.getArtifacts();
         } else {
-            artifact.setStartOrder(bundlesStartOrder);
+            int startOrderForBundle = startOrder != null ? startOrder.intValue() : bundlesStartOrder;
+            artifact.setStartOrder(startOrderForBundle);
             artifacts = targetFeature.getBundles();
         }
 

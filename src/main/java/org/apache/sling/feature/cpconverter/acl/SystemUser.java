@@ -61,6 +61,9 @@ public class SystemUser {
         return Objects.equals(id, other.getId()) && Objects.equals(path, other.getPath());
     }
 
-    
+    @Override
+    public String toString() {
+        return "SystemUser [id=" + id + ", path=" + path + "]";
+    }
 
 }

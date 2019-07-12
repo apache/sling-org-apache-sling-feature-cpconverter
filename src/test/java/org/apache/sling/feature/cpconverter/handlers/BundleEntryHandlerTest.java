@@ -53,9 +53,12 @@ public final class BundleEntryHandlerTest {
 
     private final EntryHandler bundleEntryHandler;
 
-    public BundleEntryHandlerTest(String bundleLocation, EntryHandler bundleEntryHandler) {
+    private final int startOrder;
+
+    public BundleEntryHandlerTest(String bundleLocation, EntryHandler bundleEntryHandler, int startOrder) {
         this.bundleLocation = bundleLocation;
         this.bundleEntryHandler = bundleEntryHandler;
+        this.startOrder = startOrder;
     }
 
     @Test
@@ -108,6 +111,7 @@ public final class BundleEntryHandlerTest {
         assertFalse(featuresManager.getTargetFeature().getBundles().isEmpty());
         assertEquals(1, feature.getBundles().size());
         assertEquals("org.apache.felix:org.apache.felix.framework:6.0.1", feature.getBundles().get(0).getId().toMvnId());
+        assertEquals(startOrder, feature.getBundles().get(0).getStartOrder());
     }
 
     @Parameters
@@ -115,10 +119,12 @@ public final class BundleEntryHandlerTest {
         final BundleEntryHandler bundleEntryHandler = new BundleEntryHandler();
 
         return Arrays.asList(new Object[][] {
-            { "/jcr_root/apps/asd/install/test-framework-no-pom.jar", bundleEntryHandler },
-            { "/jcr_root/apps/asd/install/test-framework.jar", bundleEntryHandler },
-            { "/jcr_root/apps/asd/install.author/test-framework.jar", bundleEntryHandler },
-            { "/jcr_root/apps/asd/install.publish/test-framework.jar", bundleEntryHandler }
+                { "/jcr_root/apps/asd/install/test-framework-no-pom.jar", bundleEntryHandler, 20 },
+                { "/jcr_root/apps/asd/install/test-framework.jar", bundleEntryHandler, 20 },
+                { "/jcr_root/apps/asd/install/9/test-framework.jar", bundleEntryHandler, 9 },
+                { "/jcr_root/apps/asd/install.author/test-framework.jar", bundleEntryHandler, 20 },
+                { "/jcr_root/apps/asd/install.author/9/test-framework.jar", bundleEntryHandler, 9 },
+                { "/jcr_root/apps/asd/install.publish/test-framework.jar", bundleEntryHandler, 20 }
         });
     }
 

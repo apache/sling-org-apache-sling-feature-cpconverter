@@ -26,6 +26,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.StringReader;
 import java.nio.file.Path;
@@ -89,7 +90,7 @@ public final class RepPolicyEntryHandlerTest {
                                                           "acs-commons-package-replication-status-event-service",
                                                           "acs-commons-ensure-service-user-service",
                                                           "acs-commons-automatic-package-replicator-service",
-                                                          "acs-commons-on-deploy-scripts-service");
+                                                          "acs-commons-on-deploy-scripts-service").getRepoinitExtension();
         assertNotNull(repoinitExtension);
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
@@ -130,10 +131,12 @@ public final class RepPolicyEntryHandlerTest {
 
     @Test
     public void notDeclaredSystemUsersWillNotHaveAclSettings() throws Exception {
-        Extension repoinitExtension = parseAndSetRepoinit("acs-commons-package-replication-status-event-service",
-                                                          "acs-commons-ensure-service-user-service",
-                                                          "acs-commons-automatic-package-replicator-service",
-                                                          "acs-commons-on-deploy-scripts-service");
+        ParseResult result = parseAndSetRepoinit("acs-commons-package-replication-status-event-service",
+                                                 "acs-commons-ensure-service-user-service",
+                                                 "acs-commons-automatic-package-replicator-service",
+                                                 "acs-commons-on-deploy-scripts-service");
+        Extension repoinitExtension = result.getRepoinitExtension();
+
         assertNotNull(repoinitExtension);
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
@@ -162,11 +165,22 @@ public final class RepPolicyEntryHandlerTest {
         RepoInitParser repoInitParser = new RepoInitParserService();
         List<Operation> operations = repoInitParser.parse(new StringReader(actual));
         assertFalse(operations.isEmpty());
+
+        // acs-commons-ensure-oak-index-service and acs-commons-dispatcher-flush-service not recognized as system users
+        expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?><jcr:root xmlns:jcr=\"http://www.jcp.org/jcr/1.0\" xmlns:rep=\"internal\" jcr:primaryType=\"rep:ACL\">\n" + 
+                "<allow0 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-ensure-oak-index-service\" rep:privileges=\"{Name}[jcr:read,rep:write,rep:indexDefinitionManagement]\">\n" + 
+                "<rep:restrictions jcr:primaryType=\"rep:Restrictions\" rep:glob=\"{Name}[*/oak:index/*]\"/>\n" + 
+                "</allow0>\n" + 
+                "<allow1 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-dispatcher-flush-service\" rep:privileges=\"{Name}[jcr:read,crx:replicate,jcr:removeNode]\"/>\n" + 
+                "</jcr:root>\n";
+        actual = result.getExcludedAcls();
+        assertEquals(expected, actual);
     }
 
     @Test
     public void systemUserAclSetNotForUserPath() throws Exception {
-        Extension repoinitExtension = parseAndSetRepoinit(new SystemUser("acs-commons-package-replication-status-event-service", Paths.get("/this/is/a/completely/different/path")));
+        ParseResult result = parseAndSetRepoinit(new SystemUser("acs-commons-package-replication-status-event-service", Paths.get("/this/is/a/completely/different/path")));
+        Extension repoinitExtension = result.getRepoinitExtension();
         assertNotNull(repoinitExtension);
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
@@ -182,15 +196,28 @@ public final class RepPolicyEntryHandlerTest {
         RepoInitParser repoInitParser = new RepoInitParserService();
         List<Operation> operations = repoInitParser.parse(new StringReader(actual));
         assertFalse(operations.isEmpty());
+
+        // acs-commons-package-replication-status-event-service only recognised as system user - ACLs in allow2
+        expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?><jcr:root xmlns:jcr=\"http://www.jcp.org/jcr/1.0\" xmlns:rep=\"internal\" jcr:primaryType=\"rep:ACL\">\n" + 
+                "<allow0 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-ensure-oak-index-service\" rep:privileges=\"{Name}[jcr:read,rep:write,rep:indexDefinitionManagement]\">\n" + 
+                "<rep:restrictions jcr:primaryType=\"rep:Restrictions\" rep:glob=\"{Name}[*/oak:index/*]\"/>\n" + 
+                "</allow0>\n" + 
+                "<allow1 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-dispatcher-flush-service\" rep:privileges=\"{Name}[jcr:read,crx:replicate,jcr:removeNode]\"/>\n" + 
+                "<allow3 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-ensure-service-user-service\" rep:privileges=\"{Name}[jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl]\"/>\n" + 
+                "<allow4 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-automatic-package-replicator-service\" rep:privileges=\"{Name}[jcr:read]\"/>\n" + 
+                "<allow5 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-on-deploy-scripts-service\" rep:privileges=\"{Name}[jcr:read]\"/>\n" + 
+                "</jcr:root>\n";
+        actual = result.getExcludedAcls();
+        assertEquals(expected, actual);
     }
 
     @Test
     public void parseEmptyAcl() throws Exception {
-        Extension repoinitExtension = parseAndSetRepoinit(new String[] {});
+        Extension repoinitExtension = parseAndSetRepoinit(new String[] {}).getRepoinitExtension();
         assertNull(repoinitExtension);
     }
 
-    private Extension parseAndSetRepoinit(String...systemUsersNames) throws Exception {
+    private ParseResult parseAndSetRepoinit(String...systemUsersNames) throws Exception {
         Path alwaysTheSamePath = Paths.get("/asd/public");
 
         SystemUser[] systemUsers = new SystemUser[systemUsersNames.length];
@@ -201,11 +228,13 @@ public final class RepPolicyEntryHandlerTest {
         return parseAndSetRepoinit(systemUsers);
     }
 
-    private Extension parseAndSetRepoinit(SystemUser...systemUsers) throws Exception {
+    private ParseResult parseAndSetRepoinit(SystemUser...systemUsers) throws Exception {
         String path = "/jcr_root/asd/public/_rep_policy.xml";
         Archive archive = mock(Archive.class);
         Entry entry = mock(Entry.class);
         VaultPackageAssembler packageAssembler = mock(VaultPackageAssembler.class);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        when(packageAssembler.createEntry(anyString())).thenReturn(baos);
 
         when(archive.openInputStream(entry)).thenReturn(getClass().getResourceAsStream(path.substring(1)));
 
@@ -215,8 +244,7 @@ public final class RepPolicyEntryHandlerTest {
         ContentPackage2FeatureModelConverter converter = spy(ContentPackage2FeatureModelConverter.class);
         when(converter.getFeaturesManager()).thenReturn(featuresManager);
         when(converter.getAclManager()).thenReturn(new DefaultAclManager());
-
-        handler.handle(path, archive, entry, converter);
+        when(converter.getMainPackageAssembler()).thenReturn(packageAssembler);
 
         if (systemUsers != null) {
             for (SystemUser systemUser : systemUsers) {
@@ -224,10 +252,33 @@ public final class RepPolicyEntryHandlerTest {
             }
         }
 
+        handler.handle(path, archive, entry, converter);
+
         when(packageAssembler.getEntry(anyString())).thenReturn(new File("itdoesnotexist"));
 
         converter.getAclManager().addRepoinitExtension(Arrays.asList(packageAssembler), feature);
-        return feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+        return new ParseResult(feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT), new String(baos.toByteArray()));
+    }
+
+    private static final class ParseResult {
+
+        private final Extension repoinitExtension;
+
+        private final String excludedAcls;
+
+        public ParseResult(Extension repoinitExtension, String excludedAcls) {
+            this.repoinitExtension = repoinitExtension;
+            this.excludedAcls = excludedAcls;
+        }
+
+        public Extension getRepoinitExtension() {
+            return repoinitExtension;
+        }
+
+        public String getExcludedAcls() {
+            return excludedAcls;
+        }
+
     }
 
 }
