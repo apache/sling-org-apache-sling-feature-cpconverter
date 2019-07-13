@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Feature;
@@ -204,7 +205,7 @@ public final class DefaultAclManager implements AclManager {
 
         Set<Path> paths = new TreeSet<>();
         for (Acl authorization : authorizations) {
-            addPath(authorization.getPath(), paths);
+            addPath(authorization.getRepositoryPath(), paths);
         }
 
         for (Path path : paths) {
@@ -247,7 +248,7 @@ public final class DefaultAclManager implements AclManager {
             formatter.format("%s %s on %s",
                              authorization.getOperation(),
                              authorization.getPrivileges(),
-                             authorization.getPath());
+                             authorization.getRepositoryPath());
 
             if (!authorization.getRestrictions().isEmpty()) {
                 formatter.format(" restriction(%s)",
