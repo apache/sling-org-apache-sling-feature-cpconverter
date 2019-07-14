@@ -204,7 +204,7 @@ public final class DefaultAclManager implements AclManager {
 
         Set<Path> paths = new TreeSet<>();
         for (Acl authorization : authorizations) {
-            addPath(authorization.getPath(), paths);
+            addPath(authorization.getRepositoryPath(), paths);
         }
 
         for (Path path : paths) {
@@ -247,7 +247,7 @@ public final class DefaultAclManager implements AclManager {
             formatter.format("%s %s on %s",
                              authorization.getOperation(),
                              authorization.getPrivileges(),
-                             authorization.getPath());
+                             authorization.getRepositoryPath());
 
             if (!authorization.getRestrictions().isEmpty()) {
                 formatter.format(" restriction(%s)",

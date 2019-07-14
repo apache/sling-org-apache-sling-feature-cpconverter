@@ -31,12 +31,15 @@ public final class Acl {
 
     private final Path path;
 
+    private final Path repositoryPath;
+
     private final List<String> restrictions = new LinkedList<>();
 
-    public Acl(String operation, String privileges, Path path) {
+    public Acl(String operation, String privileges, Path path, Path repositoryPath) {
         this.operation = operation;
         this.privileges = privileges;
         this.path = path;
+        this.repositoryPath = repositoryPath;
     }
 
     public void addRestriction(String restriction) {
@@ -55,6 +58,10 @@ public final class Acl {
 
     public Path getPath() {
         return path;
+    }
+
+    public Path getRepositoryPath() {
+        return repositoryPath;
     }
 
     public List<String> getRestrictions() {
