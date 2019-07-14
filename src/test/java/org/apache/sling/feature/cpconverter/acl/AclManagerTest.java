@@ -29,6 +29,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.Feature;
@@ -64,11 +65,11 @@ public class AclManagerTest {
 
         aclManager.addSystemUser(new SystemUser("acs-commons-package-replication-status-event-service", Paths.get("/asd/public")));
 
-        aclManager.addAcl("acs-commons-ensure-oak-index-service", new Acl("allow", "jcr:read,rep:write,rep:indexDefinitionManagement", Paths.get("/asd/public")));
-        aclManager.addAcl("acs-commons-package-replication-status-event-service", new Acl("allow", "jcr:read,crx:replicate,jcr:removeNode", Paths.get("/asd/public")));
+        aclManager.addAcl("acs-commons-ensure-oak-index-service", newAcl("allow", "jcr:read,rep:write,rep:indexDefinitionManagement", "/asd/public"));
+       aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl("allow", "jcr:read,crx:replicate,jcr:removeNode", "/asd/public"));
 
         // add an ACL for unknown user
-        aclManager.addAcl("acs-commons-on-deploy-scripts-service", new Acl("allow", "jcr:read,crx:replicate,jcr:removeNode", Paths.get("/asd/public")));
+        aclManager.addAcl("acs-commons-on-deploy-scripts-service", newAcl("allow", "jcr:read,crx:replicate,jcr:removeNode", "/asd/public"));
 
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
         when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
@@ -101,8 +102,8 @@ public class AclManagerTest {
     @Test
     public void pathWithSpecialCharactersTest() throws RepoInitParsingException {
         aclManager.addSystemUser(new SystemUser("sys-usr", Paths.get("/home/users/system")));
-        aclManager.addAcl("sys-usr", new Acl("allow", "jcr:read", Paths.get("/content/_cq_tags")));
-        aclManager.addAcl("sys-usr", new Acl("allow", "jcr:write", Paths.get("/content/cq:tags")));
+        aclManager.addAcl("sys-usr", newAcl("allow", "jcr:read", "/content/_cq_tags"));
+        aclManager.addAcl("sys-usr", newAcl("allow", "jcr:write", "/content/cq:tags"));
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
         when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
@@ -127,6 +128,10 @@ public class AclManagerTest {
         RepoInitParser repoInitParser = new RepoInitParserService();
         List<Operation> operations = repoInitParser.parse(new StringReader(actual));
         assertFalse(operations.isEmpty());
+    }
+
+    private static Acl newAcl(String operation, String privileges, String path) {
+        return new Acl(operation, privileges, Paths.get(path), Paths.get(PlatformNameFormat.getRepositoryPath(path)));
     }
 
 }

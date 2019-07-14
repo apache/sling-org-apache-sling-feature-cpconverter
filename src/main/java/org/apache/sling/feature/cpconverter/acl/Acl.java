@@ -16,10 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.acl;
 
-import org.apache.jackrabbit.vault.util.PlatformNameFormat;
-
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -38,11 +35,11 @@ public final class Acl {
 
     private final List<String> restrictions = new LinkedList<>();
 
-    public Acl(String operation, String privileges, Path path) {
+    public Acl(String operation, String privileges, Path path, Path repositoryPath) {
         this.operation = operation;
         this.privileges = privileges;
         this.path = path;
-        this.repositoryPath = Paths.get(PlatformNameFormat.getRepositoryPath(path.toString()));
+        this.repositoryPath = repositoryPath;
     }
 
     public void addRestriction(String restriction) {
