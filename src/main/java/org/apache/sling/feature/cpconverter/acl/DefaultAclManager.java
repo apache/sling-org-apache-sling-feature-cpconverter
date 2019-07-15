@@ -19,6 +19,7 @@ package org.apache.sling.feature.cpconverter.acl;
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,6 +33,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Feature;
@@ -215,6 +217,8 @@ public final class DefaultAclManager implements AclManager {
     }
 
     private static String computePathType(Path path, List<VaultPackageAssembler> packageAssemblers) {
+        path = Paths.get(PlatformNameFormat.getPlatformPath(path.toString()));
+
         for (VaultPackageAssembler packageAssembler: packageAssemblers) {
             File currentDir = packageAssembler.getEntry(path.toString());
 
