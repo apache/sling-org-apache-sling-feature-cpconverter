@@ -75,6 +75,9 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Option(names = { "-i", "--artifact-id" }, description = "The optional Artifact Id the Feature File will have, once generated; it will be derived, if not specified.", required = false)
     private String artifactIdOverride;
 
+    @Option(names = { "-p", "--fm-preix" }, description = "The optional prefix of the output file", required = false)
+    private String fmPrefix;
+
     @Option(names = {"-D", "--define"}, description = "Define a system property", required = false)
     private Map<String, String> properties = new HashMap<>();
 
@@ -114,6 +117,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                                                                                                             bundlesStartOrder,
                                                                                                             featureModelsOutputDirectory,
                                                                                                             artifactIdOverride,
+                                                                                                            fmPrefix,
                                                                                                             properties))
                                                              .setBundlesDeployer(new DefaultArtifactsDeployer(artifactsOutputDirectory))
                                                              .setEntryHandlersManager(new DefaultEntryHandlersManager())

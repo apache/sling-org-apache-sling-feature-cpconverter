@@ -66,23 +66,27 @@ public class DefaultFeaturesManager implements FeaturesManager {
 
     private final String artifactIdOverride;
 
+    private final String prefix;
+
     private final Map<String, String> properties;
 
     private Feature targetFeature = null;
 
     public DefaultFeaturesManager() {
-        this(true, 20, new File(System.getProperty(JAVA_IO_TMPDIR_PROPERTY)), null, null);
+        this(true, 20, new File(System.getProperty(JAVA_IO_TMPDIR_PROPERTY)), null, null, null);
     }
 
     public DefaultFeaturesManager(boolean mergeConfigurations,
                                   int bundlesStartOrder,
                                   File featureModelsOutputDirectory,
                                   String artifactIdOverride,
+                                  String prefix,
                                   Map<String, String> properties) {
         this.mergeConfigurations = mergeConfigurations;
         this.bundlesStartOrder = bundlesStartOrder;
         this.featureModelsOutputDirectory = featureModelsOutputDirectory;
         this.artifactIdOverride = artifactIdOverride;
+        this.prefix = prefix;
         this.properties = properties;
     }
 
@@ -201,7 +205,9 @@ public class DefaultFeaturesManager implements FeaturesManager {
     }
 
     private void seralize(Feature feature, String runMode, RunmodeMapper runmodeMapper) throws Exception {
-        StringBuilder fileNameBuilder = new StringBuilder().append(feature.getId().getArtifactId());
+        StringBuilder fileNameBuilder = new StringBuilder()
+            .append((prefix != null) ? prefix : "")
+            .append(feature.getId().getArtifactId());
 
         String classifier = feature.getId().getClassifier();
         if (classifier != null && !classifier.isEmpty()) {

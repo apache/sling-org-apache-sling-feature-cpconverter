@@ -115,7 +115,7 @@ public class ContentPackage2FeatureModelConverterTest {
 
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
-        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null))
+        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
                  .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
                  .convert(packageFile);
 
@@ -272,7 +272,7 @@ public class ContentPackage2FeatureModelConverterTest {
 
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
-        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null))
+        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
                  .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
                  .convert(packageFile);
     }
@@ -293,7 +293,7 @@ public class ContentPackage2FeatureModelConverterTest {
         File packageFile = FileUtils.toFile(packageUrl);
 
         converter.setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
-                 .setFeaturesManager(new DefaultFeaturesManager(false, 5, outputDirectory, null, null))
+                 .setFeaturesManager(new DefaultFeaturesManager(false, 5, outputDirectory, null, null, null))
                  .convert(packageFile);
 
         String pid = "this.is.just.a.pid";
@@ -309,7 +309,7 @@ public class ContentPackage2FeatureModelConverterTest {
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
         String overrideId = "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0:${project.version}";
-        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, overrideId, null))
+        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, overrideId, null, null))
                  .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
                  .convert(packageFile);
 
@@ -376,7 +376,7 @@ public class ContentPackage2FeatureModelConverterTest {
 
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
-        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null))
+        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
                  .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
                  .convert(contentPackages[0]);
 
