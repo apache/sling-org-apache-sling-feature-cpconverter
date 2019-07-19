@@ -112,6 +112,9 @@ public final class DefaultAclManager implements AclManager {
             // system users
 
             for (SystemUser systemUser : systemUsers) {
+                // TODO does it harm?!?
+                formatter.format("create path (rep:AuthorizableFolder) %s%n", systemUser.getPath());
+
                 // make sure all users are created first
 
                 formatter.format("create service user %s with path %s%n", systemUser.getId(), systemUser.getPath());
