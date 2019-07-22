@@ -47,6 +47,7 @@ import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
+import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.junit.After;
 import org.junit.Before;
@@ -117,6 +118,7 @@ public class ContentPackage2FeatureModelConverterTest {
 
         converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null))
                  .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                 .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                  .convert(packageFile);
 
         verifyFeatureFile(outputDirectory,
@@ -274,6 +276,7 @@ public class ContentPackage2FeatureModelConverterTest {
 
         converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null))
                  .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                 .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                  .convert(packageFile);
     }
 
@@ -294,6 +297,7 @@ public class ContentPackage2FeatureModelConverterTest {
 
         converter.setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
                  .setFeaturesManager(new DefaultFeaturesManager(false, 5, outputDirectory, null, null))
+                 .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                  .convert(packageFile);
 
         String pid = "this.is.just.a.pid";
@@ -311,6 +315,7 @@ public class ContentPackage2FeatureModelConverterTest {
         String overrideId = "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0:${project.version}";
         converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, overrideId, null))
                  .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                 .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                  .convert(packageFile);
 
         verifyFeatureFile(outputDirectory,
@@ -378,6 +383,7 @@ public class ContentPackage2FeatureModelConverterTest {
 
         converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null))
                  .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                 .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                  .convert(contentPackages[0]);
 
         File featureFile = new File(outputDirectory, "test_a.json");

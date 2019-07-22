@@ -47,6 +47,8 @@ public final class DefaultAclManager implements AclManager {
 
     private final Set<SystemUser> preProvidedSystemUsers = new LinkedHashSet<>();
 
+    private final Set<Path> preProvidedSystemPaths = new HashSet<>();
+
     private final Set<Path> preProvidedPaths = new HashSet<>();
 
     private final Set<SystemUser> systemUsers = new LinkedHashSet<>();
@@ -112,6 +114,9 @@ public final class DefaultAclManager implements AclManager {
             // system users
 
             for (SystemUser systemUser : systemUsers) {
+                // TODO does it harm?!?
+                addSystemUserPath(formatter, systemUser.getPath());
+
                 // make sure all users are created first
 
                 formatter.format("create service user %s with path %s%n", systemUser.getId(), systemUser.getPath());
@@ -178,6 +183,12 @@ public final class DefaultAclManager implements AclManager {
             }
         }
         return false;
+    }
+
+    private final void addSystemUserPath(Formatter formatter, Path path) {
+        if (preProvidedSystemPaths.add(path)) {
+            formatter.format("create path (rep:AuthorizableFolder) %s%n", path);
+        }
     }
 
     @Override

@@ -81,7 +81,8 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         // acs-commons-on-deploy-scripts-service will be missed
-        String expected = "create service user acs-commons-package-replication-status-event-service with path /asd/public\n" +
+        String expected = "create path (rep:AuthorizableFolder) /asd/public\n" + // SLING-8586
+                "create service user acs-commons-package-replication-status-event-service with path /asd/public\n" +
                 "create path (sling:Folder) /asd\n" + 
                 "create path (sling:Folder) /asd/public\n" +
                 // see SLING-8561
@@ -112,9 +113,9 @@ public class AclManagerTest {
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
-        System.out.println(repoinitExtension.getText());
 
-        String expected = "create service user sys-usr with path /home/users/system\n" +
+        String expected = "create path (rep:AuthorizableFolder) /home/users/system\n" + // SLING-8586
+                "create service user sys-usr with path /home/users/system\n" +
                 "create path (sling:Folder) /content\n" +
                 "create path (sling:Folder) /content/cq:tags\n" +
                 "set ACL for sys-usr\n" +

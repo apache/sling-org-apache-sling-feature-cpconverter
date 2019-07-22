@@ -95,7 +95,8 @@ public final class RepPolicyEntryHandlerTest {
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
         // commented ACLs are due SLING-8561
-        String expected = "create service user acs-commons-ensure-oak-index-service with path /asd/public\n" + 
+        String expected = "create path (rep:AuthorizableFolder) /asd/public\n" + // SLING-8586
+                "create service user acs-commons-ensure-oak-index-service with path /asd/public\n" + 
                 // "create path (sling:Folder) /asd\n" + 
                 // "create path (sling:Folder) /asd/public\n" + 
                 // "set ACL for acs-commons-ensure-oak-index-service\n" + 
@@ -141,7 +142,8 @@ public final class RepPolicyEntryHandlerTest {
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
         // commented ACLs are due SLING-8561
-        String expected = "create service user acs-commons-package-replication-status-event-service with path /asd/public\n" + 
+        String expected = "create path (rep:AuthorizableFolder) /asd/public\n" + // SLING-8586
+                "create service user acs-commons-package-replication-status-event-service with path /asd/public\n" + 
                 // "create path (sling:Folder) /asd\n" + 
                 // "create path (sling:Folder) /asd/public\n" + 
                 // "set ACL for acs-commons-package-replication-status-event-service\n" + 
@@ -184,7 +186,8 @@ public final class RepPolicyEntryHandlerTest {
         assertNotNull(repoinitExtension);
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
-        String expected = "create service user acs-commons-package-replication-status-event-service with path /this/is/a/completely/different/path\n" + 
+        String expected = "create path (rep:AuthorizableFolder) /this/is/a/completely/different/path\n" + // SLING-8586 
+                "create service user acs-commons-package-replication-status-event-service with path /this/is/a/completely/different/path\n" + 
                 "create path (sling:Folder) /asd\n" + 
                 "create path (sling:Folder) /asd/public\n" + 
                 "set ACL for acs-commons-package-replication-status-event-service\n" + 
