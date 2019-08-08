@@ -17,6 +17,7 @@
 package org.apache.sling.feature.cpconverter.vltpkg;
 
 import static java.util.stream.Collectors.joining;
+import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.detectPackageType;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -26,10 +27,7 @@ import java.io.Writer;
 import java.util.Date;
 import java.util.Stack;
 
-import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
-import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
 import org.apache.jackrabbit.vault.packaging.PackageId;
-import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 
 /**
@@ -112,39 +110,6 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
     @Override
     public void endSubPackage() {
         endPackage();
-    }
-
-    private static PackageType detectPackageType(VaultPackage vaultPackage) {
-        PackageType packageType = vaultPackage.getPackageType();
-        if (packageType != null) {
-            return packageType;
-        }
-
-        // borrowed from org.apache.jackrabbit.vault.fs.io.AbstractExporter
-        WorkspaceFilter filter = vaultPackage.getMetaInf().getFilter();
-
-        boolean hasApps = false;
-        boolean hasOther = false;
-        for (PathFilterSet p : filter.getFilterSets()) {
-            if ("cleanup".equals(p.getType())) {
-                continue;
-            }
-            String root = p.getRoot();
-            if ("/apps".equals(root)
-                    || root.startsWith("/apps/")
-                    || "/libs".equals(root)
-                    || root.startsWith("/libs/")) {
-                hasApps = true;
-            } else {
-                hasOther = true;
-            }
-        }
-        if (hasApps && !hasOther) {
-            return PackageType.APPLICATION;
-        } else if (hasOther && !hasApps) {
-            return PackageType.CONTENT;
-        }
-        return PackageType.MIXED;
     }
 
 }
