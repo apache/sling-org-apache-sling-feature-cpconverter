@@ -294,6 +294,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 // deploy the new content-package to the local mvn bundles dir and attach it to the feature
                 artifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), packageId);
                 featuresManager.addArtifact(null, packageId);
+            } else {
+                logger.info("Dropping package of PackageType.CONTENT {}", packageId.getArtifactId());
             }
         }
     }
