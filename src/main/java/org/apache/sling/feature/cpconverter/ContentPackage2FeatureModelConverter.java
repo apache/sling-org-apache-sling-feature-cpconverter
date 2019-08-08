@@ -81,7 +81,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     private PackagesEventsEmitter emitter;
 
-    private boolean dropContent;
+    private boolean dropContent = true;
 
     public ContentPackage2FeatureModelConverter() {
         this(false);
