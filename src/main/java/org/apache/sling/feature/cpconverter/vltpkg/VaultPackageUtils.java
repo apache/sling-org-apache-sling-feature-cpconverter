@@ -38,24 +38,26 @@ public class VaultPackageUtils {
 
         boolean hasApps = false;
         boolean hasOther = false;
-        for (PathFilterSet p : filter.getFilterSets()) {
-            if ("cleanup".equals(p.getType())) {
-                continue;
+        if (filter != null) {
+            for (PathFilterSet p : filter.getFilterSets()) {
+                if ("cleanup".equals(p.getType())) {
+                    continue;
+                }
+                String root = p.getRoot();
+                if ("/apps".equals(root)
+                        || root.startsWith("/apps/")
+                        || "/libs".equals(root)
+                        || root.startsWith("/libs/")) {
+                    hasApps = true;
+                } else {
+                    hasOther = true;
+                }
             }
-            String root = p.getRoot();
-            if ("/apps".equals(root)
-                    || root.startsWith("/apps/")
-                    || "/libs".equals(root)
-                    || root.startsWith("/libs/")) {
-                hasApps = true;
-            } else {
-                hasOther = true;
+            if (hasApps && !hasOther) {
+                return PackageType.APPLICATION;
+            } else if (hasOther && !hasApps) {
+                return PackageType.CONTENT;
             }
-        }
-        if (hasApps && !hasOther) {
-            return PackageType.APPLICATION;
-        } else if (hasOther && !hasApps) {
-            return PackageType.CONTENT;
         }
         return PackageType.MIXED;
     }
