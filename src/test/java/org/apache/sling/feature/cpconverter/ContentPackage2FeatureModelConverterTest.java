@@ -40,6 +40,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.ArtifactId;
+import org.apache.sling.feature.Artifacts;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.acl.DefaultAclManager;
@@ -195,6 +196,76 @@ public class ContentPackage2FeatureModelConverterTest {
                              "jcr_root/config.xml",
                              "jcr_root/definition/.content.xml");
     }
+    
+    @Test
+    public void convertContentPackageDropContent() throws Exception {
+        URL packageUrl = getClass().getResource("test-content-package.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+
+        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null))
+                 .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                 .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                 .setDropContent(true)
+                 .convert(packageFile);
+
+        verifyFeatureFile(outputDirectory,
+                          "asd.retail.all.json",
+                          "asd.sample:asd.retail.all:slingosgifeature:0.0.1",
+                          Arrays.asList("org.apache.felix:org.apache.felix.framework:6.0.1"),
+                          Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
+                          Arrays.asList("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1",
+                                        "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1"));
+        verifyFeatureFile(outputDirectory,
+                          "asd.retail.all-author.json",
+                          "asd.sample:asd.retail.all:slingosgifeature:author:0.0.1",
+                          Arrays.asList("org.apache.sling:org.apache.sling.api:2.20.0"),
+                          Collections.emptyList(),
+                          Collections.emptyList());
+        verifyFeatureFile(outputDirectory,
+                          "asd.retail.all-publish.json",
+                          "asd.sample:asd.retail.all:slingosgifeature:publish:0.0.1",
+                          Arrays.asList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
+                          Arrays.asList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
+                          Collections.emptyList());
+
+        // verify the runmode.mapper integrity
+        File runmodeMapperFile = new File(outputDirectory, "runmode.mapping");
+        assertTrue(runmodeMapperFile.exists());
+        assertTrue(runmodeMapperFile.isFile());
+        Properties runModes = new Properties();
+        try (FileInputStream input = new FileInputStream(runmodeMapperFile)) {
+            runModes.load(input);
+        }
+        assertFalse(runModes.isEmpty());
+        assertTrue(runModes.containsKey("(default)"));
+        assertEquals("asd.retail.all.json", runModes.getProperty("(default)"));
+        assertEquals("asd.retail.all-author.json", runModes.getProperty("author"));
+        assertEquals("asd.retail.all-publish.json", runModes.getProperty("publish"));
+
+        verifyContentPackage(new File(outputDirectory, "asd/Asd.Retail.config/0.0.1/Asd.Retail.config-0.0.1-cp2fm-converted.zip"),
+                             "META-INF/vault/settings.xml",
+                             "META-INF/vault/properties.xml",
+                             "META-INF/vault/config.xml",
+                             "META-INF/vault/filter.xml",
+                             "jcr_root/settings.xml",
+                             "jcr_root/config.xml",
+                             "jcr_root/definition/.content.xml",
+                             "jcr_root/apps/.content.xml");
+        verifyContentPackage(new File(outputDirectory, "asd/sample/asd.retail.apps/0.0.1/asd.retail.apps-0.0.1-cp2fm-converted.zip"),
+                             "META-INF/vault/settings.xml",
+                             "META-INF/vault/properties.xml",
+                             "META-INF/vault/config.xml",
+                             "META-INF/vault/filter.xml",
+                             "META-INF/vault/filter-plugin-generated.xml",
+                             "jcr_root/settings.xml",
+                             "jcr_root/config.xml",
+                             "jcr_root/definition/.content.xml");
+        // in contrast to previous test when dropping content packages the cases below would be filtered out and files wouldn'T be in cache
+        assertFalse(new File(outputDirectory, "asd/sample/Asd.Retail.ui.content/0.0.1/Asd.Retail.ui.content-0.0.1-cp2fm-converted.zip").exists());
+        assertFalse(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip").exists());
+    }
 
     private void verifyFeatureFile(File outputDirectory,
                                    String name,
@@ -219,10 +290,15 @@ public class ContentPackage2FeatureModelConverterTest {
                 assertNotNull(expectedConfiguration + " not found in Feature " + expectedArtifactId, feature.getConfigurations().getConfiguration(expectedConfiguration));
             }
 
-            for (String expectedContentPackagesExtension : expectedContentPackagesExtensions) {
-                assertTrue(expectedContentPackagesExtension + " not found in Feature " + expectedArtifactId,
-                           feature.getExtensions().getByName("content-packages").getArtifacts().containsExact(ArtifactId.fromMvnId(expectedContentPackagesExtension)));
-                verifyInstalledArtifact(outputDirectory, expectedContentPackagesExtension);
+            if (expectedContentPackagesExtensions.size() > 0) {
+            Artifacts contentPackages = feature.getExtensions().getByName("content-packages").getArtifacts();
+            assertEquals(expectedContentPackagesExtensions.size(), contentPackages.size());
+
+                for (String expectedContentPackagesExtension : expectedContentPackagesExtensions) {
+                    assertTrue(expectedContentPackagesExtension + " not found in Feature " + expectedArtifactId,
+                        contentPackages.containsExact(ArtifactId.fromMvnId(expectedContentPackagesExtension)));
+                    verifyInstalledArtifact(outputDirectory, expectedContentPackagesExtension);
+                }
             }
         }
     }
