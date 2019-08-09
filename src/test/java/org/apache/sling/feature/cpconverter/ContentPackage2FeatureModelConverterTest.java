@@ -120,7 +120,6 @@ public class ContentPackage2FeatureModelConverterTest {
         converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null))
                  .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
                  .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
-                 .setDropContent(false)
                  .convert(packageFile);
 
         verifyFeatureFile(outputDirectory,
@@ -208,6 +207,7 @@ public class ContentPackage2FeatureModelConverterTest {
         converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null))
                  .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
                  .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                 .setDropContent(true)
                  .convert(packageFile);
 
         verifyFeatureFile(outputDirectory,
