@@ -76,7 +76,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Option(names = { "-i", "--artifact-id" }, description = "The optional Artifact Id the Feature File will have, once generated; it will be derived, if not specified.", required = false)
     private String artifactIdOverride;
 
-    @Option(names = { "-p", "--fm-preix" }, description = "The optional prefix of the output file", required = false)
+    @Option(names = { "-p", "--fm-prefix" }, description = "The optional prefix of the output file", required = false)
     private String fmPrefix;
 
     @Option(names = {"-D", "--define"}, description = "Define a system property", required = false)
