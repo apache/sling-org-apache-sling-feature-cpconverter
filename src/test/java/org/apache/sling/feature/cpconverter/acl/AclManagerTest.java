@@ -65,8 +65,8 @@ public class AclManagerTest {
 
         aclManager.addSystemUser(new SystemUser("acs-commons-package-replication-status-event-service", Paths.get("/asd/public")));
 
-        aclManager.addAcl("acs-commons-ensure-oak-index-service", newAcl("allow", "jcr:read,rep:write,rep:indexDefinitionManagement", "/asd/public"));
-       aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl("allow", "jcr:read,crx:replicate,jcr:removeNode", "/asd/public"));
+        aclManager.addAcl("acs-commons-ensure-oak-index-service", newAcl("allow", "jcr:read,rep:write,rep:indexDefinitionManagement", "/asd/not/system/user/path"));
+        aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl("allow", "jcr:read,crx:replicate,jcr:removeNode", "/asd/public"));
 
         // add an ACL for unknown user
         aclManager.addAcl("acs-commons-on-deploy-scripts-service", newAcl("allow", "jcr:read,crx:replicate,jcr:removeNode", "/asd/public"));
@@ -81,15 +81,19 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         // acs-commons-on-deploy-scripts-service will be missed
-        String expected = "create service user acs-commons-package-replication-status-event-service with path /asd/public\n" +
+        String expected = "create path (rep:AuthorizableFolder) /asd/public\n" + // SLING-8586
+                "create service user acs-commons-package-replication-status-event-service with path /asd/public\n" +
                 "create path (sling:Folder) /asd\n" + 
-                "create path (sling:Folder) /asd/public\n" +
+                "create path (sling:Folder) /asd/not\n" + 
+                "create path (sling:Folder) /asd/not/system\n" + 
+                "create path (sling:Folder) /asd/not/system/user\n" + 
+                "create path (sling:Folder) /asd/not/system/user/path\n" +
                 // see SLING-8561
                 // "set ACL for acs-commons-package-replication-status-event-service\n" + 
                 // "allow jcr:read,crx:replicate,jcr:removeNode on /asd/public\n" + 
                 // "end\n" + 
                 "set ACL for acs-commons-ensure-oak-index-service\n" + 
-                "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/public\n" + 
+                "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/not/system/user/path\n" + 
                 "end\n";
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -112,9 +116,9 @@ public class AclManagerTest {
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
-        System.out.println(repoinitExtension.getText());
 
-        String expected = "create service user sys-usr with path /home/users/system\n" +
+        String expected = "create path (rep:AuthorizableFolder) /home/users/system\n" + // SLING-8586
+                "create service user sys-usr with path /home/users/system\n" +
                 "create path (sling:Folder) /content\n" +
                 "create path (sling:Folder) /content/cq:tags\n" +
                 "set ACL for sys-usr\n" +

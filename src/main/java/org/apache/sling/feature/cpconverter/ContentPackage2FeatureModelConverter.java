@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter;
 
+import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.detectPackageType;
 import static java.util.Objects.requireNonNull;
 
 import java.io.File;
@@ -36,6 +37,7 @@ import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
 import org.apache.jackrabbit.vault.packaging.Dependency;
 import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
+import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.acl.AclManager;
@@ -47,6 +49,7 @@ import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
 import org.apache.sling.feature.cpconverter.handlers.NodeTypesEntryHandler;
 import org.apache.sling.feature.cpconverter.vltpkg.BaseVaultPackageScanner;
+import org.apache.sling.feature.cpconverter.vltpkg.PackagesEventsEmitter;
 import org.apache.sling.feature.cpconverter.vltpkg.RecollectorVaultPackageScanner;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 
@@ -75,6 +78,10 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     private VaultPackageAssembler mainPackageAssembler = null;
 
     private RecollectorVaultPackageScanner recollectorVaultPackageScanner;
+
+    private PackagesEventsEmitter emitter;
+
+    private boolean dropContent = false;
 
     public ContentPackage2FeatureModelConverter() {
         this(false);
@@ -126,6 +133,17 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return mainPackageAssembler;
     }
 
+    public ContentPackage2FeatureModelConverter setEmitter(PackagesEventsEmitter emitter) {
+        this.emitter = emitter;
+        return this;
+    }
+    
+    public ContentPackage2FeatureModelConverter setDropContent(boolean dropContent) {
+        this.dropContent = dropContent;
+        return this;
+    }
+
+
     public void convert(File...contentPackages) throws Exception {
         requireNonNull(contentPackages , "Null content-package(s) can not be converted.");
         secondPass(firstPass(contentPackages));
@@ -148,7 +166,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             idPackageMapping.put(pack.getId(), pack);
 
             // analyze sub-content packages in order to filter out
-            // possible outdated conflictring packages
+            // possible outdated conflicting packages
             recollectorVaultPackageScanner.traverse(pack);
 
             logger.info("content-package '{}' successfully read!", contentPackage);
@@ -166,8 +184,11 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     }
 
     protected void secondPass(Collection<VaultPackage> orderedContentPackages) throws Exception {
+        emitter.start();
+
         for (VaultPackage vaultPackage : orderedContentPackages) {
             try {
+                emitter.startPackage(vaultPackage);
                 mainPackageAssembler = VaultPackageAssembler.create(vaultPackage);
                 assemblers.add(mainPackageAssembler);
 
@@ -185,9 +206,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
                 // deploy the new zip content-package to the local mvn bundles dir
 
-                artifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), packageId);
-
-                featuresManager.addArtifact(null, packageId);
+                processContentPackageArchive(contentPackageArchive, packageId);
 
                 // finally serialize the Feature Model(s) file(s)
 
@@ -196,6 +215,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 logger.info("Conversion complete!");
 
                 featuresManager.serialize();
+                emitter.endPackage();
             } finally {
                 aclManager.reset();
                 assemblers.clear();
@@ -207,6 +227,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 }
             }
         }
+
+        emitter.end();
     }
 
     private void orderDependencies(Map<PackageId, VaultPackage> idFileMap,
@@ -239,6 +261,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             return;
         }
 
+        emitter.startSubPackage(path, vaultPackage);
+
         ArtifactId packageId = toArtifactId(vaultPackage);
         VaultPackageAssembler clonedPackage = VaultPackageAssembler.create(vaultPackage);
 
@@ -254,13 +278,26 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         File contentPackageArchive = clonedPackage.createPackage();
 
         // deploy the new content-package to the local mvn bundles dir and attach it to the feature
-
-        artifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), packageId);
-
-        featuresManager.addArtifact(null, packageId);
+        processContentPackageArchive(contentPackageArchive, packageId);
 
         // restore the previous assembler
         mainPackageAssembler = handler;
+
+        emitter.endSubPackage();
+    }
+
+    private void processContentPackageArchive(File contentPackageArchive, ArtifactId packageId) throws Exception {
+        try (VaultPackage vaultPackage = open(contentPackageArchive)) {
+            PackageType packageType = detectPackageType(vaultPackage);
+            // don't deploy & add content-packages of type content to featuremodel if dropContent is set
+            if (PackageType.CONTENT != packageType || !dropContent) {
+                // deploy the new content-package to the local mvn bundles dir and attach it to the feature
+                artifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), packageId);
+                featuresManager.addArtifact(null, packageId);
+            } else {
+                logger.info("Dropping package of PackageType.CONTENT {}", packageId.getArtifactId());
+            }
+        }
     }
 
     protected boolean isSubContentPackageIncluded(String path) {

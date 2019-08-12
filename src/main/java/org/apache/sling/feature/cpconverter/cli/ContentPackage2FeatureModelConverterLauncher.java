@@ -27,6 +27,7 @@ import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
+import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,7 +122,8 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                                                                                                             properties))
                                                              .setBundlesDeployer(new DefaultArtifactsDeployer(artifactsOutputDirectory))
                                                              .setEntryHandlersManager(new DefaultEntryHandlersManager())
-                                                             .setAclManager(new DefaultAclManager());
+                                                             .setAclManager(new DefaultAclManager())
+                                                             .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory));
 
             if (filteringPatterns != null && filteringPatterns.length > 0) {
                 RegexBasedResourceFilter filter = new RegexBasedResourceFilter();
