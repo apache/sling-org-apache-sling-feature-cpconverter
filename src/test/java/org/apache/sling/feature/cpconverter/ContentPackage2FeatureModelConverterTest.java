@@ -204,7 +204,7 @@ public class ContentPackage2FeatureModelConverterTest {
 
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
-        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null))
+        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
                  .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
                  .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                  .setDropContent(true)
