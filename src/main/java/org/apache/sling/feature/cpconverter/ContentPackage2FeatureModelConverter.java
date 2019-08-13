@@ -143,7 +143,6 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return this;
     }
 
-
     public void convert(File...contentPackages) throws Exception {
         requireNonNull(contentPackages , "Null content-package(s) can not be converted.");
         secondPass(firstPass(contentPackages));
@@ -325,16 +324,20 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     private static ArtifactId toArtifactId(VaultPackage vaultPackage) {
         PackageId packageId = vaultPackage.getId();
         String groupId = requireNonNull(packageId.getGroup(),
-                                        PackageProperties.NAME_GROUP
-                                        + " property not found in content-package "
-                                        + vaultPackage
-                                        + ", please check META-INF/vault/properties.xml").replace('/', '.'); 
+            PackageProperties.NAME_GROUP
+                + " property not found in content-package "
+                + vaultPackage
+                + ", please check META-INF/vault/properties.xml").replace('/', '.');
+        // Replace any space with an underscore to adhere to Maven Group Id specification
+        groupId = groupId.replaceAll(" ", "_");
 
         String artifactid = requireNonNull(packageId.getName(),
-                                           PackageProperties.NAME_NAME
-                                           + " property not found in content-package "
-                                           + vaultPackage
-                                           + ", please check META-INF/vault/properties.xml");
+            PackageProperties.NAME_NAME
+                + " property not found in content-package "
+                + vaultPackage
+                + ", please check META-INF/vault/properties.xml");
+        // Replace any space with an underscore to adhere to Maven Artifact Id specification
+        artifactid = artifactid.replaceAll(" ", "_");
 
         String version = packageId.getVersionString();
         if (version == null || version.isEmpty()) {

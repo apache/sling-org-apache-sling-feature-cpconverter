@@ -81,7 +81,11 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
                 classifier = properties.getProperty(NAME_CLASSIFIER);
             } else { // maybe the included jar is just an OSGi bundle but not a valid Maven artifact
                 groupId = getCheckedProperty(manifest, BUNDLE_SYMBOLIC_NAME);
+                // Make sure there are not spaces in the name to adhere to the Maven Group Id specification
+                groupId = groupId.replaceAll(" ", "_");
                 artifactId = getCheckedProperty(manifest, BUNDLE_NAME);
+                // Make sure there are not spaces in the name to adhere to the Maven Artifact Id specification
+                artifactId = artifactId.replaceAll(" ", "_");
                 version = getCheckedProperty(manifest, BUNDLE_VERSION);
             }
         }
