@@ -34,6 +34,8 @@ public final class MavenPomSupplierWriter implements ArtifactWriter {
     @Override
     public void write(OutputStream outputStream) throws IOException {
         Model model = new Model();
+        // Maven complains if Model Version is not set
+        model.setModelVersion("4.0.0");
         model.setGroupId(id.getGroupId());
         model.setArtifactId(id.getArtifactId());
         model.setVersion(id.getVersion());
