@@ -89,8 +89,12 @@ public final class DefaultArtifactsDeployer implements ArtifactsDeployer {
 
         targetFile = new File(targetDir, String.format("%s-%s.pom", id.getArtifactId(), id.getVersion()));
 
-        try (FileOutputStream targetStream = new FileOutputStream(targetFile)) {
-            new MavenPomSupplierWriter(id).write(targetStream);
+        // If a POM already exists then there is not need to overwrite it as either the entire POM is lost
+        // or if its the a file previously generated here it must be the same
+        if(!targetFile.exists()) {
+            try (FileOutputStream targetStream = new FileOutputStream(targetFile)) {
+                new MavenPomSupplierWriter(id).write(targetStream);
+            }
         }
     }
 
