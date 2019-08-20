@@ -21,10 +21,12 @@ import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelCo
 
 import java.io.File;
 import java.io.FileWriter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -66,29 +68,56 @@ public class DefaultFeaturesManager implements FeaturesManager {
 
     private final String artifactIdOverride;
 
+    private final String prefix;
+
     private final Map<String, String> properties;
+
+    private final List<String> targetAPIRegions = new ArrayList<>();
 
     private Feature targetFeature = null;
 
     public DefaultFeaturesManager() {
-        this(true, 20, new File(System.getProperty(JAVA_IO_TMPDIR_PROPERTY)), null, null);
+        this(true, 20, new File(System.getProperty(JAVA_IO_TMPDIR_PROPERTY)), null, null, null);
     }
 
     public DefaultFeaturesManager(boolean mergeConfigurations,
                                   int bundlesStartOrder,
                                   File featureModelsOutputDirectory,
                                   String artifactIdOverride,
+                                  String prefix,
                                   Map<String, String> properties) {
         this.mergeConfigurations = mergeConfigurations;
         this.bundlesStartOrder = bundlesStartOrder;
         this.featureModelsOutputDirectory = featureModelsOutputDirectory;
         this.artifactIdOverride = artifactIdOverride;
+        this.prefix = prefix;
         this.properties = properties;
     }
 
     public void init(String groupId, String artifactId, String version) {
         targetFeature = new Feature(new ArtifactId(groupId, artifactId, version, null, SLING_OSGI_FEATURE_TILE_TYPE));
+
+        initAPIRegions();
+
         runModes.clear();
+    }
+
+    private void initAPIRegions() {
+        if (targetAPIRegions.size() > 0) {
+            Extension apiRegions = new Extension(ExtensionType.JSON, "api-regions", false);
+            StringBuilder jsonBuilder = new StringBuilder("[");
+            for (String apiRegion : targetAPIRegions) {
+                if (jsonBuilder.length() > 1) {
+                    jsonBuilder.append(',');
+                }
+                jsonBuilder.append("{\"name\":\"");
+                jsonBuilder.append(apiRegion);
+                jsonBuilder.append("\",\"exports\":[]}");
+            }
+            jsonBuilder.append("]");
+            apiRegions.setJSON(jsonBuilder.toString());
+            targetFeature.getExtensions().add(apiRegions);
+        }
     }
 
     public Feature getTargetFeature() {
@@ -201,7 +230,9 @@ public class DefaultFeaturesManager implements FeaturesManager {
     }
 
     private void seralize(Feature feature, String runMode, RunmodeMapper runmodeMapper) throws Exception {
-        StringBuilder fileNameBuilder = new StringBuilder().append(feature.getId().getArtifactId());
+        StringBuilder fileNameBuilder = new StringBuilder()
+            .append((prefix != null) ? prefix : "")
+            .append(feature.getId().getArtifactId());
 
         String classifier = feature.getId().getClassifier();
         if (classifier != null && !classifier.isEmpty()) {
@@ -238,4 +269,9 @@ public class DefaultFeaturesManager implements FeaturesManager {
         }
     }
 
+    public synchronized DefaultFeaturesManager setAPIRegions(List<String> regions) {
+        targetAPIRegions.clear();
+        targetAPIRegions.addAll(regions);
+        return this;
+    }
 }
