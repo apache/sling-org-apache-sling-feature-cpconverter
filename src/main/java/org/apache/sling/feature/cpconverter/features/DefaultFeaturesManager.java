@@ -21,10 +21,12 @@ import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelCo
 
 import java.io.File;
 import java.io.FileWriter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -68,6 +70,8 @@ public class DefaultFeaturesManager implements FeaturesManager {
 
     private final Map<String, String> properties;
 
+    private final List<String> targetAPIRegions = new ArrayList<>();
+
     private Feature targetFeature = null;
 
     public DefaultFeaturesManager() {
@@ -88,7 +92,28 @@ public class DefaultFeaturesManager implements FeaturesManager {
 
     public void init(String groupId, String artifactId, String version) {
         targetFeature = new Feature(new ArtifactId(groupId, artifactId, version, null, SLING_OSGI_FEATURE_TILE_TYPE));
+
+        initAPIRegions();
+
         runModes.clear();
+    }
+
+    private void initAPIRegions() {
+        if (targetAPIRegions.size() > 0) {
+            Extension apiRegions = new Extension(ExtensionType.JSON, "api-regions", false);
+            StringBuilder jsonBuilder = new StringBuilder("[");
+            for (String apiRegion : targetAPIRegions) {
+                if (jsonBuilder.length() > 1) {
+                    jsonBuilder.append(',');
+                }
+                jsonBuilder.append("{\"name\":\"");
+                jsonBuilder.append(apiRegion);
+                jsonBuilder.append("\",\"exports\":[]}");
+            }
+            jsonBuilder.append("]");
+            apiRegions.setJSON(jsonBuilder.toString());
+            targetFeature.getExtensions().add(apiRegions);
+        }
     }
 
     public Feature getTargetFeature() {
@@ -238,4 +263,9 @@ public class DefaultFeaturesManager implements FeaturesManager {
         }
     }
 
+    public synchronized DefaultFeaturesManager setAPIRegions(List<String> regions) {
+        targetAPIRegions.clear();
+        targetAPIRegions.addAll(regions);
+        return this;
+    }
 }
