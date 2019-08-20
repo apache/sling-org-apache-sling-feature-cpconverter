@@ -18,6 +18,7 @@ package org.apache.sling.feature.cpconverter.cli;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
@@ -76,6 +77,9 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Option(names = { "-i", "--artifact-id" }, description = "The optional Artifact Id the Feature File will have, once generated; it will be derived, if not specified.", required = false)
     private String artifactIdOverride;
 
+    @Option(names = { "-r", "--api-region" }, description = "The API Regions assigned to the generated features", required = false)
+    private List<String> apiRegions;
+
     @Option(names = {"-D", "--define"}, description = "Define a system property", required = false)
     private Map<String, String> properties = new HashMap<>();
 
@@ -110,12 +114,16 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
         logger.info("");
 
         try {
+            DefaultFeaturesManager featuresManager = new DefaultFeaturesManager(mergeConfigurations,
+                                                            bundlesStartOrder,
+                                                            featureModelsOutputDirectory,
+                                                            artifactIdOverride,
+                                                            properties);
+            if (apiRegions != null)
+                featuresManager.setAPIRegions(apiRegions);
+
             ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation)
-                                                             .setFeaturesManager(new DefaultFeaturesManager(mergeConfigurations,
-                                                                                                            bundlesStartOrder,
-                                                                                                            featureModelsOutputDirectory,
-                                                                                                            artifactIdOverride,
-                                                                                                            properties))
+                                                             .setFeaturesManager(featuresManager)
                                                              .setBundlesDeployer(new DefaultArtifactsDeployer(artifactsOutputDirectory))
                                                              .setEntryHandlersManager(new DefaultEntryHandlersManager())
                                                              .setAclManager(new DefaultAclManager())

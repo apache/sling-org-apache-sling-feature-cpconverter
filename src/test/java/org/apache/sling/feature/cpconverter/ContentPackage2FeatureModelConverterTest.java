@@ -24,11 +24,16 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.Reader;
+import java.io.StringReader;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
@@ -42,6 +47,7 @@ import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Artifacts;
 import org.apache.sling.feature.Extension;
+import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.acl.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
@@ -54,15 +60,19 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+
 public class ContentPackage2FeatureModelConverterTest {
 
     /**
      * Test package A-1.0. Depends on B and C-1.X
      * Test package B-1.0. Depends on C
      */
-    private static String[] TEST_PACKAGES_INPUT = { "test_c-1.0.zip", "test_a-1.0.zip", "test_b-1.0.zip" }; 
+    private static String[] TEST_PACKAGES_INPUT = { "test_c-1.0.zip", "test_a-1.0.zip", "test_b-1.0.zip" };
 
-    private static String[] TEST_PACKAGES_OUTPUT = { "my_packages:test_c:1.0", "my_packages:test_b:1.0", "my_packages:test_a:1.0" }; 
+    private static String[] TEST_PACKAGES_OUTPUT = { "my_packages:test_c:1.0", "my_packages:test_b:1.0", "my_packages:test_a:1.0" };
 
     private static String[] TEST_PACKAGES_CYCLIC_DEPENDENCY = { "test_d-1.0.zip",
                                                                 "test_c-1.0.zip",
@@ -196,7 +206,7 @@ public class ContentPackage2FeatureModelConverterTest {
                              "jcr_root/config.xml",
                              "jcr_root/definition/.content.xml");
     }
-    
+
     @Test
     public void convertContentPackageDropContent() throws Exception {
         URL packageUrl = getClass().getResource("test-content-package.zip");
@@ -265,6 +275,53 @@ public class ContentPackage2FeatureModelConverterTest {
         // in contrast to previous test when dropping content packages the cases below would be filtered out and files wouldn'T be in cache
         assertFalse(new File(outputDirectory, "asd/sample/Asd.Retail.ui.content/0.0.1/Asd.Retail.ui.content-0.0.1-cp2fm-converted.zip").exists());
         assertFalse(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip").exists());
+    }
+
+    @Test
+    public void testConvertContentPackageWithAPIRegion() throws Exception {
+        URL cp = getClass().getResource("test_c-1.0.zip");
+        File cpFile = new File(cp.getFile());
+        File outDir = Files.createTempDirectory(getClass().getSimpleName()).toFile();
+
+        try {
+            DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 5, outDir, null, null);
+            fm.setAPIRegions(Arrays.asList("global", "foo.bar"));
+            converter.setFeaturesManager(fm)
+                     .setBundlesDeployer(new DefaultArtifactsDeployer(outDir))
+                     .setEmitter(DefaultPackagesEventsEmitter.open(outDir))
+                     .convert(cpFile);
+
+            File featureFile = new File(outDir, "test_c.json");
+            try (Reader reader = new FileReader(featureFile)) {
+                Feature feature = FeatureJSONReader.read(reader, featureFile.getAbsolutePath());
+
+                Extension apiRegions = feature.getExtensions().getByName("api-regions");
+                assertEquals(ExtensionType.JSON, apiRegions.getType());
+                String json = apiRegions.getJSON();
+                JsonArray ja = Json.createReader(new StringReader(json)).readArray();
+                assertEquals(2, ja.size());
+
+                JsonObject globalJO = ja.getJsonObject(0);
+                assertEquals("global", globalJO.getString("name"));
+                assertEquals(0, globalJO.getJsonArray("exports").size());
+
+                JsonObject foobarJO = ja.getJsonObject(1);
+                assertEquals("foo.bar", foobarJO.getString("name"));
+                assertEquals(0, foobarJO.getJsonArray("exports").size());
+            }
+
+        } finally {
+            deleteDirTree(outDir);
+        }
+    }
+
+    private void deleteDirTree(File dir) throws IOException {
+        Path tempDir = dir.toPath();
+
+        Files.walk(tempDir)
+            .sorted(Comparator.reverseOrder())
+            .map(Path::toFile)
+            .forEach(File::delete);
     }
 
     private void verifyFeatureFile(File outputDirectory,
@@ -471,18 +528,18 @@ public class ContentPackage2FeatureModelConverterTest {
 
             String expected = "register nodetypes\n" +
                     "<<===\n" +
-                    "<< <'sling'='http://sling.apache.org/jcr/sling/1.0'>\n" + 
-                    "<< <'nt'='http://www.jcp.org/jcr/nt/1.0'>\n" + 
-                    "<< <'rep'='internal'>\n" + 
-                    "\n" + 
-                    "<< [sling:Folder] > nt:folder\n" + 
-                    "<<   - * (undefined) multiple\n" + 
-                    "<<   - * (undefined)\n" + 
-                    "<<   + * (nt:base) = sling:Folder version\n" + 
-                    "\n" + 
-                    "<< [rep:RepoAccessControllable]\n" + 
-                    "<<   mixin\n" + 
-                    "<<   + rep:repoPolicy (rep:Policy) protected ignore\n" + 
+                    "<< <'sling'='http://sling.apache.org/jcr/sling/1.0'>\n" +
+                    "<< <'nt'='http://www.jcp.org/jcr/nt/1.0'>\n" +
+                    "<< <'rep'='internal'>\n" +
+                    "\n" +
+                    "<< [sling:Folder] > nt:folder\n" +
+                    "<<   - * (undefined) multiple\n" +
+                    "<<   - * (undefined)\n" +
+                    "<<   + * (nt:base) = sling:Folder version\n" +
+                    "\n" +
+                    "<< [rep:RepoAccessControllable]\n" +
+                    "<<   mixin\n" +
+                    "<<   + rep:repoPolicy (rep:Policy) protected ignore\n" +
                     "\n===>>\n";
             String actual = repoinitExtension.getText();
             assertEquals(expected, actual);
