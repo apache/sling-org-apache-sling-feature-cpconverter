@@ -284,7 +284,7 @@ public class ContentPackage2FeatureModelConverterTest {
         File outDir = Files.createTempDirectory(getClass().getSimpleName()).toFile();
 
         try {
-            DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 5, outDir, null, null);
+            DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 5, outDir, null, null, null);
             fm.setAPIRegions(Arrays.asList("global", "foo.bar"));
             converter.setFeaturesManager(fm)
                      .setBundlesDeployer(new DefaultArtifactsDeployer(outDir))
