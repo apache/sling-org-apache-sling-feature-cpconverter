@@ -127,7 +127,7 @@ public class ContentPackage2FeatureModelConverterTest {
 
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
-        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null))
+        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
                  .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
                  .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                  .convert(packageFile);
@@ -214,7 +214,7 @@ public class ContentPackage2FeatureModelConverterTest {
 
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
-        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null))
+        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
                  .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
                  .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                  .setDropContent(true)
@@ -284,7 +284,7 @@ public class ContentPackage2FeatureModelConverterTest {
         File outDir = Files.createTempDirectory(getClass().getSimpleName()).toFile();
 
         try {
-            DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 5, outDir, null, null);
+            DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 5, outDir, null, null, null);
             fm.setAPIRegions(Arrays.asList("global", "foo.bar"));
             converter.setFeaturesManager(fm)
                      .setBundlesDeployer(new DefaultArtifactsDeployer(outDir))
@@ -407,7 +407,7 @@ public class ContentPackage2FeatureModelConverterTest {
 
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
-        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null))
+        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
                  .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
                  .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                  .convert(packageFile);
@@ -429,7 +429,7 @@ public class ContentPackage2FeatureModelConverterTest {
         File packageFile = FileUtils.toFile(packageUrl);
 
         converter.setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
-                 .setFeaturesManager(new DefaultFeaturesManager(false, 5, outputDirectory, null, null))
+                 .setFeaturesManager(new DefaultFeaturesManager(false, 5, outputDirectory, null, null, null))
                  .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                  .convert(packageFile);
 
@@ -446,7 +446,7 @@ public class ContentPackage2FeatureModelConverterTest {
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
         String overrideId = "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0:${project.version}";
-        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, overrideId, null))
+        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, overrideId, null, null))
                  .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
                  .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                  .convert(packageFile);
@@ -514,7 +514,7 @@ public class ContentPackage2FeatureModelConverterTest {
 
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
-        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null))
+        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
                  .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
                  .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                  .convert(contentPackages[0]);

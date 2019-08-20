@@ -77,6 +77,9 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Option(names = { "-i", "--artifact-id" }, description = "The optional Artifact Id the Feature File will have, once generated; it will be derived, if not specified.", required = false)
     private String artifactIdOverride;
 
+    @Option(names = { "-p", "--fm-prefix" }, description = "The optional prefix of the output file", required = false)
+    private String fmPrefix;
+
     @Option(names = { "-r", "--api-region" }, description = "The API Regions assigned to the generated features", required = false)
     private List<String> apiRegions;
 
@@ -118,6 +121,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                                                             bundlesStartOrder,
                                                             featureModelsOutputDirectory,
                                                             artifactIdOverride,
+                                                            fmPrefix,
                                                             properties);
             if (apiRegions != null)
                 featuresManager.setAPIRegions(apiRegions);
