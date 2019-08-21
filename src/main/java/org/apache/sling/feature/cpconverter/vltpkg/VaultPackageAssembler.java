@@ -31,8 +31,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.api.ImportMode;
@@ -41,6 +45,7 @@ import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
 import org.apache.jackrabbit.vault.fs.config.DefaultWorkspaceFilter;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
+import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
@@ -50,6 +55,8 @@ import org.codehaus.plexus.archiver.util.DefaultFileSet;
 import org.codehaus.plexus.archiver.zip.ZipArchiver;
 
 public class VaultPackageAssembler implements EntryHandler {
+
+    private static final String DEPENDENCIES_DELIMITER = ",";
 
     private static final String NAME_PATH = "path";
 
@@ -90,7 +97,6 @@ public class VaultPackageAssembler implements EntryHandler {
         for (String key : new String[] {
                 PackageProperties.NAME_GROUP,
                 PackageProperties.NAME_NAME,
-                PackageProperties.NAME_DEPENDENCIES,
                 PackageProperties.NAME_CREATED_BY,
                 PackageProperties.NAME_CREATED,
                 PackageProperties.NAME_REQUIRES_ROOT,
@@ -104,12 +110,28 @@ public class VaultPackageAssembler implements EntryHandler {
             }
         }
 
-        VaultPackageAssembler assembler = new VaultPackageAssembler(storingDirectory, properties);
+        Set<PackageId> dependencies = new HashSet<>();
+        String dependenciesString = properties.getProperty(PackageProperties.NAME_DEPENDENCIES);
+
+        if (dependenciesString != null && !dependenciesString.isEmpty()) {
+         // from https://jackrabbit.apache.org/filevault/properties.html
+            // Comma-separated list of dependencies
+            StringTokenizer tokenizer = new StringTokenizer(dependenciesString, DEPENDENCIES_DELIMITER);
+            while (tokenizer.hasMoreTokens()) {
+                String dependencyString = tokenizer.nextToken();
+                PackageId dependency = PackageId.fromString(dependencyString);
+                dependencies.add(dependency);
+            }
+        }
+
+        VaultPackageAssembler assembler = new VaultPackageAssembler(storingDirectory, properties, dependencies);
         assembler.mergeFilters(filter);
         return assembler;
     }
 
     private final DefaultWorkspaceFilter filter = new DefaultWorkspaceFilter();
+
+    private final Set<PackageId> dependencies;
 
     private final File storingDirectory;
 
@@ -129,9 +151,10 @@ public class VaultPackageAssembler implements EntryHandler {
     /**
      * This class can not be instantiated from outside
      */
-    private VaultPackageAssembler(File storingDirectory, Properties properties) {
+    private VaultPackageAssembler(File storingDirectory, Properties properties, Set<PackageId> dependencies) {
         this.storingDirectory = storingDirectory;
         this.properties = properties;
+        this.dependencies = dependencies;
     }
 
     public void mergeFilters(WorkspaceFilter filter) {
@@ -174,6 +197,10 @@ public class VaultPackageAssembler implements EntryHandler {
         return new File(storingDirectory, path);
     }
 
+    public void removeDependencies(Set<PackageId> mutableContentsIds) {
+        dependencies.removeAll(mutableContentsIds);
+    }
+
     public File createPackage() throws IOException {
         return createPackage(TMP_DIR);
     }
@@ -184,6 +211,11 @@ public class VaultPackageAssembler implements EntryHandler {
         File metaDir = new File(storingDirectory, META_DIR);
         if (!metaDir.exists()) {
             metaDir.mkdirs();
+        }
+
+        if (!dependencies.isEmpty()) {
+            String dependenciesString = dependencies.stream().map(id -> id.toString()).collect(Collectors.joining(DEPENDENCIES_DELIMITER));
+            properties.setProperty(PackageProperties.NAME_DEPENDENCIES, dependenciesString);
         }
 
         File xmlProperties = new File(metaDir, PROPERTIES_XML);
