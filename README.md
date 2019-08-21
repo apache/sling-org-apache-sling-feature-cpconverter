@@ -404,3 +404,17 @@ then execute the command
 ```
 $ ./bin/cp2sf @arfile
 ````
+
+## Local Maven Repo as Cache
+
+The converter will create a Maven Dependency folder structure and create a POM file
+for any converted Content Package file. This will allow subsequent Feature tools
+to find and process them.
+The **group and artifact id** of the converted Content Package and Bundles is
+taken from the file itself (Content Package's Vault Properties file, Bundle's
+Headers). Because these sources might not correspond with the CPs or Bundles
+regular Maven place the Converter will place them accordingly to the found
+data hence in a new place.
+This does not bother the Sling Feature Maven Plugin nor the Feature Launcher
+as they are still able to find the dependencies if placed in the Local
+Maven Repo.
