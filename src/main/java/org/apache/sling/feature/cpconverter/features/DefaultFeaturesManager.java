@@ -97,12 +97,12 @@ public class DefaultFeaturesManager implements FeaturesManager {
     public void init(String groupId, String artifactId, String version) {
         targetFeature = new Feature(new ArtifactId(groupId, artifactId, version, null, SLING_OSGI_FEATURE_TILE_TYPE));
 
-        initAPIRegions();
+        initAPIRegions(targetFeature);
 
         runModes.clear();
     }
 
-    private void initAPIRegions() {
+    private void initAPIRegions(Feature feature) {
         if (targetAPIRegions.size() > 0) {
             Extension apiRegions = new Extension(ExtensionType.JSON, "api-regions", false);
             StringBuilder jsonBuilder = new StringBuilder("[");
@@ -116,7 +116,7 @@ public class DefaultFeaturesManager implements FeaturesManager {
             }
             jsonBuilder.append("]");
             apiRegions.setJSON(jsonBuilder.toString());
-            targetFeature.getExtensions().add(apiRegions);
+            feature.getExtensions().add(apiRegions);
         }
     }
 
@@ -135,7 +135,11 @@ public class DefaultFeaturesManager implements FeaturesManager {
 
         ArtifactId newId = appendRunmode(getTargetFeature().getId(), runMode);
 
-        return runModes.computeIfAbsent(runMode, k -> new Feature(newId));
+        return runModes.computeIfAbsent(runMode, k -> {
+            Feature f = new Feature(newId);
+            initAPIRegions(f);
+            return f;
+        });
     }
 
     public void addArtifact(String runMode, ArtifactId id) {

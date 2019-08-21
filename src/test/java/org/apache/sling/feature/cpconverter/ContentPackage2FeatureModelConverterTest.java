@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
@@ -436,6 +437,44 @@ public class ContentPackage2FeatureModelConverterTest {
         String pid = "this.is.just.a.pid";
         converter.getFeaturesManager().addConfiguration(runmodeA, pid, new Hashtable<String, Object>());
         converter.getFeaturesManager().addConfiguration(runmodeB, pid, new Hashtable<String, Object>());
+    }
+
+    @Test
+    public void testAPIRegionsWithRunmodes() throws Exception {
+        URL cp = getClass().getResource("test-content-package.zip");
+        File cpFile = new File(cp.getFile());
+        File outDir = Files.createTempDirectory(getClass().getSimpleName()).toFile();
+
+        try {
+            converter.setBundlesDeployer(new DefaultArtifactsDeployer(outDir))
+            .setFeaturesManager(new DefaultFeaturesManager(false, 5, outDir, null, null, null)
+                    .setAPIRegions(Arrays.asList("a.b.c")))
+            .setEmitter(DefaultPackagesEventsEmitter.open(outDir))
+            .convert(cpFile);
+
+            assertAPIRegion(new File(outDir, "asd.retail.all.json"), "a.b.c");
+            assertAPIRegion(new File(outDir, "asd.retail.all-author.json"), "a.b.c");
+            assertAPIRegion(new File(outDir, "asd.retail.all-publish.json"), "a.b.c");
+        } finally {
+            deleteDirTree(outDir);
+        }
+
+    }
+
+    private void assertAPIRegion(File featureFile, String region) throws IOException, FileNotFoundException {
+        try (Reader reader = new FileReader(featureFile)) {
+            Feature feature = FeatureJSONReader.read(reader, featureFile.getAbsolutePath());
+
+            Extension apiRegions = feature.getExtensions().getByName("api-regions");
+            assertEquals(ExtensionType.JSON, apiRegions.getType());
+            String json = apiRegions.getJSON();
+            JsonArray ja = Json.createReader(new StringReader(json)).readArray();
+            assertEquals(1, ja.size());
+
+            JsonObject regionJO = ja.getJsonObject(0);
+            assertEquals(region, regionJO.getString("name"));
+            assertEquals(0, regionJO.getJsonArray("exports").size());
+        }
     }
 
     @Test
