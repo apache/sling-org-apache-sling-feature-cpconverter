@@ -18,6 +18,7 @@ package org.apache.sling.feature.cpconverter;
 
 import static java.util.Objects.requireNonNull;
 import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.detectPackageType;
+import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.getDependencies;
 
 import java.io.File;
 import java.util.Collection;
@@ -65,7 +66,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     private final List<VaultPackageAssembler> assemblers = new LinkedList<>();
 
-    private final Set<PackageId> mutableContentsIds = new HashSet<>();
+    private final Map<PackageId, Set<Dependency>> mutableContentsIds = new LinkedHashMap<>();
 
     private EntryHandlersManager handlersManager;
 
@@ -201,6 +202,10 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
                 traverse(vaultPackage);
 
+                // make sure 
+
+                mainPackageAssembler.updateDependencies(mutableContentsIds);
+
                 // attach all unmatched resources as new content-package
 
                 File contentPackageArchive = mainPackageAssembler.createPackage();
@@ -266,7 +271,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
         emitter.startSubPackage(path, vaultPackage);
 
-        PackageId packageId = vaultPackage.getId();
+        PackageId originalPackageId = vaultPackage.getId();
         ArtifactId mvnPackageId = toArtifactId(vaultPackage);
         VaultPackageAssembler clonedPackage = VaultPackageAssembler.create(vaultPackage);
 
@@ -279,10 +284,12 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         // scan the detected package, first
         traverse(vaultPackage);
 
+        clonedPackage.updateDependencies(mutableContentsIds);
+
         File contentPackageArchive = clonedPackage.createPackage();
 
         // deploy the new content-package to the local mvn bundles dir and attach it to the feature
-        processContentPackageArchive(contentPackageArchive, mvnPackageId, packageId);
+        processContentPackageArchive(contentPackageArchive, mvnPackageId, originalPackageId);
 
         // restore the previous assembler
         mainPackageAssembler = handler;
@@ -292,7 +299,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     private void processContentPackageArchive(File contentPackageArchive,
                                               ArtifactId mvnPackageId,
-                                              PackageId packageId) throws Exception {
+                                              PackageId originalPackageId) throws Exception {
         try (VaultPackage vaultPackage = open(contentPackageArchive)) {
             PackageType packageType = detectPackageType(vaultPackage);
             // don't deploy & add content-packages of type content to featuremodel if dropContent is set
@@ -301,8 +308,9 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 artifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), mvnPackageId);
                 featuresManager.addArtifact(null, mvnPackageId);
             } else {
-                mutableContentsIds.add(packageId);
-                logger.info("Dropping package of PackageType.CONTENT {} (content-package id: {})", mvnPackageId.getArtifactId(), packageId);
+                mutableContentsIds.put(originalPackageId, getDependencies(vaultPackage));
+                logger.info("Dropping package of PackageType.CONTENT {} (content-package id: {})",
+                            mvnPackageId.getArtifactId(), originalPackageId);
             }
         }
     }

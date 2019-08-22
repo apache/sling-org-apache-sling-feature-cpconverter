@@ -556,7 +556,10 @@ public class ContentPackage2FeatureModelConverterTest {
     // see SLING-8649
     @Test
     public void filteredOutContentPackagesAreExcludedDependencies() throws Exception {
-        File[] contentPackages = load("test_dep_a-1.0.zip", "test_dep_b-1.0.zip");
+        File[] contentPackages = load("test_dep_a-1.0.zip", "test_dep_b-1.0.zip", "test_dep_b-1.0.zip");
+
+        // input: c <- a <- b
+        // expected output: c <- a
 
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
@@ -576,8 +579,8 @@ public class ContentPackage2FeatureModelConverterTest {
 
         File contentPackage = new File(outputDirectory, "my_packages/test_b/1.0/test_b-1.0-cp2fm-converted.zip");
         VaultPackage vaultPackage = new PackageManagerImpl().open(contentPackage);
-        String depencies = vaultPackage.getProperties().getProperty(PackageProperties.NAME_DEPENDENCIES);
-        assertNull(depencies);
+        String dependencies = vaultPackage.getProperties().getProperty(PackageProperties.NAME_DEPENDENCIES);
+        assertEquals("my_packages:test_c", dependencies);
     }
 
     private File[] load(String...resources) {

@@ -24,6 +24,8 @@ import static org.apache.jackrabbit.vault.util.Constants.PROPERTIES_XML;
 import static org.apache.jackrabbit.vault.util.Constants.ROOT_DIR;
 import static org.apache.jackrabbit.vault.util.Constants.SETTINGS_XML;
 import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER;
+import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.getDependencies;
+import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.setDependencies;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,12 +33,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.api.ImportMode;
@@ -45,6 +45,7 @@ import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
 import org.apache.jackrabbit.vault.fs.config.DefaultWorkspaceFilter;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
+import org.apache.jackrabbit.vault.packaging.Dependency;
 import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
@@ -55,8 +56,6 @@ import org.codehaus.plexus.archiver.util.DefaultFileSet;
 import org.codehaus.plexus.archiver.zip.ZipArchiver;
 
 public class VaultPackageAssembler implements EntryHandler {
-
-    private static final String DEPENDENCIES_DELIMITER = ",";
 
     private static final String NAME_PATH = "path";
 
@@ -110,19 +109,7 @@ public class VaultPackageAssembler implements EntryHandler {
             }
         }
 
-        Set<PackageId> dependencies = new HashSet<>();
-        String dependenciesString = properties.getProperty(PackageProperties.NAME_DEPENDENCIES);
-
-        if (dependenciesString != null && !dependenciesString.isEmpty()) {
-         // from https://jackrabbit.apache.org/filevault/properties.html
-            // Comma-separated list of dependencies
-            StringTokenizer tokenizer = new StringTokenizer(dependenciesString, DEPENDENCIES_DELIMITER);
-            while (tokenizer.hasMoreTokens()) {
-                String dependencyString = tokenizer.nextToken();
-                PackageId dependency = PackageId.fromString(dependencyString);
-                dependencies.add(dependency);
-            }
-        }
+        Set<Dependency> dependencies = getDependencies(vaultPackage);
 
         VaultPackageAssembler assembler = new VaultPackageAssembler(storingDirectory, properties, dependencies);
         assembler.mergeFilters(filter);
@@ -131,7 +118,7 @@ public class VaultPackageAssembler implements EntryHandler {
 
     private final DefaultWorkspaceFilter filter = new DefaultWorkspaceFilter();
 
-    private final Set<PackageId> dependencies;
+    private final Set<Dependency> dependencies;
 
     private final File storingDirectory;
 
@@ -151,7 +138,7 @@ public class VaultPackageAssembler implements EntryHandler {
     /**
      * This class can not be instantiated from outside
      */
-    private VaultPackageAssembler(File storingDirectory, Properties properties, Set<PackageId> dependencies) {
+    private VaultPackageAssembler(File storingDirectory, Properties properties, Set<Dependency> dependencies) {
         this.storingDirectory = storingDirectory;
         this.properties = properties;
         this.dependencies = dependencies;
@@ -197,8 +184,15 @@ public class VaultPackageAssembler implements EntryHandler {
         return new File(storingDirectory, path);
     }
 
-    public void removeDependencies(Set<PackageId> mutableContentsIds) {
-        dependencies.removeAll(mutableContentsIds);
+    public void updateDependencies(Map<PackageId, Set<Dependency>> mutableContentsIds) {
+        for (Dependency dependency : dependencies) {
+            for (java.util.Map.Entry<PackageId, Set<Dependency>> mutableContentId : mutableContentsIds.entrySet()) {
+                if (dependency.matches(mutableContentId.getKey())) {
+                    dependencies.remove(dependency);
+                    dependencies.addAll(mutableContentId.getValue());
+                }
+            }
+        }
     }
 
     public File createPackage() throws IOException {
@@ -213,10 +207,7 @@ public class VaultPackageAssembler implements EntryHandler {
             metaDir.mkdirs();
         }
 
-        if (!dependencies.isEmpty()) {
-            String dependenciesString = dependencies.stream().map(id -> id.toString()).collect(Collectors.joining(DEPENDENCIES_DELIMITER));
-            properties.setProperty(PackageProperties.NAME_DEPENDENCIES, dependenciesString);
-        }
+        setDependencies(dependencies, properties);
 
         File xmlProperties = new File(metaDir, PROPERTIES_XML);
 

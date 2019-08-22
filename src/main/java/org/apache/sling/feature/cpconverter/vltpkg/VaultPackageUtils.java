@@ -16,12 +16,22 @@
  */
 package org.apache.sling.feature.cpconverter.vltpkg;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
 import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
+import org.apache.jackrabbit.vault.packaging.Dependency;
+import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 
 public class VaultPackageUtils {
+
+    private static final String DEPENDENCIES_DELIMITER = ",";
 
     private VaultPackageUtils() {
         // this class must not be instantiated from outside
@@ -60,6 +70,27 @@ public class VaultPackageUtils {
             }
         }
         return PackageType.MIXED;
+    }
+
+    public static Set<Dependency> getDependencies(VaultPackage vaultPackage) {
+        Dependency[] originalDepenencies = vaultPackage.getDependencies();
+
+        Set<Dependency> dependencies = new HashSet<>();
+
+        if (originalDepenencies != null && originalDepenencies.length > 0) {
+            dependencies.addAll(Arrays.asList(originalDepenencies));
+        }
+
+        return dependencies;
+    }
+
+    public static void setDependencies(Set<Dependency> dependencies, Properties properties) {
+        if (dependencies == null || dependencies.isEmpty()) {
+            return;
+        }
+
+        String dependenciesString = dependencies.stream().map(d -> d.toString()).collect(Collectors.joining(DEPENDENCIES_DELIMITER));
+        properties.setProperty(PackageProperties.NAME_DEPENDENCIES, dependenciesString);
     }
 
 }
