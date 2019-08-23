@@ -24,6 +24,8 @@ import static org.apache.jackrabbit.vault.util.Constants.PROPERTIES_XML;
 import static org.apache.jackrabbit.vault.util.Constants.ROOT_DIR;
 import static org.apache.jackrabbit.vault.util.Constants.SETTINGS_XML;
 import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER;
+import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.getDependencies;
+import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.setDependencies;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,7 +33,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
@@ -41,6 +45,8 @@ import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
 import org.apache.jackrabbit.vault.fs.config.DefaultWorkspaceFilter;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
+import org.apache.jackrabbit.vault.packaging.Dependency;
+import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
@@ -90,7 +96,6 @@ public class VaultPackageAssembler implements EntryHandler {
         for (String key : new String[] {
                 PackageProperties.NAME_GROUP,
                 PackageProperties.NAME_NAME,
-                PackageProperties.NAME_DEPENDENCIES,
                 PackageProperties.NAME_CREATED_BY,
                 PackageProperties.NAME_CREATED,
                 PackageProperties.NAME_REQUIRES_ROOT,
@@ -104,12 +109,16 @@ public class VaultPackageAssembler implements EntryHandler {
             }
         }
 
-        VaultPackageAssembler assembler = new VaultPackageAssembler(storingDirectory, properties);
+        Set<Dependency> dependencies = getDependencies(vaultPackage);
+
+        VaultPackageAssembler assembler = new VaultPackageAssembler(storingDirectory, properties, dependencies);
         assembler.mergeFilters(filter);
         return assembler;
     }
 
     private final DefaultWorkspaceFilter filter = new DefaultWorkspaceFilter();
+
+    private final Set<Dependency> dependencies;
 
     private final File storingDirectory;
 
@@ -129,9 +138,10 @@ public class VaultPackageAssembler implements EntryHandler {
     /**
      * This class can not be instantiated from outside
      */
-    private VaultPackageAssembler(File storingDirectory, Properties properties) {
+    private VaultPackageAssembler(File storingDirectory, Properties properties, Set<Dependency> dependencies) {
         this.storingDirectory = storingDirectory;
         this.properties = properties;
+        this.dependencies = dependencies;
     }
 
     public void mergeFilters(WorkspaceFilter filter) {
@@ -174,6 +184,17 @@ public class VaultPackageAssembler implements EntryHandler {
         return new File(storingDirectory, path);
     }
 
+    public void updateDependencies(Map<PackageId, Set<Dependency>> mutableContentsIds) {
+        for (Dependency dependency : dependencies) {
+            for (java.util.Map.Entry<PackageId, Set<Dependency>> mutableContentId : mutableContentsIds.entrySet()) {
+                if (dependency.matches(mutableContentId.getKey())) {
+                    dependencies.remove(dependency);
+                    dependencies.addAll(mutableContentId.getValue());
+                }
+            }
+        }
+    }
+
     public File createPackage() throws IOException {
         return createPackage(TMP_DIR);
     }
@@ -185,6 +206,8 @@ public class VaultPackageAssembler implements EntryHandler {
         if (!metaDir.exists()) {
             metaDir.mkdirs();
         }
+
+        setDependencies(dependencies, properties);
 
         File xmlProperties = new File(metaDir, PROPERTIES_XML);
 

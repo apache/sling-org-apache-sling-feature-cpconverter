@@ -19,6 +19,7 @@ package org.apache.sling.feature.cpconverter;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -42,9 +43,15 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.zip.ZipFile;
 
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
+import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
+import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Artifacts;
 import org.apache.sling.feature.Extension;
@@ -60,10 +67,6 @@ import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
 
 public class ContentPackage2FeatureModelConverterTest {
 
@@ -325,38 +328,42 @@ public class ContentPackage2FeatureModelConverterTest {
             .forEach(File::delete);
     }
 
+    private Feature getFeature(File outputDirectory, String name) throws Exception {
+        File featureFile = new File(outputDirectory, name);
+        assertTrue(featureFile + " was not correctly created", featureFile.exists());
+
+        try (Reader reader = new FileReader(featureFile)) {
+            return FeatureJSONReader.read(reader, featureFile.getAbsolutePath());
+        }
+    }
+
     private void verifyFeatureFile(File outputDirectory,
                                    String name,
                                    String expectedArtifactId,
                                    List<String> expectedArtifacts,
                                    List<String> expectedConfigurations,
                                    List<String> expectedContentPackagesExtensions) throws Exception {
-        File featureFile = new File(outputDirectory, name);
-        assertTrue(featureFile + " was not correctly created", featureFile.exists());
+        Feature feature = getFeature(outputDirectory, name);
 
-        try (Reader reader = new FileReader(featureFile)) {
-            Feature feature = FeatureJSONReader.read(reader, featureFile.getAbsolutePath());
+        assertEquals(expectedArtifactId, feature.getId().toMvnId());
 
-            assertEquals(expectedArtifactId, feature.getId().toMvnId());
+        for (String expectedArtifact : expectedArtifacts) {
+            assertTrue(expectedArtifact + " not found in Feature " + expectedArtifactId, feature.getBundles().containsExact(ArtifactId.fromMvnId(expectedArtifact)));
+            verifyInstalledArtifact(outputDirectory, expectedArtifact);
+        }
 
-            for (String expectedArtifact : expectedArtifacts) {
-                assertTrue(expectedArtifact + " not found in Feature " + expectedArtifactId, feature.getBundles().containsExact(ArtifactId.fromMvnId(expectedArtifact)));
-                verifyInstalledArtifact(outputDirectory, expectedArtifact);
-            }
+        for (String expectedConfiguration : expectedConfigurations) {
+            assertNotNull(expectedConfiguration + " not found in Feature " + expectedArtifactId, feature.getConfigurations().getConfiguration(expectedConfiguration));
+        }
 
-            for (String expectedConfiguration : expectedConfigurations) {
-                assertNotNull(expectedConfiguration + " not found in Feature " + expectedArtifactId, feature.getConfigurations().getConfiguration(expectedConfiguration));
-            }
+        if (expectedContentPackagesExtensions.size() > 0) {
+        Artifacts contentPackages = feature.getExtensions().getByName("content-packages").getArtifacts();
+        assertEquals(expectedContentPackagesExtensions.size(), contentPackages.size());
 
-            if (expectedContentPackagesExtensions.size() > 0) {
-            Artifacts contentPackages = feature.getExtensions().getByName("content-packages").getArtifacts();
-            assertEquals(expectedContentPackagesExtensions.size(), contentPackages.size());
-
-                for (String expectedContentPackagesExtension : expectedContentPackagesExtensions) {
-                    assertTrue(expectedContentPackagesExtension + " not found in Feature " + expectedArtifactId,
-                        contentPackages.containsExact(ArtifactId.fromMvnId(expectedContentPackagesExtension)));
-                    verifyInstalledArtifact(outputDirectory, expectedContentPackagesExtension);
-                }
+            for (String expectedContentPackagesExtension : expectedContentPackagesExtensions) {
+                assertTrue(expectedContentPackagesExtension + " not found in Feature " + expectedArtifactId,
+                    contentPackages.containsExact(ArtifactId.fromMvnId(expectedContentPackagesExtension)));
+                verifyInstalledArtifact(outputDirectory, expectedContentPackagesExtension);
             }
         }
     }
@@ -583,6 +590,36 @@ public class ContentPackage2FeatureModelConverterTest {
             String actual = repoinitExtension.getText();
             assertEquals(expected, actual);
         }
+    }
+
+    // see SLING-8649
+    @Test
+    public void filteredOutContentPackagesAreExcludedDependencies() throws Exception {
+        File[] contentPackages = load("test_dep_a-1.0.zip", "test_dep_b-1.0.zip", "test_dep_b-1.0.zip");
+
+        // input: c <- a <- b
+        // expected output: c <- a
+
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+
+        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
+                 .setDropContent(true)
+                 .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                 .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                 .convert(contentPackages);
+
+        Feature a = getFeature(outputDirectory, "test_a.json");
+        assertNull(a.getExtensions().getByName("content-packages"));
+
+        Feature b = getFeature(outputDirectory, "test_b.json");
+        Artifacts artifacts = b.getExtensions().getByName("content-packages").getArtifacts();
+        assertFalse(artifacts.isEmpty());
+        assertEquals("my_packages:test_b:zip:cp2fm-converted:1.0", artifacts.iterator().next().getId().toString());
+
+        File contentPackage = new File(outputDirectory, "my_packages/test_b/1.0/test_b-1.0-cp2fm-converted.zip");
+        VaultPackage vaultPackage = new PackageManagerImpl().open(contentPackage);
+        String dependencies = vaultPackage.getProperties().getProperty(PackageProperties.NAME_DEPENDENCIES);
+        assertEquals("my_packages:test_c", dependencies);
     }
 
     private File[] load(String...resources) {
