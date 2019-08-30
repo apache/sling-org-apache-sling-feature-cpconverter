@@ -29,6 +29,8 @@ import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter
 
 public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHandler {
 
+    private static final String SNAPSHOT_POSTFIX = "-SNAPSHOT";
+
     private final File temporaryDir = new File(System.getProperty("java.io.tmpdir"), "sub-content-packages");
 
     public AbstractContentPackageHandler() {
@@ -42,6 +44,16 @@ public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHa
         logger.info("Processing sub-content package '{}'...", entry.getName());
 
         File temporaryContentPackage = new File(temporaryDir, entry.getName());
+
+        if (entry.getName().contains(SNAPSHOT_POSTFIX) && temporaryContentPackage.exists()) {
+            logger.debug("SNAPSHOT content-package detected, deleting previous version on {}...", temporaryContentPackage);
+            if (temporaryContentPackage.delete()) {
+                logger.debug("Previous SNAPSHOT content-package version on {} deleted", temporaryContentPackage);
+            } else {
+                logger.warn("Impossible to delete previous SNAPSHOT content-package version on {}, please check current user permissions",
+                            temporaryContentPackage);
+            }
+        }
 
         if (!temporaryContentPackage.exists()) {
             logger.debug("Extracting sub-content package '{}' to {} for future analysis...", entry.getName(), temporaryContentPackage);
