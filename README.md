@@ -255,35 +255,123 @@ Multiple Run Modes are not supported yet.
 
 ```java
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.**.*; // not real Java syntax
 
 ...
 
-new ContentPackage2FeatureModelConverter()
-            // content-package validation, when opening them
-            .setStrictValidation(strictValidation)
-            // (don't) allow different OSGi configurations file have the same PID
-            .setMergeConfigurations(mergeConfigurations)
-            // users can decide which is the bundles start order, declared in the generated Apache Sling Feature(s)
-            .setBundlesStartOrder(bundlesStartOrder)
-            // a valid directory where the artifacts will be deployed (it will created, if not existing already)
-            .setArtifactsOutputDirectory(outputDirectory)
-            // a valid directory where the Feature Models will be generated (it will created, if not existing already)
-            .setFeatureModelsOutputDirectory(sameOrDifferentOutputDirectory)
-            // an existing and valid content-package file
-            .convert(contentPackage);
+List<String> apiRegions = ...;
+
+DefaultFeaturesManager featuresManager = new DefaultFeaturesManager(mergeConfigurations,
+                                                                    bundlesStartOrder,
+                                                                    featureModelsOutputDirectory,
+                                                                    artifactIdOverride,
+                                                                    fmPrefix,
+                                                                    properties);
+if (apiRegions != null) {
+    featuresManager.setAPIRegions(apiRegions);
+}
+
+ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation)
+                                                 .setFeaturesManager(featuresManager)
+                                                 .setBundlesDeployer(new DefaultArtifactsDeployer(artifactsOutputDirectory))
+                                                 .setEntryHandlersManager(new DefaultEntryHandlersManager())
+                                                 .setAclManager(new DefaultAclManager())
+                                                 .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory));
+
+if (filteringPatterns != null && filteringPatterns.length > 0) {
+    RegexBasedResourceFilter filter = new RegexBasedResourceFilter();
+
+    for (String filteringPattern : filteringPatterns) {
+        filter.addFilteringPattern(filteringPattern);
+    }
+
+    converter.setResourceFilter(filter);
+}
+
+File[] contentPackages = ...;
+
+converter.convert(contentPackages);
 ```
 
-### Handler Services
+The `org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter#convert(File[] contentPackages)` method performs a two-phases algorithm, which:
 
-In order to make the tool extensible, the [org.apache.sling.feature.cpconverter.spi.EntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/spi/EntryHandler.java) interface is declared to handle different kind of resources, have a look at the [org.apache.sling.feature.cpconverter.handlers](src/main/java/org/apache/sling/feature/cpconverter/handlers) package to see the default implementations.
+ * all content-packages dependencies are computed in order to built the correct content-packages processing sequence;
+ * all entries of each content-package is scanned and processed accordingly.
 
-If users want to handle special resource type, all they have to do is providing their `org.apache.sling.feature.cpconverter.spi.EntryHandler` service implementation and declaring them in the `META-INF/services/org.apache.sling.feature.cpconverter.spi.EntryHandler` classpath resource file, on order to let the `ServiceLoader` including it in the `content-package` scan.
+### Features Manager service
+
+The [org.apache.sling.feature.cpconverter.features.FeaturesManager](./src/main/java/org/apache/sling/feature/cpconverter/features/FeaturesManager.java), backed by the default implementation [org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager](./src/main/java/org/apache/sling/feature/cpconverter/features/DefaultFeaturesManager.java), is the service responsible to build and collect the Feature Models while scanning the input content-packages.
+
+The additional [org.apache.sling.feature.cpconverter.features.RunmodeMapper](./src/main/java/org/apache/sling/feature/cpconverter/features/RunmodeMapper.java) component, embedded in the `DefaultFeaturesManager`, will take care to create a `runmode.mapping`, in the same Feature Model target directory, where all features will be indexed by runmodes, i.e.:
+
+```
+$ cat /my-target-project/src/main/features/runmode.mapping 
+#File edited by the Apache Sling Content Package to Sling Feature converter
+#Fri Aug 30 12:47:56 CEST 2019
+production=org.apache.test.mytest-sample-site.ui.apps-production.json,org.apache.test.components.all-production.json
+(default)=org.apache.test.mytest-sample-site.ui.content.json,org.apache.test.mytest-sample-site.ui.apps.json,org.apache.test.components.all.json
+```
 
 ### Bundles deployer
 
-The [org.apache.sling.feature.cpconverter.spi.BundlesDeployer](./src/main/java/org/apache/sling/cp2fm/spi/BundlesDeployer) service is designed to let the conversion tool be integrated in external services, i.e. _Apache Maven_.
+The [org.apache.sling.feature.cpconverter.artifacts.ArtifactsDeployer](./src/main/java/org/apache/sling/feature/cpconverter/artifacts/ArtifactsDeployer.java) service is designed to let the conversion tool be integrated in external services, i.e. _Apache Maven_.
 
-The [default implementation](src/main/java/org/apache/sling/cp2fm/DefaultBundlesDeployer.java) just copies bundles in the target output directory, according to the _Apache Maven_ repository layout.
+The [default implementation](./src/main/java/org/apache/sling/feature/cpconverter/artifacts/DefaultArtifactsDeployer.java) just copies bundles in the target output directory, according to the _Apache Maven_ repository layout.
+
+### Handler Service
+
+In order to make the tool extensible, the [org.apache.sling.feature.cpconverter.handlers.EntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/spi/EntryHandler.java) interface is declared to handle different kind of resources, have a look at the [org.apache.sling.feature.cpconverter.handlers](src/main/java/org/apache/sling/feature/cpconverter/handlers) package to see the default implementations.
+
+If users want to handle special resource type, all they have to do is providing their `org.apache.sling.feature.cpconverter.handlers.EntryHandler` service implementation and declaring them in the `META-INF/services/org.apache.sling.feature.cpconverter.handlers.EntryHandler` classpath resource file, on order to let the `ServiceLoader` including it in the `content-package` scan.
+
+All handlers are managed by the [org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager](./src/main/java/org/apache/sling/feature/cpconverter/spi/EntryHandlersManager.java) service, which default implementation is [org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager](./src/main/java/org/apache/sling/feature/cpconverter/spi/DefaultEntryHandlersManager.java)
+
+#### Built-in handlers
+
+|  Entry type | Entry regular expression | Handler |
+|:-----------:|:------------------------:|:-------:|
+| Node types | `/META-INF/vault/nodetypes\.cnd` | [org.apache.sling.feature.cpconverter.handlers.NodeTypesEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/NodeTypesEntryHandler.java) |
+| Privileges | `/META-INF/vault/privileges\.xml` | [org.apache.sling.feature.cpconverter.handlers.PrivilegesHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/PrivilegesHandler.java) |
+| Rep Policy | `/jcr_root(.*/)_rep_policy.xml` | [org.apache.sling.feature.cpconverter.handlers.RepPolicyEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/RepPolicyEntryHandler.java) |
+| System Users | `/jcr_root(/home/users/.*/)\.content.xml` | [org.apache.sling.feature.cpconverter.handlers.SystemUsersEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/SystemUsersEntryHandler.java) |
+| Sub content-packages | `/jcr_root/etc/packages/.+\.zip` | [org.apache.sling.feature.cpconverter.handlers.ContentPackageEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/ContentPackageEntryHandler.java) |
+| OSGi Bundle | `/jcr_root/(?:apps|libs)/.+/install(?:\.([^/]+))?/(?:([0-9]+)/)?.+\.jar` | [org.apache.sling.feature.cpconverter.handlers.BundleEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/BundleEntryHandler.java) |
+| OSGi Configuration | `/jcr_root/(?:apps|libs)/.+/config(\.([^/]+))?/.+\.config` | [org.apache.sling.feature.cpconverter.handlers.ConfigurationEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/ConfigurationEntryHandler.java) |
+| OSGi JSON Configuration | `/jcr_root/(?:apps|libs)/.+/config(\.([^/]+))?/.+\.cfg\.json` | [org.apache.sling.feature.cpconverter.handlers.JsonConfigurationEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/JsonConfigurationEntryHandler.java) |
+| OSGi Properties Configuration | `/jcr_root/(?:apps|libs)/.+/config(\.([^/]+))?/.+\.cfg\.properties` | [org.apache.sling.feature.cpconverter.handlers.PropertiesConfigurationEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/PropertiesConfigurationEntryHandler.java) |
+| OSGi XML Configuration | `/jcr_root/(?:apps|libs)/.+/config(\.([^/]+))?/.+\.xml` | [org.apache.sling.feature.cpconverter.handlers.XmlConfigurationEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/XmlConfigurationEntryHandler.java) |
+
+Everything else, unless users will deploy in the classpath a custom `org.apache.sling.feature.cpconverter.handlers.EntryHandler` implementation, is handled by the [org.apache.sling.feature.cpconverter.handlers.ContentPackageEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/ContentPackageEntryHandler.java)
+
+### ACL Management
+
+While scanning the input content-package(s), all ACLs entries are handled by the [org.apache.sling.feature.cpconverter.acl.AclManager](./src/main/java/org/apache/sling/feature/cpconverter/acl/AclManager.java) service which is in charge of collecting and computing:
+
+ * System Users;
+ * System Users related ACLs;
+ * Privileges;
+ * Node types registrations;
+ * Any `repoinit` additional instruction.
+ 
+Default implementation is provided by [org.apache.sling.feature.cpconverter.acl.DefaultAclManager](./src/main/java/org/apache/sling/feature/cpconverter/acl/DefaultAclManager.java).
+
+Please note that ACLs are set for detected System Users only, all other ACLs will be ignored.
+
+### Content-Packages events
+
+SAX-alike events are emitted while processing input (sub-)content-packages, all them are handled by the [org.apache.sling.feature.cpconverter.vltpkg.PackagesEventsEmitter](./src/main/java/org/apache/sling/feature/cpconverter/vltpkg/PackagesEventsEmitter.java).
+
+The default implementation [org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter](./src/main/java/org/apache/sling/feature/cpconverter/vltpkg/DefaultPackagesEventsEmitter.java) will take care of creating, in the same Feature Model target directory, a `content-packages.csv` index file, where all (sub-)content-packages will be enlisted with their related complete path, i.e.:
+
+```
+# File created on Fri Aug 30 12:47:55 CEST 2019 by the Apache Sling Content Package to Sling Feature converter
+# content-package path, content-package ID, content-package type, content-package parent ID, path in parent content-package, absolute path
+/Users/asfuser/content-packages/org.apache.test.components.all-2.5.1-SNAPSHOT.zip,org/apache/test:org.apache.test.components.all:2.5.1-SNAPSHOT,MIXED,,,
+/Users/asfuser/content-packages/org.apache.test.components.all-2.5.1-SNAPSHOT.zip,org/apache/test:org.apache.test.components.content:2.5.1-SNAPSHOT,APPLICATION,org/apache/test:org.apache.test.components.all:2.5.1-SNAPSHOT,/jcr_root/etc/packages/org/apache/test/org.apache.test.components.content-2.5.1-SNAPSHOT.zip,/Users/asfuser/content-packages/org.apache.test.components.all-2.5.1-SNAPSHOT.zip!/jcr_root/etc/packages/org/apache/test/org.apache.test.components.content-2.5.1-SNAPSHOT.zip
+/Users/asfuser/content-packages/org.apache.test.components.all-2.5.1-SNAPSHOT.zip,org/apache/test:org.apache.test.components.config:2.5.1-SNAPSHOT,APPLICATION,org/apache/test:org.apache.test.components.all:2.5.1-SNAPSHOT,/jcr_root/etc/packages/org/apache/test/org.apache.test.components.config-2.5.1-SNAPSHOT.zip,/Users/asfuser/content-packages/org.apache.test.components.all-2.5.1-SNAPSHOT.zip!/jcr_root/etc/packages/org/apache/test/org.apache.test.components.config-2.5.1-SNAPSHOT.zip
+```
+
+The `!` character is used to separate nested sub-content-packages path.
 
 ## The CLI Tool
 
@@ -350,35 +438,43 @@ once the package is decompressed, open the shell and type:
 
 ```
 $ ./bin/cp2sf -h
-Missing required options [--content-package=<contentPackage>, --artifacts-output-directory=<artifactsOutputDirectory>, --features-output-directory=<featureModelsOutputDirectory>]
 Usage: cp2fm [-hmqsvX] -a=<artifactsOutputDirectory> [-b=<bundlesStartOrder>]
-             -c=<contentPackage> -o=<featureModelsOutputDirectory>
-             [-f=<filteringPatterns>]...
+             [-i=<artifactIdOverride>] -o=<featureModelsOutputDirectory>
+             [-p=<fmPrefix>] [-D=<String=String>]...
+             [-f=<filteringPatterns>]... [-r=<apiRegions>]...
+             content-packages...
 Apache Sling Content Package to Sling Feature converter
+      content-packages...   The content-package input file(s).
   -a, --artifacts-output-directory=<artifactsOutputDirectory>
                             The output directory where the artifacts will be
                               deployed.
   -b, --bundles-start-order=<bundlesStartOrder>
                             The order to start detected bundles.
-  -c, --content-package=<contentPackage>
-                            The content-package input file.
+  -D, --define=<String=String>
+                            Define a system property
   -f, --filtering-patterns=<filteringPatterns>
                             Regex based pattern(s) to reject content-package archive
                               entries.
   -h, --help                Display the usage message.
+  -i, --artifact-id=<artifactIdOverride>
+                            The optional Artifact Id the Feature File will have,
+                              once generated; it will be derived, if not specified.
   -m, --merge-configurations
                             Flag to mark OSGi configurations with same PID will be
                               merged, the tool will fail otherwise.
   -o, --features-output-directory=<featureModelsOutputDirectory>
                             The output directory where the Feature File will be
                               generated.
+  -p, --fm-prefix=<fmPrefix>
+                            The optional prefix of the output file
   -q, --quiet               Log errors only.
+  -r, --api-region=<apiRegions>
+                            The API Regions assigned to the generated features
   -s, --strict-validation   Flag to mark the content-package input file being strict
                               validated.
   -v, --version             Display version information.
   -X, --verbose             Produce execution debug output.
 Copyright(c) 2019 The Apache Software Foundation.
-
 ```
 
 to see all the available options; a sample execution could look like:
