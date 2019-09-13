@@ -84,6 +84,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     private PackagesEventsEmitter emitter;
 
+    private boolean failOnMixedPackages = false;
+
     private boolean dropContent = false;
 
     public ContentPackage2FeatureModelConverter() {
@@ -143,6 +145,11 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     
     public ContentPackage2FeatureModelConverter setDropContent(boolean dropContent) {
         this.dropContent = dropContent;
+        return this;
+    }
+
+    public ContentPackage2FeatureModelConverter setFailOnMixedPackages(boolean failOnMixedPackages) {
+        this.failOnMixedPackages = failOnMixedPackages;
         return this;
     }
 
@@ -302,6 +309,16 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                                               PackageId originalPackageId) throws Exception {
         try (VaultPackage vaultPackage = open(contentPackageArchive)) {
             PackageType packageType = detectPackageType(vaultPackage);
+
+            // SLING-8608 - Fail the conversion if the resulting attached content-package is MIXED type
+            if (PackageType.MIXED == packageType && failOnMixedPackages) {
+                throw new Exception("Generated content-package '"
+                                    + originalPackageId
+                                    + "' located in file "
+                                    + contentPackageArchive
+                                    + " is of MIXED type");
+            }
+
             // don't deploy & add content-packages of type content to featuremodel if dropContent is set
             if (PackageType.CONTENT != packageType || !dropContent) {
                 // deploy the new content-package to the local mvn bundles dir and attach it to the feature

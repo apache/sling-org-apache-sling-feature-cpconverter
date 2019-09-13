@@ -474,6 +474,9 @@ Apache Sling Content Package to Sling Feature converter
                               validated.
   -v, --version             Display version information.
   -X, --verbose             Produce execution debug output.
+  -Z, --fail-on-mixed-packages
+                            Fail the conversion if the resulting attached
+                              content-package is MIXED type
 Copyright(c) 2019 The Apache Software Foundation.
 ```
 

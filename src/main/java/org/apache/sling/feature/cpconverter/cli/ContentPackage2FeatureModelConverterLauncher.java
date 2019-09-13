@@ -89,6 +89,9 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Parameters(arity = "1..*", paramLabel = "content-packages", description = "The content-package input file(s).")
     private File[] contentPackages;
 
+    @Option(names = { "-Z", "--fail-on-mixed-packages" }, description = "Fail the conversion if the resulting attached content-package is MIXED type", required = false)
+    private boolean failOnMixedPackages = false;
+
     @Override
     public void run() {
         if (quiet) {
@@ -131,7 +134,8 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                                                              .setBundlesDeployer(new DefaultArtifactsDeployer(artifactsOutputDirectory))
                                                              .setEntryHandlersManager(new DefaultEntryHandlersManager())
                                                              .setAclManager(new DefaultAclManager())
-                                                             .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory));
+                                                             .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
+                                                             .setFailOnMixedPackages(failOnMixedPackages);
 
             if (filteringPatterns != null && filteringPatterns.length > 0) {
                 RegexBasedResourceFilter filter = new RegexBasedResourceFilter();
