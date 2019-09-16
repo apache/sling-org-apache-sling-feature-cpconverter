@@ -28,6 +28,7 @@ import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.getD
 import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.setDependencies;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -55,9 +56,11 @@ import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.util.DefaultFileSet;
 import org.codehaus.plexus.archiver.zip.ZipArchiver;
 
-public class VaultPackageAssembler implements EntryHandler {
+public class VaultPackageAssembler implements EntryHandler, FileFilter {
 
     private static final String NAME_PATH = "path";
+
+    private static final String JCR_ROOT_DIR = "jcr_root";
 
     private static final String[] INCLUDE_RESOURCES = { PACKAGE_DEFINITION_XML, CONFIG_XML, SETTINGS_XML };
 
@@ -216,6 +219,7 @@ public class VaultPackageAssembler implements EntryHandler {
         }
 
         // generate the Vault filter XML file
+        computeFilters(outputDirectory);
         File xmlFilter = new File(metaDir, FILTER_XML);
         try (InputStream input = filter.getSource();
                 FileOutputStream output = new FileOutputStream(xmlFilter)) {
@@ -243,6 +247,76 @@ public class VaultPackageAssembler implements EntryHandler {
         archiver.createArchive();
 
         return destFile;
+    }
+
+    private void computeFilters(File outputDirectory) {
+        File jcrRootDir = new File(outputDirectory, JCR_ROOT_DIR);
+
+        if (jcrRootDir.exists() && jcrRootDir.isDirectory()) {
+            for (File child : jcrRootDir.listFiles(this)) {
+                File lowestCommonAncestor = lowestCommonAncestor(new TreeNode(child)).val;
+                if (lowestCommonAncestor != null) {
+                    String root = outputDirectory.toURI().relativize(lowestCommonAncestor.toURI()).getPath();
+
+                    filter.add(new PathFilterSet(root));
+                }
+            }
+        }
+    }
+
+    @Override
+    public boolean accept(File pathname) {
+        return pathname.isDirectory();
+    }
+
+    private TreeNode lowestCommonAncestor(TreeNode root) {
+        int currMaxDepth = 0;//curr tree's deepest leaf depth
+        int countMaxDepth = 0;//num of deepest leaves
+        TreeNode node = null;
+
+        for (File child : root.val.listFiles(this)) {
+            TreeNode temp = lowestCommonAncestor(new TreeNode(child));
+
+            if (temp == null) {
+                continue;
+            } else if (temp.maxDepth > currMaxDepth) {//if deeper leaf found,update everything to that deeper leaf
+                currMaxDepth = temp.maxDepth;
+                node = temp;//update the maxDepth leaf/LCA
+                countMaxDepth = 1;//reset count of maxDepth leaves
+            } else if (temp.maxDepth == currMaxDepth) {
+                countMaxDepth++;//more deepest leaves of curr (sub)tree found
+            }
+        }
+
+        if (countMaxDepth > 1) {
+            //if there're several leaves at the deepest level of curr tree,curr root is the LCA of them
+            //OR if there're several LCA of several deepest leaves in curr tree,curr root is also the LCA of them
+            root.maxDepth = node.maxDepth + 1;//update root's maxDepth and return it
+            return root;
+        } else if (countMaxDepth == 1) {
+            //if there's only 1 deepest leaf or only 1 LCA of curr tree,return that leaf/LCA
+            node.maxDepth++;//update node's maxDepth and return it
+            return node;
+        } else if (countMaxDepth == 0) {
+            //if curr root's children have no children(all leaves,so all return null to temp),set root's maxDepth to 2,return
+            root.maxDepth = 2;//update node's maxDepth to 2 cuz its children are leaves
+            return root;
+        }
+
+        return null;
+    }
+
+    private static final class TreeNode {
+
+        File val;
+
+        int maxDepth;//this means the maxDepth of curr treenode-rooted (sub)tree
+
+        TreeNode(File x) {
+            val = x;
+            maxDepth = 0;
+        }
+
     }
 
 }
