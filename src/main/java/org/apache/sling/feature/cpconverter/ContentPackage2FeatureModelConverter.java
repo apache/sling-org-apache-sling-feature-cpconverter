@@ -219,7 +219,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
                 // deploy the new zip content-package to the local mvn bundles dir
 
-                processContentPackageArchive(contentPackageArchive, mvnPackageId, vaultPackage.getId());
+                processContentPackageArchive(contentPackageArchive, null, mvnPackageId, vaultPackage.getId());
 
                 // finally serialize the Feature Model(s) file(s)
 
@@ -267,7 +267,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         idPackageMapping.remove(pack.getId());
     }
 
-    public void processSubPackage(String path, VaultPackage vaultPackage) throws Exception {
+    public void processSubPackage(String path, String runMode, VaultPackage vaultPackage) throws Exception {
         requireNonNull(path, "Impossible to process a null vault package");
         requireNonNull(vaultPackage, "Impossible to process a null vault package");
 
@@ -296,7 +296,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         File contentPackageArchive = clonedPackage.createPackage();
 
         // deploy the new content-package to the local mvn bundles dir and attach it to the feature
-        processContentPackageArchive(contentPackageArchive, mvnPackageId, originalPackageId);
+        processContentPackageArchive(contentPackageArchive, runMode, mvnPackageId, originalPackageId);
 
         // restore the previous assembler
         mainPackageAssembler = handler;
@@ -305,6 +305,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     }
 
     private void processContentPackageArchive(File contentPackageArchive,
+                                              String runMode,
                                               ArtifactId mvnPackageId,
                                               PackageId originalPackageId) throws Exception {
         try (VaultPackage vaultPackage = open(contentPackageArchive)) {
@@ -323,7 +324,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             if (PackageType.CONTENT != packageType || !dropContent) {
                 // deploy the new content-package to the local mvn bundles dir and attach it to the feature
                 artifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), mvnPackageId);
-                featuresManager.addArtifact(null, mvnPackageId);
+                featuresManager.addArtifact(runMode, mvnPackageId);
             } else {
                 mutableContentsIds.put(originalPackageId, getDependencies(vaultPackage));
                 logger.info("Dropping package of PackageType.CONTENT {} (content-package id: {})",

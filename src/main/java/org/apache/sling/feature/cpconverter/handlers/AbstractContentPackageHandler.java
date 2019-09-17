@@ -20,12 +20,14 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.regex.Matcher;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.codehaus.plexus.util.StringUtils;
 
 public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHandler {
 
@@ -34,7 +36,7 @@ public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHa
     private final File temporaryDir = new File(System.getProperty("java.io.tmpdir"), "sub-content-packages");
 
     public AbstractContentPackageHandler() {
-        super("/jcr_root/etc/packages/.+\\.zip");
+        super("/jcr_root/(?:etc/packages|apps/.+/install(?:\\.([^/]+))?)/.+.zip");
         temporaryDir.mkdirs();
     }
 
@@ -66,13 +68,30 @@ public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHa
             logger.debug("Sub-content package '{}' successfully extracted to {} ", entry.getName(), temporaryContentPackage);
         }
 
+        Matcher matcher = getPattern().matcher(path);
+        String runMode = null;
+        // we are pretty sure it matches, here
+        if (!matcher.matches()) {
+            throw new IllegalStateException("Something went terribly wrong: pattern '"
+                                            + getPattern().pattern()
+                                            + "' should have matched already with path '"
+                                            + path
+                                            + "' but it does not, currently");
+        }
+
+        if (StringUtils.isNotBlank(matcher.group(1))) {
+            // there is a specified RunMode
+            runMode = matcher.group(1);
+            logger.debug("Runmode {} was extracted from path {}", runMode, path);
+        }
+
         try (VaultPackage vaultPackage = converter.open(temporaryContentPackage)) {
-            processSubPackage(path, vaultPackage, converter);
+            processSubPackage(path, runMode, vaultPackage, converter);
         }
 
         logger.info("Sub-content package '{}' processing is over", entry.getName());
     }
 
-    protected abstract void processSubPackage(String path, VaultPackage contentPackage, ContentPackage2FeatureModelConverter converter) throws Exception;
+    protected abstract void processSubPackage(String path, String runMode, VaultPackage contentPackage, ContentPackage2FeatureModelConverter converter) throws Exception;
 
 }

@@ -22,9 +22,9 @@ import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter
 public final class ContentPackageEntryHandler extends AbstractContentPackageHandler {
 
     @Override
-    protected void processSubPackage(String path, VaultPackage contentPackage, ContentPackage2FeatureModelConverter converter)
+    protected void processSubPackage(String path, String runMode, VaultPackage contentPackage, ContentPackage2FeatureModelConverter converter)
             throws Exception {
-        converter.processSubPackage(path, contentPackage);
+        converter.processSubPackage(path, runMode, contentPackage);
     }
 
 }

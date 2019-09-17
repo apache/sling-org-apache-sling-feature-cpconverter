@@ -121,7 +121,7 @@ public class ContentPackage2FeatureModelConverterTest {
 
     @Test(expected = NullPointerException.class)
     public void processRequiresNotNullPackage() throws Exception {
-        converter.processSubPackage("", null);
+        converter.processSubPackage("", null, null);
     }
 
     @Test
