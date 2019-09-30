@@ -58,11 +58,6 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
             return;
         }
 
-        if (configurationProperties.isEmpty()) {
-            logger.info("No configuration properties found for configuration {}", path);
-            return;
-        }
-
         Matcher matcher = getPattern().matcher(path);
         String runMode = null;
         // we are pretty sure it matches, here

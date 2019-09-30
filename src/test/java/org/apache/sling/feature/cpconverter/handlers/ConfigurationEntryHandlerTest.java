@@ -94,10 +94,13 @@ public class ConfigurationEntryHandlerTest {
 
         assertEquals(expectedConfigurationsSize, configurations.size());
 
-        if (expectedConfigurationsSize > 0) {
-            Configuration configuration = configurations.get(0);
+        Configuration configuration = configurations.get(0);
 
-            assertTrue(configuration.getPid(), configuration.getPid().startsWith(EXPECTED_PID));
+        assertTrue(configuration.getPid(), configuration.getPid().startsWith(EXPECTED_PID));
+
+        if (configuration.getPid().contains(".empty")) {
+            assertTrue(configuration.getProperties().isEmpty());
+        } else {
             assertEquals("Unmatching size: " + configuration.getProperties().size(), 2, configuration.getProperties().size());
         }
     }
@@ -107,19 +110,19 @@ public class ConfigurationEntryHandlerTest {
         String path = "/jcr_root/apps/asd/config/";
 
         return Arrays.asList(new Object[][] {
-            { path + EXPECTED_PID + ".empty.cfg", 0, new PropertiesConfigurationEntryHandler() },
+            { path + EXPECTED_PID + ".empty.cfg", 1, new PropertiesConfigurationEntryHandler() },
             { path + EXPECTED_PID + ".cfg", 1, new PropertiesConfigurationEntryHandler() },
 
-            { path + EXPECTED_PID + ".empty.cfg.json", 0, new JsonConfigurationEntryHandler() },
+            { path + EXPECTED_PID + ".empty.cfg.json", 1, new JsonConfigurationEntryHandler() },
             { path + EXPECTED_PID + ".cfg.json", 1, new JsonConfigurationEntryHandler() },
 
-            { path + EXPECTED_PID + ".empty.config", 0, new ConfigurationEntryHandler() },
+            { path + EXPECTED_PID + ".empty.config", 1, new ConfigurationEntryHandler() },
             { path + EXPECTED_PID + ".config", 1, new ConfigurationEntryHandler() },
 
-            { path + EXPECTED_PID + ".empty.xml", 0, new XmlConfigurationEntryHandler() },
+            { path + EXPECTED_PID + ".empty.xml", 1, new XmlConfigurationEntryHandler() },
             { path + EXPECTED_PID + ".xml", 1, new XmlConfigurationEntryHandler() },
 
-            { path + EXPECTED_PID + ".empty.xml.cfg", 0, new PropertiesConfigurationEntryHandler() },
+            { path + EXPECTED_PID + ".empty.xml.cfg", 1, new PropertiesConfigurationEntryHandler() },
             { path + EXPECTED_PID + ".xml.cfg", 1, new PropertiesConfigurationEntryHandler() },
 
             // runmode aware folders
