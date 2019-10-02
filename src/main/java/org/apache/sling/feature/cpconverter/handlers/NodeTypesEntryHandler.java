@@ -38,10 +38,19 @@ public class NodeTypesEntryHandler extends AbstractRegexEntryHandler {
     public void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter)
             throws Exception {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(archive.openInputStream(entry)))) {
+            converter.getAclManager().addNodetypeRegistrationSentence("register nodetypes");
+            converter.getAclManager().addNodetypeRegistrationSentence("<<===");
+
             String nodetypeRegistrationSentence;
             while ((nodetypeRegistrationSentence = reader.readLine()) != null) {
-                converter.getAclManager().addNodetypeRegistrationSentence(nodetypeRegistrationSentence);
+                if (nodetypeRegistrationSentence.isEmpty()) {
+                    converter.getAclManager().addNodetypeRegistrationSentence("");
+                } else {
+                    converter.getAclManager().addNodetypeRegistrationSentence("<< " + nodetypeRegistrationSentence);
+                }
             }
+
+            converter.getAclManager().addNodetypeRegistrationSentence("===>>");
         }
     }
 

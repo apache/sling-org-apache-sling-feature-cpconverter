@@ -97,19 +97,8 @@ public final class DefaultAclManager implements AclManager {
                 }
             }
 
-            if (!nodetypeRegistrationSentences.isEmpty()) {
-                formatter.format("register nodetypes%n")
-                         .format("<<===%n");
-
-                for (String nodetypeRegistrationSentence : nodetypeRegistrationSentences) {
-                    if (nodetypeRegistrationSentence.isEmpty()) {
-                        formatter.format("%n");
-                    } else {
-                        formatter.format("<< %s%n", nodetypeRegistrationSentence);
-                    }
-                }
-
-                formatter.format("===>>%n");
+            for (String nodetypeRegistrationSentence : nodetypeRegistrationSentences) {
+                formatter.format("%s%n", nodetypeRegistrationSentence);
             }
 
             // system users
