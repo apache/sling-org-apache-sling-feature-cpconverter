@@ -201,7 +201,9 @@ $ cat asd.retail.all-publish.json
 }
 ```
 
-bundles are collected in an _Apache Maven repository_ compliant directory, all other resources are collected in a new `content-package` created while scanning the packages:
+### Binaries
+
+All detected bundles are collected in an _Apache Maven repository_ compliant directory, all other resources are collected in a new `content-package`, usually classified as `cp2fm-converted-feature`, created while scanning the packages, which contains _content only_.
 
 ```
 $ tree bundles/
@@ -229,8 +231,6 @@ artifacts/
 
 12 directories, 8 files
 ```
-
-_Apache Maven GAVs_ are extracted from nested bundles metadata and are renamed according to the _Apache Maven_ conventions.
 
 ### Supported configurations
 
@@ -318,6 +318,47 @@ The [org.apache.sling.feature.cpconverter.artifacts.ArtifactsDeployer](./src/mai
 
 The [default implementation](./src/main/java/org/apache/sling/feature/cpconverter/artifacts/DefaultArtifactsDeployer.java) just copies bundles in the target output directory, according to the _Apache Maven_ repository layout.
 
+Bundles are collected in an _Apache Maven repository_ compliant directory, all other resources are collected in a new `content-package` created while scanning the packages:
+
+```
+$ tree bundles/
+artifacts/
+└── org
+    └── apache
+        ├── felix
+        │   └── org.apache.felix.framework
+        │       └── 6.0.1
+        │           ├── org.apache.felix.framework-6.0.1.jar
+        │           └── org.apache.felix.framework-6.0.1.pom
+        └── sling
+            ├── asd.retail.all
+            │   └── 0.0.1
+            │       ├── asd.retail.all-0.0.1-cp2fm-converted-feature.zip
+            │       └── asd.retail.all-0.0.1.pom
+            ├── org.apache.sling.api
+            │   └── 2.20.0
+            │       ├── org.apache.sling.api-2.20.0.jar
+            │       └── org.apache.sling.api-2.20.0.pom
+            └── org.apache.sling.models.api
+                └── 1.3.8
+                    ├── org.apache.sling.models.api-1.3.8.jar
+                    └── org.apache.sling.models.api-1.3.8.pom
+
+12 directories, 8 files
+```
+
+_Apache Maven GAVs_ are extracted from nested bundles metadata and are renamed according to the _Apache Maven_ conventions; if no _Apache Maven GAVs_ are provided, OSGi `Bundle-SymbolicName`, `Bundle-Name` and `Bundle-Version` metadata will be used to supply the missing informations.
+
+#### Local Maven Repo as Cache
+
+The converter will create a Maven Dependency folder structure and create a POM file for any converted Content Package file.
+This will allow subsequent Feature tools to find and process them.
+
+The **group and artifact id** of the converted Content Package and Bundles is taken from the file itself (Content Package's Vault Properties file, Bundle's Headers).
+Because these sources might not correspond with the CPs or Bundles regular Maven place the Converter will place them accordingly to the found data hence in a new place.
+
+This does not bother the Sling Feature Maven Plugin nor the Feature Launcher as they are still able to find the dependencies if placed in the Local Maven Repo.
+
 ### Handler Service
 
 In order to make the tool extensible, the [org.apache.sling.feature.cpconverter.handlers.EntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/spi/EntryHandler.java) interface is declared to handle different kind of resources, have a look at the [org.apache.sling.feature.cpconverter.handlers](src/main/java/org/apache/sling/feature/cpconverter/handlers) package to see the default implementations.
@@ -334,14 +375,14 @@ All handlers are managed by the [org.apache.sling.feature.cpconverter.handlers.E
 | Privileges | `/META-INF/vault/privileges\.xml` | [org.apache.sling.feature.cpconverter.handlers.PrivilegesHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/PrivilegesHandler.java) |
 | Rep Policy | `/jcr_root(*/)_rep_policy.xml` | [org.apache.sling.feature.cpconverter.handlers.RepPolicyEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/RepPolicyEntryHandler.java) |
 | System Users | `/jcr_root(/home/users/*/)\.content.xml` | [org.apache.sling.feature.cpconverter.handlers.SystemUsersEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/SystemUsersEntryHandler.java) |
-| Sub content-packages | `/jcr_root/(etc/packages|apps/*/install[\.${runMode}]/*.zip` | [org.apache.sling.feature.cpconverter.handlers.ContentPackageEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/ContentPackageEntryHandler.java) |
-| OSGi Bundle | `/jcr_root/(apps|libs)/*/install[\.${runMode}]/[startLevel/]*.jar` | [org.apache.sling.feature.cpconverter.handlers.BundleEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/BundleEntryHandler.java) |
-| OSGi Configuration | `/jcr_root/(apps|libs)/*/config[\.${runMode}]/*.config` | [org.apache.sling.feature.cpconverter.handlers.ConfigurationEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/ConfigurationEntryHandler.java) |
-| OSGi JSON Configuration | `/jcr_root/(apps|libs)/*/config[\.${runMode}]/*.cfg.json` | [org.apache.sling.feature.cpconverter.handlers.JsonConfigurationEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/JsonConfigurationEntryHandler.java) |
-| OSGi Properties Configuration | `/jcr_root/(apps|libs)/*/config[.${runMode}]/*.cfg.properties` | [org.apache.sling.feature.cpconverter.handlers.PropertiesConfigurationEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/PropertiesConfigurationEntryHandler.java) |
-| OSGi XML Configuration | `/jcr_root/(apps|libs)/*/config[\.${runMode}]/*.xml` | [org.apache.sling.feature.cpconverter.handlers.XmlConfigurationEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/XmlConfigurationEntryHandler.java) |
+| Sub content-packages | `/jcr_root/(etc/packages\|apps/*/install[\.${runMode}]/*.zip` | [org.apache.sling.feature.cpconverter.handlers.ContentPackageEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/ContentPackageEntryHandler.java) |
+| OSGi Bundle | `/jcr_root/(apps\|libs)/*/install[\.${runMode}]/[startLevel/]*.jar` | [org.apache.sling.feature.cpconverter.handlers.BundleEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/BundleEntryHandler.java) |
+| OSGi Configuration | `/jcr_root/(apps\|libs)/*/config[\.${runMode}]/*.config` | [org.apache.sling.feature.cpconverter.handlers.ConfigurationEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/ConfigurationEntryHandler.java) |
+| OSGi JSON Configuration | `/jcr_root/(apps\|libs)/*/config[\.${runMode}]/*.cfg.json` | [org.apache.sling.feature.cpconverter.handlers.JsonConfigurationEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/JsonConfigurationEntryHandler.java) |
+| OSGi Properties Configuration | `/jcr_root/(apps\|libs)/*/config[.${runMode}]/*.cfg.properties` | [org.apache.sling.feature.cpconverter.handlers.PropertiesConfigurationEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/PropertiesConfigurationEntryHandler.java) |
+| OSGi XML Configuration | `/jcr_root/(apps\|libs)/*/config[\.${runMode}]/*.xml` | [org.apache.sling.feature.cpconverter.handlers.XmlConfigurationEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/XmlConfigurationEntryHandler.java) |
 
-Everything else, unless users will deploy in the classpath a custom `org.apache.sling.feature.cpconverter.handlers.EntryHandler` implementation, is handled by the [org.apache.sling.feature.cpconverter.handlers.ContentPackageEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/ContentPackageEntryHandler.java)
+Everything else, unless users will deploy in the classpath a custom `org.apache.sling.feature.cpconverter.handlers.EntryHandler` implementation, is considered as part of the final content-package, handled by the [org.apache.sling.feature.cpconverter.handlers.ContentPackageEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/ContentPackageEntryHandler.java)
 
 ### ACL Management
 
@@ -355,7 +396,9 @@ While scanning the input content-package(s), all ACLs entries are handled by the
  
 Default implementation is provided by [org.apache.sling.feature.cpconverter.acl.DefaultAclManager](./src/main/java/org/apache/sling/feature/cpconverter/acl/DefaultAclManager.java).
 
-Please note that ACLs are set for detected System Users only, all other ACLs will be ignored.
+#### Please note
+
+ACLs are set in the `repoinit` section for detected System Users _only_, all other ACLs will be 1:1 copied in the related `/jcr_root(/home/users/*/)\.content.xml` file, which will contain filtered ACLs.
 
 ### Content-Packages events
 
@@ -501,19 +544,9 @@ Argument Files for Long Command Lines:
 then execute the command
 
 ```
-$ ./bin/cp2sf @arfile
+$ ./bin/cp2sf @argfile
 ````
 
-## Local Maven Repo as Cache
+## Failures and Restrictions
 
-The converter will create a Maven Dependency folder structure and create a POM file
-for any converted Content Package file. This will allow subsequent Feature tools
-to find and process them.
-The **group and artifact id** of the converted Content Package and Bundles is
-taken from the file itself (Content Package's Vault Properties file, Bundle's
-Headers). Because these sources might not correspond with the CPs or Bundles
-regular Maven place the Converter will place them accordingly to the found
-data hence in a new place.
-This does not bother the Sling Feature Maven Plugin nor the Feature Launcher
-as they are still able to find the dependencies if placed in the Local
-Maven Repo.
+There could be cases where default handlers would be not enough to create pure content `content-pacake(s)` archives, by enabling the `-Z` option in the CLI tool, or via [ContentPackage2FeatureModelConverter#setFailOnMixedPackages(boolean)](./src/main/java/org/apache/sling/feature/cpconverter/ContentPackage2FeatureModelConverter.java#L151) API, the converter will fail the process if the resulting `content-pacake(s)` is of MIXED type.
