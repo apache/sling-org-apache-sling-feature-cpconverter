@@ -39,6 +39,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.api.ImportMode;
 import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
@@ -84,6 +85,13 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
 
     private static VaultPackageAssembler create(VaultPackage vaultPackage, WorkspaceFilter filter) {
         File storingDirectory = new File(TMP_DIR, vaultPackage.getFile().getName() + "-deflated");
+        if(storingDirectory.exists()) {
+            try {
+                FileUtils.deleteDirectory(storingDirectory);
+            } catch(IOException e) {
+                throw new RuntimeException("Unable to delete existing deflated folder: '" + storingDirectory + "'", e);
+            }
+        }
         // avoid any possible Stream is not a content package. Missing 'jcr_root' error
         File jcrRootDirectory = new File(storingDirectory, ROOT_DIR);
         jcrRootDirectory.mkdirs();
