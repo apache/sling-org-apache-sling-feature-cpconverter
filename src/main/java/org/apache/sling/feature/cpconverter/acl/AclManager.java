@@ -19,6 +19,7 @@ package org.apache.sling.feature.cpconverter.acl;
 import java.util.List;
 
 import org.apache.sling.feature.Feature;
+import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 
 /**
@@ -30,7 +31,7 @@ public interface AclManager {
 
     boolean addAcl(String systemUser, Acl acl);
 
-    void addRepoinitExtension(List<VaultPackageAssembler> packageAssemblers, Feature feature);
+    void addRepoinitExtension(List<VaultPackageAssembler> packageAssemblers, FeaturesManager featureManager);
 
     void addNodetypeRegistrationSentence(String nodetypeRegistrationSentence);
 
