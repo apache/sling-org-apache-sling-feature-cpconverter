@@ -38,6 +38,7 @@ import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Feature;
+import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 
 public final class DefaultAclManager implements AclManager {
@@ -86,7 +87,7 @@ public final class DefaultAclManager implements AclManager {
         }
     }
 
-    public void addRepoinitExtension(List<VaultPackageAssembler> packageAssemblers, Feature feature) {
+    public void addRepoinitExtension(List<VaultPackageAssembler> packageAssemblers, FeaturesManager featureManager) {
         Formatter formatter = null;
         try {
             formatter = new Formatter();
@@ -133,9 +134,7 @@ public final class DefaultAclManager implements AclManager {
             String text = formatter.toString();
 
             if (!text.isEmpty()) {
-                Extension repoInitExtension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, true);
-                repoInitExtension.setText(text);
-                feature.getExtensions().add(repoInitExtension);
+                featureManager.addOrAppendRepoInitExtension(text);
             }
         } finally {
             if (formatter != null) {

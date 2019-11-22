@@ -116,7 +116,7 @@ public class SystemUsersEntryHandlerTest {
 
         when(packageAssembler.getEntry(anyString())).thenReturn(new File("itdoesnotexist"));
 
-        converter.getAclManager().addRepoinitExtension(Arrays.asList(packageAssembler), feature);
+        converter.getAclManager().addRepoinitExtension(Arrays.asList(packageAssembler), featuresManager);
         return feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
     }
 

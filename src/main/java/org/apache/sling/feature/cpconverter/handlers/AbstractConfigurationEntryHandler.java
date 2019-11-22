@@ -25,6 +25,8 @@ import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 
 abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandler {
+    
+    private static final String REPOINIT_PID = "org.apache.sling.jcr.repoinit.RepositoryInitializer";
 
     public AbstractConfigurationEntryHandler(String extension) {
         super("/jcr_root/(?:apps|libs)/.+/config(\\.([^/]+))?/.+\\." + extension);
@@ -34,13 +36,15 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
     public final void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter) throws Exception {
         String pid = entry.getName().substring(0, entry.getName().lastIndexOf('.'));
 
+        String factoryPid = null;
         String id;
         int n = pid.indexOf('~');
         if (n == -1) {
             n = pid.indexOf('-');
         }
         if (n > 0) {
-            id = pid.substring(0, n).concat("~").concat(pid.substring(n + 1));
+            factoryPid = pid.substring(0, n);
+            id = factoryPid.concat("~").concat(pid.substring(n + 1));
         } else {
             id = pid;
         }
@@ -71,8 +75,18 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
                                             + path
                                             + "' but it does not, currently");
         }
-
-        converter.getFeaturesManager().addConfiguration(runMode, id, configurationProperties);
+        
+        if (REPOINIT_PID.equals(factoryPid)) {
+            String[] scripts = (String[]) configurationProperties.get("scripts");
+            if (scripts != null) {
+                String text = String.join("\n", scripts);
+                converter.getFeaturesManager().addOrAppendRepoInitExtension(text);
+            } else {
+                // any repoinit configuration with empty scripts may be igored - filereferences are not supported at that point
+            }
+        } else {
+            converter.getFeaturesManager().addConfiguration(runMode, id, configurationProperties);
+        }
     }
 
     protected abstract Dictionary<String, Object> parseConfiguration(String name, InputStream input) throws Exception;
