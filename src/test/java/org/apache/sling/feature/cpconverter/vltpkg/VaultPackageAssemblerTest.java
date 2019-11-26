@@ -17,6 +17,7 @@
 package org.apache.sling.feature.cpconverter.vltpkg;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.net.URL;
@@ -36,6 +37,8 @@ import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(Parameterized.class)
 public class VaultPackageAssemblerTest {
+
+    private static final File TMP_DIR = new File(System.getProperty("java.io.tmpdir"), "syntethic-content-packages");
 
     private File testDirectory;
 
@@ -75,6 +78,18 @@ public class VaultPackageAssemblerTest {
         assertNotNull(resourceEntry);
 
         zipFile.close();
+    }
+
+    @Test
+    public void testCreate() throws Exception {
+        // This is just here to force the deletion
+        URL resource = VaultPackageAssemblerTest.class.getResource("../test-content-package.zip");
+        File file = FileUtils.toFile(resource);
+        VaultPackage vaultPackage = new PackageManagerImpl().open(file);
+
+        VaultPackageAssembler assembler = VaultPackageAssembler.create(vaultPackage);
+        File storingDirectory = new File(TMP_DIR, vaultPackage.getFile().getName() + "-deflated");
+        assertTrue("Storing Directory for Vault Package does not exist", storingDirectory.exists());
     }
 
     @Parameters

@@ -89,7 +89,7 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
             try {
                 FileUtils.deleteDirectory(storingDirectory);
             } catch(IOException e) {
-                throw new RuntimeException("Unable to delete existing deflated folder: '" + storingDirectory + "'", e);
+                throw new FolderDeletionException("Unable to delete existing deflated folder: '" + storingDirectory + "'", e);
             }
         }
         // avoid any possible Stream is not a content package. Missing 'jcr_root' error
@@ -327,4 +327,13 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
 
     }
 
+    public static class FolderDeletionException extends RuntimeException {
+        public FolderDeletionException(String message) {
+            super(message);
+        }
+
+        public FolderDeletionException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
 }
