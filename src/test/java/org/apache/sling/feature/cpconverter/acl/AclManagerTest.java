@@ -33,6 +33,8 @@ import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.Feature;
+import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
+import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.repoinit.parser.RepoInitParser;
 import org.apache.sling.repoinit.parser.RepoInitParsingException;
@@ -41,6 +43,8 @@ import org.apache.sling.repoinit.parser.operations.Operation;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.Spy;
 
 public class AclManagerTest {
 
@@ -75,8 +79,12 @@ public class AclManagerTest {
         when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
 
-        aclManager.addRepoinitExtension(Arrays.asList(assembler), feature);
+        FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager());
+        when(fm.getTargetFeature()).thenReturn(feature);
+        
+        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
 
+        
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
 
@@ -112,7 +120,10 @@ public class AclManagerTest {
         when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
 
-        aclManager.addRepoinitExtension(Arrays.asList(assembler), feature);
+        FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager());
+        when(fm.getTargetFeature()).thenReturn(feature);
+        
+        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);

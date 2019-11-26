@@ -34,6 +34,7 @@ import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.Configurations;
+import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
@@ -47,7 +48,18 @@ import org.junit.runners.Parameterized.Parameters;
 public class ConfigurationEntryHandlerTest {
 
     private static final String EXPECTED_PID = "org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl";
+    private static final String REPOINIT_PID = "org.apache.sling.jcr.repoinit.RepositoryInitializer";
+    private static final String REPOINIT_TESTCONFIG_PATH = "/jcr_root/apps/asd/config.author/" + REPOINIT_PID + "-test.config";
+    private static final String EXPECTED_REPOINIT = "create service user test-user\n" + 
+        "    set ACL for test-user\n" + 
+        "        allow    jcr:read    on /conf\n" + 
+        "    end\n" +
+        "create service user test-user2\n" + 
+        "    set ACL for test-user2\n" + 
+        "        allow    jcr:read    on /conf\n" + 
+        "    end";
 
+    
     private final String resourceConfiguration;
 
     private final int expectedConfigurationsSize;
@@ -94,6 +106,12 @@ public class ConfigurationEntryHandlerTest {
 
         assertEquals(expectedConfigurationsSize, configurations.size());
 
+        
+        if (this.resourceConfiguration.equals(REPOINIT_TESTCONFIG_PATH)) {
+            assertEquals(EXPECTED_REPOINIT, featuresManager.getTargetFeature().getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT).getText());
+        }
+
+        if (expectedConfigurationsSize != 0) {
         Configuration configuration = configurations.get(0);
 
         assertTrue(configuration.getPid(), configuration.getPid().startsWith(EXPECTED_PID));
@@ -104,6 +122,7 @@ public class ConfigurationEntryHandlerTest {
             assertEquals("Unmatching size: " + configuration.getProperties().size(), 2, configuration.getProperties().size());
         }
     }
+}
 
     @Parameters
     public static Collection<Object[]> data() {
@@ -127,6 +146,7 @@ public class ConfigurationEntryHandlerTest {
 
             // runmode aware folders
             { "/jcr_root/apps/asd/config.author/" + EXPECTED_PID + ".config", 1, new ConfigurationEntryHandler() },
+            { REPOINIT_TESTCONFIG_PATH, 0, new ConfigurationEntryHandler() },
             { "/jcr_root/apps/asd/config.publish/" + EXPECTED_PID + ".config", 1, new ConfigurationEntryHandler() },
         });
     }

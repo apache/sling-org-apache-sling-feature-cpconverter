@@ -221,19 +221,19 @@ public class DefaultFeaturesManager implements FeaturesManager {
     public void serialize() throws Exception {
         RunmodeMapper runmodeMapper = RunmodeMapper.open(featureModelsOutputDirectory);
 
-        seralize(targetFeature, null, runmodeMapper);
+        serialize(targetFeature, null, runmodeMapper);
 
         if (!runModes.isEmpty()) {
             for (Entry<String, Feature> runmodeEntry : runModes.entrySet()) {
                 String runmode = runmodeEntry.getKey();
-                seralize(runmodeEntry.getValue(), runmode, runmodeMapper);
+                serialize(runmodeEntry.getValue(), runmode, runmodeMapper);
             }
         }
 
         runmodeMapper.save();
     }
 
-    private void seralize(Feature feature, String runMode, RunmodeMapper runmodeMapper) throws Exception {
+    private void serialize(Feature feature, String runMode, RunmodeMapper runmodeMapper) throws Exception {
         StringBuilder fileNameBuilder = new StringBuilder()
             .append((prefix != null) ? prefix : "")
             .append(feature.getId().getArtifactId());
@@ -277,5 +277,19 @@ public class DefaultFeaturesManager implements FeaturesManager {
         targetAPIRegions.clear();
         targetAPIRegions.addAll(regions);
         return this;
+    }
+
+    @Override
+    public void addOrAppendRepoInitExtension(String text) {
+        
+        Extension repoInitExtension = getTargetFeature().getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+        
+        if (repoInitExtension == null) {
+            repoInitExtension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, true);
+            getTargetFeature().getExtensions().add(repoInitExtension);
+            repoInitExtension.setText(text);
+        } else {
+            repoInitExtension.setText(repoInitExtension.getText() + "\n " + text);
+        }
     }
 }

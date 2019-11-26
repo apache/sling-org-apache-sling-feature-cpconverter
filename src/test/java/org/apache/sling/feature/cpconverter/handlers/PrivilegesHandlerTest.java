@@ -82,7 +82,7 @@ public class PrivilegesHandlerTest {
 
         handler.handle(path, archive, entry, converter);
 
-        converter.getAclManager().addRepoinitExtension(Arrays.asList(packageAssembler), feature);
+        converter.getAclManager().addRepoinitExtension(Arrays.asList(packageAssembler), featuresManager);
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);

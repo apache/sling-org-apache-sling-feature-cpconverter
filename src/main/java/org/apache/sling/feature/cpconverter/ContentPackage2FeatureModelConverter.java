@@ -223,7 +223,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
                 // finally serialize the Feature Model(s) file(s)
 
-                aclManager.addRepoinitExtension(assemblers, featuresManager.getTargetFeature());
+                aclManager.addRepoinitExtension(assemblers, featuresManager);
 
                 logger.info("Conversion complete!");
 
