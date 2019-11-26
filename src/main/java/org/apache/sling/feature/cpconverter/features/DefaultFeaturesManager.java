@@ -221,19 +221,19 @@ public class DefaultFeaturesManager implements FeaturesManager {
     public void serialize() throws Exception {
         RunmodeMapper runmodeMapper = RunmodeMapper.open(featureModelsOutputDirectory);
 
-        seralize(targetFeature, null, runmodeMapper);
+        serialize(targetFeature, null, runmodeMapper);
 
         if (!runModes.isEmpty()) {
             for (Entry<String, Feature> runmodeEntry : runModes.entrySet()) {
                 String runmode = runmodeEntry.getKey();
-                seralize(runmodeEntry.getValue(), runmode, runmodeMapper);
+                serialize(runmodeEntry.getValue(), runmode, runmodeMapper);
             }
         }
 
         runmodeMapper.save();
     }
 
-    private void seralize(Feature feature, String runMode, RunmodeMapper runmodeMapper) throws Exception {
+    private void serialize(Feature feature, String runMode, RunmodeMapper runmodeMapper) throws Exception {
         StringBuilder fileNameBuilder = new StringBuilder()
             .append((prefix != null) ? prefix : "")
             .append(feature.getId().getArtifactId());
