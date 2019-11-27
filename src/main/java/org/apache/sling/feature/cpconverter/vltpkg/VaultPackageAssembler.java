@@ -84,7 +84,9 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
     }
 
     private static VaultPackageAssembler create(VaultPackage vaultPackage, WorkspaceFilter filter) {
-        File storingDirectory = new File(TMP_DIR, vaultPackage.getFile().getName() + "-deflated");
+        PackageId packageId = vaultPackage.getId();
+        String fileName = packageId.toString().replaceAll("/", "-").replaceAll(":", "-") + "-" + vaultPackage.getFile().getName();
+        File storingDirectory = new File(TMP_DIR, fileName + "-deflated");
         if(storingDirectory.exists()) {
             try {
                 FileUtils.deleteDirectory(storingDirectory);

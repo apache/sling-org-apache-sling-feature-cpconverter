@@ -27,6 +27,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
 import org.junit.Before;
@@ -88,7 +89,9 @@ public class VaultPackageAssemblerTest {
         VaultPackage vaultPackage = new PackageManagerImpl().open(file);
 
         VaultPackageAssembler assembler = VaultPackageAssembler.create(vaultPackage);
-        File storingDirectory = new File(TMP_DIR, vaultPackage.getFile().getName() + "-deflated");
+        PackageId packageId = vaultPackage.getId();
+        String fileName = packageId.toString().replace("/", "-") + "-" + vaultPackage.getFile().getName();
+        File storingDirectory = new File(TMP_DIR, fileName + "-deflated");
         assertTrue("Storing Directory for Vault Package does not exist", storingDirectory.exists());
     }
 
