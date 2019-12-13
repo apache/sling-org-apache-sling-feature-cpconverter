@@ -63,9 +63,9 @@
   </properties>
 
   <scm>
-    <connection>scm:git:https://gitbox.apache.org/repos/asf/org.apache.sling.feature.cpconverter.git</connection>
-    <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/org.apache.sling.feature.cpconverter.git</developerConnection>
-    <url>https://gitbox.apache.org/repos/asf?p=org.apache.sling.feature.cpconverter.git</url>
+    <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-feature-cpconverter.git</connection>
+    <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-feature-cpconverter.git</developerConnection>
+    <url>https://gitbox.apache.org/repos/asf?p=sling-org-apache-sling-feature-cpconverter.git</url>
     <tag>HEAD</tag>
   </scm>
 
