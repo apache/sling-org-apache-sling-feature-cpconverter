@@ -35,8 +35,6 @@
     <sling.java.version>8</sling.java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <picocli.version>3.6.0</picocli.version>
-    <org.apache.jackrabbit.vault.version>3.2.8</org.apache.jackrabbit.vault.version>
-    <jackrabbit-spi-commons.version>2.19.5</jackrabbit-spi-commons.version>
     <commons-io.version>2.6</commons-io.version>
     <org.apache.sling.feature.version>1.1.0</org.apache.sling.feature.version>
     <org.apache.sling.feature.io.version>1.1.0</org.apache.sling.feature.io.version>
@@ -48,7 +46,9 @@
     <org.osgi.annotation.versioning.version>1.0.0</org.osgi.annotation.versioning.version>
     <osgi.core.version>6.0.0</osgi.core.version>
     <org.apache.felix.configadmin.version>1.9.16</org.apache.felix.configadmin.version>
-    <jackrabbit-api.version>2.19.3</jackrabbit-api.version>
+    <org.apache.jackrabbit.vault.version>3.2.8</org.apache.jackrabbit.vault.version>
+    <jackrabbit-api.version>2.18.4</jackrabbit-api.version>
+    <jackrabbit-spi-commons.version>2.18.4</jackrabbit-spi-commons.version>
     <plexus-archiver.version>4.1.0</plexus-archiver.version>
     <plexus-utils.version>3.2.1</plexus-utils.version>
     <plexus-io.version>3.1.1</plexus-io.version>
