@@ -134,7 +134,7 @@ public final class DefaultAclManager implements AclManager {
             String text = formatter.toString();
 
             if (!text.isEmpty()) {
-                featureManager.addOrAppendRepoInitExtension(text);
+                featureManager.addOrAppendRepoInitExtension(text, null);
             }
         } finally {
             if (formatter != null) {
