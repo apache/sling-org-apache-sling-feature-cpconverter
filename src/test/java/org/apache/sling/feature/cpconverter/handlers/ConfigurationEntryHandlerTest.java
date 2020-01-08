@@ -65,13 +65,16 @@ public class ConfigurationEntryHandlerTest {
     private final int expectedConfigurationsSize;
 
     private final AbstractConfigurationEntryHandler configurationEntryHandler;
+    private final String expectedRunMode;
 
     public ConfigurationEntryHandlerTest(String resourceConfiguration,
                                          int expectedConfigurationsSize,
-                                         AbstractConfigurationEntryHandler configurationEntryHandler) {
+                                         AbstractConfigurationEntryHandler configurationEntryHandler, 
+                                         String expectedRunMode) {
         this.resourceConfiguration = resourceConfiguration;
         this.expectedConfigurationsSize = expectedConfigurationsSize;
         this.configurationEntryHandler = configurationEntryHandler;
+        this.expectedRunMode = expectedRunMode;
     }
 
     @Test
@@ -102,13 +105,12 @@ public class ConfigurationEntryHandlerTest {
 
         configurationEntryHandler.handle(resourceConfiguration, archive, entry, converter);
 
-        Configurations configurations = featuresManager.getTargetFeature().getConfigurations();
+        Configurations configurations = featuresManager.getRunMode(expectedRunMode).getConfigurations();
 
         assertEquals(expectedConfigurationsSize, configurations.size());
 
-        
         if (this.resourceConfiguration.equals(REPOINIT_TESTCONFIG_PATH)) {
-            assertEquals(EXPECTED_REPOINIT, featuresManager.getTargetFeature().getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT).getText());
+            assertEquals(EXPECTED_REPOINIT, featuresManager.getRunMode(expectedRunMode).getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT).getText());
         }
 
         if (expectedConfigurationsSize != 0) {
@@ -129,25 +131,25 @@ public class ConfigurationEntryHandlerTest {
         String path = "/jcr_root/apps/asd/config/";
 
         return Arrays.asList(new Object[][] {
-            { path + EXPECTED_PID + ".empty.cfg", 1, new PropertiesConfigurationEntryHandler() },
-            { path + EXPECTED_PID + ".cfg", 1, new PropertiesConfigurationEntryHandler() },
+            { path + EXPECTED_PID + ".empty.cfg", 1, new PropertiesConfigurationEntryHandler(), null },
+            { path + EXPECTED_PID + ".cfg", 1, new PropertiesConfigurationEntryHandler(), null },
 
-            { path + EXPECTED_PID + ".empty.cfg.json", 1, new JsonConfigurationEntryHandler() },
-            { path + EXPECTED_PID + ".cfg.json", 1, new JsonConfigurationEntryHandler() },
+            { path + EXPECTED_PID + ".empty.cfg.json", 1, new JsonConfigurationEntryHandler(), null },
+            { path + EXPECTED_PID + ".cfg.json", 1, new JsonConfigurationEntryHandler(), null },
 
-            { path + EXPECTED_PID + ".empty.config", 1, new ConfigurationEntryHandler() },
-            { path + EXPECTED_PID + ".config", 1, new ConfigurationEntryHandler() },
+            { path + EXPECTED_PID + ".empty.config", 1, new ConfigurationEntryHandler(), null },
+            { path + EXPECTED_PID + ".config", 1, new ConfigurationEntryHandler(), null },
 
-            { path + EXPECTED_PID + ".empty.xml", 1, new XmlConfigurationEntryHandler() },
-            { path + EXPECTED_PID + ".xml", 1, new XmlConfigurationEntryHandler() },
+            { path + EXPECTED_PID + ".empty.xml", 1, new XmlConfigurationEntryHandler(), null },
+            { path + EXPECTED_PID + ".xml", 1, new XmlConfigurationEntryHandler(), null },
 
-            { path + EXPECTED_PID + ".empty.xml.cfg", 1, new PropertiesConfigurationEntryHandler() },
-            { path + EXPECTED_PID + ".xml.cfg", 1, new PropertiesConfigurationEntryHandler() },
+            { path + EXPECTED_PID + ".empty.xml.cfg", 1, new PropertiesConfigurationEntryHandler(), null },
+            { path + EXPECTED_PID + ".xml.cfg", 1, new PropertiesConfigurationEntryHandler(), null },
 
             // runmode aware folders
-            { "/jcr_root/apps/asd/config.author/" + EXPECTED_PID + ".config", 1, new ConfigurationEntryHandler() },
-            { REPOINIT_TESTCONFIG_PATH, 0, new ConfigurationEntryHandler() },
-            { "/jcr_root/apps/asd/config.publish/" + EXPECTED_PID + ".config", 1, new ConfigurationEntryHandler() },
+            { "/jcr_root/apps/asd/config.author/" + EXPECTED_PID + ".config", 1, new ConfigurationEntryHandler(), "author" },
+            { REPOINIT_TESTCONFIG_PATH, 0, new ConfigurationEntryHandler() , "author"},
+            { "/jcr_root/apps/asd/config.publish/" + EXPECTED_PID + ".config", 1, new ConfigurationEntryHandler(), "publish" }
         });
     }
 

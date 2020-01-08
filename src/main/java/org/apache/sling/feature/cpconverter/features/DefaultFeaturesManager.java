@@ -35,6 +35,7 @@ import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Artifacts;
 import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.Extension;
+import org.apache.sling.feature.ExtensionState;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Extensions;
 import org.apache.sling.feature.Feature;
@@ -278,15 +279,16 @@ public class DefaultFeaturesManager implements FeaturesManager {
         targetAPIRegions.addAll(regions);
         return this;
     }
-
+    
     @Override
-    public void addOrAppendRepoInitExtension(String text) {
+    public void addOrAppendRepoInitExtension(String text, String runMode) {
         
-        Extension repoInitExtension = getTargetFeature().getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+        logger.info("Adding/Appending RepoInitExtension for runMode: {}", runMode );
+        Extension repoInitExtension = getRunMode(runMode).getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         
         if (repoInitExtension == null) {
-            repoInitExtension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, true);
-            getTargetFeature().getExtensions().add(repoInitExtension);
+            repoInitExtension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, ExtensionState.REQUIRED);
+            getRunMode(runMode).getExtensions().add(repoInitExtension);
             repoInitExtension.setText(text);
         } else {
             repoInitExtension.setText(repoInitExtension.getText() + "\n " + text);

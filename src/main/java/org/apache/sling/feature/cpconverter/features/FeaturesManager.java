@@ -37,6 +37,6 @@ public interface FeaturesManager {
 
     void serialize() throws Exception;
 
-    void addOrAppendRepoInitExtension(String text);
+    void addOrAppendRepoInitExtension(String text, String runMode);
 
 }
