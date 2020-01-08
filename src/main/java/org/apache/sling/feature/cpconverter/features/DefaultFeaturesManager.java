@@ -278,11 +278,11 @@ public class DefaultFeaturesManager implements FeaturesManager {
         targetAPIRegions.addAll(regions);
         return this;
     }
-
+    
     @Override
-    public void addOrAppendRepoInitExtension(String text) {
+    public void addOrAppendRepoInitExtension(String text, String runMode) {
         
-        Extension repoInitExtension = getTargetFeature().getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+        Extension repoInitExtension = getRunMode(runMode).getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         
         if (repoInitExtension == null) {
             repoInitExtension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, true);
