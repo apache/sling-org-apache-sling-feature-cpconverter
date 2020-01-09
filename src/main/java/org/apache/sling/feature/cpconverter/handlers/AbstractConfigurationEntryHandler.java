@@ -80,7 +80,7 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
             String[] scripts = (String[]) configurationProperties.get("scripts");
             if (scripts != null) {
                 String text = String.join("\n", scripts);
-                converter.getFeaturesManager().addOrAppendRepoInitExtension(text);
+                converter.getFeaturesManager().addOrAppendRepoInitExtension(text, runMode);
             } else {
                 // any repoinit configuration with empty scripts may be igored - filereferences are not supported at that point
             }
