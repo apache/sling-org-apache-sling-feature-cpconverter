@@ -330,16 +330,16 @@
             <goals>
               <goal>single</goal>
             </goals>
+            <configuration>
+              <finalName>${project.build.finalName}</finalName>
+              <tarLongFileMode>gnu</tarLongFileMode>
+              <appendAssemblyId>false</appendAssemblyId>
+              <descriptors>
+                <descriptor>${basedir}/src/main/assembly/bin.xml</descriptor>
+              </descriptors>
+            </configuration>
           </execution>
         </executions>
-        <configuration>
-          <finalName>${project.build.finalName}</finalName>
-          <tarLongFileMode>gnu</tarLongFileMode>
-          <appendAssemblyId>false</appendAssemblyId>
-          <descriptors>
-            <descriptor>${basedir}/src/main/assembly/bin.xml</descriptor>
-          </descriptors>
-        </configuration>
       </plugin>
     </plugins>
   </build>
