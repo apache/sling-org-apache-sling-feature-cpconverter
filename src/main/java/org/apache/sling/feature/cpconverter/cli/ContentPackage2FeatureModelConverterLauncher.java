@@ -135,7 +135,8 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                                                              .setEntryHandlersManager(new DefaultEntryHandlersManager())
                                                              .setAclManager(new DefaultAclManager())
                                                              .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
-                                                             .setFailOnMixedPackages(failOnMixedPackages);
+                                                             .setFailOnMixedPackages(failOnMixedPackages)
+                                                             .setDropContent(true);
 
             if (filteringPatterns != null && filteringPatterns.length > 0) {
                 RegexBasedResourceFilter filter = new RegexBasedResourceFilter();
