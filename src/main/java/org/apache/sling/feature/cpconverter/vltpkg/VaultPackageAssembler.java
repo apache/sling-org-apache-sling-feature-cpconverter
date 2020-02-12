@@ -34,6 +34,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -198,13 +200,17 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
     }
 
     public void updateDependencies(Map<PackageId, Set<Dependency>> mutableContentsIds) {
+        Map<Dependency, Set<Dependency>> matches = new HashMap<>();
         for (Dependency dependency : dependencies) {
             for (java.util.Map.Entry<PackageId, Set<Dependency>> mutableContentId : mutableContentsIds.entrySet()) {
                 if (dependency.matches(mutableContentId.getKey())) {
-                    dependencies.remove(dependency);
-                    dependencies.addAll(mutableContentId.getValue());
+                    matches.put(dependency, mutableContentId.getValue());
                 }
             }
+        }
+        for(java.util.Map.Entry<Dependency, Set<Dependency>>  match : matches.entrySet()) {
+            dependencies.remove(match.getKey());
+            dependencies.addAll(match.getValue());
         }
     }
 
