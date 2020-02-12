@@ -27,7 +27,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -73,12 +72,10 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
                                             + "' but it does not, currently");
         }
 
-        Properties format = new Properties();
-        format.put(OutputKeys.INDENT, "yes");
-        format.put(OutputKeys.ENCODING, "utf-8");
-
         TransformerHandler handler = saxTransformerFactory.newTransformerHandler();
-        handler.getTransformer().setOutputProperties(format);
+        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
+        handler.getTransformer().setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+        handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, "UTF-8");
         StringWriter stringWriter = new StringWriter();
         handler.setResult(new StreamResult(stringWriter));
 
@@ -178,6 +175,7 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
                     }
                 } else if (REP_RESTRICTIONS.equals(primaryType) && !acls.isEmpty()) {
                     if (processCurrentAcl) {
+                        acls.add(acls.peek());
                         for (String restriction : RESTRICTIONS) {
                             String path = extractValue(attributes.getValue(restriction));
 

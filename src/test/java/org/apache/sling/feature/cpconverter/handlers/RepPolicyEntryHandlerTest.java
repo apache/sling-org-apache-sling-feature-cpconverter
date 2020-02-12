@@ -96,31 +96,31 @@ public final class RepPolicyEntryHandlerTest {
 
         // commented ACLs are due SLING-8561
         String expected = "create path (rep:AuthorizableFolder) /asd/public\n" + // SLING-8586
-                "create service user acs-commons-ensure-oak-index-service with path /asd/public\n" + 
-                // "create path (sling:Folder) /asd\n" + 
-                // "create path (sling:Folder) /asd/public\n" + 
-                // "set ACL for acs-commons-ensure-oak-index-service\n" + 
-                // "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/public restriction(rep:glob,*/oak:index/*)\n" + 
-                // "end\n" + 
-                "create service user acs-commons-dispatcher-flush-service with path /asd/public\n" + 
-                // "set ACL for acs-commons-dispatcher-flush-service\n" + 
-                // "allow jcr:read,crx:replicate,jcr:removeNode on /asd/public\n" + 
-                // "end\n" + 
-                "create service user acs-commons-package-replication-status-event-service with path /asd/public\n" + 
-                // "set ACL for acs-commons-package-replication-status-event-service\n" + 
-                // "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" + 
-                // "end\n" + 
-                "create service user acs-commons-ensure-service-user-service with path /asd/public\n" + 
-                // "set ACL for acs-commons-ensure-service-user-service\n" + 
-                // "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" + 
-                // "end\n" + 
-                "create service user acs-commons-automatic-package-replicator-service with path /asd/public\n" + 
-                // "set ACL for acs-commons-automatic-package-replicator-service\n" + 
-                // "allow jcr:read on /asd/public\n" + 
-                // "end\n" + 
-                "create service user acs-commons-on-deploy-scripts-service with path /asd/public\n"; 
-                // "set ACL for acs-commons-on-deploy-scripts-service\n" + 
-                // "allow jcr:read on /asd/public\n" + 
+                "create service user acs-commons-ensure-oak-index-service with path /asd/public\n" +
+                // "create path (sling:Folder) /asd\n" +
+                // "create path (sling:Folder) /asd/public\n" +
+                // "set ACL for acs-commons-ensure-oak-index-service\n" +
+                // "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/public restriction(rep:glob,*/oak:index/*)\n" +
+                // "end\n" +
+                "create service user acs-commons-dispatcher-flush-service with path /asd/public\n" +
+                // "set ACL for acs-commons-dispatcher-flush-service\n" +
+                // "allow jcr:read,crx:replicate,jcr:removeNode on /asd/public\n" +
+                // "end\n" +
+                "create service user acs-commons-package-replication-status-event-service with path /asd/public\n" +
+                // "set ACL for acs-commons-package-replication-status-event-service\n" +
+                // "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" +
+                // "end\n" +
+                "create service user acs-commons-ensure-service-user-service with path /asd/public\n" +
+                // "set ACL for acs-commons-ensure-service-user-service\n" +
+                // "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" +
+                // "end\n" +
+                "create service user acs-commons-automatic-package-replicator-service with path /asd/public\n" +
+                // "set ACL for acs-commons-automatic-package-replicator-service\n" +
+                // "allow jcr:read on /asd/public\n" +
+                // "end\n" +
+                "create service user acs-commons-on-deploy-scripts-service with path /asd/public\n";
+                // "set ACL for acs-commons-on-deploy-scripts-service\n" +
+                // "allow jcr:read on /asd/public\n" +
                 // "end\n";
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -143,23 +143,23 @@ public final class RepPolicyEntryHandlerTest {
 
         // commented ACLs are due SLING-8561
         String expected = "create path (rep:AuthorizableFolder) /asd/public\n" + // SLING-8586
-                "create service user acs-commons-package-replication-status-event-service with path /asd/public\n" + 
-                // "create path (sling:Folder) /asd\n" + 
-                // "create path (sling:Folder) /asd/public\n" + 
-                // "set ACL for acs-commons-package-replication-status-event-service\n" + 
-                // "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" + 
-                // "end\n" + 
-                "create service user acs-commons-ensure-service-user-service with path /asd/public\n" + 
-                // "set ACL for acs-commons-ensure-service-user-service\n" + 
-                // "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" + 
-                // "end\n" + 
-                "create service user acs-commons-automatic-package-replicator-service with path /asd/public\n" + 
-                // "set ACL for acs-commons-automatic-package-replicator-service\n" + 
-                // "allow jcr:read on /asd/public\n" + 
-                // "end\n" + 
+                "create service user acs-commons-package-replication-status-event-service with path /asd/public\n" +
+                // "create path (sling:Folder) /asd\n" +
+                // "create path (sling:Folder) /asd/public\n" +
+                // "set ACL for acs-commons-package-replication-status-event-service\n" +
+                // "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" +
+                // "end\n" +
+                "create service user acs-commons-ensure-service-user-service with path /asd/public\n" +
+                // "set ACL for acs-commons-ensure-service-user-service\n" +
+                // "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" +
+                // "end\n" +
+                "create service user acs-commons-automatic-package-replicator-service with path /asd/public\n" +
+                // "set ACL for acs-commons-automatic-package-replicator-service\n" +
+                // "allow jcr:read on /asd/public\n" +
+                // "end\n" +
                 "create service user acs-commons-on-deploy-scripts-service with path /asd/public\n";
-                //"set ACL for acs-commons-on-deploy-scripts-service\n" + 
-                //"allow jcr:read on /asd/public\n" + 
+                //"set ACL for acs-commons-on-deploy-scripts-service\n" +
+                //"allow jcr:read on /asd/public\n" +
                 //"end\n";
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -169,11 +169,13 @@ public final class RepPolicyEntryHandlerTest {
         assertFalse(operations.isEmpty());
 
         // acs-commons-ensure-oak-index-service and acs-commons-dispatcher-flush-service not recognized as system users
-        expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?><jcr:root xmlns:jcr=\"http://www.jcp.org/jcr/1.0\" xmlns:rep=\"internal\" jcr:primaryType=\"rep:ACL\">\n" + 
-                "<allow0 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-ensure-oak-index-service\" rep:privileges=\"{Name}[jcr:read,rep:write,rep:indexDefinitionManagement]\">\n" + 
-                "<rep:restrictions jcr:primaryType=\"rep:Restrictions\" rep:glob=\"{Name}[*/oak:index/*]\"/>\n" + 
-                "</allow0>\n" + 
-                "<allow1 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-dispatcher-flush-service\" rep:privileges=\"{Name}[jcr:read,crx:replicate,jcr:removeNode]\"/>\n" + 
+        expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><jcr:root xmlns:jcr=\"http://www.jcp.org/jcr/1.0\" xmlns:rep=\"internal\" jcr:primaryType=\"rep:ACL\">\n"
+                +
+                "    <allow0 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-ensure-oak-index-service\" rep:privileges=\"{Name}[jcr:read,rep:write,rep:indexDefinitionManagement]\">\n"
+                + "        <rep:restrictions jcr:primaryType=\"rep:Restrictions\" rep:glob=\"{Name}[*/oak:index/*]\"/>\n"
+                + "    </allow0>\n"
+                + "    <allow1 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-dispatcher-flush-service\" rep:privileges=\"{Name}[jcr:read,crx:replicate,jcr:removeNode]\"/>\n"
+                +
                 "</jcr:root>\n";
         actual = result.getExcludedAcls();
         assertEquals(expected, actual);
@@ -186,12 +188,12 @@ public final class RepPolicyEntryHandlerTest {
         assertNotNull(repoinitExtension);
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
-        String expected = "create path (rep:AuthorizableFolder) /this/is/a/completely/different/path\n" + // SLING-8586 
-                "create service user acs-commons-package-replication-status-event-service with path /this/is/a/completely/different/path\n" + 
-                "create path (sling:Folder) /asd\n" + 
-                "create path (sling:Folder) /asd/public\n" + 
-                "set ACL for acs-commons-package-replication-status-event-service\n" + 
-                "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" + 
+        String expected = "create path (rep:AuthorizableFolder) /this/is/a/completely/different/path\n" + // SLING-8586
+                "create service user acs-commons-package-replication-status-event-service with path /this/is/a/completely/different/path\n" +
+                "create path (sling:Folder) /asd\n" +
+                "create path (sling:Folder) /asd/public\n" +
+                "set ACL for acs-commons-package-replication-status-event-service\n" +
+                "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" +
                 "end\n";
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -201,14 +203,16 @@ public final class RepPolicyEntryHandlerTest {
         assertFalse(operations.isEmpty());
 
         // acs-commons-package-replication-status-event-service only recognised as system user - ACLs in allow2
-        expected = "<?xml version=\"1.0\" encoding=\"utf-8\"?><jcr:root xmlns:jcr=\"http://www.jcp.org/jcr/1.0\" xmlns:rep=\"internal\" jcr:primaryType=\"rep:ACL\">\n" + 
-                "<allow0 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-ensure-oak-index-service\" rep:privileges=\"{Name}[jcr:read,rep:write,rep:indexDefinitionManagement]\">\n" + 
-                "<rep:restrictions jcr:primaryType=\"rep:Restrictions\" rep:glob=\"{Name}[*/oak:index/*]\"/>\n" + 
-                "</allow0>\n" + 
-                "<allow1 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-dispatcher-flush-service\" rep:privileges=\"{Name}[jcr:read,crx:replicate,jcr:removeNode]\"/>\n" + 
-                "<allow3 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-ensure-service-user-service\" rep:privileges=\"{Name}[jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl]\"/>\n" + 
-                "<allow4 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-automatic-package-replicator-service\" rep:privileges=\"{Name}[jcr:read]\"/>\n" + 
-                "<allow5 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-on-deploy-scripts-service\" rep:privileges=\"{Name}[jcr:read]\"/>\n" + 
+        expected = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><jcr:root xmlns:jcr=\"http://www.jcp.org/jcr/1.0\" xmlns:rep=\"internal\" jcr:primaryType=\"rep:ACL\">\n"
+                +
+                "    <allow0 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-ensure-oak-index-service\" rep:privileges=\"{Name}[jcr:read,rep:write,rep:indexDefinitionManagement]\">\n"
+                + "        <rep:restrictions jcr:primaryType=\"rep:Restrictions\" rep:glob=\"{Name}[*/oak:index/*]\"/>\n"
+                + "    </allow0>\n"
+                + "    <allow1 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-dispatcher-flush-service\" rep:privileges=\"{Name}[jcr:read,crx:replicate,jcr:removeNode]\"/>\n"
+                + "    <allow3 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-ensure-service-user-service\" rep:privileges=\"{Name}[jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl]\"/>\n"
+                + "    <allow4 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-automatic-package-replicator-service\" rep:privileges=\"{Name}[jcr:read]\"/>\n"
+                + "    <allow5 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-on-deploy-scripts-service\" rep:privileges=\"{Name}[jcr:read]\"/>\n"
+                +
                 "</jcr:root>\n";
         actual = result.getExcludedAcls();
         assertEquals(expected, actual);
@@ -258,7 +262,7 @@ public final class RepPolicyEntryHandlerTest {
         handler.handle(path, archive, entry, converter);
 
         when(packageAssembler.getEntry(anyString())).thenReturn(new File("itdoesnotexist"));
-        
+
         converter.getAclManager().addRepoinitExtension(Arrays.asList(packageAssembler), featuresManager);
         return new ParseResult(feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT), new String(baos.toByteArray()));
     }
