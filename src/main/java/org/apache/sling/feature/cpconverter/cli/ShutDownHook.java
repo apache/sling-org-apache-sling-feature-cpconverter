@@ -16,9 +16,12 @@
  */
 package org.apache.sling.feature.cpconverter.cli;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Date;
 import java.util.Formatter;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 
 final class ShutDownHook extends Thread {
@@ -33,6 +36,9 @@ final class ShutDownHook extends Thread {
 
     @Override
     public void run() {
+
+        cleanUp();
+
         // format the uptime string
         Formatter uptimeFormatter = new Formatter();
         uptimeFormatter.format("Total time:");
@@ -76,4 +82,15 @@ final class ShutDownHook extends Thread {
         logger.info("+-----------------------------------------------------+");
     }
 
+    private void cleanUp(){
+        String tmpDir = System.getProperty("java.io.tmpdir");
+        logger.info("Cleaning up tmp directories {}, {}", tmpDir + "sub-content-packages", tmpDir + "syntethic-content-packages" );
+
+        try {
+            FileUtils.deleteDirectory( new File (tmpDir, "syntethic-content-packages") );
+            FileUtils.deleteDirectory( new File(tmpDir, "sub-content-packages") );
+        } catch (IOException e) {
+            logger.error( "Error Deleting {}, {}", tmpDir + "sub-content-packages", tmpDir + "syntethic-content-packages");
+        }
+    }
 }
