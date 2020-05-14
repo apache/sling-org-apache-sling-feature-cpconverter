@@ -108,6 +108,9 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
         String appName = getClass().getAnnotation(Command.class).description()[0];
         final Logger logger = LoggerFactory.getLogger(appName);
 
+        //output the current tmp directory
+        logger.debug("Using tmp directory {}", System.getProperty("java.io.tmpdir"));
+
         // Add the Shutdown Hook to the Java virtual machine
         // in order to destroy all the allocated resources
         Runtime.getRuntime().addShutdownHook(new ShutDownHook(logger));
