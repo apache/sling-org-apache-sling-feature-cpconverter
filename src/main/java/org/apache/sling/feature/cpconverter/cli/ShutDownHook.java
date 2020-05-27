@@ -83,14 +83,15 @@ final class ShutDownHook extends Thread {
     }
 
     private void cleanUp(){
-        String tmpDir = System.getProperty("java.io.tmpdir");
-        logger.info("Cleaning up tmp directories {}, {}", tmpDir + "sub-content-packages", tmpDir + "syntethic-content-packages" );
+        File tmpDir = new File ( System.getProperty("java.io.tmpdir") );
+        logger.info( "Cleaning up tmp directories {}, {}", tmpDir.getAbsolutePath() + "/sub-content-packages",
+                tmpDir.getAbsolutePath() + "/syntethic-content-packages" );
 
         try {
             FileUtils.deleteDirectory( new File (tmpDir, "syntethic-content-packages") );
             FileUtils.deleteDirectory( new File(tmpDir, "sub-content-packages") );
         } catch (IOException e) {
-            logger.error( "Error Deleting {}, {}", tmpDir + "sub-content-packages", tmpDir + "syntethic-content-packages");
+            logger.error( "Error Deleting {}, {}", tmpDir + "sub-content-packages", tmpDir + "syntethic-content-packages" );
         }
     }
 }
