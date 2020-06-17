@@ -1,0 +1,8 @@
+github:
+  description: "Apache Sling Content Package to Feature Model Converter"
+  homepage: "https://sling.apache.org/"
+  labels:
+    - java
+    - sling
+    - osgi
+    - osgi-feature-model
