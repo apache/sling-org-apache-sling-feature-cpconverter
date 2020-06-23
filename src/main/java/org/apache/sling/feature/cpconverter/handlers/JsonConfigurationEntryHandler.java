@@ -16,18 +16,13 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Dictionary;
+import java.util.Hashtable;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.felix.configurator.impl.json.JSONUtil;
-import org.apache.felix.configurator.impl.json.TypeConverter;
-import org.apache.felix.configurator.impl.model.ConfigurationFile;
+import org.apache.felix.cm.json.Configurations;
 
 public final class JsonConfigurationEntryHandler extends AbstractConfigurationEntryHandler {
 
@@ -37,39 +32,12 @@ public final class JsonConfigurationEntryHandler extends AbstractConfigurationEn
 
     @Override
     protected Dictionary<String, Object> parseConfiguration(String name, InputStream input) throws Exception {
-        StringBuilder content = new StringBuilder()
-                                .append("{ \"")
-                                .append(name)
-                                .append("\" : ");
-        try (Reader reader = new InputStreamReader(input); StringWriter writer = new StringWriter()) {
-            IOUtils.copy(reader, writer);
-            content.append(writer.toString());
-        }
-        content.append("}");
+        final Hashtable<String, Object> props = Configurations.buildReader()
+            .withIdentifier(name)
+            .build(new InputStreamReader(input, StandardCharsets.UTF_8))
+            .readConfiguration();
 
-        JSONUtil.Report report = new JSONUtil.Report();
-        ConfigurationFile configuration = JSONUtil.readJSON(new TypeConverter(null),
-                                                            name,
-                                                            new URL("file://content-package/" + name),
-                                                            0,
-                                                            content.toString(),
-                                                            report);
-
-        if (!report.errors.isEmpty() || !report.warnings.isEmpty()) {
-            final StringBuilder builder = new StringBuilder();
-            builder.append("Errors in configuration:");
-            for (final String w : report.warnings) {
-                builder.append("\n");
-                builder.append(w);
-            }
-            for (final String e : report.errors) {
-                builder.append("\n");
-                builder.append(e);
-            }
-            throw new IOException(builder.toString());
-        }
-
-        return configuration.getConfigurations().get(0).getProperties();
+        return props;
     }
 
 }

@@ -95,6 +95,7 @@ public class DefaultFeaturesManager implements FeaturesManager {
         this.properties = properties;
     }
 
+    @Override
     public void init(String groupId, String artifactId, String version) {
         targetFeature = new Feature(new ArtifactId(groupId, artifactId, version, null, SLING_OSGI_FEATURE_TILE_TYPE));
 
@@ -105,7 +106,7 @@ public class DefaultFeaturesManager implements FeaturesManager {
 
     private void initAPIRegions(Feature feature) {
         if (targetAPIRegions.size() > 0) {
-            Extension apiRegions = new Extension(ExtensionType.JSON, "api-regions", false);
+            Extension apiRegions = new Extension(ExtensionType.JSON, "api-regions", ExtensionState.OPTIONAL);
             StringBuilder jsonBuilder = new StringBuilder("[");
             for (String apiRegion : targetAPIRegions) {
                 if (jsonBuilder.length() > 1) {
@@ -121,10 +122,12 @@ public class DefaultFeaturesManager implements FeaturesManager {
         }
     }
 
+    @Override
     public Feature getTargetFeature() {
         return targetFeature;
     }
 
+    @Override
     public Feature getRunMode(String runMode) {
         if (getTargetFeature() == null) {
             throw new IllegalStateException("Target Feature not initialized yet, please make sure convert() method was invoked first.");
@@ -143,10 +146,12 @@ public class DefaultFeaturesManager implements FeaturesManager {
         });
     }
 
+    @Override
     public void addArtifact(String runMode, ArtifactId id) {
         addArtifact(runMode, id, null);
     }
 
+    @Override
     public void addArtifact(String runMode, ArtifactId id, Integer startOrder) {
         requireNonNull(id, "Artifact can not be attached to a feature without specifying a valid ArtifactId.");
 
@@ -160,7 +165,7 @@ public class DefaultFeaturesManager implements FeaturesManager {
             Extension extension = extensions.getByName(CONTENT_PACKAGES);
 
             if (extension == null) {
-                extension = new Extension(ExtensionType.ARTIFACTS, CONTENT_PACKAGES, true);
+                extension = new Extension(ExtensionType.ARTIFACTS, CONTENT_PACKAGES, ExtensionState.REQUIRED);
                 extensions.add(extension);
             }
 
@@ -191,6 +196,7 @@ public class DefaultFeaturesManager implements FeaturesManager {
         return newId;
     }
 
+    @Override
     public void addConfiguration(String runMode, String pid, Dictionary<String, Object> configurationProperties) {
         Feature feature = getRunMode(runMode);
         Configuration configuration = feature.getConfigurations().getConfiguration(pid);
@@ -219,6 +225,7 @@ public class DefaultFeaturesManager implements FeaturesManager {
         }
     }
 
+    @Override
     public void serialize() throws Exception {
         RunmodeMapper runmodeMapper = RunmodeMapper.open(featureModelsOutputDirectory);
 
@@ -279,13 +286,13 @@ public class DefaultFeaturesManager implements FeaturesManager {
         targetAPIRegions.addAll(regions);
         return this;
     }
-    
+
     @Override
     public void addOrAppendRepoInitExtension(String text, String runMode) {
-        
+
         logger.info("Adding/Appending RepoInitExtension for runMode: {}", runMode );
         Extension repoInitExtension = getRunMode(runMode).getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
-        
+
         if (repoInitExtension == null) {
             repoInitExtension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, ExtensionState.REQUIRED);
             getRunMode(runMode).getExtensions().add(repoInitExtension);
