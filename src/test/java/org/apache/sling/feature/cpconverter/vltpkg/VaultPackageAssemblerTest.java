@@ -39,7 +39,7 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(Parameterized.class)
 public class VaultPackageAssemblerTest {
 
-    private static final File TMP_DIR = new File(System.getProperty("java.io.tmpdir"), "syntethic-content-packages");
+    private static final File TMP_DIR = new File(System.getProperty("java.io.tmpdir"), "synthetic-content-packages");
 
     private File testDirectory;
 

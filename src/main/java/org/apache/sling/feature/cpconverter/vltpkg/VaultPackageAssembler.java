@@ -67,7 +67,7 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
 
     private static final String[] INCLUDE_RESOURCES = { PACKAGE_DEFINITION_XML, CONFIG_XML, SETTINGS_XML };
 
-    private static final File TMP_DIR = new File(System.getProperty("java.io.tmpdir"), "syntethic-content-packages");
+    private static final File TMP_DIR = new File(System.getProperty("java.io.tmpdir"), "synthetic-content-packages");
 
     private static final Pattern OSGI_BUNDLE_PATTERN = Pattern.compile("(jcr_root)?/apps/[^/]+/install(\\.([^/]+))?/.+\\.jar");
 
