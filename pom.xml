@@ -28,7 +28,7 @@
   <artifactId>org.apache.sling.feature.cpconverter</artifactId>
   <version>1.0.9-SNAPSHOT</version>
 
-  <name>Apache Sling Content Package to Feature Model converter</name>
+  <name>Apache Sling Content-Package to Feature Model Converter</name>
   <description>Content Package to Feature Model converter tools for Apache Sling</description>
 
   <properties>
