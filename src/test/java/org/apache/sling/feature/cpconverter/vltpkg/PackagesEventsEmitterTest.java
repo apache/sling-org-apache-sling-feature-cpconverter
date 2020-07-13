@@ -18,14 +18,28 @@ package org.apache.sling.feature.cpconverter.vltpkg;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.StringWriter;
+import java.util.Calendar;
 
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+
+import org.apache.jackrabbit.vault.fs.config.MetaInf;
+import org.apache.jackrabbit.vault.fs.io.AccessControlHandling;
+import org.apache.jackrabbit.vault.fs.io.Archive;
+import org.apache.jackrabbit.vault.fs.io.ImportOptions;
 import org.apache.jackrabbit.vault.packaging.Dependency;
+import org.apache.jackrabbit.vault.packaging.PackageException;
 import org.apache.jackrabbit.vault.packaging.PackageId;
+import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.PackageType;
+import org.apache.jackrabbit.vault.packaging.SubPackageHandling;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.junit.Test;
 
@@ -82,6 +96,33 @@ public class PackagesEventsEmitterTest {
                 "/org/apache/sling/content-package.zip,apache/sling:content-child:1.0.0,CONTENT,apache/sling:parent:1.0.0,/jcr_root/etc/packages/org/apache/sling/content-child-1.0.zip,/org/apache/sling/content-package.zip!/jcr_root/etc/packages/org/apache/sling/content-child-1.0.zip\n" + 
                 "/org/apache/sling/content-package.zip,apache/sling:nested-child:1.0.0,CONTAINER,apache/sling:application-child:1.0.0,/jcr_root/etc/packages/org/apache/sling/nested-child-1.0.zip,/org/apache/sling/content-package.zip!/jcr_root/etc/packages/org/apache/sling/application-child-1.0.zip!/jcr_root/etc/packages/org/apache/sling/nested-child-1.0.zip\n";
         assertTrue(actual.endsWith(expected));
+    }
+    
+    @Test
+    public void coverDepOnlyPackage() throws RepositoryException, PackageException {
+        VaultPackage pkg = DefaultPackagesEventsEmitter.getDepOnlyPackage(ID_NESTED_CHILD, new Dependency[0]);
+        assertFalse(pkg.requiresRoot());
+        assertNull(pkg.getSubPackageHandling());
+        assertNull(pkg.getProperty(null));
+        assertNull(pkg.getPackageType());
+        assertNull(pkg.getLastWrappedBy());
+        assertNull(pkg.getLastWrapped());
+        assertNull(pkg.getLastModifiedBy());
+        assertNull(pkg.getLastModified());
+        assertNull(pkg.getDescription());
+        assertNull(pkg.getDateProperty(null));
+        assertNull(pkg.getCreatedBy());
+        assertNull(pkg.getCreated());
+        assertNull(pkg.getACHandling());
+        assertFalse(pkg.isValid());
+        assertFalse(pkg.isClosed());
+        assertEquals(0, pkg.getSize());
+        assertNull(pkg.getProperties());
+        assertNull(pkg.getMetaInf());
+        assertNull(pkg.getFile());
+        assertNull(pkg.getArchive());
+        pkg.extract(null, null);
+        pkg.close();
     }
 
 }

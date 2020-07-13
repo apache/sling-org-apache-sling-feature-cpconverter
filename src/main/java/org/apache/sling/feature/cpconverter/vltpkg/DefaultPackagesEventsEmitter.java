@@ -98,8 +98,8 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
             }
 
         } catch (CyclicDependencyException e) {
-            throw new RuntimeException(
-                "Cyclic dependencies between packages detected, see nested exceptions: "
+            throw new ArithmeticException(
+                "Cyclic dependencies between packages detected, cannot complete operation. "
                     + e);
         } finally {
             writer.close();
@@ -155,7 +155,7 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
         endPackage();
     }
     
-    private VaultPackage getDepOnlyPackage(PackageId id,
+    static VaultPackage getDepOnlyPackage(PackageId id,
             Dependency[] dependencies) {
         return new VaultPackage() {
             
@@ -277,12 +277,12 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
             @Override
             public void extract(Session session, ImportOptions opts)
                     throws RepositoryException, PackageException {
-                
+                //no invocation for dependency calculation
             }
             
             @Override
             public void close() {
-                
+                //no invocation for dependency calculation
             }
         };
     }
