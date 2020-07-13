@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.vltpkg;
 
+import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 
 public interface PackagesEventsEmitter {

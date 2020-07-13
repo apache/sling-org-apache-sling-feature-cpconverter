@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.StringWriter;
 
+import org.apache.jackrabbit.vault.packaging.Dependency;
 import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
@@ -30,12 +31,18 @@ import org.junit.Test;
 
 public class PackagesEventsEmitterTest {
 
+    private static final PackageId ID_NESTED_CHILD = new PackageId("apache/sling", "nested-child", "1.0.0");
+    private static final PackageId ID_APPLICATION_CHILD = new PackageId("apache/sling", "application-child", "1.0.0");
+    private static final PackageId ID_CONTENT_CHILD = new PackageId("apache/sling", "content-child", "1.0.0");
+    private static final PackageId ID_PARENT = new PackageId("apache/sling", "parent", "1.0.0");
+
     @Test
     public void justCheckEmissions() {
         VaultPackage parent = mock(VaultPackage.class);
         when(parent.getPackageType()).thenReturn(PackageType.MIXED);
-        when(parent.getId()).thenReturn(new PackageId("apache/sling", "parent", "1.0.0"));
+        when(parent.getId()).thenReturn(ID_PARENT);
         when(parent.getFile()).thenReturn(new File("/org/apache/sling/content-package.zip"));
+        when(parent.getDependencies()).thenReturn(new Dependency[0]);
 
         StringWriter stringWriter = new StringWriter();
         PackagesEventsEmitter emitter = new DefaultPackagesEventsEmitter(stringWriter);
@@ -44,18 +51,21 @@ public class PackagesEventsEmitterTest {
 
         VaultPackage contentChild = mock(VaultPackage.class);
         when(contentChild.getPackageType()).thenReturn(PackageType.CONTENT);
-        when(contentChild.getId()).thenReturn(new PackageId("apache/sling", "content-child", "1.0.0"));
+        when(contentChild.getId()).thenReturn(ID_CONTENT_CHILD);
+        when(contentChild.getDependencies()).thenReturn(new Dependency[]{new Dependency(ID_PARENT), new Dependency(ID_APPLICATION_CHILD)});
         emitter.startSubPackage("/jcr_root/etc/packages/org/apache/sling/content-child-1.0.zip", contentChild);
         emitter.endSubPackage();
 
         VaultPackage applicationChild = mock(VaultPackage.class);
         when(applicationChild.getPackageType()).thenReturn(PackageType.APPLICATION);
-        when(applicationChild.getId()).thenReturn(new PackageId("apache/sling", "application-child", "1.0.0"));
+        when(applicationChild.getId()).thenReturn(ID_APPLICATION_CHILD);
+        when(applicationChild.getDependencies()).thenReturn(new Dependency[]{new Dependency(ID_PARENT)});
         emitter.startSubPackage("/jcr_root/etc/packages/org/apache/sling/application-child-1.0.zip", applicationChild);
 
         VaultPackage nestedChild = mock(VaultPackage.class);
         when(nestedChild.getPackageType()).thenReturn(PackageType.CONTAINER);
-        when(nestedChild.getId()).thenReturn(new PackageId("apache/sling", "nested-child", "1.0.0"));
+        when(nestedChild.getId()).thenReturn(ID_NESTED_CHILD);
+        when(nestedChild.getDependencies()).thenReturn(new Dependency[]{new Dependency(ID_APPLICATION_CHILD)});
         emitter.startSubPackage("/jcr_root/etc/packages/org/apache/sling/nested-child-1.0.zip", nestedChild);
         emitter.endSubPackage();
 
@@ -68,8 +78,8 @@ public class PackagesEventsEmitterTest {
         String actual = stringWriter.toString();
 
         String expected = "/org/apache/sling/content-package.zip,apache/sling:parent:1.0.0,MIXED,,,\n" + 
-                "/org/apache/sling/content-package.zip,apache/sling:content-child:1.0.0,CONTENT,apache/sling:parent:1.0.0,/jcr_root/etc/packages/org/apache/sling/content-child-1.0.zip,/org/apache/sling/content-package.zip!/jcr_root/etc/packages/org/apache/sling/content-child-1.0.zip\n" + 
                 "/org/apache/sling/content-package.zip,apache/sling:application-child:1.0.0,APPLICATION,apache/sling:parent:1.0.0,/jcr_root/etc/packages/org/apache/sling/application-child-1.0.zip,/org/apache/sling/content-package.zip!/jcr_root/etc/packages/org/apache/sling/application-child-1.0.zip\n" + 
+                "/org/apache/sling/content-package.zip,apache/sling:content-child:1.0.0,CONTENT,apache/sling:parent:1.0.0,/jcr_root/etc/packages/org/apache/sling/content-child-1.0.zip,/org/apache/sling/content-package.zip!/jcr_root/etc/packages/org/apache/sling/content-child-1.0.zip\n" + 
                 "/org/apache/sling/content-package.zip,apache/sling:nested-child:1.0.0,CONTAINER,apache/sling:application-child:1.0.0,/jcr_root/etc/packages/org/apache/sling/nested-child-1.0.zip,/org/apache/sling/content-package.zip!/jcr_root/etc/packages/org/apache/sling/application-child-1.0.zip!/jcr_root/etc/packages/org/apache/sling/nested-child-1.0.zip\n";
         assertTrue(actual.endsWith(expected));
     }
