@@ -24,10 +24,29 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.Stack;
 
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+
+import org.apache.jackrabbit.vault.fs.config.MetaInf;
+import org.apache.jackrabbit.vault.fs.io.AccessControlHandling;
+import org.apache.jackrabbit.vault.fs.io.Archive;
+import org.apache.jackrabbit.vault.fs.io.ImportOptions;
+import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
+import org.apache.jackrabbit.vault.packaging.Dependency;
+import org.apache.jackrabbit.vault.packaging.DependencyUtil;
+import org.apache.jackrabbit.vault.packaging.PackageException;
 import org.apache.jackrabbit.vault.packaging.PackageId;
+import org.apache.jackrabbit.vault.packaging.PackageProperties;
+import org.apache.jackrabbit.vault.packaging.PackageType;
+import org.apache.jackrabbit.vault.packaging.SubPackageHandling;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 
 /**
@@ -51,6 +70,10 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
     private final Stack<String> paths = new Stack<>();
 
     private final Stack<PackageId> hierarchy = new Stack<>();
+    
+    private final Collection<VaultPackage> packages = new LinkedList<>();
+    
+    private final Map<PackageId, String> idOutputLine = new HashMap<>();
 
     private final PrintWriter writer;
 
@@ -68,22 +91,39 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
 
     @Override
     public void end() {
-        writer.close();
-        paths.clear();
-        hierarchy.clear();
+        try {
+            DependencyUtil.sort(packages);
+            for (VaultPackage pkg : packages) {
+                writer.printf(idOutputLine.get(pkg.getId()));
+            }
+
+        } catch (CyclicDependencyException e) {
+            throw new ArithmeticException(
+                "Cyclic dependencies between packages detected, cannot complete operation. "
+                    + e);
+        } finally {
+            writer.close();
+            paths.clear();
+            hierarchy.clear();
+        }
     }
 
     @Override
     public void startPackage(VaultPackage vaultPackage) {
+        PackageId id = vaultPackage.getId();
+        Dependency[] dependencies = vaultPackage.getDependencies();
         paths.add(vaultPackage.getFile().getAbsolutePath());
-        hierarchy.add(vaultPackage.getId());
+        hierarchy.add(id);
         current = vaultPackage;
 
-        writer.printf("%s,%s,%s,,,%n",
-                      paths.peek(),
-                      hierarchy.peek(),
-                      detectPackageType(vaultPackage));
+        packages.add(getDepOnlyPackage(id, dependencies));
+        idOutputLine.put(id, String.format("%s,%s,%s,,,%n",
+            paths.peek(),
+            hierarchy.peek(),
+            detectPackageType(vaultPackage)));
     }
+
+   
 
     @Override
     public void endPackage() {
@@ -93,23 +133,158 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
 
     @Override
     public void startSubPackage(String path, VaultPackage vaultPackage) {
+        PackageId id = vaultPackage.getId();
+        Dependency[] dependencies = vaultPackage.getDependencies();
         paths.add(path);
         String absolutePath = paths.stream().collect(joining(PATH_SEPARATOR_CHAR));
 
-        writer.printf("%s,%s,%s,%s,%s,%s%n",
-                      current.getFile().getAbsolutePath(),
-                      vaultPackage.getId(),
-                      detectPackageType(vaultPackage),
-                      hierarchy.peek(),
-                      path,
-                      absolutePath);
+        packages.add(getDepOnlyPackage(id, dependencies));
+        idOutputLine.put(vaultPackage.getId(), String.format("%s,%s,%s,%s,%s,%s%n",
+            current.getFile().getAbsolutePath(),
+            id,
+            detectPackageType(vaultPackage),
+            hierarchy.peek(),
+            path,
+            absolutePath));
 
-        hierarchy.add(vaultPackage.getId());
+        hierarchy.add(id);
     }
 
     @Override
     public void endSubPackage() {
         endPackage();
+    }
+    
+    static VaultPackage getDepOnlyPackage(PackageId id,
+            Dependency[] dependencies) {
+        return new VaultPackage() {
+            
+            
+            @Override
+            public PackageId getId() {
+                return id;
+            }
+            
+            @Override
+            public Dependency[] getDependencies() {
+                return dependencies;
+            }
+            
+            /** 
+             * Further methods are irrelevant for sorting
+             **/
+            
+            @Override
+            public boolean requiresRoot() {
+                return false;
+            }
+            
+            @Override
+            public SubPackageHandling getSubPackageHandling() {
+                return null;
+            }
+            
+            @Override
+            public String getProperty(String name) {
+                return null;
+            }
+            
+            @Override
+            public PackageType getPackageType() {
+                return null;
+            }
+            
+            @Override
+            public String getLastWrappedBy() {
+                return null;
+            }
+            
+            @Override
+            public Calendar getLastWrapped() {
+                return null;
+            }
+            
+            @Override
+            public String getLastModifiedBy() {
+                return null;
+            }
+            
+            @Override
+            public Calendar getLastModified() {
+                return null;
+            }
+            
+            @Override
+            public String getDescription() {
+                return null;
+            }
+
+            @Override
+            public Calendar getDateProperty(String name) {
+                return null;
+            }
+            
+            @Override
+            public String getCreatedBy() {
+                return null;
+            }
+            
+            @Override
+            public Calendar getCreated() {
+                return null;
+            }
+            
+            @Override
+            public AccessControlHandling getACHandling() {
+                return null;
+            }
+            
+            @Override
+            public boolean isValid() {
+                return false;
+            }
+            
+            @Override
+            public boolean isClosed() {
+                return false;
+            }
+            
+            @Override
+            public long getSize() {
+                return 0;
+            }
+            
+            @Override
+            public PackageProperties getProperties() {
+                return null;
+            }
+            
+            @Override
+            public MetaInf getMetaInf() {
+                return null;
+            }
+
+            @Override
+            public File getFile() {
+                return null;
+            }
+            
+            @Override
+            public Archive getArchive() {
+                return null;
+            }
+            
+            @Override
+            public void extract(Session session, ImportOptions opts)
+                    throws RepositoryException, PackageException {
+                //no invocation for dependency calculation
+            }
+            
+            @Override
+            public void close() {
+                //no invocation for dependency calculation
+            }
+        };
     }
 
 }
