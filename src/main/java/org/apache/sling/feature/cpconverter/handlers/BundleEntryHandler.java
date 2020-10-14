@@ -28,12 +28,15 @@ import java.util.jar.Manifest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.felix.utils.manifest.Clause;
+import org.apache.felix.utils.manifest.Parser;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.artifacts.InputStreamArtifactWriter;
 import org.codehaus.plexus.util.StringUtils;
+import org.osgi.framework.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,10 +72,11 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         String artifactId;
         String version;
         String classifier = null;
+        Manifest manifest;
 
         try (JarInputStream jarInput = new JarInputStream(archive.openInputStream(entry))) {
             Properties properties = readGav(entry.getName(), jarInput);
-            Manifest manifest = jarInput.getManifest();
+            manifest = jarInput.getManifest();
 
             if (!properties.isEmpty()) {
                 groupId = getCheckedProperty(properties, NAME_GROUP_ID);
@@ -120,6 +124,13 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
             converter.getArtifactsDeployer().deploy(new InputStreamArtifactWriter(input), id);
 
             converter.getFeaturesManager().addArtifact(runMode, id, startLevel);
+
+            String epHeader = manifest.getMainAttributes().getValue(Constants.EXPORT_PACKAGE);
+            if (epHeader != null) {
+                for (Clause clause : Parser.parseHeader(epHeader)) {
+                    converter.getFeaturesManager().addAPIRegionExport(runMode, clause.getName());
+                }
+            }
         }
     }
 

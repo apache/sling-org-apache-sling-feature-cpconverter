@@ -25,8 +25,11 @@ import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
@@ -44,20 +47,26 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.mockito.Spy;
 
 public class AclManagerTest {
-
     private AclManager aclManager;
+    private Path tempDir;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         aclManager = new DefaultAclManager();
+        tempDir = Files.createTempDirectory(getClass().getSimpleName());
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
         aclManager = null;
+
+        // Delete the temp dir again
+        Files.walk(tempDir)
+            .sorted(Comparator.reverseOrder())
+            .map(Path::toFile)
+            .forEach(File::delete);
     }
 
     @Test
@@ -79,29 +88,29 @@ public class AclManagerTest {
         when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
 
-        FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager());
+        FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
         when(fm.getTargetFeature()).thenReturn(feature);
-        
+
         aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
 
-        
+
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
 
         // acs-commons-on-deploy-scripts-service will be missed
         String expected = "create path (rep:AuthorizableFolder) /asd/public\n" + // SLING-8586
                 "create service user acs-commons-package-replication-status-event-service with path /asd/public\n" +
-                "create path (sling:Folder) /asd\n" + 
-                "create path (sling:Folder) /asd/not\n" + 
-                "create path (sling:Folder) /asd/not/system\n" + 
-                "create path (sling:Folder) /asd/not/system/user\n" + 
+                "create path (sling:Folder) /asd\n" +
+                "create path (sling:Folder) /asd/not\n" +
+                "create path (sling:Folder) /asd/not/system\n" +
+                "create path (sling:Folder) /asd/not/system/user\n" +
                 "create path (sling:Folder) /asd/not/system/user/path\n" +
                 // see SLING-8561
-                // "set ACL for acs-commons-package-replication-status-event-service\n" + 
-                // "allow jcr:read,crx:replicate,jcr:removeNode on /asd/public\n" + 
-                // "end\n" + 
-                "set ACL for acs-commons-ensure-oak-index-service\n" + 
-                "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/not/system/user/path\n" + 
+                // "set ACL for acs-commons-package-replication-status-event-service\n" +
+                // "allow jcr:read,crx:replicate,jcr:removeNode on /asd/public\n" +
+                // "end\n" +
+                "set ACL for acs-commons-ensure-oak-index-service\n" +
+                "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/not/system/user/path\n" +
                 "end\n";
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -120,9 +129,9 @@ public class AclManagerTest {
         when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
 
-        FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager());
+        FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
         when(fm.getTargetFeature()).thenReturn(feature);
-        
+
         aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);

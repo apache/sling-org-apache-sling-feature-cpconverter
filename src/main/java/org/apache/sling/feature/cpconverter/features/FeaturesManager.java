@@ -33,6 +33,8 @@ public interface FeaturesManager {
 
     void addArtifact(String runMode, ArtifactId id, Integer startOrder);
 
+    void addAPIRegionExport(String runMode, String exportedPackage);
+
     void addConfiguration(String runMode, String pid, Dictionary<String, Object> configurationProperties);
 
     void serialize() throws Exception;
