@@ -21,8 +21,10 @@ import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelCo
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -41,13 +43,14 @@ import org.apache.sling.feature.Extensions;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.interpolator.SimpleVariablesInterpolator;
 import org.apache.sling.feature.cpconverter.interpolator.VariablesInterpolator;
+import org.apache.sling.feature.extension.apiregions.api.ApiExport;
+import org.apache.sling.feature.extension.apiregions.api.ApiRegion;
+import org.apache.sling.feature.extension.apiregions.api.ApiRegions;
 import org.apache.sling.feature.io.json.FeatureJSONWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class DefaultFeaturesManager implements FeaturesManager {
-
-    private static final String JAVA_IO_TMPDIR_PROPERTY = "java.io.tmpdir";
 
     private static final String CONTENT_PACKAGES = "content-packages";
 
@@ -67,6 +70,8 @@ public class DefaultFeaturesManager implements FeaturesManager {
 
     private final File featureModelsOutputDirectory;
 
+    private final Map<String, List<String>> apiRegionExports = new HashMap<>();
+
     private final String artifactIdOverride;
 
     private final String prefix;
@@ -75,10 +80,16 @@ public class DefaultFeaturesManager implements FeaturesManager {
 
     private final List<String> targetAPIRegions = new ArrayList<>();
 
+    private String exportsToAPIRegion = null;
+
     private Feature targetFeature = null;
 
-    public DefaultFeaturesManager() {
-        this(true, 20, new File(System.getProperty(JAVA_IO_TMPDIR_PROPERTY)), null, null, null);
+    DefaultFeaturesManager() {
+        this(null);
+    }
+
+    public DefaultFeaturesManager(File tempDir) {
+        this(true, 20, tempDir, null, null, null);
     }
 
     public DefaultFeaturesManager(boolean mergeConfigurations,
@@ -99,27 +110,7 @@ public class DefaultFeaturesManager implements FeaturesManager {
     public void init(String groupId, String artifactId, String version) {
         targetFeature = new Feature(new ArtifactId(groupId, artifactId, version, null, SLING_OSGI_FEATURE_TILE_TYPE));
 
-        initAPIRegions(targetFeature);
-
         runModes.clear();
-    }
-
-    private void initAPIRegions(Feature feature) {
-        if (targetAPIRegions.size() > 0) {
-            Extension apiRegions = new Extension(ExtensionType.JSON, "api-regions", ExtensionState.OPTIONAL);
-            StringBuilder jsonBuilder = new StringBuilder("[");
-            for (String apiRegion : targetAPIRegions) {
-                if (jsonBuilder.length() > 1) {
-                    jsonBuilder.append(',');
-                }
-                jsonBuilder.append("{\"name\":\"");
-                jsonBuilder.append(apiRegion);
-                jsonBuilder.append("\",\"exports\":[]}");
-            }
-            jsonBuilder.append("]");
-            apiRegions.setJSON(jsonBuilder.toString());
-            feature.getExtensions().add(apiRegions);
-        }
     }
 
     @Override
@@ -141,7 +132,6 @@ public class DefaultFeaturesManager implements FeaturesManager {
 
         return runModes.computeIfAbsent(runMode, k -> {
             Feature f = new Feature(newId);
-            initAPIRegions(f);
             return f;
         });
     }
@@ -197,6 +187,18 @@ public class DefaultFeaturesManager implements FeaturesManager {
     }
 
     @Override
+    public void addAPIRegionExport(String runMode, String exportedPackage) {
+        if (exportsToAPIRegion == null)
+            return; // Ignore if we're not exporting to an API region
+
+
+        getRunMode(runMode); // Trigger runmode initialization
+
+        List<String> l = apiRegionExports.computeIfAbsent(runMode, r -> new ArrayList<>());
+        l.add(exportedPackage);
+    }
+
+    @Override
     public void addConfiguration(String runMode, String pid, Dictionary<String, Object> configurationProperties) {
         Feature feature = getRunMode(runMode);
         Configuration configuration = feature.getConfigurations().getConfiguration(pid);
@@ -225,6 +227,31 @@ public class DefaultFeaturesManager implements FeaturesManager {
         }
     }
 
+    private void addAPIRegions(Feature feature, List<String> exportedPackages) throws IOException {
+        if (exportedPackages == null)
+            exportedPackages = Collections.emptyList();
+
+        if (exportedPackages.size() == 0 && targetAPIRegions.size() == 0)
+            return; // Nothing to do.
+
+        ApiRegions regions = new ApiRegions();
+        if (exportsToAPIRegion != null) {
+            ApiRegion ar = new ApiRegion(exportsToAPIRegion);
+            exportedPackages
+                .stream()
+                .forEach(e -> ar.add(new ApiExport(e)));
+            regions.add(ar);
+        }
+
+        targetAPIRegions
+            .stream()
+            .forEach(r -> regions.add(new ApiRegion(r)));
+
+        Extension apiRegions = new Extension(ExtensionType.JSON, "api-regions", ExtensionState.OPTIONAL);
+        apiRegions.setJSONStructure(regions.toJSONArray());
+        feature.getExtensions().add(apiRegions);
+    }
+
     @Override
     public void serialize() throws Exception {
         RunmodeMapper runmodeMapper = RunmodeMapper.open(featureModelsOutputDirectory);
@@ -242,6 +269,8 @@ public class DefaultFeaturesManager implements FeaturesManager {
     }
 
     private void serialize(Feature feature, String runMode, RunmodeMapper runmodeMapper) throws Exception {
+        addAPIRegions(feature, apiRegionExports.get(runMode));
+
         StringBuilder fileNameBuilder = new StringBuilder()
             .append((prefix != null) ? prefix : "")
             .append(feature.getId().getArtifactId());
@@ -284,6 +313,11 @@ public class DefaultFeaturesManager implements FeaturesManager {
     public synchronized DefaultFeaturesManager setAPIRegions(List<String> regions) {
         targetAPIRegions.clear();
         targetAPIRegions.addAll(regions);
+        return this;
+    }
+
+    public synchronized DefaultFeaturesManager setExportToAPIRegion(String region) {
+        exportsToAPIRegion = region;
         return this;
     }
 

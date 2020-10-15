@@ -83,6 +83,9 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Option(names = { "-r", "--api-region" }, description = "The API Regions assigned to the generated features", required = false)
     private List<String> apiRegions;
 
+    @Option(names = { "-e", "--exports-to-region" }, description = "Packages exported by bundles in the content packages are exported in the named region", required = false)
+    private String exportsToRegion;
+
     @Option(names = {"-D", "--define"}, description = "Define a system property", required = false)
     private Map<String, String> properties = new HashMap<>();
 
@@ -131,6 +134,9 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                                                             properties);
             if (apiRegions != null)
                 featuresManager.setAPIRegions(apiRegions);
+
+            if (exportsToRegion != null)
+                featuresManager.setExportToAPIRegion(exportsToRegion);
 
             ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation)
                                                              .setFeaturesManager(featuresManager)

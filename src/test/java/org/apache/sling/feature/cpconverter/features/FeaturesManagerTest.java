@@ -20,18 +20,44 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class FeaturesManagerTest {
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonString;
+import javax.json.stream.JsonParser;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+public class FeaturesManagerTest {
     private FeaturesManager featuresManager;
+    private Path tempDir;
 
     @Before
-    public void setUp() {
-        featuresManager = new DefaultFeaturesManager();
+    public void setUp() throws IOException {
+        tempDir = Files.createTempDirectory(getClass().getSimpleName());
+        featuresManager = new DefaultFeaturesManager(tempDir.toFile());
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws IOException {
         featuresManager = null;
+
+        // Delete the temp dir again
+        Files.walk(tempDir)
+            .sorted(Comparator.reverseOrder())
+            .map(Path::toFile)
+            .forEach(File::delete);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -44,4 +70,60 @@ public class FeaturesManagerTest {
         featuresManager.addArtifact(null, null);
     }
 
+    @Test
+    public void testExportsToAPIRegion() throws Exception {
+        ((DefaultFeaturesManager) featuresManager).setExportToAPIRegion("global");
+        ((DefaultFeaturesManager) featuresManager).setAPIRegions(Collections.singletonList("deprecated"));
+        featuresManager.init("g", "a", "1");
+        featuresManager.addAPIRegionExport(null, "org.foo.a");
+        featuresManager.addAPIRegionExport(null, "org.foo.b");
+        featuresManager.addAPIRegionExport("rm1", "x.y");
+
+        featuresManager.serialize();
+
+        try (InputStream in = new FileInputStream(new File(tempDir.toFile(), "a.json"))) {
+            JsonParser p = Json.createParser(in);
+            JsonObject jo = p.getObject();
+
+            assertEquals("g:a:slingosgifeature:1", jo.getString("id"));
+
+            JsonArray ja = jo.getJsonArray("api-regions:JSON|false");
+            assertEquals(2, ja.size());
+
+            JsonObject ar1 = ja.getJsonObject(0);
+            assertEquals("global", ar1.getString("name"));
+            JsonArray are1 = ar1.getJsonArray("exports");
+
+            assertEquals(Arrays.asList("org.foo.a", "org.foo.b"),
+                    are1.getValuesAs(JsonString::getString));
+
+            JsonObject ar2 = ja.getJsonObject(1);
+            assertEquals("deprecated", ar2.getString("name"));
+            JsonArray are2 = ar2.getJsonArray("exports");
+            assertTrue(are2 == null || are2.isEmpty());
+        }
+
+        // Runmode file:
+        try (InputStream in = new FileInputStream(new File(tempDir.toFile(), "a-rm1.json"))) {
+            JsonParser p = Json.createParser(in);
+            JsonObject jo = p.getObject();
+
+            assertEquals("g:a:slingosgifeature:rm1:1", jo.getString("id"));
+
+            JsonArray ja = jo.getJsonArray("api-regions:JSON|false");
+            assertEquals(2, ja.size());
+
+            JsonObject ar1 = ja.getJsonObject(0);
+            assertEquals("global", ar1.getString("name"));
+            JsonArray are1 = ar1.getJsonArray("exports");
+
+            assertEquals(Arrays.asList("x.y"),
+                    are1.getValuesAs(JsonString::getString));
+
+            JsonObject ar2 = ja.getJsonObject(1);
+            assertEquals("deprecated", ar2.getString("name"));
+            JsonArray are2 = ar2.getJsonArray("exports");
+            assertTrue(are2 == null || are2.isEmpty());
+        }
+    }
 }
