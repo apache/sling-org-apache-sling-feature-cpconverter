@@ -307,11 +307,13 @@ public class ContentPackage2FeatureModelConverterTest {
 
                 JsonObject globalJO = ja.getJsonObject(0);
                 assertEquals("global", globalJO.getString("name"));
-                assertEquals(0, globalJO.getJsonArray("exports").size());
+                JsonArray globalExports = globalJO.getJsonArray("exports");
+                assertTrue(globalExports == null || globalExports.isEmpty());
 
                 JsonObject foobarJO = ja.getJsonObject(1);
                 assertEquals("foo.bar", foobarJO.getString("name"));
-                assertEquals(0, foobarJO.getJsonArray("exports").size());
+                JsonArray fooExports = foobarJO.getJsonArray("exports");
+                assertTrue(fooExports == null || fooExports.isEmpty());
             }
 
         } finally {
@@ -480,7 +482,8 @@ public class ContentPackage2FeatureModelConverterTest {
 
             JsonObject regionJO = ja.getJsonObject(0);
             assertEquals(region, regionJO.getString("name"));
-            assertEquals(0, regionJO.getJsonArray("exports").size());
+            JsonArray exports = regionJO.getJsonArray("exports");
+            assertTrue(exports == null || exports.isEmpty());
         }
     }
 

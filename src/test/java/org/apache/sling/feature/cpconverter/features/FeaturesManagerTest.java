@@ -100,7 +100,7 @@ public class FeaturesManagerTest {
             JsonObject ar2 = ja.getJsonObject(1);
             assertEquals("deprecated", ar2.getString("name"));
             JsonArray are2 = ar2.getJsonArray("exports");
-            assertTrue(are2.isEmpty());
+            assertTrue(are2 == null || are2.isEmpty());
         }
 
         // Runmode file:
@@ -123,7 +123,7 @@ public class FeaturesManagerTest {
             JsonObject ar2 = ja.getJsonObject(1);
             assertEquals("deprecated", ar2.getString("name"));
             JsonArray are2 = ar2.getJsonArray("exports");
-            assertTrue(are2.isEmpty());
+            assertTrue(are2 == null || are2.isEmpty());
         }
     }
 }

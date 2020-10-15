@@ -21,6 +21,7 @@ import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelCo
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -30,7 +31,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 import org.apache.sling.feature.Artifact;
 import org.apache.sling.feature.ArtifactId;
@@ -43,6 +43,9 @@ import org.apache.sling.feature.Extensions;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.interpolator.SimpleVariablesInterpolator;
 import org.apache.sling.feature.cpconverter.interpolator.VariablesInterpolator;
+import org.apache.sling.feature.extension.apiregions.api.ApiExport;
+import org.apache.sling.feature.extension.apiregions.api.ApiRegion;
+import org.apache.sling.feature.extension.apiregions.api.ApiRegions;
 import org.apache.sling.feature.io.json.FeatureJSONWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -224,42 +227,28 @@ public class DefaultFeaturesManager implements FeaturesManager {
         }
     }
 
-    private void addAPIRegions(Feature feature, List<String> exportedPackages) {
+    private void addAPIRegions(Feature feature, List<String> exportedPackages) throws IOException {
         if (exportedPackages == null)
             exportedPackages = Collections.emptyList();
 
         if (exportedPackages.size() == 0 && targetAPIRegions.size() == 0)
             return; // Nothing to do.
 
-        StringBuilder jsonBuilder = new StringBuilder("[");
+        ApiRegions regions = new ApiRegions();
         if (exportsToAPIRegion != null) {
-            jsonBuilder.append("{\"name\":\"");
-            jsonBuilder.append(exportsToAPIRegion);
-            jsonBuilder.append("\",\"exports\":[");
-            jsonBuilder.append(exportedPackages
-                    .stream()
-                    .map(s -> '"' + s + '"')
-                    .collect(Collectors.joining(",")));
-            jsonBuilder.append("]}");
+            ApiRegion ar = new ApiRegion(exportsToAPIRegion);
+            exportedPackages
+                .stream()
+                .forEach(e -> ar.add(new ApiExport(e)));
+            regions.add(ar);
         }
 
-        boolean first = true;
-        for (String apiRegion : targetAPIRegions) {
-            if (apiRegion.equals(exportsToAPIRegion))
-                continue; // We've handled that one already
-
-            if (exportsToAPIRegion != null || !first)
-                jsonBuilder.append(',');
-            first = false;
-
-            jsonBuilder.append("{\"name\":\"");
-            jsonBuilder.append(apiRegion);
-            jsonBuilder.append("\",\"exports\":[]}");
-        }
-        jsonBuilder.append(']');
+        targetAPIRegions
+            .stream()
+            .forEach(r -> regions.add(new ApiRegion(r)));
 
         Extension apiRegions = new Extension(ExtensionType.JSON, "api-regions", ExtensionState.OPTIONAL);
-        apiRegions.setJSON(jsonBuilder.toString());
+        apiRegions.setJSONStructure(regions.toJSONArray());
         feature.getExtensions().add(apiRegions);
     }
 
