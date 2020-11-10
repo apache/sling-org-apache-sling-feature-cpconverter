@@ -16,17 +16,17 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
-import java.io.InputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.regex.Matcher;
+import org.xml.sax.Attributes;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.acl.SystemUser;
 import org.apache.sling.feature.cpconverter.shared.AbstractJcrNodeParser;
-import org.xml.sax.Attributes;
+import org.apache.sling.feature.cpconverter.shared.RepoPath;
+
+import java.io.InputStream;
+import java.util.regex.Matcher;
 
 public final class SystemUsersEntryHandler extends AbstractRegexEntryHandler {
 
@@ -42,7 +42,7 @@ public final class SystemUsersEntryHandler extends AbstractRegexEntryHandler {
             path = matcher.group(1);
         }
 
-        Path currentPath = Paths.get(path).getParent();
+        RepoPath currentPath = new RepoPath(path).getParent();
 
         SystemUserParser systemUserParser = new SystemUserParser(converter, currentPath);
         try (InputStream input = archive.openInputStream(entry)) {
@@ -58,9 +58,9 @@ public final class SystemUsersEntryHandler extends AbstractRegexEntryHandler {
 
         private final ContentPackage2FeatureModelConverter converter;
 
-        private final Path path;
+        private final RepoPath path;
 
-        public SystemUserParser(ContentPackage2FeatureModelConverter converter, Path path) {
+        public SystemUserParser(ContentPackage2FeatureModelConverter converter, RepoPath path) {
             super(REP_SYSTEM_USER);
             this.converter = converter;
             this.path = path;

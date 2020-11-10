@@ -86,7 +86,7 @@ public class PrivilegesHandlerTest {
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
-        assertTrue(repoinitExtension.getText().contains("register privilege rx:replicate\n"));
+        assertTrue(repoinitExtension.getText().contains("register privilege rx:replicate" + System.lineSeparator()));
     }
 
 }

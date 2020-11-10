@@ -575,21 +575,22 @@ public class ContentPackage2FeatureModelConverterTest {
             Extension repoinitExtension = feature.getExtensions().getByName("repoinit");
             assertNotNull(repoinitExtension);
 
-            String expected = "register nodetypes\n" +
-                    "<<===\n" +
-                    "<< <'sling'='http://sling.apache.org/jcr/sling/1.0'>\n" +
-                    "<< <'nt'='http://www.jcp.org/jcr/nt/1.0'>\n" +
-                    "<< <'rep'='internal'>\n" +
-                    "\n" +
-                    "<< [sling:Folder] > nt:folder\n" +
-                    "<<   - * (undefined) multiple\n" +
-                    "<<   - * (undefined)\n" +
-                    "<<   + * (nt:base) = sling:Folder version\n" +
-                    "\n" +
-                    "<< [rep:RepoAccessControllable]\n" +
-                    "<<   mixin\n" +
-                    "<<   + rep:repoPolicy (rep:Policy) protected ignore\n" +
-                    "\n===>>\n";
+            String expected = "register nodetypes" + System.lineSeparator() +
+                    "<<===" + System.lineSeparator() +
+                    "<< <'sling'='http://sling.apache.org/jcr/sling/1.0'>" + System.lineSeparator() +
+                    "<< <'nt'='http://www.jcp.org/jcr/nt/1.0'>" + System.lineSeparator() +
+                    "<< <'rep'='internal'>" + System.lineSeparator() +
+                    "" + System.lineSeparator() +
+                    "<< [sling:Folder] > nt:folder" + System.lineSeparator() +
+                    "<<   - * (undefined) multiple" + System.lineSeparator() +
+                    "<<   - * (undefined)" + System.lineSeparator() +
+                    "<<   + * (nt:base) = sling:Folder version" + System.lineSeparator() +
+                    System.lineSeparator() +
+                    "<< [rep:RepoAccessControllable]" + System.lineSeparator() +
+                    "<<   mixin" + System.lineSeparator() +
+                    "<<   + rep:repoPolicy (rep:Policy) protected ignore" + System.lineSeparator() +
+                    System.lineSeparator() +
+                    "===>>" + System.lineSeparator();
             String actual = repoinitExtension.getText();
             assertEquals(expected, actual);
         }
