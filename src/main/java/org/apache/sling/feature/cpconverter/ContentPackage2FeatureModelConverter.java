@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
@@ -267,7 +268,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         idPackageMapping.remove(pack.getId());
     }
 
-    public void processSubPackage(String path, String runMode, VaultPackage vaultPackage) throws Exception {
+    public void processSubPackage(String path, String runMode, VaultPackage vaultPackage, boolean isEmbeddedPackage) throws Exception {
         requireNonNull(path, "Impossible to process a null vault package");
         requireNonNull(vaultPackage, "Impossible to process a null vault package");
 
@@ -286,12 +287,22 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         // temporary swap the main handler to collect stuff
         VaultPackageAssembler handler = mainPackageAssembler;
         assemblers.add(handler);
+        Properties parentProps = handler.getPackageProperties();
+        boolean isContainerPackage = PackageType.CONTAINER.equals(parentProps.get(PackageProperties.NAME_PACKAGE_TYPE));
         mainPackageAssembler = clonedPackage;
 
         // scan the detected package, first
         traverse(vaultPackage);
 
         clonedPackage.updateDependencies(mutableContentsIds);
+        
+        //set dependency to parent package if the parent package is an application package & subpackage is embedded
+        if (isEmbeddedPackage && !isContainerPackage) {
+            PackageId parentId = new PackageId((String)parentProps.get(PackageProperties.NAME_GROUP), 
+                                                (String)parentProps.get(PackageProperties.NAME_NAME),
+                                                (String)parentProps.get(PackageProperties.NAME_VERSION));
+            clonedPackage.addDependency(new Dependency(parentId));
+        }
 
         File contentPackageArchive = clonedPackage.createPackage();
 

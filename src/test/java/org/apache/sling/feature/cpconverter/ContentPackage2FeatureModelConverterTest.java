@@ -49,9 +49,11 @@ import javax.json.JsonObject;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
+import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
+import org.apache.maven.model.Dependency;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Artifacts;
 import org.apache.sling.feature.Extension;
@@ -121,7 +123,7 @@ public class ContentPackage2FeatureModelConverterTest {
 
     @Test(expected = NullPointerException.class)
     public void processRequiresNotNullPackage() throws Exception {
-        converter.processSubPackage("", null, null);
+        converter.processSubPackage("", null, null, false);
     }
 
     @Test
@@ -421,6 +423,30 @@ public class ContentPackage2FeatureModelConverterTest {
                  .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
                  .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                  .convert(packageFile);
+    }
+    
+    /** app package containing another app package must lead to an explicit dependency from  
+     *  embedded to embedding package to reflect the implicit installation order via osgi Installer
+    **/
+    
+    @Test
+    public void verifyEmbeddedDependency() throws Exception {
+        URL packageUrl = getClass().getResource("embedded.package.test-0.0.1.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+
+        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
+                 .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                 .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                 .convert(packageFile);
+        
+        File contentPackage = new File(outputDirectory, "asd/sample/embedded.test.app/0.0.0/embedded.test.app-0.0.0-cp2fm-converted.zip");
+        VaultPackage vaultPackage = new PackageManagerImpl().open(contentPackage);
+        String dependencies = vaultPackage.getProperties().getProperty(PackageProperties.NAME_DEPENDENCIES);
+        org.apache.jackrabbit.vault.packaging.Dependency dep = org.apache.jackrabbit.vault.packaging.Dependency.fromString(dependencies);
+        PackageId targetId = PackageId.fromString("asd/sample:embedded.package.test:0.0.1-cp2fm-converted");
+        assertTrue(dep.matches(targetId));
     }
 
     @Test(expected = IllegalStateException.class)
