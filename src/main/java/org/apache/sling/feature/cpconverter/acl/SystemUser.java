@@ -16,16 +16,17 @@
  */
 package org.apache.sling.feature.cpconverter.acl;
 
-import java.nio.file.Path;
+import org.apache.sling.feature.cpconverter.shared.RepoPath;
+
 import java.util.Objects;
 
 public class SystemUser {
 
     private final String id;
 
-    private final Path path;
+    private final RepoPath path;
 
-    public SystemUser(String id, Path path) {
+    public SystemUser(String id, RepoPath path) {
         this.id = id;
         this.path = path;
     }
@@ -34,7 +35,7 @@ public class SystemUser {
         return id;
     }
 
-    public Path getPath() {
+    public RepoPath getPath() {
         return path;
     }
 

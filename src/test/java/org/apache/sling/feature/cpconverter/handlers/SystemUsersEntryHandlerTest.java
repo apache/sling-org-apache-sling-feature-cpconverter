@@ -81,8 +81,8 @@ public class SystemUsersEntryHandlerTest {
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
         assertTrue(repoinitExtension.isRequired());
 
-        String expected = "create path (rep:AuthorizableFolder) /home/users/system/asd-share-commons\n" + // SLING-8586
-                "create service user asd-share-commons-asd-index-definition-reader-service with path /home/users/system/asd-share-commons\n";
+        String expected = "create path (rep:AuthorizableFolder) /home/users/system/asd-share-commons" + System.lineSeparator() + // SLING-8586
+                "create service user asd-share-commons-asd-index-definition-reader-service with path /home/users/system/asd-share-commons" + System.lineSeparator();
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
 

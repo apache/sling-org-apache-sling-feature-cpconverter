@@ -16,15 +16,24 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
-import static org.apache.jackrabbit.JcrConstants.JCR_PRIMARYTYPE;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.jackrabbit.vault.fs.io.Archive;
+import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
+import org.apache.jackrabbit.vault.util.PlatformNameFormat;
+import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.acl.Acl;
+import org.apache.sling.feature.cpconverter.acl.AclManager;
+import org.apache.sling.feature.cpconverter.shared.AbstractJcrNodeParser;
+import org.apache.sling.feature.cpconverter.shared.RepoPath;
 
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -37,16 +46,7 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.jackrabbit.vault.fs.io.Archive;
-import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
-import org.apache.jackrabbit.vault.util.PlatformNameFormat;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.acl.Acl;
-import org.apache.sling.feature.cpconverter.acl.AclManager;
-import org.apache.sling.feature.cpconverter.shared.AbstractJcrNodeParser;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
+import static org.apache.jackrabbit.JcrConstants.JCR_PRIMARYTYPE;
 
 public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
 
@@ -79,8 +79,8 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
         StringWriter stringWriter = new StringWriter();
         handler.setResult(new StreamResult(stringWriter));
 
-        RepPolicyParser systemUserParser = new RepPolicyParser(Paths.get(resourcePath),
-                                                               Paths.get(PlatformNameFormat.getRepositoryPath(resourcePath)),
+        RepPolicyParser systemUserParser = new RepPolicyParser(new RepoPath(resourcePath),
+                                                               new RepoPath(PlatformNameFormat.getRepositoryPath(resourcePath)),
                                                                converter.getAclManager(),
                                                                handler);
         boolean hasRejectedAcls;
@@ -124,9 +124,9 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
 
         private final Stack<Acl> acls = new Stack<>();
 
-        private final Path path;
+        private final RepoPath path;
 
-        private final Path repositoryPath;
+        private final RepoPath repositoryPath;
 
         private final AclManager aclManager;
 
@@ -140,7 +140,7 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
         // just internal pointer for every iteration
         private boolean processCurrentAcl = false;
 
-        public RepPolicyParser(Path path, Path repositoryPath, AclManager aclManager, TransformerHandler handler) {
+        public RepPolicyParser(RepoPath path, RepoPath repositoryPath, AclManager aclManager, TransformerHandler handler) {
             super(REP_ACL);
             this.path = path;
             this.repositoryPath = repositoryPath;

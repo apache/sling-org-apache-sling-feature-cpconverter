@@ -16,28 +16,13 @@
  */
 package org.apache.sling.feature.cpconverter.acl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.io.File;
-import java.io.StringReader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
+import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.repoinit.parser.RepoInitParser;
 import org.apache.sling.repoinit.parser.RepoInitParsingException;
@@ -47,6 +32,21 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import java.io.File;
+import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class AclManagerTest {
     private AclManager aclManager;
@@ -71,12 +71,12 @@ public class AclManagerTest {
 
     @Test
     public void makeSureAclsAreCreatedOnlyoutsideSytemUsersPaths() throws Exception {
-        aclManager.addSystemUser(new SystemUser("acs-commons-ensure-oak-index-service", Paths.get("/asd/public")));
+        aclManager.addSystemUser(new SystemUser("acs-commons-ensure-oak-index-service", new RepoPath("/asd/public")));
 
         // emulate a second iteration of conversion
         aclManager.reset();
 
-        aclManager.addSystemUser(new SystemUser("acs-commons-package-replication-status-event-service", Paths.get("/asd/public")));
+        aclManager.addSystemUser(new SystemUser("acs-commons-package-replication-status-event-service", new RepoPath("/asd/public")));
 
         aclManager.addAcl("acs-commons-ensure-oak-index-service", newAcl("allow", "jcr:read,rep:write,rep:indexDefinitionManagement", "/asd/not/system/user/path"));
         aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl("allow", "jcr:read,crx:replicate,jcr:removeNode", "/asd/public"));
@@ -98,20 +98,20 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         // acs-commons-on-deploy-scripts-service will be missed
-        String expected = "create path (rep:AuthorizableFolder) /asd/public\n" + // SLING-8586
-                "create service user acs-commons-package-replication-status-event-service with path /asd/public\n" +
-                "create path (sling:Folder) /asd\n" +
-                "create path (sling:Folder) /asd/not\n" +
-                "create path (sling:Folder) /asd/not/system\n" +
-                "create path (sling:Folder) /asd/not/system/user\n" +
-                "create path (sling:Folder) /asd/not/system/user/path\n" +
+        String expected = "create path (rep:AuthorizableFolder) /asd/public" + System.lineSeparator() + // SLING-8586
+                "create service user acs-commons-package-replication-status-event-service with path /asd/public" + System.lineSeparator() +
+                "create path (sling:Folder) /asd" + System.lineSeparator() +
+                "create path (sling:Folder) /asd/not" + System.lineSeparator() +
+                "create path (sling:Folder) /asd/not/system" + System.lineSeparator() +
+                "create path (sling:Folder) /asd/not/system/user" + System.lineSeparator() +
+                "create path (sling:Folder) /asd/not/system/user/path" + System.lineSeparator() +
                 // see SLING-8561
                 // "set ACL for acs-commons-package-replication-status-event-service\n" +
                 // "allow jcr:read,crx:replicate,jcr:removeNode on /asd/public\n" +
                 // "end\n" +
-                "set ACL for acs-commons-ensure-oak-index-service\n" +
-                "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/not/system/user/path\n" +
-                "end\n";
+                "set ACL for acs-commons-ensure-oak-index-service" + System.lineSeparator() +
+                "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/not/system/user/path" + System.lineSeparator() +
+                "end" + System.lineSeparator();
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
 
@@ -122,7 +122,7 @@ public class AclManagerTest {
 
     @Test
     public void pathWithSpecialCharactersTest() throws RepoInitParsingException {
-        aclManager.addSystemUser(new SystemUser("sys-usr", Paths.get("/home/users/system")));
+        aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system")));
         aclManager.addAcl("sys-usr", newAcl("allow", "jcr:read", "/content/_cq_tags"));
         aclManager.addAcl("sys-usr", newAcl("allow", "jcr:write", "/content/cq:tags"));
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
@@ -137,14 +137,14 @@ public class AclManagerTest {
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
 
-        String expected = "create path (rep:AuthorizableFolder) /home/users/system\n" + // SLING-8586
-                "create service user sys-usr with path /home/users/system\n" +
-                "create path (sling:Folder) /content\n" +
-                "create path (sling:Folder) /content/cq:tags\n" +
-                "set ACL for sys-usr\n" +
-                "allow jcr:read on /content/cq:tags\n" +
-                "allow jcr:write on /content/cq:tags\n" +
-                "end\n";
+        String expected = "create path (rep:AuthorizableFolder) /home/users/system" + System.lineSeparator() + // SLING-8586
+                "create service user sys-usr with path /home/users/system" + System.lineSeparator() +
+                "create path (sling:Folder) /content" + System.lineSeparator() +
+                "create path (sling:Folder) /content/cq:tags" + System.lineSeparator() +
+                "set ACL for sys-usr" + System.lineSeparator() +
+                "allow jcr:read on /content/cq:tags" + System.lineSeparator() +
+                "allow jcr:write on /content/cq:tags" + System.lineSeparator() +
+                "end" + System.lineSeparator();
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -155,7 +155,7 @@ public class AclManagerTest {
     }
 
     private static Acl newAcl(String operation, String privileges, String path) {
-        return new Acl(operation, privileges, Paths.get(path), Paths.get(PlatformNameFormat.getRepositoryPath(path)));
+        return new Acl(operation, privileges, new RepoPath(path), new RepoPath(PlatformNameFormat.getRepositoryPath(path)));
     }
 
 }

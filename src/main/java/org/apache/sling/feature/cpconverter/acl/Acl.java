@@ -16,7 +16,8 @@
  */
 package org.apache.sling.feature.cpconverter.acl;
 
-import java.nio.file.Path;
+import org.apache.sling.feature.cpconverter.shared.RepoPath;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -29,13 +30,13 @@ public final class Acl {
 
     private final String privileges;
 
-    private final Path path;
+    private final RepoPath path;
 
-    private final Path repositoryPath;
+    private final RepoPath repositoryPath;
 
     private final List<String> restrictions = new LinkedList<>();
 
-    public Acl(String operation, String privileges, Path path, Path repositoryPath) {
+    public Acl(String operation, String privileges, RepoPath path, RepoPath repositoryPath) {
         this.operation = operation;
         this.privileges = privileges;
         this.path = path;
@@ -56,11 +57,11 @@ public final class Acl {
         return privileges;
     }
 
-    public Path getPath() {
+    public RepoPath getPath() {
         return path;
     }
 
-    public Path getRepositoryPath() {
+    public RepoPath getRepositoryPath() {
         return repositoryPath;
     }
 

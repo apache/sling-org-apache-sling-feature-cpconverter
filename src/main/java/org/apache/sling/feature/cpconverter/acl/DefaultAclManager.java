@@ -16,10 +16,13 @@
  */
 package org.apache.sling.feature.cpconverter.acl;
 
+import org.apache.jackrabbit.vault.util.PlatformNameFormat;
+import org.apache.sling.feature.cpconverter.features.FeaturesManager;
+import org.apache.sling.feature.cpconverter.shared.RepoPath;
+import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
+
 import java.io.File;
 import java.io.FileInputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,13 +37,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import org.apache.jackrabbit.vault.util.PlatformNameFormat;
-import org.apache.sling.feature.Extension;
-import org.apache.sling.feature.ExtensionType;
-import org.apache.sling.feature.Feature;
-import org.apache.sling.feature.cpconverter.features.FeaturesManager;
-import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
-
 public final class DefaultAclManager implements AclManager {
 
     private static final String CONTENT_XML_FILE_NAME = ".content.xml";
@@ -49,9 +45,9 @@ public final class DefaultAclManager implements AclManager {
 
     private final Set<SystemUser> preProvidedSystemUsers = new LinkedHashSet<>();
 
-    private final Set<Path> preProvidedSystemPaths = new HashSet<>();
+    private final Set<RepoPath> preProvidedSystemPaths = new HashSet<>();
 
-    private final Set<Path> preProvidedPaths = new HashSet<>();
+    private final Set<RepoPath> preProvidedPaths = new HashSet<>();
 
     private final Set<SystemUser> systemUsers = new LinkedHashSet<>();
 
@@ -76,13 +72,13 @@ public final class DefaultAclManager implements AclManager {
         return false;
     }
 
-    private void addPath(Path path, Set<Path> paths) {
+    private void addPath(RepoPath path, Set<RepoPath> paths) {
         if (preProvidedPaths.add(path)) {
             paths.add(path);
         }
 
-        Path parent = path.getParent();
-        if (parent != null && parent.getNameCount() > 0) {
+        RepoPath parent = path.getParent();
+        if (parent != null && parent.getSegmentCount() > 0) {
             addPath(parent, paths);
         }
     }
@@ -177,7 +173,7 @@ public final class DefaultAclManager implements AclManager {
         return Optional.empty();
     }
 
-    private final void addSystemUserPath(Formatter formatter, Path path) {
+    private final void addSystemUserPath(Formatter formatter, RepoPath path) {
         if (preProvidedSystemPaths.add(path)) {
             formatter.format("create path (rep:AuthorizableFolder) %s%n", path);
         }
@@ -207,20 +203,20 @@ public final class DefaultAclManager implements AclManager {
             return;
         }
 
-        Set<Path> paths = new TreeSet<>();
+        Set<RepoPath> paths = new TreeSet<>();
         for (Acl authorization : authorizations) {
             addPath(authorization.getRepositoryPath(), paths);
         }
 
-        for (Path path : paths) {
+        for (RepoPath path : paths) {
             String type = computePathType(path, packageAssemblers);
 
             formatter.format("create path (%s) %s%n", type, path);
         }
     }
 
-    private static String computePathType(Path path, List<VaultPackageAssembler> packageAssemblers) {
-        path = Paths.get(PlatformNameFormat.getPlatformPath(path.toString()));
+	private static String computePathType(RepoPath path, List<VaultPackageAssembler> packageAssemblers) {
+        path = new RepoPath(PlatformNameFormat.getPlatformPath(path.toString()));
 
         for (VaultPackageAssembler packageAssembler: packageAssemblers) {
             File currentDir = packageAssembler.getEntry(path.toString());
@@ -270,5 +266,4 @@ public final class DefaultAclManager implements AclManager {
     private static boolean areEmpty(List<Acl> authorizations) {
         return authorizations == null || authorizations.isEmpty();
     }
-
 }
