@@ -17,13 +17,23 @@
 package org.apache.sling.feature.cpconverter.handlers;
 
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Dictionary;
 import java.util.Hashtable;
+import java.util.List;
 
+import javax.jcr.PropertyType;
+
+import org.apache.jackrabbit.util.ISO8601;
 import org.apache.jackrabbit.vault.util.DocViewProperty;
 import org.apache.sling.feature.cpconverter.shared.AbstractJcrNodeParser;
+import org.codehaus.plexus.util.StringUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
+
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 
 public final class XmlConfigurationEntryHandler extends AbstractConfigurationEntryHandler {
 
@@ -42,7 +52,7 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
         }
     }
 
-    private static final class JcrConfigurationHandler extends AbstractJcrNodeParser<Dictionary<String, Object>> {
+    protected static final class JcrConfigurationHandler extends AbstractJcrNodeParser<Dictionary<String, Object>> {
 
         private static final String SLING_OSGICONFIG = "sling:OsgiConfig";
 
@@ -65,13 +75,73 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
 
                     if (attributeValue != null && !attributeValue.isEmpty()) {
                         DocViewProperty property = DocViewProperty.parse(attributeQName, attributeValue);
-
+                        Object value = property.values;
+                        List<String> strValues = Arrays.asList(property.values);
+                        switch (property.type) {
+                            case PropertyType.DATE:
+                                // Date was never properly supported as osgi configs don't support dates so converting to millis 
+                                // Scenario should just be theoretical
+                                attributeQName += ":Long";
+                                value = Lists.transform(strValues, new Function<String, Long>() {
+                                   public Long apply(String s) {
+                                      Long res = null;
+                                      if (s != null) {
+                                           Calendar cal = ISO8601.parse(s);
+                                           if (cal != null) {
+                                               res = cal.getTimeInMillis();
+                                           }
+                                      } 
+                                      return res;
+                                   }
+                                }).toArray();
+                                break;
+                            case PropertyType.DOUBLE:
+                                attributeQName += ":Double";
+                                value = Lists.transform(strValues, new Function<String, Double>() {
+                                   public Double apply(String s) {
+                                      Double res = null;
+                                      if (StringUtils.isNotEmpty(s)) {
+                                          res = Double.parseDouble(s);
+                                      }
+                                      return res;
+                                   }
+                                }).toArray();
+                                break;
+                            case PropertyType.LONG:
+                                attributeQName += ":Long";
+                                value = Lists.transform(strValues, new Function<String, Long>() {
+                                    public Long apply(String s) {
+                                       Long res = null;
+                                       if (StringUtils.isNotEmpty(s)) {
+                                          res = Long.parseLong(s);
+                                       }
+                                       return res;
+                                    }
+                                 }).toArray();
+                                break;
+                            case PropertyType.BOOLEAN:
+                                attributeQName += ":Boolean";
+                                value = Lists.transform(strValues, new Function<String, Boolean>() {
+                                    public Boolean apply(String s) {
+                                       Boolean res = null;
+                                       if (s != null) {
+                                          res = Boolean.valueOf(s);
+                                       } 
+                                       return res;
+                                    }
+                                 }).toArray();
+                                break;
+                        }
+                        if(property.isMulti) {
+                            attributeQName+="[]";
+                        } else {
+                            // first element to be used in case of singlevalue
+                            value = ((Object[])value)[0];
+                        }
+                         
+                        
                         if (property.values.length > 0) {
-                            if (property.isMulti) {
-                                configuration.put(attributeQName, property.values);
-                            } else {
-                                configuration.put(attributeQName, property.values[0]);
-                            }
+                            configuration.put(attributeQName, value);
                         }
                     }
                 }
