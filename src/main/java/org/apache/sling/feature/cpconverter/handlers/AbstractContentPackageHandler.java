@@ -21,10 +21,13 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
+import org.apache.jackrabbit.vault.packaging.Dependency;
+import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.codehaus.plexus.util.StringUtils;
@@ -35,6 +38,8 @@ public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHa
 
     private final File temporaryDir = new File(System.getProperty("java.io.tmpdir"), "sub-content-packages");
 
+    private final Pattern EMBEDDED_PACKAGE_PATTERN = Pattern.compile("/jcr_root/apps/.+/install(?:\\\\.([^/]+))?/.+.zip");
+    
     public AbstractContentPackageHandler() {
         super("/jcr_root/(?:etc/packages|apps/.+/install(?:\\.([^/]+))?)/.+.zip");
         temporaryDir.mkdirs();
@@ -85,13 +90,14 @@ public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHa
             logger.debug("Runmode {} was extracted from path {}", runMode, path);
         }
 
+        boolean isEmbeddedPackage = EMBEDDED_PACKAGE_PATTERN.matcher(path).matches();
         try (VaultPackage vaultPackage = converter.open(temporaryContentPackage)) {
-            processSubPackage(path, runMode, vaultPackage, converter);
+            processSubPackage(path, runMode, vaultPackage, converter, isEmbeddedPackage);
         }
 
         logger.info("Sub-content package '{}' processing is over", entry.getName());
     }
 
-    protected abstract void processSubPackage(String path, String runMode, VaultPackage contentPackage, ContentPackage2FeatureModelConverter converter) throws Exception;
+    protected abstract void processSubPackage(String path, String runMode, VaultPackage contentPackage, ContentPackage2FeatureModelConverter converter, boolean isEmbeddedPackage) throws Exception;
 
 }

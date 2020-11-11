@@ -70,7 +70,7 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
     private static final File TMP_DIR = new File(System.getProperty("java.io.tmpdir"), "synthetic-content-packages");
 
     private static final Pattern OSGI_BUNDLE_PATTERN = Pattern.compile("(jcr_root)?/apps/[^/]+/install(\\.([^/]+))?/.+\\.jar");
-
+    
     public static VaultPackageAssembler create(VaultPackage vaultPackage) {
         return create(vaultPackage, vaultPackage.getMetaInf().getFilter());
     }
@@ -158,6 +158,10 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
         this.properties = properties;
         this.dependencies = dependencies;
     }
+    
+    public Properties getPackageProperties() {
+        return this.properties;
+    }
 
     public void mergeFilters(WorkspaceFilter filter) {
         for (PathFilterSet pathFilterSet : filter.getFilterSets()) {
@@ -212,6 +216,11 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
             dependencies.remove(match.getKey());
             dependencies.addAll(match.getValue());
         }
+    }
+    
+
+    public void addDependency(Dependency dependency) {
+        dependencies.add(dependency);
     }
 
     public File createPackage() throws IOException {

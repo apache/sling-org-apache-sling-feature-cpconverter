@@ -39,7 +39,7 @@ public final class VersionResolverContentPackageEntryHandler extends AbstractCon
     }
 
     @Override
-    protected void processSubPackage(String path, String runMode, VaultPackage contentPackage, ContentPackage2FeatureModelConverter converter)
+    protected void processSubPackage(String path, String runMode, VaultPackage contentPackage, ContentPackage2FeatureModelConverter converter, boolean isEmbeddedPackage)
             throws Exception {
 
         boolean addPackage = false;
