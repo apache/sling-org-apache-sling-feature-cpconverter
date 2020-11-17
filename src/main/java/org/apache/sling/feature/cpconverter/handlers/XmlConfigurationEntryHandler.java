@@ -25,6 +25,7 @@ import java.util.List;
 
 import javax.jcr.PropertyType;
 
+import org.apache.felix.cm.json.Configurations;
 import org.apache.jackrabbit.util.ISO8601;
 import org.apache.jackrabbit.vault.util.DocViewProperty;
 import org.apache.sling.feature.cpconverter.shared.AbstractJcrNodeParser;
@@ -56,7 +57,7 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
 
         private static final String SLING_OSGICONFIG = "sling:OsgiConfig";
 
-        private Dictionary<String, Object> configuration = null;
+        private Dictionary<String, Object> configuration;
 
         public JcrConfigurationHandler() {
             super(SLING_OSGICONFIG);
@@ -64,7 +65,7 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
 
         @Override
         protected void onJcrRootElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-            configuration = new Hashtable<>();
+            configuration = Configurations.newConfiguration();
 
             for (int i = 0; i < attributes.getLength(); i++) {
                 String attributeQName = attributes.getQName(i);
@@ -81,7 +82,6 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
                             case PropertyType.DATE:
                                 // Date was never properly supported as osgi configs don't support dates so converting to millis 
                                 // Scenario should just be theoretical
-                                attributeQName += ":Long";
                                 value = Lists.transform(strValues, new Function<String, Long>() {
                                    public Long apply(String s) {
                                       Long res = null;
@@ -96,7 +96,6 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
                                 }).toArray();
                                 break;
                             case PropertyType.DOUBLE:
-                                attributeQName += ":Double";
                                 value = Lists.transform(strValues, new Function<String, Double>() {
                                    public Double apply(String s) {
                                       Double res = null;
@@ -108,7 +107,6 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
                                 }).toArray();
                                 break;
                             case PropertyType.LONG:
-                                attributeQName += ":Long";
                                 value = Lists.transform(strValues, new Function<String, Long>() {
                                     public Long apply(String s) {
                                        Long res = null;
@@ -120,7 +118,6 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
                                  }).toArray();
                                 break;
                             case PropertyType.BOOLEAN:
-                                attributeQName += ":Boolean";
                                 value = Lists.transform(strValues, new Function<String, Boolean>() {
                                     public Boolean apply(String s) {
                                        Boolean res = null;
@@ -132,9 +129,7 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
                                  }).toArray();
                                 break;
                         }
-                        if(property.isMulti) {
-                            attributeQName+="[]";
-                        } else {
+                        if (!property.isMulti) {
                             // first element to be used in case of singlevalue
                             value = ((Object[])value)[0];
                         }

@@ -65,15 +65,15 @@ public class ConfigurationEntryHandlerTest {
 
     private static final String EXPECTED_TYPED_CONFIG = "{\n" + 
         "  \"org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.typed\":  {\n" + 
-        "    \"test.longproperty:Long\":123,\n" + 
-        "    \"user.mapping[]\":[\n" + 
+        "    \"user.default\":\"admin\",\n" + 
+        "    \"test.longproperty\":123,\n" + 
+        "    \"test.doubleproperty\":1.23,\n" + 
+        "    \"test.dateproperty\":1604743842669,\n" + 
+        "    \"test.booleanproperty\":true,\n" + 
+        "    \"user.mapping\":[\n" + 
         "      \"com.adobe.acs.acs-aem-samples-bundle=admin\",\n" + 
         "      \"com.adobe.acs.acs-aem-samples-bundle:sample-service=oauthservice\"\n" + 
-        "    ],\n" + 
-        "    \"test.booleanproperty:Boolean\":true,\n" + 
-        "    \"test.dateproperty:Long\":1604743842669,\n" + 
-        "    \"user.default\":\"admin\",\n" + 
-        "    \"test.doubleproperty:Double\":1.23\n" + 
+        "    ]\n" + 
         "  }\n" + 
         "}";
     
