@@ -47,6 +47,7 @@ import org.apache.sling.feature.extension.apiregions.api.ApiExport;
 import org.apache.sling.feature.extension.apiregions.api.ApiRegion;
 import org.apache.sling.feature.extension.apiregions.api.ApiRegions;
 import org.apache.sling.feature.io.json.FeatureJSONWriter;
+import org.osgi.framework.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -225,6 +226,10 @@ public class DefaultFeaturesManager implements FeaturesManager {
 
             configuration.getProperties().put(key, value);
         }
+        // remove internal properties (these are ignored anyway)
+        configuration.getProperties().remove(Constants.SERVICE_PID);
+        configuration.getProperties().remove("service.bundleLocation");
+        configuration.getProperties().remove("service.factoryPid");
     }
 
     private void addAPIRegions(Feature feature, List<String> exportedPackages) throws IOException {
