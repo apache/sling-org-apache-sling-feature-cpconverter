@@ -26,10 +26,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Dictionary;
+import java.util.Hashtable;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
@@ -134,24 +138,23 @@ public class ConfigurationEntryHandlerTest {
         }
 
         if (expectedConfigurationsSize != 0) {
-        Configuration configuration = configurations.get(0);
+            Configuration configuration = configurations.get(0);
 
-        assertTrue(configuration.getPid(), configuration.getPid().startsWith(EXPECTED_PID));
+            assertTrue(configuration.getPid(), configuration.getPid().startsWith(EXPECTED_PID));
 
-        if (configuration.getPid().contains(".empty")) {
-            assertTrue(configuration.getProperties().isEmpty());
-        } else {
-            assertEquals("Unmatching size: " + configuration.getProperties().size(), expectedConfigurationsEntrySize, configuration.getProperties().size());
+            if (configuration.getPid().contains(".empty")) {
+                assertTrue(configuration.getProperties().isEmpty());
+            } else {
+                assertEquals("Unmatching size: " + configuration.getProperties().size(), expectedConfigurationsEntrySize, configuration.getProperties().size());
+            }
+            // type & value check for typed configuration
+            if (this.resourceConfiguration.equals(TYPED_TESTCONFIG_PATH)) {
+                Writer writer = new StringWriter();
+                ConfigurationJSONWriter.write(writer, configurations);
+                assertEquals(EXPECTED_TYPED_CONFIG, writer.toString());
+            }
         }
-        // type & value check for typed configuration
-        if (this.resourceConfiguration.equals(TYPED_TESTCONFIG_PATH)) {
-            Writer writer = new StringWriter();
-            ConfigurationJSONWriter.write(writer, configurations);
-            assertEquals(EXPECTED_TYPED_CONFIG, writer.toString());
-        }
-
     }
-}
 
     @Parameters
     public static Collection<Object[]> data() {
