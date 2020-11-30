@@ -46,7 +46,6 @@ import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.apache.sling.feature.io.json.FeatureJSONWriter;
 import org.junit.Test;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 
 public class ConfigEntryHandlerTest {
