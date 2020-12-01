@@ -24,8 +24,8 @@ import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.acl.Acl;
-import org.apache.sling.feature.cpconverter.acl.AclManager;
+import org.apache.sling.feature.cpconverter.accesscontrol.AccessControlEntry;
+import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.shared.AbstractJcrNodeParser;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 
@@ -122,7 +122,7 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
 
         private static final Pattern typeIndicatorPattern = Pattern.compile("\\{[^\\}]+\\}\\[(.+)\\]");
 
-        private final Stack<Acl> acls = new Stack<>();
+        private final Stack<AccessControlEntry> acls = new Stack<>();
 
         private final RepoPath path;
 
@@ -165,7 +165,7 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
 
                     String privileges = extractValue(attributes.getValue(REP_PRIVILEGES));
 
-                    Acl acl = new Acl(operation, privileges, path, repositoryPath);
+                    AccessControlEntry acl = new AccessControlEntry(operation, privileges, path, repositoryPath);
 
                     processCurrentAcl = aclManager.addAcl(principalName, acl);
                     if (processCurrentAcl) {

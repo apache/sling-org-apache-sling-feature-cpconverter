@@ -14,8 +14,28 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
+package org.apache.sling.feature.cpconverter.accesscontrol;
+
+import java.util.List;
+
+import org.apache.sling.feature.cpconverter.features.FeaturesManager;
+import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 
 /**
- * Small utility set to handle System Users and related ACL policies.
+ * The Manager able to collect and build System Users and related ACL policies.
  */
-package org.apache.sling.feature.cpconverter.acl;
+public interface AclManager {
+
+    boolean addSystemUser(SystemUser systemUser);
+
+    boolean addAcl(String systemUser, AccessControlEntry acl);
+
+    void addRepoinitExtension(List<VaultPackageAssembler> packageAssemblers, FeaturesManager featureManager);
+
+    void addNodetypeRegistrationSentence(String nodetypeRegistrationSentence);
+
+    void addPrivilege(String privilege);
+
+    void reset();
+
+}

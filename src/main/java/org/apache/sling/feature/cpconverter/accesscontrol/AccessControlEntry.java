@@ -14,7 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.sling.feature.cpconverter.acl;
+package org.apache.sling.feature.cpconverter.accesscontrol;
 
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 
@@ -24,7 +24,7 @@ import java.util.List;
 /**
  * Simple single ACL statement representation.
  */
-public final class Acl {
+public final class AccessControlEntry {
 
     private final String operation;
 
@@ -36,7 +36,7 @@ public final class Acl {
 
     private final List<String> restrictions = new LinkedList<>();
 
-    public Acl(String operation, String privileges, RepoPath path, RepoPath repositoryPath) {
+    public AccessControlEntry(String operation, String privileges, RepoPath path, RepoPath repositoryPath) {
         this.operation = operation;
         this.privileges = privileges;
         this.path = path;

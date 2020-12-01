@@ -21,7 +21,7 @@ import org.xml.sax.Attributes;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.acl.SystemUser;
+import org.apache.sling.feature.cpconverter.accesscontrol.SystemUser;
 import org.apache.sling.feature.cpconverter.shared.AbstractJcrNodeParser;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 

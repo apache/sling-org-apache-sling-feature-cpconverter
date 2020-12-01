@@ -14,7 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.sling.feature.cpconverter.acl;
+package org.apache.sling.feature.cpconverter.accesscontrol;
 
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.ArtifactId;
@@ -154,8 +154,8 @@ public class AclManagerTest {
         assertFalse(operations.isEmpty());
     }
 
-    private static Acl newAcl(String operation, String privileges, String path) {
-        return new Acl(operation, privileges, new RepoPath(path), new RepoPath(PlatformNameFormat.getRepositoryPath(path)));
+    private static AccessControlEntry newAcl(String operation, String privileges, String path) {
+        return new AccessControlEntry(operation, privileges, new RepoPath(path), new RepoPath(PlatformNameFormat.getRepositoryPath(path)));
     }
 
 }

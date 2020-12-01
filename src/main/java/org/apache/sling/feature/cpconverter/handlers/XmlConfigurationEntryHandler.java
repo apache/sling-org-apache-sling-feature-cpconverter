@@ -20,7 +20,6 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Dictionary;
-import java.util.Hashtable;
 import java.util.List;
 
 import javax.jcr.PropertyType;

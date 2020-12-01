@@ -14,7 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.sling.feature.cpconverter.acl;
+package org.apache.sling.feature.cpconverter.accesscontrol;
 
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
@@ -51,7 +51,7 @@ public final class DefaultAclManager implements AclManager {
 
     private final Set<SystemUser> systemUsers = new LinkedHashSet<>();
 
-    private final Map<String, List<Acl>> acls = new HashMap<>();
+    private final Map<String, List<AccessControlEntry>> acls = new HashMap<>();
 
     private List<String> nodetypeRegistrationSentences = new LinkedList<>();
 
@@ -64,7 +64,7 @@ public final class DefaultAclManager implements AclManager {
         return false;
     }
 
-    public boolean addAcl(String systemUser, Acl acl) {
+    public boolean addAcl(String systemUser, AccessControlEntry acl) {
         if (getSystemUser(systemUser).isPresent()) {
             acls.computeIfAbsent(systemUser, k -> new LinkedList<>()).add(acl);
             return true;
@@ -110,18 +110,18 @@ public final class DefaultAclManager implements AclManager {
 
                 // clean the unneeded ACLs, see SLING-8561
 
-                List<Acl> authorizations = acls.remove(systemUser.getId());
+                List<AccessControlEntry> authorizations = acls.remove(systemUser.getId());
 
                 addStatements(systemUser, authorizations, packageAssemblers, formatter);
             }
 
             // all the resting ACLs can now be set
 
-            for (Entry<String, List<Acl>> currentAcls : acls.entrySet()) {
+            for (Entry<String, List<AccessControlEntry>> currentAcls : acls.entrySet()) {
                 Optional<SystemUser> systemUser = getSystemUser(currentAcls.getKey());
 
                 if (systemUser.isPresent()) {
-                    List<Acl> authorizations = currentAcls.getValue();
+                    List<AccessControlEntry> authorizations = currentAcls.getValue();
 
                     addStatements(systemUser.get(), authorizations, packageAssemblers, formatter);
                 }
@@ -140,14 +140,14 @@ public final class DefaultAclManager implements AclManager {
     }
 
     private void addStatements(SystemUser systemUser,
-                               List<Acl> authorizations,
+                               List<AccessControlEntry> authorizations,
                                List<VaultPackageAssembler> packageAssemblers,
                                Formatter formatter) {
         // clean the unneeded ACLs, see SLING-8561
         if (authorizations != null) {
-            Iterator<Acl> authorizationsIterator = authorizations.iterator();
+            Iterator<AccessControlEntry> authorizationsIterator = authorizations.iterator();
             while (authorizationsIterator.hasNext()) {
-                Acl acl = authorizationsIterator.next();
+                AccessControlEntry acl = authorizationsIterator.next();
 
                 if (acl.getPath().startsWith(systemUser.getPath())) {
                     authorizationsIterator.remove();
@@ -198,13 +198,13 @@ public final class DefaultAclManager implements AclManager {
         privileges.clear();
     }
 
-    private void addPaths(List<Acl> authorizations, List<VaultPackageAssembler> packageAssemblers, Formatter formatter) {
+    private void addPaths(List<AccessControlEntry> authorizations, List<VaultPackageAssembler> packageAssemblers, Formatter formatter) {
         if (areEmpty(authorizations)) {
             return;
         }
 
         Set<RepoPath> paths = new TreeSet<>();
-        for (Acl authorization : authorizations) {
+        for (AccessControlEntry authorization : authorizations) {
             addPath(authorization.getRepositoryPath(), paths);
         }
 
@@ -239,14 +239,14 @@ public final class DefaultAclManager implements AclManager {
         return DEFAULT_TYPE;
     }
 
-    private static void addAclStatement(Formatter formatter, String systemUser, List<Acl> authorizations) {
+    private static void addAclStatement(Formatter formatter, String systemUser, List<AccessControlEntry> authorizations) {
         if (authorizations == null || areEmpty(authorizations)) {
             return;
         }
 
         formatter.format("set ACL for %s%n", systemUser);
 
-        for (Acl authorization : authorizations) {
+        for (AccessControlEntry authorization : authorizations) {
             formatter.format("%s %s on %s",
                              authorization.getOperation(),
                              authorization.getPrivileges(),
@@ -263,7 +263,7 @@ public final class DefaultAclManager implements AclManager {
         formatter.format("end%n");
     }
 
-    private static boolean areEmpty(List<Acl> authorizations) {
+    private static boolean areEmpty(List<AccessControlEntry> authorizations) {
         return authorizations == null || authorizations.isEmpty();
     }
 }
