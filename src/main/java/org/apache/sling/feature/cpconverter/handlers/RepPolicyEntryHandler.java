@@ -79,8 +79,7 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
         StringWriter stringWriter = new StringWriter();
         handler.setResult(new StreamResult(stringWriter));
 
-        RepPolicyParser systemUserParser = new RepPolicyParser(new RepoPath(resourcePath),
-                                                               new RepoPath(PlatformNameFormat.getRepositoryPath(resourcePath)),
+        RepPolicyParser systemUserParser = new RepPolicyParser(new RepoPath(PlatformNameFormat.getRepositoryPath(resourcePath)),
                                                                converter.getAclManager(),
                                                                handler);
         boolean hasRejectedAcls;
@@ -124,8 +123,6 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
 
         private final Stack<AccessControlEntry> acls = new Stack<>();
 
-        private final RepoPath path;
-
         private final RepoPath repositoryPath;
 
         private final AclManager aclManager;
@@ -140,9 +137,8 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
         // just internal pointer for every iteration
         private boolean processCurrentAcl = false;
 
-        public RepPolicyParser(RepoPath path, RepoPath repositoryPath, AclManager aclManager, TransformerHandler handler) {
+        public RepPolicyParser(RepoPath repositoryPath, AclManager aclManager, TransformerHandler handler) {
             super(REP_ACL);
-            this.path = path;
             this.repositoryPath = repositoryPath;
             this.aclManager = aclManager;
             this.handler = handler;
@@ -165,7 +161,7 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
 
                     String privileges = extractValue(attributes.getValue(REP_PRIVILEGES));
 
-                    AccessControlEntry acl = new AccessControlEntry(isAllow, privileges, path, repositoryPath);
+                    AccessControlEntry acl = new AccessControlEntry(isAllow, privileges, repositoryPath);
 
                     processCurrentAcl = aclManager.addAcl(principalName, acl);
                     if (processCurrentAcl) {

@@ -98,6 +98,21 @@ public class SystemUsersEntryHandlerTest {
         assertNull(repoinitExtension);
     }
 
+    /**
+     * @see <a href="https://issues.apache.org/jira/browse/SLING-9970">SLING-9970</a>
+     */
+    @Test
+    public void testSystemUserPathIsConvertedToRepositoryPath() throws Exception {
+        String path = "/jcr_root/home/users/system/_my_feature/_my_user-node/.content.xml";
+        Extension repoinitExtension = parseAndSetRepoinit(path);
+        assertNotNull(repoinitExtension);
+
+        String actual = repoinitExtension.getText();
+        assertFalse(actual.contains("/jcr_root/home/users/system/_my_feature"));
+        assertFalse(actual.contains("/home/users/system/_my_feature"));
+        assertTrue(actual.contains("/home/users/system/my:feature"));
+    }
+
     private Extension parseAndSetRepoinit(String path) throws Exception {
         Archive archive = mock(Archive.class);
         Entry entry = mock(Entry.class);

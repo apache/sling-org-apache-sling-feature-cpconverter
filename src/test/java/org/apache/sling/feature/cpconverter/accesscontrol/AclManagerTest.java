@@ -155,7 +155,7 @@ public class AclManagerTest {
     }
 
     private static AccessControlEntry newAcl(boolean isAllow, String privileges, String path) {
-        return new AccessControlEntry(isAllow, privileges, new RepoPath(path), new RepoPath(PlatformNameFormat.getRepositoryPath(path)));
+        return new AccessControlEntry(isAllow, privileges, new RepoPath(PlatformNameFormat.getRepositoryPath(path)));
     }
 
 }

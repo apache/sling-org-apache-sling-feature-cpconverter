@@ -30,16 +30,13 @@ public final class AccessControlEntry {
 
     private final String privileges;
 
-    private final RepoPath path;
-
     private final RepoPath repositoryPath;
 
     private final List<String> restrictions = new LinkedList<>();
 
-    public AccessControlEntry(boolean isAllow, String privileges, RepoPath path, RepoPath repositoryPath) {
+    public AccessControlEntry(boolean isAllow, String privileges, RepoPath repositoryPath) {
         this.isAllow = isAllow;
         this.privileges = privileges;
-        this.path = path;
         this.repositoryPath = repositoryPath;
     }
 
@@ -57,10 +54,6 @@ public final class AccessControlEntry {
         return privileges;
     }
 
-    public RepoPath getPath() {
-        return path;
-    }
-
     public RepoPath getRepositoryPath() {
         return repositoryPath;
     }
@@ -76,7 +69,7 @@ public final class AccessControlEntry {
                + ", privileges="
                + privileges
                + ", path="
-               + path
+               + repositoryPath
                + ", restrictions="
                + restrictions
                + "]";
