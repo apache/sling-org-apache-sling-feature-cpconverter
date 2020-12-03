@@ -111,11 +111,11 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
 
         private static final String REP_PRIVILEGES = "rep:privileges";
 
-        private static final Map<String, String> operations = new HashMap<>();
+        private static final Map<String, Boolean> operations = new HashMap<>();
 
         static {
-            operations.put(REP_GRANT_ACE, "allow");
-            operations.put(REP_DENY_ACE, "deny");
+            operations.put(REP_GRANT_ACE, true);
+            operations.put(REP_DENY_ACE, false);
         }
 
         private static final String[] RESTRICTIONS = new String[] { "rep:glob", "rep:ntNames", "rep:prefixes", "rep:itemNames" };
@@ -161,11 +161,11 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
                 if (REP_GRANT_ACE.equals(primaryType) || REP_DENY_ACE.equals(primaryType)) {
                     String principalName = attributes.getValue(REP_PRINCIPAL_NAME);
 
-                    String operation = operations.get(primaryType);
+                    Boolean isAllow = operations.get(primaryType);
 
                     String privileges = extractValue(attributes.getValue(REP_PRIVILEGES));
 
-                    AccessControlEntry acl = new AccessControlEntry(operation, privileges, path, repositoryPath);
+                    AccessControlEntry acl = new AccessControlEntry(isAllow, privileges, path, repositoryPath);
 
                     processCurrentAcl = aclManager.addAcl(principalName, acl);
                     if (processCurrentAcl) {
