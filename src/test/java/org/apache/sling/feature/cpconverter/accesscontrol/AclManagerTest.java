@@ -78,11 +78,11 @@ public class AclManagerTest {
 
         aclManager.addSystemUser(new SystemUser("acs-commons-package-replication-status-event-service", new RepoPath("/asd/public")));
 
-        aclManager.addAcl("acs-commons-ensure-oak-index-service", newAcl("allow", "jcr:read,rep:write,rep:indexDefinitionManagement", "/asd/not/system/user/path"));
-        aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl("allow", "jcr:read,crx:replicate,jcr:removeNode", "/asd/public"));
+        aclManager.addAcl("acs-commons-ensure-oak-index-service", newAcl(true, "jcr:read,rep:write,rep:indexDefinitionManagement", "/asd/not/system/user/path"));
+        aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl(true, "jcr:read,crx:replicate,jcr:removeNode", "/asd/public"));
 
         // add an ACL for unknown user
-        aclManager.addAcl("acs-commons-on-deploy-scripts-service", newAcl("allow", "jcr:read,crx:replicate,jcr:removeNode", "/asd/public"));
+        aclManager.addAcl("acs-commons-on-deploy-scripts-service", newAcl(true, "jcr:read,crx:replicate,jcr:removeNode", "/asd/public"));
 
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
         when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
@@ -123,8 +123,8 @@ public class AclManagerTest {
     @Test
     public void pathWithSpecialCharactersTest() throws RepoInitParsingException {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system")));
-        aclManager.addAcl("sys-usr", newAcl("allow", "jcr:read", "/content/_cq_tags"));
-        aclManager.addAcl("sys-usr", newAcl("allow", "jcr:write", "/content/cq:tags"));
+        aclManager.addAcl("sys-usr", newAcl(true, "jcr:read", "/content/_cq_tags"));
+        aclManager.addAcl("sys-usr", newAcl(true, "jcr:write", "/content/cq:tags"));
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
         when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
@@ -154,8 +154,8 @@ public class AclManagerTest {
         assertFalse(operations.isEmpty());
     }
 
-    private static AccessControlEntry newAcl(String operation, String privileges, String path) {
-        return new AccessControlEntry(operation, privileges, new RepoPath(path), new RepoPath(PlatformNameFormat.getRepositoryPath(path)));
+    private static AccessControlEntry newAcl(boolean isAllow, String privileges, String path) {
+        return new AccessControlEntry(isAllow, privileges, new RepoPath(path), new RepoPath(PlatformNameFormat.getRepositoryPath(path)));
     }
 
 }

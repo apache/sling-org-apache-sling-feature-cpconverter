@@ -26,7 +26,7 @@ import java.util.List;
  */
 public final class AccessControlEntry {
 
-    private final String operation;
+    private final boolean isAllow;
 
     private final String privileges;
 
@@ -36,8 +36,8 @@ public final class AccessControlEntry {
 
     private final List<String> restrictions = new LinkedList<>();
 
-    public AccessControlEntry(String operation, String privileges, RepoPath path, RepoPath repositoryPath) {
-        this.operation = operation;
+    public AccessControlEntry(boolean isAllow, String privileges, RepoPath path, RepoPath repositoryPath) {
+        this.isAllow = isAllow;
         this.privileges = privileges;
         this.path = path;
         this.repositoryPath = repositoryPath;
@@ -50,7 +50,7 @@ public final class AccessControlEntry {
     }
 
     public String getOperation() {
-        return operation;
+        return isAllow ? "allow" : "deny";
     }
 
     public String getPrivileges() {
@@ -71,8 +71,8 @@ public final class AccessControlEntry {
 
     @Override
     public String toString() {
-        return "Acl [operation="
-               + operation
+        return "Acl [isAllow="
+               + isAllow
                + ", privileges="
                + privileges
                + ", path="
