@@ -45,7 +45,11 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
         if (matcher.matches()) {
             
             String pid = matcher.group("pid");
-    
+
+            int idx = pid.lastIndexOf('/');
+            if (idx != -1) {
+                pid = pid.substring(idx + 1);
+            }
             String factoryPid = null;
             String id;
             int n = pid.indexOf('~');

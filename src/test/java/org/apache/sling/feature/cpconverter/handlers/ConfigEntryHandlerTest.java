@@ -28,9 +28,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Dictionary;
+import java.util.Hashtable;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
@@ -43,6 +46,7 @@ import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.apache.sling.feature.io.json.FeatureJSONWriter;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 public class ConfigEntryHandlerTest {
 
@@ -88,6 +92,31 @@ public class ConfigEntryHandlerTest {
         assertEquals("ims", configurationProperties.get("handler.name"));
         assertEquals("ims", configurationProperties.get("user.pathPrefix"));
         assertTrue((boolean) configurationProperties.get("user.disableMissing"));
+    }
+
+
+
+    @Test
+    public void testConfigPathWithFolders() throws Exception {
+        Archive archive = mock(Archive.class);
+        Entry entry = mock(Entry.class);
+        FeaturesManager manager = mock(FeaturesManager.class);
+        ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
+        when(converter.getFeaturesManager()).thenReturn(manager);
+
+        when(entry.getName()).thenReturn("/jcr_root/apps/foo/bar/config/baz/blub.cfg");
+        when(archive.openInputStream(entry)).thenReturn(new ByteArrayInputStream("{}".getBytes()));
+
+        AbstractConfigurationEntryHandler handler = new AbstractConfigurationEntryHandler("cfg") {
+            @Override
+            protected Dictionary<String, Object> parseConfiguration(String name, InputStream input) throws Exception {
+                return new Hashtable(){{put("foo", "bar");}};
+            }
+        };
+        handler.handle("/jcr_root/apps/foo/bar/config/baz/blub.cfg", archive, entry, converter);
+
+        Mockito.verify(manager).addConfiguration(null, "blub", new Hashtable(){{put("foo","bar");}});
+        Mockito.verify(manager).addConfiguration(Mockito.any(), Mockito.anyString(), Mockito.any());
     }
 
 }

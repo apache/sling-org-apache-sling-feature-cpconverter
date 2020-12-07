@@ -134,24 +134,23 @@ public class ConfigurationEntryHandlerTest {
         }
 
         if (expectedConfigurationsSize != 0) {
-        Configuration configuration = configurations.get(0);
+            Configuration configuration = configurations.get(0);
 
-        assertTrue(configuration.getPid(), configuration.getPid().startsWith(EXPECTED_PID));
+            assertTrue(configuration.getPid(), configuration.getPid().startsWith(EXPECTED_PID));
 
-        if (configuration.getPid().contains(".empty")) {
-            assertTrue(configuration.getProperties().isEmpty());
-        } else {
-            assertEquals("Unmatching size: " + configuration.getProperties().size(), expectedConfigurationsEntrySize, configuration.getProperties().size());
+            if (configuration.getPid().contains(".empty")) {
+                assertTrue(configuration.getProperties().isEmpty());
+            } else {
+                assertEquals("Unmatching size: " + configuration.getProperties().size(), expectedConfigurationsEntrySize, configuration.getProperties().size());
+            }
+            // type & value check for typed configuration
+            if (this.resourceConfiguration.equals(TYPED_TESTCONFIG_PATH)) {
+                Writer writer = new StringWriter();
+                ConfigurationJSONWriter.write(writer, configurations);
+                assertEquals(EXPECTED_TYPED_CONFIG, writer.toString());
+            }
         }
-        // type & value check for typed configuration
-        if (this.resourceConfiguration.equals(TYPED_TESTCONFIG_PATH)) {
-            Writer writer = new StringWriter();
-            ConfigurationJSONWriter.write(writer, configurations);
-            assertEquals(EXPECTED_TYPED_CONFIG, writer.toString());
-        }
-
     }
-}
 
     @Parameters
     public static Collection<Object[]> data() {
