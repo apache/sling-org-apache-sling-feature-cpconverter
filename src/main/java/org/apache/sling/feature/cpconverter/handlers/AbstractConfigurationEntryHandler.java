@@ -92,7 +92,7 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
                 }
 
                 if (_references != null) {
-                    final String[] references = Converters.standardConverter().convert(configurationProperties.get("references")).to(String[].class);
+                    final String[] references = Converters.standardConverter().convert(_references).to(String[].class);
                     if ( references != null && references.length > 0 ) {
                         throw new IllegalArgumentException("References are not supported for repoinit (factory configuration " + pid + ")");
                     }
@@ -100,7 +100,7 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
 
             } else if ( REPOINIT_PID.equals(pid) ) {
                 if (_references != null) {
-                    final String[] references = Converters.standardConverter().convert(configurationProperties.get("references")).to(String[].class);
+                    final String[] references = Converters.standardConverter().convert(_references).to(String[].class);
                     if ( references != null && references.length > 0 ) {
                         throw new IllegalArgumentException("References are not supported for repoinit (configuration " + pid + ")");
                     }
