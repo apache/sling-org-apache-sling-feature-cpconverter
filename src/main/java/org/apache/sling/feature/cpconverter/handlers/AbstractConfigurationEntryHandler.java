@@ -26,7 +26,7 @@ import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter
 import org.osgi.util.converter.Converters;
 
 abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandler {
-    
+
     private static final String REPOINIT_FACTORY_PID = "org.apache.sling.jcr.repoinit.RepositoryInitializer";
 
     private static final String REPOINIT_PID = "org.apache.sling.jcr.repoinit.impl.RepositoryInitializer ";
@@ -39,11 +39,11 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
     public final void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter) throws Exception {
 
         Matcher matcher = getPattern().matcher(path);
-        
+
         String runMode = null;
         // we are pretty sure it matches, here
         if (matcher.matches()) {
-            
+
             String pid = matcher.group("pid");
 
             int idx = pid.lastIndexOf('/');
@@ -62,14 +62,14 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
             } else {
                 id = pid;
             }
-    
+
             logger.info("Processing configuration '{}'.", id);
-    
+
             Dictionary<String, Object> configurationProperties;
             try (InputStream input = archive.openInputStream(entry)) {
                 configurationProperties = parseConfiguration(id, input);
             }
-    
+
             if (configurationProperties == null) {
                 logger.info("{} entry does not contain a valid OSGi configuration, treating it as a regular resource", path);
                 converter.getMainPackageAssembler().addEntry(path, archive, entry);
@@ -77,23 +77,34 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
             }
             // there is a specified RunMode
             runMode = matcher.group("runmode");
-            
+
+            Object _scripts = configurationProperties.get("scripts");
+            Object _references = configurationProperties.get("references");
+
             if (REPOINIT_FACTORY_PID.equals(factoryPid)) {
-                final String[] scripts = Converters.standardConverter().convert(configurationProperties.get("scripts")).to(String[].class);
-                if (scripts != null && scripts.length > 0 ) {
-                    String text = String.join("\n", scripts);
-                    converter.getFeaturesManager().addOrAppendRepoInitExtension(text, runMode);
-                }
-                final String[] references = Converters.standardConverter().convert(configurationProperties.get("references")).to(String[].class);
-                if ( references != null && references.length > 0 ) {
-                    throw new IllegalArgumentException("References are not supported for repoinit (factory configuration " + pid + ")");
-                }
-            } else if ( REPOINIT_PID.equals(pid) ) {
-                final String[] references = Converters.standardConverter().convert(configurationProperties.get("references")).to(String[].class);
-                if ( references != null && references.length > 0 ) {
-                    throw new IllegalArgumentException("References are not supported for repoinit (configuration " + pid + ")");
+
+                if (_scripts != null) {
+                    final String[] scripts = Converters.standardConverter().convert(_scripts).to(String[].class);
+                    if (scripts != null && scripts.length > 0 ) {
+                        String text = String.join("\n", scripts);
+                        converter.getFeaturesManager().addOrAppendRepoInitExtension(text, runMode);
+                    }
                 }
 
+                if (_references != null) {
+                    final String[] references = Converters.standardConverter().convert(configurationProperties.get("references")).to(String[].class);
+                    if ( references != null && references.length > 0 ) {
+                        throw new IllegalArgumentException("References are not supported for repoinit (factory configuration " + pid + ")");
+                    }
+                }
+
+            } else if ( REPOINIT_PID.equals(pid) ) {
+                if (_references != null) {
+                    final String[] references = Converters.standardConverter().convert(configurationProperties.get("references")).to(String[].class);
+                    if ( references != null && references.length > 0 ) {
+                        throw new IllegalArgumentException("References are not supported for repoinit (configuration " + pid + ")");
+                    }
+                }
             } else {
                 converter.getFeaturesManager().addConfiguration(runMode, id, configurationProperties);
             }
