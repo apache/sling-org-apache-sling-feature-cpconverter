@@ -149,7 +149,7 @@ public final class DefaultAclManager implements AclManager {
             while (authorizationsIterator.hasNext()) {
                 AccessControlEntry acl = authorizationsIterator.next();
 
-                if (acl.getPath().startsWith(systemUser.getPath())) {
+                if (acl.getRepositoryPath().startsWith(systemUser.getPath())) {
                     authorizationsIterator.remove();
                 }
             }

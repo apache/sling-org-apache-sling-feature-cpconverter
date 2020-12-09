@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.xml.sax.Attributes;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
@@ -42,7 +43,7 @@ public final class SystemUsersEntryHandler extends AbstractRegexEntryHandler {
             path = matcher.group(1);
         }
 
-        RepoPath currentPath = new RepoPath(path).getParent();
+        RepoPath currentPath = new RepoPath(PlatformNameFormat.getRepositoryPath(path)).getParent();
 
         SystemUserParser systemUserParser = new SystemUserParser(converter, currentPath);
         try (InputStream input = archive.openInputStream(entry)) {
