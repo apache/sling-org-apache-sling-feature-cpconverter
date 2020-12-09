@@ -60,14 +60,14 @@ public final class SystemUsersEntryHandler extends AbstractRegexEntryHandler {
 
         private final ContentPackage2FeatureModelConverter converter;
 
-        private final RepoPath oPath;
+        private final RepoPath path;
 
         private final RepoPath intermediatePath;
 
         public SystemUserParser(ContentPackage2FeatureModelConverter converter, RepoPath path, RepoPath intermediatePath) {
             super(REP_SYSTEM_USER);
             this.converter = converter;
-            this.oPath = path;
+            this.path = path;
             this.intermediatePath = intermediatePath;
         }
 
@@ -75,7 +75,7 @@ public final class SystemUsersEntryHandler extends AbstractRegexEntryHandler {
         protected void onJcrRootElement(String uri, String localName, String qName, Attributes attributes) {
             String authorizableId = attributes.getValue(REP_AUTHORIZABLE_ID);
             if (authorizableId != null && !authorizableId.isEmpty()) {
-                converter.getAclManager().addSystemUser(new SystemUser(authorizableId, oPath, intermediatePath));
+                converter.getAclManager().addSystemUser(new SystemUser(authorizableId, path, intermediatePath));
             }
         }
 
