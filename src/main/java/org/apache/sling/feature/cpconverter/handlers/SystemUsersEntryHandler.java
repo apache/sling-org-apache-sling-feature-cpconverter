@@ -43,9 +43,10 @@ public final class SystemUsersEntryHandler extends AbstractRegexEntryHandler {
             path = matcher.group(1);
         }
 
-        RepoPath currentPath = new RepoPath(PlatformNameFormat.getRepositoryPath(path)).getParent();
+        RepoPath originalPath = new RepoPath(PlatformNameFormat.getRepositoryPath(path));
+        RepoPath intermediatePath = originalPath.getParent();
 
-        SystemUserParser systemUserParser = new SystemUserParser(converter, currentPath);
+        SystemUserParser systemUserParser = new SystemUserParser(converter, originalPath, intermediatePath);
         try (InputStream input = archive.openInputStream(entry)) {
             systemUserParser.parse(input);
         }
@@ -59,19 +60,22 @@ public final class SystemUsersEntryHandler extends AbstractRegexEntryHandler {
 
         private final ContentPackage2FeatureModelConverter converter;
 
-        private final RepoPath path;
+        private final RepoPath oPath;
 
-        public SystemUserParser(ContentPackage2FeatureModelConverter converter, RepoPath path) {
+        private final RepoPath intermediatePath;
+
+        public SystemUserParser(ContentPackage2FeatureModelConverter converter, RepoPath path, RepoPath intermediatePath) {
             super(REP_SYSTEM_USER);
             this.converter = converter;
-            this.path = path;
+            this.oPath = path;
+            this.intermediatePath = intermediatePath;
         }
 
         @Override
         protected void onJcrRootElement(String uri, String localName, String qName, Attributes attributes) {
             String authorizableId = attributes.getValue(REP_AUTHORIZABLE_ID);
             if (authorizableId != null && !authorizableId.isEmpty()) {
-                converter.getAclManager().addSystemUser(new SystemUser(authorizableId, path));
+                converter.getAclManager().addSystemUser(new SystemUser(authorizableId, oPath, intermediatePath));
             }
         }
 

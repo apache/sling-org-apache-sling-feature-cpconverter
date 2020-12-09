@@ -25,10 +25,12 @@ public class SystemUser {
     private final String id;
 
     private final RepoPath path;
+    private final RepoPath intermediatePath;
 
-    public SystemUser(String id, RepoPath path) {
+    public SystemUser(String id, RepoPath path, RepoPath intermediatePath) {
         this.id = id;
         this.path = path;
+        this.intermediatePath = intermediatePath;
     }
 
     public String getId() {
@@ -37,6 +39,10 @@ public class SystemUser {
 
     public RepoPath getPath() {
         return path;
+    }
+
+    public RepoPath getIntermediatePath() {
+        return intermediatePath;
     }
 
     @Override
