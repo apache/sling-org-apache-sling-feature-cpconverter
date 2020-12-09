@@ -16,17 +16,17 @@ The _Apache Sling Content Package to Feature Model converter_ (referred as _cp2f
 
 As exposed above, `content-package`s are archives, compressed with the ZIP algorithm, which contain:
 
- * OSGi bundles, conventionally found under the `jcr_root/apps/<application>/install(.runMode)/<bundle>.jar` path; typically, OSGi bundles are also valid _Apache Maven_ artifacts, that means that they contain _Apache Maven_ metadata files such as `META-INF/maven/<groupId>/<artifactId>/pom.(xml|properties)`;
- * OSGi configurations, conventionally found under the `jcr_root/apps/<application>/config(.runMode)/<configuration>.<extension>` path;
- * nested `content-package`s, conventionally found under the `jcr_root/etc/packages/<package-name>.zip` path;
- * Metadata files, under the `META-INF/` directory;
- * any other kind of resource.
+* OSGi bundles, conventionally found under the `jcr_root/apps/<application>/install(.runMode)/<bundle>.jar` path; typically, OSGi bundles are also valid _Apache Maven_ artifacts, that means that they contain _Apache Maven_ metadata files such as `META-INF/maven/<groupId>/<artifactId>/pom.(xml|properties)`;
+* OSGi configurations, conventionally found under the `jcr_root/apps/<application>/config(.runMode)/<configuration>.<extension>` path;
+* nested `content-package`s, conventionally found under the `jcr_root/etc/packages/<package-name>.zip` path;
+* Metadata files, under the `META-INF/` directory;
+* any other kind of resource.
 
-### a content-package sample
+### A content-package sample
 
 We can have a look at what's inside a `test-content-package.zip` test `content-package` included in the `cp2fm` test resources:
 
-```
+``` bash
 $ unzip -l ./content-package-2-feature-model/src/test/resources/org/apache/sling/cp2fm/test-content-package.zip 
 Archive:  content-package-2-feature-model/src/test/resources/org/apache/sling/cp2fm/test-content-package.zip
   Length      Date    Time    Name
@@ -56,7 +56,7 @@ Archive:  content-package-2-feature-model/src/test/resources/org/apache/sling/cp
 
 Where the `test-bundles.zip` is a nested `content-package` wrapping OSGi bundles:
 
-```
+``` bash
 $ unzip -l test-bundles.zip 
 Archive:  test-bundles.zip
   Length      Date    Time    Name
@@ -89,7 +89,7 @@ Archive:  test-bundles.zip
 
 the `test-configurations.zip` contains OSGi configurations:
 
-```
+``` bash
 $ unzip -l test-configurations.zip 
 Archive:  test-configurations.zip
   Length      Date    Time    Name
@@ -120,7 +120,7 @@ Archive:  test-configurations.zip
 
 and the `test-content.zip` package includes resources of various nature:
 
-```
+``` bash
 $ unzip -l test-content.zip 
 Archive:  test-content.zip
   Length      Date    Time    Name
@@ -205,7 +205,7 @@ $ cat asd.retail.all-publish.json
 
 All detected bundles are collected in an _Apache Maven repository_ compliant directory, all other resources are collected in a new `content-package`, usually classified as `cp2fm-converted-feature`, created while scanning the packages, which contains _content only_.
 
-```
+```bash
 $ tree bundles/
 artifacts/
 └── org
@@ -236,10 +236,10 @@ artifacts/
 
 All OSGi configuration formats are supported:
 
- * _Property_ files, which extensions are `.properties` or `.cfg`, see the related [documentation](https://sling.apache.org/documentation/bundles/configuration-installer-factory.html#property-files-cfg);
- * Configuration Files, which extension is `.config`, see the related [documentation](https://sling.apache.org/documentation/bundles/configuration-installer-factory.html#configuration-files-config);
- * JSON format, which extension is `.cfg.json`, see the related [documentation](https://blog.osgi.org/2018/06/osgi-r7-highlights-configuration-admin.html)
- * `sling:OsgiConfig` content nodes, typically `.xml` files.
+* _Property_ files, which extensions are `.properties` or `.cfg`, see the related [documentation](https://sling.apache.org/documentation/bundles/configuration-installer-factory.html#property-files-cfg);
+* Configuration Files, which extension is `.config`, see the related [documentation](https://sling.apache.org/documentation/bundles/configuration-installer-factory.html#configuration-files-config);
+* JSON format, which extension is `.cfg.json`, see the related [documentation](https://blog.osgi.org/2018/06/osgi-r7-highlights-configuration-admin.html)
+* `sling:OsgiConfig` content nodes, typically `.xml` files.
 
 During the conversion process, all these formats will be parsed and then added in the `configuration` section of the _Sling Feature Model_ file.
 
@@ -295,8 +295,8 @@ converter.convert(contentPackages);
 
 The `org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter#convert(File[] contentPackages)` method performs a two-phases algorithm, which:
 
- * all content-packages dependencies are computed in order to built the correct content-packages processing sequence;
- * all entries of each content-package is scanned and processed accordingly.
+* all content-packages dependencies are computed in order to built the correct content-packages processing sequence;
+* all entries of each content-package is scanned and processed accordingly.
 
 ### Features Manager service
 
@@ -304,7 +304,7 @@ The [org.apache.sling.feature.cpconverter.features.FeaturesManager](./src/main/j
 
 The additional [org.apache.sling.feature.cpconverter.features.RunmodeMapper](./src/main/java/org/apache/sling/feature/cpconverter/features/RunmodeMapper.java) component, embedded in the `DefaultFeaturesManager`, will take care to create a `runmode.mapping`, in the same Feature Model target directory, where all features will be indexed by runmodes, i.e.:
 
-```
+``` bash
 $ cat /my-target-project/src/main/features/runmode.mapping 
 #File edited by the Apache Sling Content Package to Sling Feature converter
 #Fri Aug 30 12:47:56 CEST 2019
@@ -320,7 +320,7 @@ The [default implementation](./src/main/java/org/apache/sling/feature/cpconverte
 
 Bundles are collected in an _Apache Maven repository_ compliant directory, all other resources are collected in a new `content-package` created while scanning the packages:
 
-```
+``` bash
 $ tree bundles/
 artifacts/
 └── org
@@ -388,12 +388,12 @@ Everything else, unless users will deploy in the classpath a custom `org.apache.
 
 While scanning the input content-package(s), all ACLs entries are handled by the [org.apache.sling.feature.cpconverter.acl.AclManager](./src/main/java/org/apache/sling/feature/cpconverter/acl/AclManager.java) service which is in charge of collecting and computing:
 
- * System Users;
- * System Users related ACLs;
- * Privileges;
- * Node types registrations;
- * Any `repoinit` additional instruction.
- 
+* System Users;
+* System Users related ACLs;
+* Privileges;
+* Node types registrations;
+* Any `repoinit` additional instruction.
+
 Default implementation is provided by [org.apache.sling.feature.cpconverter.acl.DefaultAclManager](./src/main/java/org/apache/sling/feature/cpconverter/acl/DefaultAclManager.java).
 
 #### Please note
@@ -406,7 +406,7 @@ SAX-alike events are emitted while processing input (sub-)content-packages, all 
 
 The default implementation [org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter](./src/main/java/org/apache/sling/feature/cpconverter/vltpkg/DefaultPackagesEventsEmitter.java) will take care of creating, in the same Feature Model target directory, a `content-packages.csv` index file, where all (sub-)content-packages will be enlisted with their related complete path, i.e.:
 
-```
+```bash
 # File created on Fri Aug 30 12:47:55 CEST 2019 by the Apache Sling Content Package to Sling Feature converter
 # content-package path, content-package ID, content-package type, content-package parent ID, path in parent content-package, absolute path
 /Users/asfuser/content-packages/org.apache.test.components.all-2.5.1-SNAPSHOT.zip,org/apache/test:org.apache.test.components.all:2.5.1-SNAPSHOT,MIXED,,,
@@ -420,7 +420,7 @@ The `!` character is used to separate nested sub-content-packages path.
 
 The tool is distributed with a commodity package containing all is needed in order to launch the `ContentPackage2FeatureModelConverter` form the shell:
 
-```
+```bash
 $ unzip -l org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT.zip 
 Archive:  org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT.zip
   Length      Date    Time    Name
@@ -479,7 +479,7 @@ Archive:  org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT.zip
 
 once the package is decompressed, open the shell and type:
 
-```
+```bash
 $ ./bin/cp2sf -h
 Usage: cp2fm [-hmqsvX] -a=<artifactsOutputDirectory> [-b=<bundlesStartOrder>]
              [-i=<artifactIdOverride>] -o=<featureModelsOutputDirectory>
@@ -525,13 +525,13 @@ Copyright(c) 2019 The Apache Software Foundation.
 
 to see all the available options; a sample execution could look like:
 
-```
-$ ./bin/cp2sf -v -b 20 -c /content-package-2-feature-model/src/test/resources/org/apache/sling/cp2fm/test-content-package.zip -a /cache -o /tmp
+``` bash
+> ./bin/cp2sf -v -b 20 -c /content-package-2-feature-model/src/test/resources/org/apache/sling/cp2fm/test-content-package.zip -a /cache -o /tmp
 ```
 
 Argument Files for Long Command Lines:
 
-```
+```bash
 # argfile
 # comments are supported
 
@@ -543,8 +543,8 @@ Argument Files for Long Command Lines:
 
 then execute the command
 
-```
-$ ./bin/cp2sf @argfile
+```bash
+> ./bin/cp2sf @argfile
 ````
 
 ## Failures and Restrictions
