@@ -102,11 +102,11 @@ public final class DefaultAclManager implements AclManager {
 
             for (SystemUser systemUser : systemUsers) {
                 // TODO does it harm?!?
-                addSystemUserPath(formatter, systemUser.getPath());
+                addSystemUserPath(formatter, systemUser.getIntermediatePath());
 
                 // make sure all users are created first
 
-                formatter.format("create service user %s with path %s%n", systemUser.getId(), systemUser.getPath());
+                formatter.format("create service user %s with path %s%n", systemUser.getId(), systemUser.getIntermediatePath());
 
                 // clean the unneeded ACLs, see SLING-8561
 
@@ -149,7 +149,7 @@ public final class DefaultAclManager implements AclManager {
             while (authorizationsIterator.hasNext()) {
                 AccessControlEntry acl = authorizationsIterator.next();
 
-                if (acl.getRepositoryPath().startsWith(systemUser.getPath())) {
+                if (acl.getRepositoryPath().startsWith(systemUser.getIntermediatePath())) {
                     authorizationsIterator.remove();
                 }
             }

@@ -183,7 +183,7 @@ public final class RepPolicyEntryHandlerTest {
     @Test
     public void systemUserAclSetNotForUserPath() throws Exception {
         ParseResult result = parseAndSetRepoinit(new SystemUser("acs-commons-package-replication-status-event-service",
-                new RepoPath("/this/is/a/completely/different/path")));
+                new RepoPath("/this/is/a/completely/different/path/foo"), new RepoPath("/this/is/a/completely/different/path")));
         Extension repoinitExtension = result.getRepoinitExtension();
         assertNotNull(repoinitExtension);
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
@@ -225,11 +225,12 @@ public final class RepPolicyEntryHandlerTest {
     }
 
     private ParseResult parseAndSetRepoinit(String...systemUsersNames) throws Exception {
-        RepoPath alwaysTheSamePath = new RepoPath("/asd/public");
+        RepoPath alwaysTheSameOrgPath = new RepoPath("/asd/public/foo");
+        RepoPath alwaysTheSameInterPath = new RepoPath("/asd/public");
 
         SystemUser[] systemUsers = new SystemUser[systemUsersNames.length];
         for (int i = 0; i < systemUsersNames.length; i++) {
-            systemUsers[i] = new SystemUser(systemUsersNames[i], alwaysTheSamePath);
+            systemUsers[i] = new SystemUser(systemUsersNames[i], alwaysTheSameOrgPath, alwaysTheSameInterPath);
         }
 
         return parseAndSetRepoinit(systemUsers);

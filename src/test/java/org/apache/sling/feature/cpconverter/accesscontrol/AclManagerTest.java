@@ -71,12 +71,12 @@ public class AclManagerTest {
 
     @Test
     public void makeSureAclsAreCreatedOnlyoutsideSytemUsersPaths() throws Exception {
-        aclManager.addSystemUser(new SystemUser("acs-commons-ensure-oak-index-service", new RepoPath("/asd/public")));
+        aclManager.addSystemUser(new SystemUser("acs-commons-ensure-oak-index-service", new RepoPath("/asd/public/foo"), new RepoPath("/asd/public")));
 
         // emulate a second iteration of conversion
         aclManager.reset();
 
-        aclManager.addSystemUser(new SystemUser("acs-commons-package-replication-status-event-service", new RepoPath("/asd/public")));
+        aclManager.addSystemUser(new SystemUser("acs-commons-package-replication-status-event-service", new RepoPath("/asd/public/foo"), new RepoPath("/asd/public")));
 
         aclManager.addAcl("acs-commons-ensure-oak-index-service", newAcl(true, "jcr:read,rep:write,rep:indexDefinitionManagement", "/asd/not/system/user/path"));
         aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl(true, "jcr:read,crx:replicate,jcr:removeNode", "/asd/public"));
@@ -122,7 +122,7 @@ public class AclManagerTest {
 
     @Test
     public void pathWithSpecialCharactersTest() throws RepoInitParsingException {
-        aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system")));
+        aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
         aclManager.addAcl("sys-usr", newAcl(true, "jcr:read", "/content/_cq_tags"));
         aclManager.addAcl("sys-usr", newAcl(true, "jcr:write", "/content/cq:tags"));
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
