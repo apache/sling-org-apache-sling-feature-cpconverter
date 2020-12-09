@@ -29,7 +29,7 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
     
     private static final String REPOINIT_FACTORY_PID = "org.apache.sling.jcr.repoinit.RepositoryInitializer";
 
-    private static final String REPOINIT_PID = "org.apache.sling.jcr.repoinit.impl.RepositoryInitializer ";
+    private static final String REPOINIT_PID = "org.apache.sling.jcr.repoinit.impl.RepositoryInitializer";
 
     public AbstractConfigurationEntryHandler(String extension) {
         super("/jcr_root/(?:apps|libs)/.+/config(\\.(?<runmode>[^/]+))?/(?<pid>.*)\\." + extension);
