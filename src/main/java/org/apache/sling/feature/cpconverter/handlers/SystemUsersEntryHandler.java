@@ -64,6 +64,11 @@ public final class SystemUsersEntryHandler extends AbstractRegexEntryHandler {
 
         private final RepoPath intermediatePath;
 
+        /**
+         * @param converter - the converter to use.
+         * @param path - the original repository path of the user in the content-package.
+         * @param intermediatePath - the intermediate path the user should have - most likely the (direct) parent of the path.
+         */
         public SystemUserParser(ContentPackage2FeatureModelConverter converter, RepoPath path, RepoPath intermediatePath) {
             super(REP_SYSTEM_USER);
             this.converter = converter;

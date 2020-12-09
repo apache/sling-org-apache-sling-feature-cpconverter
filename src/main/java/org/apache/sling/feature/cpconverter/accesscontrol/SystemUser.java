@@ -27,6 +27,11 @@ public class SystemUser {
     private final RepoPath path;
     private final RepoPath intermediatePath;
 
+    /**
+     * @param id - the authorizableId to use.
+     * @param path - the original repository path of the user in the content-package.
+     * @param intermediatePath - the intermediate path the user should have - most likely the (direct) parent of the path.
+     */
     public SystemUser(String id, RepoPath path, RepoPath intermediatePath) {
         this.id = id;
         this.path = path;
