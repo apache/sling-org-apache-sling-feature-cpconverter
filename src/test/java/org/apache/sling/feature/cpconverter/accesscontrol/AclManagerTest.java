@@ -41,9 +41,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -113,7 +111,7 @@ public class AclManagerTest {
     }
 
     @Test
-    public void testRest() throws RepoInitParsingException {
+    public void testReset() throws RepoInitParsingException {
         // We assume this user will not be in the result because of the reset in the next line
         aclManager.addSystemUser(new SystemUser("acs-commons-ensure-oak-index-service", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
@@ -136,7 +134,7 @@ public class AclManagerTest {
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
 
-        // acs-commons-on-deploy-scripts-service will be missed
+        // aacs-commons-ensure-oak-index-service will be missed
         String expected = "create path (rep:AuthorizableFolder) /home/users/system" + System.lineSeparator() + // SLING-8586
                 "create service user acs-commons-package-replication-status-event-service with path /home/users/system" + System.lineSeparator() +
                 "create path (sling:Folder) /asd" + System.lineSeparator() +
@@ -157,8 +155,6 @@ public class AclManagerTest {
 
     @Test
     public void testAddACLforUnknownUser() throws RepoInitParsingException {
-        aclManager.addSystemUser(new SystemUser("acs-commons-package-replication-status-event-service", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
-
         // we expect this acl to not show up because the user is unknown
         aclManager.addAcl("acs-commons-on-deploy-scripts-service", newAcl(true, "jcr:read,crx:replicate,jcr:removeNode", "/home/users/system"));
 
@@ -173,17 +169,7 @@ public class AclManagerTest {
 
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
-        assertNotNull(repoinitExtension);
-
-        // acs-commons-on-deploy-scripts-service will be missed
-        String expected = "create path (rep:AuthorizableFolder) /home/users/system" + System.lineSeparator() + // SLING-8586
-                "create service user acs-commons-package-replication-status-event-service with path /home/users/system" + System.lineSeparator();
-        String actual = repoinitExtension.getText();
-        assertEquals(expected, actual);
-
-        RepoInitParser repoInitParser = new RepoInitParserService();
-        List<Operation> operations = repoInitParser.parse(new StringReader(actual));
-        assertFalse(operations.isEmpty());
+        assertNull(repoinitExtension);
     }
 
     @Test
