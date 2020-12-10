@@ -113,6 +113,80 @@ public class AclManagerTest {
     }
 
     @Test
+    public void testRest() throws RepoInitParsingException {
+        // We assume this user will not be in the result because of the reset in the next line
+        aclManager.addSystemUser(new SystemUser("acs-commons-ensure-oak-index-service", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
+
+        // emulate a second iteration of conversion
+        aclManager.reset();
+
+        aclManager.addSystemUser(new SystemUser("acs-commons-package-replication-status-event-service", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
+        aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl(true, "jcr:read,rep:write,rep:indexDefinitionManagement", "/asd/not/system/user/path"));
+
+        VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
+        when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
+        Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
+
+        FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
+        when(fm.getTargetFeature()).thenReturn(feature);
+
+        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+
+
+        Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+        assertNotNull(repoinitExtension);
+
+        // acs-commons-on-deploy-scripts-service will be missed
+        String expected = "create path (rep:AuthorizableFolder) /home/users/system" + System.lineSeparator() + // SLING-8586
+                "create service user acs-commons-package-replication-status-event-service with path /home/users/system" + System.lineSeparator() +
+                "create path (sling:Folder) /asd" + System.lineSeparator() +
+                "create path (sling:Folder) /asd/not" + System.lineSeparator() +
+                "create path (sling:Folder) /asd/not/system" + System.lineSeparator() +
+                "create path (sling:Folder) /asd/not/system/user" + System.lineSeparator() +
+                "create path (sling:Folder) /asd/not/system/user/path" + System.lineSeparator() +
+                "set ACL for acs-commons-package-replication-status-event-service" + System.lineSeparator() +
+                "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/not/system/user/path" + System.lineSeparator() +
+                "end" + System.lineSeparator();
+        String actual = repoinitExtension.getText();
+        assertEquals(expected, actual);
+
+        RepoInitParser repoInitParser = new RepoInitParserService();
+        List<Operation> operations = repoInitParser.parse(new StringReader(actual));
+        assertFalse(operations.isEmpty());
+    }
+
+    @Test
+    public void testAddACLforUnknownUser() throws RepoInitParsingException {
+        aclManager.addSystemUser(new SystemUser("acs-commons-package-replication-status-event-service", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
+
+        // we expect this acl to not show up because the user is unknown
+        aclManager.addAcl("acs-commons-on-deploy-scripts-service", newAcl(true, "jcr:read,crx:replicate,jcr:removeNode", "/home/users/system"));
+
+        VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
+        when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
+        Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
+
+        FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
+        when(fm.getTargetFeature()).thenReturn(feature);
+
+        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+
+
+        Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+        assertNotNull(repoinitExtension);
+
+        // acs-commons-on-deploy-scripts-service will be missed
+        String expected = "create path (rep:AuthorizableFolder) /home/users/system" + System.lineSeparator() + // SLING-8586
+                "create service user acs-commons-package-replication-status-event-service with path /home/users/system" + System.lineSeparator();
+        String actual = repoinitExtension.getText();
+        assertEquals(expected, actual);
+
+        RepoInitParser repoInitParser = new RepoInitParserService();
+        List<Operation> operations = repoInitParser.parse(new StringReader(actual));
+        assertFalse(operations.isEmpty());
+    }
+
+    @Test
     public void pathWithSpecialCharactersTest() throws RepoInitParsingException {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
         aclManager.addAcl("sys-usr", newAcl(true, "jcr:read", "/content/_cq_tags"));
