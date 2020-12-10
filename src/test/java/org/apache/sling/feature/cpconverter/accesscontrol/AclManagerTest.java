@@ -71,18 +71,10 @@ public class AclManagerTest {
 
     @Test
     public void makeSureAclsAreCreatedOnlyoutsideSytemUsersPaths() throws Exception {
-        aclManager.addSystemUser(new SystemUser("acs-commons-ensure-oak-index-service", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
-
-        // emulate a second iteration of conversion
-        aclManager.reset();
-
         aclManager.addSystemUser(new SystemUser("acs-commons-package-replication-status-event-service", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
-        aclManager.addAcl("acs-commons-ensure-oak-index-service", newAcl(true, "jcr:read,rep:write,rep:indexDefinitionManagement", "/asd/not/system/user/path"));
+        aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl(true, "jcr:read,rep:write,rep:indexDefinitionManagement", "/asd/not/system/user/path"));
         aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl(true, "jcr:read,crx:replicate,jcr:removeNode", "/home/users/system"));
-
-        // add an ACL for unknown user
-        aclManager.addAcl("acs-commons-on-deploy-scripts-service", newAcl(true, "jcr:read,crx:replicate,jcr:removeNode", "/home/users/system"));
 
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
         when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
@@ -109,7 +101,7 @@ public class AclManagerTest {
                 // "set ACL for acs-commons-package-replication-status-event-service\n" +
                 // "allow jcr:read,crx:replicate,jcr:removeNode on /asd/public\n" +
                 // "end\n" +
-                "set ACL for acs-commons-ensure-oak-index-service" + System.lineSeparator() +
+                "set ACL for acs-commons-package-replication-status-event-service" + System.lineSeparator() +
                 "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/not/system/user/path" + System.lineSeparator() +
                 "end" + System.lineSeparator();
         String actual = repoinitExtension.getText();
