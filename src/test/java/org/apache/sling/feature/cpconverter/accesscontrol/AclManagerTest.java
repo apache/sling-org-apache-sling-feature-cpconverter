@@ -71,18 +71,18 @@ public class AclManagerTest {
 
     @Test
     public void makeSureAclsAreCreatedOnlyoutsideSytemUsersPaths() throws Exception {
-        aclManager.addSystemUser(new SystemUser("acs-commons-ensure-oak-index-service", new RepoPath("/asd/public/foo"), new RepoPath("/asd/public")));
+        aclManager.addSystemUser(new SystemUser("acs-commons-ensure-oak-index-service", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         // emulate a second iteration of conversion
         aclManager.reset();
 
-        aclManager.addSystemUser(new SystemUser("acs-commons-package-replication-status-event-service", new RepoPath("/asd/public/foo"), new RepoPath("/asd/public")));
+        aclManager.addSystemUser(new SystemUser("acs-commons-package-replication-status-event-service", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addAcl("acs-commons-ensure-oak-index-service", newAcl(true, "jcr:read,rep:write,rep:indexDefinitionManagement", "/asd/not/system/user/path"));
-        aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl(true, "jcr:read,crx:replicate,jcr:removeNode", "/asd/public"));
+        aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl(true, "jcr:read,crx:replicate,jcr:removeNode", "/home/users/system"));
 
         // add an ACL for unknown user
-        aclManager.addAcl("acs-commons-on-deploy-scripts-service", newAcl(true, "jcr:read,crx:replicate,jcr:removeNode", "/asd/public"));
+        aclManager.addAcl("acs-commons-on-deploy-scripts-service", newAcl(true, "jcr:read,crx:replicate,jcr:removeNode", "/home/users/system"));
 
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
         when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
@@ -98,8 +98,8 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         // acs-commons-on-deploy-scripts-service will be missed
-        String expected = "create path (rep:AuthorizableFolder) /asd/public" + System.lineSeparator() + // SLING-8586
-                "create service user acs-commons-package-replication-status-event-service with path /asd/public" + System.lineSeparator() +
+        String expected = "create path (rep:AuthorizableFolder) /home/users/system" + System.lineSeparator() + // SLING-8586
+                "create service user acs-commons-package-replication-status-event-service with path /home/users/system" + System.lineSeparator() +
                 "create path (sling:Folder) /asd" + System.lineSeparator() +
                 "create path (sling:Folder) /asd/not" + System.lineSeparator() +
                 "create path (sling:Folder) /asd/not/system" + System.lineSeparator() +

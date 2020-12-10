@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements. See the NOTICE file distributed with this
+ work for additional information regarding copyright ownership. The ASF
+ licenses this file to You under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+ http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ License for the specific language governing permissions and limitations under
+ the License.
+-->
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:rep="internal"
+          jcr:primaryType="rep:ACL">
+    <allow0
+            jcr:primaryType="rep:GrantACE"
+            rep:principalName="acs-commons-ensure-oak-index-service"
+            rep:privileges="{Name}[jcr:read,rep:write,rep:indexDefinitionManagement]">
+        <rep:restrictions
+                jcr:primaryType="rep:Restrictions"
+                rep:glob="{Name}[*/oak:index/*]"/>
+    </allow0>
+    <allow1
+            jcr:primaryType="rep:GrantACE"
+            rep:principalName="acs-commons-dispatcher-flush-service"
+            rep:privileges="{Name}[jcr:read,crx:replicate,jcr:removeNode]"/>
+    <allow2
+            jcr:primaryType="rep:GrantACE"
+            rep:principalName="acs-commons-package-replication-status-event-service"
+            rep:privileges="{Name}[jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl]"/>
+    <allow3
+            jcr:primaryType="rep:GrantACE"
+            rep:principalName="acs-commons-ensure-service-user-service"
+            rep:privileges="{Name}[jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl]"/>
+    <allow4
+            jcr:primaryType="rep:GrantACE"
+            rep:principalName="acs-commons-automatic-package-replicator-service"
+            rep:privileges="{Name}[jcr:read]"/>
+    <allow5
+            jcr:primaryType="rep:GrantACE"
+            rep:principalName="acs-commons-on-deploy-scripts-service"
+            rep:privileges="{Name}[jcr:read]"/>
+</jcr:root>
