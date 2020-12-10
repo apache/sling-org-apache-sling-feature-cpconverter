@@ -16,137 +16,49 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import org.apache.sling.feature.cpconverter.accesscontrol.AccessControlEntry;
+import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
+import org.apache.sling.feature.cpconverter.shared.RepoPath;
+import org.jetbrains.annotations.NotNull;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.jackrabbit.vault.fs.io.Archive;
-import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
-import org.apache.jackrabbit.vault.util.PlatformNameFormat;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.accesscontrol.AccessControlEntry;
-import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
-import org.apache.sling.feature.cpconverter.shared.AbstractJcrNodeParser;
-import org.apache.sling.feature.cpconverter.shared.RepoPath;
-
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.StringWriter;
+import javax.xml.transform.sax.TransformerHandler;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.sax.TransformerHandler;
-import javax.xml.transform.stream.StreamResult;
 
 import static org.apache.jackrabbit.JcrConstants.JCR_PRIMARYTYPE;
 
-public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
-
-    private final SAXTransformerFactory saxTransformerFactory = (SAXTransformerFactory) TransformerFactory.newInstance();
+public final class RepPolicyEntryHandler extends AbstractPolicyEntryHandler {
 
     public RepPolicyEntryHandler() {
         super("/jcr_root(.*/)_rep_policy.xml");
     }
 
-    @Override
-    public void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter)
-            throws Exception {
-        String resourcePath;
-        Matcher matcher = getPattern().matcher(path);
-        // we are pretty sure it matches, here
-        if (matcher.matches()) {
-            resourcePath = matcher.group(1);
-        } else {
-            throw new IllegalStateException("Something went terribly wrong: pattern '"
-                                            + getPattern().pattern()
-                                            + "' should have matched already with path '"
-                                            + path
-                                            + "' but it does not, currently");
-        }
-
-        TransformerHandler handler = saxTransformerFactory.newTransformerHandler();
-        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
-        handler.getTransformer().setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
-        handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-        StringWriter stringWriter = new StringWriter();
-        handler.setResult(new StreamResult(stringWriter));
-
-        RepPolicyParser systemUserParser = new RepPolicyParser(new RepoPath(PlatformNameFormat.getRepositoryPath(resourcePath)),
-                                                               converter.getAclManager(),
-                                                               handler);
-        boolean hasRejectedAcls;
-
-        try (InputStream input = archive.openInputStream(entry)) {
-            hasRejectedAcls = systemUserParser.parse(input);
-        }
-
-        if (hasRejectedAcls) {
-            try (Reader reader = new StringReader(stringWriter.toString());
-                    OutputStreamWriter writer = new OutputStreamWriter(converter.getMainPackageAssembler().createEntry(path))) {
-                IOUtils.copy(reader, writer);
-            }
-        }
+    @NotNull
+    AbstractPolicyParser createPolicyParser(@NotNull RepoPath repositoryPath, @NotNull AclManager aclManager, @NotNull TransformerHandler handler) {
+        return new RepPolicyParser(repositoryPath, aclManager, handler);
     }
 
-    private static final class RepPolicyParser extends AbstractJcrNodeParser<Boolean> {
+    private static final class RepPolicyParser extends AbstractPolicyParser {
 
         private static final String REP_ACL = "rep:ACL";
-
         private static final String REP_GRANT_ACE = "rep:GrantACE";
-
         private static final String REP_DENY_ACE = "rep:DenyACE";
-
-        private static final String REP_RESTRICTIONS = "rep:Restrictions";
-
-        private static final String REP_PRINCIPAL_NAME = "rep:principalName";
-
-        private static final String REP_PRIVILEGES = "rep:privileges";
-
         private static final Map<String, Boolean> operations = new HashMap<>();
-
         static {
             operations.put(REP_GRANT_ACE, true);
             operations.put(REP_DENY_ACE, false);
         }
 
-        private static final String[] RESTRICTIONS = new String[] { "rep:glob", "rep:ntNames", "rep:prefixes", "rep:itemNames" };
-
-        private static final Pattern typeIndicatorPattern = Pattern.compile("\\{[^\\}]+\\}\\[(.+)\\]");
-
         private final Stack<AccessControlEntry> acls = new Stack<>();
-
-        private final RepoPath repositoryPath;
-
-        private final AclManager aclManager;
-
-        private final TransformerHandler handler;
-
-        private boolean onRepAclNode = false;
-
-        // ACL processing result
-        private boolean hasRejectedNodes = false;
 
         // just internal pointer for every iteration
         private boolean processCurrentAcl = false;
 
         public RepPolicyParser(RepoPath repositoryPath, AclManager aclManager, TransformerHandler handler) {
-            super(REP_ACL);
-            this.repositoryPath = repositoryPath;
-            this.aclManager = aclManager;
-            this.handler = handler;
-        }
-
-        @Override
-        public void startDocument() throws SAXException {
-            handler.startDocument();
+            super(REP_ACL, repositoryPath, aclManager, handler);
         }
 
         @Override
@@ -156,12 +68,7 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
                 String primaryType = attributes.getValue(JCR_PRIMARYTYPE);
                 if (REP_GRANT_ACE.equals(primaryType) || REP_DENY_ACE.equals(primaryType)) {
                     String principalName = attributes.getValue(REP_PRINCIPAL_NAME);
-
-                    Boolean isAllow = operations.get(primaryType);
-
-                    String privileges = extractValue(attributes.getValue(REP_PRIVILEGES));
-
-                    AccessControlEntry acl = new AccessControlEntry(isAllow, privileges, repositoryPath);
+                    AccessControlEntry acl = createEntry(operations.get(primaryType), attributes);
 
                     processCurrentAcl = aclManager.addAcl(principalName, acl);
                     if (processCurrentAcl) {
@@ -171,14 +78,9 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
                     }
                 } else if (REP_RESTRICTIONS.equals(primaryType) && !acls.isEmpty()) {
                     if (processCurrentAcl) {
-                        acls.add(acls.peek());
-                        for (String restriction : RESTRICTIONS) {
-                            String path = extractValue(attributes.getValue(restriction));
-
-                            if (path != null && !path.isEmpty()) {
-                                acls.peek().addRestriction(restriction + ',' + path);
-                            }
-                        }
+                        AccessControlEntry ace = acls.peek();
+                        acls.add(ace);
+                        addRestrictions(ace, attributes);
                     }
                 }
             } else {
@@ -199,35 +101,5 @@ public final class RepPolicyEntryHandler extends AbstractRegexEntryHandler {
                 handler.endElement(uri, localName, qName);
             }
         }
-
-        @Override
-        public void endDocument() throws SAXException {
-            handler.endDocument();
-        }
-
-        @Override
-        protected void onJcrRootElement(String uri, String localName, String qName, Attributes attributes) {
-            onRepAclNode = true;
-        }
-
-        @Override
-        protected Boolean getParsingResult() {
-            return hasRejectedNodes;
-        }
-
-        private static String extractValue(String expression) {
-            if (expression == null || expression.isEmpty()) {
-                return expression;
-            }
-
-            Matcher matcher = typeIndicatorPattern.matcher(expression);
-            if (matcher.matches()) {
-                return matcher.group(1);
-            }
-
-            return expression;
-        }
-
     }
-
 }
