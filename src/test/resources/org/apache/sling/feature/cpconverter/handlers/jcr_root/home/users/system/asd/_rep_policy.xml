@@ -45,4 +45,8 @@
             jcr:primaryType="rep:GrantACE"
             rep:principalName="acs-commons-on-deploy-scripts-service"
             rep:privileges="{Name}[jcr:read]"/>
+    <deny0
+            jcr:primaryType="rep:DenyACE"
+            rep:principalName="acs-commons-dispatcher-flush-service"
+            rep:privileges="{Name}[jcr:write]"/>
 </jcr:root>
