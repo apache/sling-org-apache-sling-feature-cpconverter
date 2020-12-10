@@ -49,4 +49,8 @@
             jcr:primaryType="rep:DenyACE"
             rep:principalName="acs-commons-dispatcher-flush-service"
             rep:privileges="{Name}[jcr:write]"/>
+    <deny1
+            jcr:primaryType="rep:DenyACE"
+            rep:principalName="acs-commons-package-replication-status-event-service"
+            rep:privileges="{Name}[jcr:write]"/>
 </jcr:root>
