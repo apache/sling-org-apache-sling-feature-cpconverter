@@ -94,30 +94,30 @@ public final class RepPolicyEntryHandlerTest {
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
         // commented ACLs are due SLING-8561
-        String expected = "create path (rep:AuthorizableFolder) /asd/public" + System.lineSeparator() + // SLING-8586
-                "create service user acs-commons-ensure-oak-index-service with path /asd/public" + System.lineSeparator() +
+        String expected = "create path (rep:AuthorizableFolder) /home/users/system" + System.lineSeparator() + // SLING-8586
+                "create service user acs-commons-ensure-oak-index-service with path /home/users/system" + System.lineSeparator() +
                 // "create path (sling:Folder) /asd\n" +
                 // "create path (sling:Folder) /asd/public\n" +
                 // "set ACL for acs-commons-ensure-oak-index-service\n" +
                 // "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/public restriction(rep:glob,*/oak:index/*)\n" +
                 // "end\n" +
-                "create service user acs-commons-dispatcher-flush-service with path /asd/public" + System.lineSeparator() +
+                "create service user acs-commons-dispatcher-flush-service with path /home/users/system" + System.lineSeparator() +
                 // "set ACL for acs-commons-dispatcher-flush-service\n" +
                 // "allow jcr:read,crx:replicate,jcr:removeNode on /asd/public\n" +
                 // "end\n" +
-                "create service user acs-commons-package-replication-status-event-service with path /asd/public" + System.lineSeparator() +
+                "create service user acs-commons-package-replication-status-event-service with path /home/users/system" + System.lineSeparator() +
                 // "set ACL for acs-commons-package-replication-status-event-service\n" +
                 // "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" +
                 // "end\n" +
-                "create service user acs-commons-ensure-service-user-service with path /asd/public" + System.lineSeparator() +
+                "create service user acs-commons-ensure-service-user-service with path /home/users/system" + System.lineSeparator() +
                 // "set ACL for acs-commons-ensure-service-user-service\n" +
                 // "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" +
                 // "end\n" +
-                "create service user acs-commons-automatic-package-replicator-service with path /asd/public" + System.lineSeparator() +
+                "create service user acs-commons-automatic-package-replicator-service with path /home/users/system" + System.lineSeparator() +
                 // "set ACL for acs-commons-automatic-package-replicator-service\n" +
                 // "allow jcr:read on /asd/public\n" +
                 // "end\n" +
-                "create service user acs-commons-on-deploy-scripts-service with path /asd/public" + System.lineSeparator();
+                "create service user acs-commons-on-deploy-scripts-service with path /home/users/system" + System.lineSeparator();
                 // "set ACL for acs-commons-on-deploy-scripts-service\n" +
                 // "allow jcr:read on /asd/public\n" +
                 // "end\n";
@@ -141,22 +141,22 @@ public final class RepPolicyEntryHandlerTest {
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
         // commented ACLs are due SLING-8561
-        String expected = "create path (rep:AuthorizableFolder) /asd/public" + System.lineSeparator() + // SLING-8586
-                "create service user acs-commons-package-replication-status-event-service with path /asd/public" + System.lineSeparator() +
+        String expected = "create path (rep:AuthorizableFolder) /home/users/system" + System.lineSeparator() + // SLING-8586
+                "create service user acs-commons-package-replication-status-event-service with path /home/users/system" + System.lineSeparator() +
                 // "create path (sling:Folder) /asd\n" +
                 // "create path (sling:Folder) /asd/public\n" +
                 // "set ACL for acs-commons-package-replication-status-event-service\n" +
                 // "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" +
                 // "end\n" +
-                "create service user acs-commons-ensure-service-user-service with path /asd/public" + System.lineSeparator() +
+                "create service user acs-commons-ensure-service-user-service with path /home/users/system" + System.lineSeparator() +
                 // "set ACL for acs-commons-ensure-service-user-service\n" +
                 // "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" +
                 // "end\n" +
-                "create service user acs-commons-automatic-package-replicator-service with path /asd/public" + System.lineSeparator() +
+                "create service user acs-commons-automatic-package-replicator-service with path /home/users/system" + System.lineSeparator() +
                 // "set ACL for acs-commons-automatic-package-replicator-service\n" +
                 // "allow jcr:read on /asd/public\n" +
                 // "end\n" +
-                "create service user acs-commons-on-deploy-scripts-service with path /asd/public" + System.lineSeparator();
+                "create service user acs-commons-on-deploy-scripts-service with path /home/users/system" + System.lineSeparator();
                 //"set ACL for acs-commons-on-deploy-scripts-service\n" +
                 //"allow jcr:read on /asd/public\n" +
                 //"end\n";
@@ -190,10 +190,12 @@ public final class RepPolicyEntryHandlerTest {
 
         String expected = "create path (rep:AuthorizableFolder) /this/is/a/completely/different/path" + System.lineSeparator() + // SLING-8586
                 "create service user acs-commons-package-replication-status-event-service with path /this/is/a/completely/different/path" + System.lineSeparator() +
-                "create path (sling:Folder) /asd" + System.lineSeparator() +
-                "create path (sling:Folder) /asd/public" + System.lineSeparator() +
+                "create path (sling:Folder) /home" + System.lineSeparator() +
+                "create path (sling:Folder) /home/users" + System.lineSeparator() +
+                "create path (sling:Folder) /home/users/system" + System.lineSeparator() +
+                "create path (sling:Folder) /home/users/system/asd" + System.lineSeparator() +
                 "set ACL for acs-commons-package-replication-status-event-service" + System.lineSeparator() +
-                "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public" + System.lineSeparator() +
+                "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /home/users/system/asd" + System.lineSeparator() +
                 "end" + System.lineSeparator();
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -225,8 +227,8 @@ public final class RepPolicyEntryHandlerTest {
     }
 
     private ParseResult parseAndSetRepoinit(String...systemUsersNames) throws Exception {
-        RepoPath alwaysTheSameOrgPath = new RepoPath("/asd/public/foo");
-        RepoPath alwaysTheSameInterPath = new RepoPath("/asd/public");
+        RepoPath alwaysTheSameOrgPath = new RepoPath("/home/users/system/asd");
+        RepoPath alwaysTheSameInterPath = new RepoPath("/home/users/system");
 
         SystemUser[] systemUsers = new SystemUser[systemUsersNames.length];
         for (int i = 0; i < systemUsersNames.length; i++) {
@@ -237,7 +239,7 @@ public final class RepPolicyEntryHandlerTest {
     }
 
     private ParseResult parseAndSetRepoinit(SystemUser...systemUsers) throws Exception {
-        String path = "/jcr_root/asd/public/_rep_policy.xml";
+        String path = "/jcr_root/home/users/system/asd/_rep_policy.xml";
         Archive archive = mock(Archive.class);
         Entry entry = mock(Entry.class);
         VaultPackageAssembler packageAssembler = mock(VaultPackageAssembler.class);
