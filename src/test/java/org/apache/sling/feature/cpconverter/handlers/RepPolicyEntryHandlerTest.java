@@ -174,7 +174,7 @@ public final class RepPolicyEntryHandlerTest {
                 + "        <rep:restrictions jcr:primaryType=\"rep:Restrictions\" rep:glob=\"{Name}[*/oak:index/*]\"/>" + System.lineSeparator()
                 + "    </allow0>" + System.lineSeparator()
                 + "    <allow1 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-dispatcher-flush-service\" rep:privileges=\"{Name}[jcr:read,crx:replicate,jcr:removeNode]\"/>" + System.lineSeparator()
-                +
+                + "    <deny0 jcr:primaryType=\"rep:DenyACE\" rep:principalName=\"acs-commons-dispatcher-flush-service\" rep:privileges=\"{Name}[jcr:write]\"/>" + System.lineSeparator() +
                 "</jcr:root>" + System.lineSeparator();
         actual = result.getExcludedAcls();
         assertEquals(expected, actual);
@@ -196,6 +196,7 @@ public final class RepPolicyEntryHandlerTest {
                 "create path (sling:Folder) /home/users/system/asd" + System.lineSeparator() +
                 "set ACL for acs-commons-package-replication-status-event-service" + System.lineSeparator() +
                 "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /home/users/system/asd" + System.lineSeparator() +
+                "deny jcr:write on /home/users/system/asd" + System.lineSeparator() +
                 "end" + System.lineSeparator();
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -214,7 +215,7 @@ public final class RepPolicyEntryHandlerTest {
                 + "    <allow3 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-ensure-service-user-service\" rep:privileges=\"{Name}[jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl]\"/>" + System.lineSeparator()
                 + "    <allow4 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-automatic-package-replicator-service\" rep:privileges=\"{Name}[jcr:read]\"/>" + System.lineSeparator()
                 + "    <allow5 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"acs-commons-on-deploy-scripts-service\" rep:privileges=\"{Name}[jcr:read]\"/>" + System.lineSeparator()
-                +
+                + "    <deny0 jcr:primaryType=\"rep:DenyACE\" rep:principalName=\"acs-commons-dispatcher-flush-service\" rep:privileges=\"{Name}[jcr:write]\"/>" + System.lineSeparator() +
                 "</jcr:root>" + System.lineSeparator();
         actual = result.getExcludedAcls();
         assertEquals(expected, actual);
