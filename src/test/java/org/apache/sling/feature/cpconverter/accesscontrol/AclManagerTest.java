@@ -41,9 +41,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -71,18 +69,10 @@ public class AclManagerTest {
 
     @Test
     public void makeSureAclsAreCreatedOnlyoutsideSytemUsersPaths() throws Exception {
-        aclManager.addSystemUser(new SystemUser("acs-commons-ensure-oak-index-service", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
-
-        // emulate a second iteration of conversion
-        aclManager.reset();
-
         aclManager.addSystemUser(new SystemUser("acs-commons-package-replication-status-event-service", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
-        aclManager.addAcl("acs-commons-ensure-oak-index-service", newAcl(true, "jcr:read,rep:write,rep:indexDefinitionManagement", "/asd/not/system/user/path"));
+        aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl(true, "jcr:read,rep:write,rep:indexDefinitionManagement", "/asd/not/system/user/path"));
         aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl(true, "jcr:read,crx:replicate,jcr:removeNode", "/home/users/system"));
-
-        // add an ACL for unknown user
-        aclManager.addAcl("acs-commons-on-deploy-scripts-service", newAcl(true, "jcr:read,crx:replicate,jcr:removeNode", "/home/users/system"));
 
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
         when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
@@ -109,7 +99,7 @@ public class AclManagerTest {
                 // "set ACL for acs-commons-package-replication-status-event-service\n" +
                 // "allow jcr:read,crx:replicate,jcr:removeNode on /asd/public\n" +
                 // "end\n" +
-                "set ACL for acs-commons-ensure-oak-index-service" + System.lineSeparator() +
+                "set ACL for acs-commons-package-replication-status-event-service" + System.lineSeparator() +
                 "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/not/system/user/path" + System.lineSeparator() +
                 "end" + System.lineSeparator();
         String actual = repoinitExtension.getText();
@@ -118,6 +108,68 @@ public class AclManagerTest {
         RepoInitParser repoInitParser = new RepoInitParserService();
         List<Operation> operations = repoInitParser.parse(new StringReader(actual));
         assertFalse(operations.isEmpty());
+    }
+
+    @Test
+    public void testReset() throws RepoInitParsingException {
+        // We assume this user will not be in the result because of the reset in the next line
+        aclManager.addSystemUser(new SystemUser("acs-commons-ensure-oak-index-service", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
+
+        // emulate a second iteration of conversion
+        aclManager.reset();
+
+        aclManager.addSystemUser(new SystemUser("acs-commons-package-replication-status-event-service", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
+        aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl(true, "jcr:read,rep:write,rep:indexDefinitionManagement", "/asd/not/system/user/path"));
+
+        VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
+        when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
+        Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
+
+        FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
+        when(fm.getTargetFeature()).thenReturn(feature);
+
+        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+
+
+        Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+        assertNotNull(repoinitExtension);
+
+        // aacs-commons-ensure-oak-index-service will be missed
+        String expected = "create path (rep:AuthorizableFolder) /home/users/system" + System.lineSeparator() + // SLING-8586
+                "create service user acs-commons-package-replication-status-event-service with path /home/users/system" + System.lineSeparator() +
+                "create path (sling:Folder) /asd" + System.lineSeparator() +
+                "create path (sling:Folder) /asd/not" + System.lineSeparator() +
+                "create path (sling:Folder) /asd/not/system" + System.lineSeparator() +
+                "create path (sling:Folder) /asd/not/system/user" + System.lineSeparator() +
+                "create path (sling:Folder) /asd/not/system/user/path" + System.lineSeparator() +
+                "set ACL for acs-commons-package-replication-status-event-service" + System.lineSeparator() +
+                "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/not/system/user/path" + System.lineSeparator() +
+                "end" + System.lineSeparator();
+        String actual = repoinitExtension.getText();
+        assertEquals(expected, actual);
+
+        RepoInitParser repoInitParser = new RepoInitParserService();
+        List<Operation> operations = repoInitParser.parse(new StringReader(actual));
+        assertFalse(operations.isEmpty());
+    }
+
+    @Test
+    public void testAddACLforUnknownUser() throws RepoInitParsingException {
+        // we expect this acl to not show up because the user is unknown
+        aclManager.addAcl("acs-commons-on-deploy-scripts-service", newAcl(true, "jcr:read,crx:replicate,jcr:removeNode", "/home/users/system"));
+
+        VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
+        when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
+        Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
+
+        FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
+        when(fm.getTargetFeature()).thenReturn(feature);
+
+        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+
+
+        Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+        assertNull(repoinitExtension);
     }
 
     @Test
