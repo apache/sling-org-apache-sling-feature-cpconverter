@@ -58,7 +58,7 @@ public class ConfigurationEntryHandlerTest {
         "    set ACL for test-user\n" + 
         "        allow    jcr:read    on /conf\n" + 
         "    end\n" +
-        "create service user test-user2\n" + 
+        " create service user test-user2\n" + 
         "    set ACL for test-user2\n" + 
         "        allow    jcr:read    on /conf\n" + 
         "    end";

@@ -337,7 +337,7 @@ public class DefaultFeaturesManager implements FeaturesManager {
             getRunMode(runMode).getExtensions().add(repoInitExtension);
             repoInitExtension.setText(text);
         } else {
-            repoInitExtension.setText(repoInitExtension.getText() + "\n " + text);
+            repoInitExtension.setText(repoInitExtension.getText() + "\n ".concat(text));
         }
     }
 }

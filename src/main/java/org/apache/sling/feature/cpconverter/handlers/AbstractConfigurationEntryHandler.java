@@ -81,18 +81,15 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
             if (REPOINIT_FACTORY_PID.equals(factoryPid)) {
                 final String[] scripts = Converters.standardConverter().convert(configurationProperties.get("scripts")).to(String[].class);
                 if (scripts != null && scripts.length > 0 ) {
-                    String text = String.join("\n", scripts);
-                    converter.getFeaturesManager().addOrAppendRepoInitExtension(text, runMode);
+                    for(final String text : scripts) {
+                        if ( text != null && !text.trim().isEmpty() ) {
+                            converter.getFeaturesManager().addOrAppendRepoInitExtension(text, runMode);
+                        }
+                    }
                 }
-                final String[] references = Converters.standardConverter().convert(configurationProperties.get("references")).to(String[].class);
-                if ( references != null && references.length > 0 ) {
-                    throw new IllegalArgumentException("References are not supported for repoinit (factory configuration " + pid + ")");
-                }
+                checkReferences(configurationProperties, pid);
             } else if ( REPOINIT_PID.equals(pid) ) {
-                final String[] references = Converters.standardConverter().convert(configurationProperties.get("references")).to(String[].class);
-                if ( references != null && references.length > 0 ) {
-                    throw new IllegalArgumentException("References are not supported for repoinit (configuration " + pid + ")");
-                }
+                checkReferences(configurationProperties, pid);
 
             } else {
                 converter.getFeaturesManager().addConfiguration(runMode, id, configurationProperties);
@@ -103,6 +100,17 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
                                             + "' should have matched already with path '"
                                             + path
                                             + "' but it does not, currently");
+        }
+    }
+
+    private void checkReferences(final Dictionary<String, Object> configurationProperties, final String pid) {
+        final String[] references = Converters.standardConverter().convert(configurationProperties.get("references")).to(String[].class);
+        if ( references != null && references.length > 0 ) {
+            for(final String r  : references ) {
+                if ( r != null && !r.trim().isEmpty() ) {
+                    throw new IllegalArgumentException("References are not supported for repoinit (configuration " + pid + ")");
+                }
+            }
         }
     }
 
