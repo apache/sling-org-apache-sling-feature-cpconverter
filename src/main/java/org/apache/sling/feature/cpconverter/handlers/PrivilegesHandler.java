@@ -23,6 +23,7 @@ import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
+import org.jetbrains.annotations.NotNull;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -40,7 +41,7 @@ public class PrivilegesHandler extends AbstractRegexEntryHandler {
     }
 
     @Override
-    public void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter)
+    public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter)
             throws Exception {
         SAXParser saxParser = saxParserFactory.newSAXParser();
         AclManager aclManager = converter.getAclManager();
@@ -52,7 +53,7 @@ public class PrivilegesHandler extends AbstractRegexEntryHandler {
 
         private final AclManager aclManager;
 
-        public PrivilegeHandler(AclManager aclManager) {
+        public PrivilegeHandler(@NotNull AclManager aclManager) {
             this.aclManager = aclManager;
         }
 

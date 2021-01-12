@@ -16,6 +16,8 @@
  */
 package org.apache.sling.feature.cpconverter.artifacts;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -26,12 +28,12 @@ public final class FileArtifactWriter implements ArtifactWriter {
 
     private final File fileArtifact;
 
-    public FileArtifactWriter(File fileArtifact) {
+    public FileArtifactWriter(@NotNull File fileArtifact) {
         this.fileArtifact = fileArtifact;
     }
 
     @Override
-    public void write(OutputStream output) throws IOException {
+    public void write(@NotNull OutputStream output) throws IOException {
         try (InputStream input = new FileInputStream(fileArtifact)) {
             new InputStreamArtifactWriter(input).write(output);
         }

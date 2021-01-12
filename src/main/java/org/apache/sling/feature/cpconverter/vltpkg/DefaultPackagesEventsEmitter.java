@@ -48,6 +48,7 @@ import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.jackrabbit.vault.packaging.SubPackageHandling;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Writes a CSV file <code>containerFile,packageId,packageType[,parentId,pathInParent]</code>
@@ -58,7 +59,7 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
 
     private static final String PATH_SEPARATOR_CHAR = "!";
 
-    public static DefaultPackagesEventsEmitter open(File featureModelsOutputDirectory) throws IOException {
+    public static @NotNull DefaultPackagesEventsEmitter open(@NotNull File featureModelsOutputDirectory) throws IOException {
         if (!featureModelsOutputDirectory.exists()) {
             featureModelsOutputDirectory.mkdirs();
         }
@@ -79,7 +80,7 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
 
     private VaultPackage current;
 
-    protected DefaultPackagesEventsEmitter(Writer writer) {
+    protected DefaultPackagesEventsEmitter(@NotNull Writer writer) {
         this.writer = new PrintWriter(writer, true);
     }
 
@@ -109,7 +110,7 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
     }
 
     @Override
-    public void startPackage(VaultPackage vaultPackage) {
+    public void startPackage(@NotNull VaultPackage vaultPackage) {
         PackageId id = vaultPackage.getId();
         Dependency[] dependencies = vaultPackage.getDependencies();
         paths.add(vaultPackage.getFile().getAbsolutePath());
@@ -132,7 +133,7 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
     }
 
     @Override
-    public void startSubPackage(String path, VaultPackage vaultPackage) {
+    public void startSubPackage(@NotNull String path, @NotNull VaultPackage vaultPackage) {
         PackageId id = vaultPackage.getId();
         Dependency[] dependencies = vaultPackage.getDependencies();
         paths.add(path);
@@ -155,8 +156,8 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
         endPackage();
     }
     
-    static VaultPackage getDepOnlyPackage(PackageId id,
-            Dependency[] dependencies) {
+    static @NotNull VaultPackage getDepOnlyPackage(@NotNull PackageId id,
+            @NotNull Dependency[] dependencies) {
         return new VaultPackage() {
             
             

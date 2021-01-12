@@ -17,6 +17,7 @@
 package org.apache.sling.feature.cpconverter.handlers;
 
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
+import org.jetbrains.annotations.NotNull;
 import org.xml.sax.Attributes;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
@@ -36,7 +37,7 @@ public final class SystemUsersEntryHandler extends AbstractRegexEntryHandler {
     }
 
     @Override
-    public void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter)
+    public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter)
             throws Exception {
         Matcher matcher = getPattern().matcher(path);
         if (matcher.matches()) {
@@ -69,7 +70,7 @@ public final class SystemUsersEntryHandler extends AbstractRegexEntryHandler {
          * @param path - the original repository path of the user in the content-package.
          * @param intermediatePath - the intermediate path the user should have - most likely the (direct) parent of the path.
          */
-        public SystemUserParser(ContentPackage2FeatureModelConverter converter, RepoPath path, RepoPath intermediatePath) {
+        public SystemUserParser(@NotNull ContentPackage2FeatureModelConverter converter, @NotNull RepoPath path, @NotNull RepoPath intermediatePath) {
             super(REP_SYSTEM_USER);
             this.converter = converter;
             this.path = path;

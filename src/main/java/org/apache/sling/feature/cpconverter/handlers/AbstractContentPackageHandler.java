@@ -29,6 +29,8 @@ import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.codehaus.plexus.util.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHandler {
 
@@ -44,7 +46,7 @@ public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHa
     }
 
     @Override
-    public final void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter)
+    public final void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter)
             throws Exception {
         logger.info("Processing sub-content package '{}'...", entry.getName());
 
@@ -96,6 +98,6 @@ public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHa
         logger.info("Sub-content package '{}' processing is over", entry.getName());
     }
 
-    protected abstract void processSubPackage(String path, String runMode, VaultPackage contentPackage, ContentPackage2FeatureModelConverter converter, boolean isEmbeddedPackage) throws Exception;
+    protected abstract void processSubPackage(@NotNull String path, @Nullable String runMode, @NotNull VaultPackage contentPackage, @NotNull ContentPackage2FeatureModelConverter converter, boolean isEmbeddedPackage) throws Exception;
 
 }

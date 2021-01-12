@@ -16,6 +16,8 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.util.Dictionary;
@@ -30,7 +32,7 @@ public final class PropertiesConfigurationEntryHandler extends AbstractConfigura
     }
 
     @Override
-    protected Dictionary<String, Object> parseConfiguration(String name, InputStream input) throws Exception {
+    protected @NotNull Dictionary<String, Object> parseConfiguration(@NotNull String name, @NotNull InputStream input) throws Exception {
         final Properties properties = new Properties();
 
         try (final BufferedInputStream in = new BufferedInputStream(input)) {

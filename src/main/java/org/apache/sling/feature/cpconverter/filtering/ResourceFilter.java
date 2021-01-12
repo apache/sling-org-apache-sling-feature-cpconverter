@@ -16,8 +16,10 @@
  */
 package org.apache.sling.feature.cpconverter.filtering;
 
+import org.jetbrains.annotations.NotNull;
+
 public interface ResourceFilter {
 
-    boolean isFilteredOut(String path);
+    boolean isFilteredOut(@NotNull String path);
 
 }

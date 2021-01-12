@@ -20,25 +20,27 @@ import java.util.Dictionary;
 
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Feature;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public interface FeaturesManager {
 
-    void init(String groupId, String artifactId, String version);
+    void init(@NotNull String groupId, @NotNull String artifactId, @NotNull String version);
 
-    Feature getTargetFeature();
+    @Nullable Feature getTargetFeature();
 
-    Feature getRunMode(String runMode);
+    @NotNull Feature getRunMode(@Nullable String runMode);
 
-    void addArtifact(String runMode, ArtifactId id);
+    void addArtifact(@Nullable String runMode, @NotNull ArtifactId id);
 
-    void addArtifact(String runMode, ArtifactId id, Integer startOrder);
+    void addArtifact(@Nullable String runMode, @NotNull ArtifactId id, @Nullable Integer startOrder);
 
-    void addAPIRegionExport(String runMode, String exportedPackage);
+    void addAPIRegionExport(@Nullable String runMode, @NotNull String exportedPackage);
 
-    void addConfiguration(String runMode, String pid, Dictionary<String, Object> configurationProperties);
+    void addConfiguration(@Nullable String runMode, @NotNull String pid, @Nullable Dictionary<String, Object> configurationProperties);
 
     void serialize() throws Exception;
 
-    void addOrAppendRepoInitExtension(String text, String runMode);
+    void addOrAppendRepoInitExtension(@NotNull String text, @Nullable String runMode);
 
 }

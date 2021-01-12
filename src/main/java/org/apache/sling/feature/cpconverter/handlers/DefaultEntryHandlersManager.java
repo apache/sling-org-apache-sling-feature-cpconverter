@@ -16,6 +16,9 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -27,23 +30,20 @@ public class DefaultEntryHandlersManager implements EntryHandlersManager {
 
     public DefaultEntryHandlersManager() {
         ServiceLoader<EntryHandler> entryHandlersLoader = ServiceLoader.load(EntryHandler.class);
-        Iterator<EntryHandler> entryHandlersIterator = entryHandlersLoader.iterator();
-        while (entryHandlersIterator.hasNext()) {
-            EntryHandler entryHandler = entryHandlersIterator.next();
-
+        for (EntryHandler entryHandler : entryHandlersLoader) {
             addEntryHandler(entryHandler);
         }
     }
 
     @Override
-    public void addEntryHandler(EntryHandler handler) {
+    public void addEntryHandler(@NotNull EntryHandler handler) {
         if (handler != null) {
             entryHandlers.add(handler);
         }
     }
 
     @Override
-    public EntryHandler getEntryHandlerByEntryPath(String path) {
+    public @Nullable EntryHandler getEntryHandlerByEntryPath(@NotNull String path) {
         for (EntryHandler entryHandler : entryHandlers) {
             if (entryHandler.matches(path)) {
                 return entryHandler;

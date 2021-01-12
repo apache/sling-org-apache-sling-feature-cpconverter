@@ -18,15 +18,17 @@ package org.apache.sling.feature.cpconverter.handlers;
 
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class ContentPackageEntryHandler extends AbstractContentPackageHandler {
 
     @Override
-    protected void processSubPackage(String path, String runMode,
-            VaultPackage contentPackage,
-            ContentPackage2FeatureModelConverter converter,
-            boolean isEmbeddedPackage) throws Exception {
-                converter.processSubPackage(path, runMode, contentPackage, isEmbeddedPackage);
+    protected void processSubPackage(@NotNull String path, @Nullable String runMode,
+                                     @NotNull VaultPackage contentPackage,
+                                     @NotNull ContentPackage2FeatureModelConverter converter,
+                                     boolean isEmbeddedPackage) throws Exception {
+        converter.processSubPackage(path, runMode, contentPackage, isEmbeddedPackage);
         
     }
 

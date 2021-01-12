@@ -20,6 +20,8 @@ import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -53,18 +55,18 @@ public final class DefaultAclManager implements AclManager {
 
     private final Map<String, List<AccessControlEntry>> acls = new HashMap<>();
 
-    private List<String> nodetypeRegistrationSentences = new LinkedList<>();
+    private final List<String> nodetypeRegistrationSentences = new LinkedList<>();
 
-    private Set<String> privileges = new LinkedHashSet<>();
+    private final Set<String> privileges = new LinkedHashSet<>();
 
-    public boolean addSystemUser(SystemUser systemUser) {
+    public boolean addSystemUser(@NotNull SystemUser systemUser) {
         if (preProvidedSystemUsers.add(systemUser)) {
             return systemUsers.add(systemUser);
         }
         return false;
     }
 
-    public boolean addAcl(String systemUser, AccessControlEntry acl) {
+    public boolean addAcl(@NotNull String systemUser, @NotNull AccessControlEntry acl) {
         if (getSystemUser(systemUser).isPresent()) {
             acls.computeIfAbsent(systemUser, k -> new LinkedList<>()).add(acl);
             return true;
@@ -72,7 +74,7 @@ public final class DefaultAclManager implements AclManager {
         return false;
     }
 
-    private void addPath(RepoPath path, Set<RepoPath> paths) {
+    private void addPath(@NotNull RepoPath path, @NotNull Set<RepoPath> paths) {
         if (preProvidedPaths.add(path)) {
             paths.add(path);
         }
@@ -83,10 +85,8 @@ public final class DefaultAclManager implements AclManager {
         }
     }
 
-    public void addRepoinitExtension(List<VaultPackageAssembler> packageAssemblers, FeaturesManager featureManager) {
-        Formatter formatter = null;
-        try {
-            formatter = new Formatter();
+    public void addRepoinitExtension(@NotNull List<VaultPackageAssembler> packageAssemblers, @NotNull FeaturesManager featureManager) {
+        try (Formatter formatter = new Formatter()) {
 
             if (!privileges.isEmpty()) {
                 for (String privilege : privileges) {
@@ -112,7 +112,9 @@ public final class DefaultAclManager implements AclManager {
 
                 List<AccessControlEntry> authorizations = acls.remove(systemUser.getId());
 
-                addStatements(systemUser, authorizations, packageAssemblers, formatter);
+                if (authorizations != null) {
+                    addStatements(systemUser, authorizations, packageAssemblers, formatter);
+                }
             }
 
             // all the resting ACLs can now be set
@@ -122,8 +124,9 @@ public final class DefaultAclManager implements AclManager {
 
                 if (systemUser.isPresent()) {
                     List<AccessControlEntry> authorizations = currentAcls.getValue();
-
-                    addStatements(systemUser.get(), authorizations, packageAssemblers, formatter);
+                    if (authorizations != null) {
+                        addStatements(systemUser.get(), authorizations, packageAssemblers, formatter);
+                    }
                 }
             }
 
@@ -132,26 +135,20 @@ public final class DefaultAclManager implements AclManager {
             if (!text.isEmpty()) {
                 featureManager.addOrAppendRepoInitExtension(text, null);
             }
-        } finally {
-            if (formatter != null) {
-                formatter.close();
-            }
         }
     }
 
-    private void addStatements(SystemUser systemUser,
-                               List<AccessControlEntry> authorizations,
-                               List<VaultPackageAssembler> packageAssemblers,
-                               Formatter formatter) {
+    private void addStatements(@NotNull SystemUser systemUser,
+                               @NotNull List<AccessControlEntry> authorizations,
+                               @NotNull List<VaultPackageAssembler> packageAssemblers,
+                               @NotNull Formatter formatter) {
         // clean the unneeded ACLs, see SLING-8561
-        if (authorizations != null) {
-            Iterator<AccessControlEntry> authorizationsIterator = authorizations.iterator();
-            while (authorizationsIterator.hasNext()) {
-                AccessControlEntry acl = authorizationsIterator.next();
+        Iterator<AccessControlEntry> authorizationsIterator = authorizations.iterator();
+        while (authorizationsIterator.hasNext()) {
+            AccessControlEntry acl = authorizationsIterator.next();
 
-                if (acl.getRepositoryPath().startsWith(systemUser.getIntermediatePath())) {
-                    authorizationsIterator.remove();
-                }
+            if (acl.getRepositoryPath().startsWith(systemUser.getIntermediatePath())) {
+                authorizationsIterator.remove();
             }
         }
 
@@ -164,7 +161,7 @@ public final class DefaultAclManager implements AclManager {
         addAclStatement(formatter, systemUser.getId(), authorizations);
     }
 
-    private Optional<SystemUser> getSystemUser(String id) {
+    private @NotNull Optional<SystemUser> getSystemUser(@NotNull String id) {
         for (SystemUser systemUser : preProvidedSystemUsers) {
             if (id.equals(systemUser.getId())) {
                 return Optional.of(systemUser);
@@ -173,21 +170,21 @@ public final class DefaultAclManager implements AclManager {
         return Optional.empty();
     }
 
-    private final void addSystemUserPath(Formatter formatter, RepoPath path) {
+    private void addSystemUserPath(@NotNull Formatter formatter, @NotNull RepoPath path) {
         if (preProvidedSystemPaths.add(path)) {
             formatter.format("create path (rep:AuthorizableFolder) %s%n", path);
         }
     }
 
     @Override
-    public void addNodetypeRegistrationSentence(String nodetypeRegistrationSentence) {
+    public void addNodetypeRegistrationSentence(@Nullable String nodetypeRegistrationSentence) {
         if (nodetypeRegistrationSentence != null) {
             nodetypeRegistrationSentences.add(nodetypeRegistrationSentence);
         }
     }
 
     @Override
-    public void addPrivilege(String privilege) {
+    public void addPrivilege(@NotNull String privilege) {
         privileges.add(privilege);
     }
 
@@ -198,7 +195,7 @@ public final class DefaultAclManager implements AclManager {
         privileges.clear();
     }
 
-    private void addPaths(List<AccessControlEntry> authorizations, List<VaultPackageAssembler> packageAssemblers, Formatter formatter) {
+    private void addPaths(@NotNull List<AccessControlEntry> authorizations, @NotNull List<VaultPackageAssembler> packageAssemblers, @NotNull Formatter formatter) {
         if (areEmpty(authorizations)) {
             return;
         }
@@ -215,7 +212,7 @@ public final class DefaultAclManager implements AclManager {
         }
     }
 
-	private static String computePathType(RepoPath path, List<VaultPackageAssembler> packageAssemblers) {
+	private static @NotNull String computePathType(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
         path = new RepoPath(PlatformNameFormat.getPlatformPath(path.toString()));
 
         for (VaultPackageAssembler packageAssembler: packageAssemblers) {
@@ -239,8 +236,8 @@ public final class DefaultAclManager implements AclManager {
         return DEFAULT_TYPE;
     }
 
-    private static void addAclStatement(Formatter formatter, String systemUser, List<AccessControlEntry> authorizations) {
-        if (authorizations == null || areEmpty(authorizations)) {
+    private static void addAclStatement(@NotNull Formatter formatter, @NotNull String systemUser, @NotNull List<AccessControlEntry> authorizations) {
+        if (areEmpty(authorizations)) {
             return;
         }
 
@@ -254,7 +251,7 @@ public final class DefaultAclManager implements AclManager {
 
             if (!authorization.getRestrictions().isEmpty()) {
                 formatter.format(" restriction(%s)",
-                                 authorization.getRestrictions().stream().collect(Collectors.joining(",")));
+                        String.join(",", authorization.getRestrictions()));
             }
 
             formatter.format("%n");
@@ -263,7 +260,7 @@ public final class DefaultAclManager implements AclManager {
         formatter.format("end%n");
     }
 
-    private static boolean areEmpty(List<AccessControlEntry> authorizations) {
+    private static boolean areEmpty(@Nullable List<AccessControlEntry> authorizations) {
         return authorizations == null || authorizations.isEmpty();
     }
 }

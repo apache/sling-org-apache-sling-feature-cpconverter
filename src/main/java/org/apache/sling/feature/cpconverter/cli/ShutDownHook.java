@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.Formatter;
 
 import org.apache.commons.io.FileUtils;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 final class ShutDownHook extends Thread {
@@ -30,7 +31,7 @@ final class ShutDownHook extends Thread {
 
     private final Logger logger;
 
-    public ShutDownHook(Logger logger) {
+    public ShutDownHook(@NotNull Logger logger) {
         this.logger = logger;
     }
 

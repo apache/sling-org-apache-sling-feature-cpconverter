@@ -29,11 +29,9 @@ import org.apache.jackrabbit.util.ISO8601;
 import org.apache.jackrabbit.vault.util.DocViewProperty;
 import org.apache.sling.feature.cpconverter.shared.AbstractJcrNodeParser;
 import org.codehaus.plexus.util.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
 
 public final class XmlConfigurationEntryHandler extends AbstractConfigurationEntryHandler {
 
@@ -42,7 +40,7 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
     }
 
     @Override
-    protected Dictionary<String, Object> parseConfiguration(String name, InputStream input) throws Exception {
+    protected @Nullable Dictionary<String, Object> parseConfiguration(@NotNull String name, @NotNull InputStream input) {
         JcrConfigurationHandler configurationHandler = new JcrConfigurationHandler();
         try {
             return configurationHandler.parse(input);
@@ -63,7 +61,7 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
         }
 
         @Override
-        protected void onJcrRootElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+        protected void onJcrRootElement(String uri, String localName, String qName, Attributes attributes) {
             configuration = Configurations.newConfiguration();
 
             for (int i = 0; i < attributes.getLength(); i++) {
@@ -81,51 +79,43 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
                             case PropertyType.DATE:
                                 // Date was never properly supported as osgi configs don't support dates so converting to millis 
                                 // Scenario should just be theoretical
-                                value = Lists.transform(strValues, new Function<String, Long>() {
-                                   public Long apply(String s) {
-                                      Long res = null;
-                                      if (s != null) {
-                                           Calendar cal = ISO8601.parse(s);
-                                           if (cal != null) {
-                                               res = cal.getTimeInMillis();
-                                           }
-                                      } 
-                                      return res;
-                                   }
+                                value = strValues.stream().map(s -> {
+                                    Long res = null;
+                                    if (s != null) {
+                                        Calendar cal = ISO8601.parse(s);
+                                        if (cal != null) {
+                                            res = cal.getTimeInMillis();
+                                        }
+                                    }
+                                    return res;
                                 }).toArray();
                                 break;
                             case PropertyType.DOUBLE:
-                                value = Lists.transform(strValues, new Function<String, Double>() {
-                                   public Double apply(String s) {
-                                      Double res = null;
-                                      if (StringUtils.isNotEmpty(s)) {
-                                          res = Double.parseDouble(s);
-                                      }
-                                      return res;
-                                   }
+                                value = strValues.stream().map(s -> {
+                                    Double res = null;
+                                    if (StringUtils.isNotEmpty(s)) {
+                                        res = Double.parseDouble(s);
+                                    }
+                                    return res;
                                 }).toArray();
                                 break;
                             case PropertyType.LONG:
-                                value = Lists.transform(strValues, new Function<String, Long>() {
-                                    public Long apply(String s) {
-                                       Long res = null;
-                                       if (StringUtils.isNotEmpty(s)) {
-                                          res = Long.parseLong(s);
-                                       }
-                                       return res;
+                                value = strValues.stream().map(s -> {
+                                    Long res = null;
+                                    if (StringUtils.isNotEmpty(s)) {
+                                        res = Long.parseLong(s);
                                     }
-                                 }).toArray();
+                                    return res;
+                                }).toArray();
                                 break;
                             case PropertyType.BOOLEAN:
-                                value = Lists.transform(strValues, new Function<String, Boolean>() {
-                                    public Boolean apply(String s) {
-                                       Boolean res = null;
-                                       if (s != null) {
-                                          res = Boolean.valueOf(s);
-                                       } 
-                                       return res;
+                                value = strValues.stream().map(s -> {
+                                    Boolean res = null;
+                                    if (s != null) {
+                                        res = Boolean.valueOf(s);
                                     }
-                                 }).toArray();
+                                    return res;
+                                }).toArray();
                                 break;
                         }
                         if (!property.isMulti) {

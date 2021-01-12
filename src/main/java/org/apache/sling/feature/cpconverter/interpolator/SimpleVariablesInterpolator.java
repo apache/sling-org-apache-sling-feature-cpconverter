@@ -16,6 +16,9 @@
  */
 package org.apache.sling.feature.cpconverter.interpolator;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import static java.util.Objects.requireNonNull;
 
 import java.util.Map;
@@ -26,7 +29,7 @@ public final class SimpleVariablesInterpolator implements VariablesInterpolator 
 
     private final Pattern replacementPattern = Pattern.compile("\\$\\{\\{(.+?)\\}\\}");
 
-    public String interpolate(String format, Map<String, String> properties) {
+    public @NotNull String interpolate(@NotNull String format, @Nullable Map<String, String> properties) {
         requireNonNull(format, "Input string format must be not null");
 
         if (properties == null || properties.isEmpty()) {

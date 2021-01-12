@@ -23,6 +23,7 @@ import java.io.InputStream;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.jetbrains.annotations.NotNull;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -35,7 +36,7 @@ public abstract class AbstractJcrNodeParser<O> extends DefaultHandler {
 
     private final String primaryType;
 
-    public AbstractJcrNodeParser(String primaryType) {
+    public AbstractJcrNodeParser(@NotNull String primaryType) {
         this.primaryType = primaryType;
     }
 
@@ -53,7 +54,7 @@ public abstract class AbstractJcrNodeParser<O> extends DefaultHandler {
         }
     }
 
-    protected final String getPrimaryType() {
+    protected final @NotNull String getPrimaryType() {
         return primaryType;
     }
 

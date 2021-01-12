@@ -16,6 +16,9 @@
  */
 package org.apache.sling.feature.cpconverter.shared;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -39,7 +42,7 @@ public class RepoPath implements Comparable<RepoPath>{
      * @param path The string representation of the path. If the initial leading forward
      * slash is missing it will be assumed to be there.
      */
-    public RepoPath(String path) {
+    public RepoPath(@NotNull String path) {
         path = path.trim();
         if (path.startsWith("/"))
             path = path.substring(1);
@@ -53,12 +56,12 @@ public class RepoPath implements Comparable<RepoPath>{
      * @param list The list to create the repo path from. The list should not have
      * any separators.
      */
-    public RepoPath(List<String> list) {
+    public RepoPath(@NotNull List<String> list) {
         this.path = new ArrayList<>(list);
     }
 
     @Override
-    public int compareTo(RepoPath o) {
+    public int compareTo(@NotNull RepoPath o) {
         String me = toString();
         String them = o.toString();
         return me.compareTo(them);
@@ -70,7 +73,7 @@ public class RepoPath implements Comparable<RepoPath>{
      * @return The parent path, or {@code null} if we are at the root and there is no
      * further parent.
      */
-    public RepoPath getParent() {
+    public @Nullable RepoPath getParent() {
         if (path.isEmpty())
             return null;
 

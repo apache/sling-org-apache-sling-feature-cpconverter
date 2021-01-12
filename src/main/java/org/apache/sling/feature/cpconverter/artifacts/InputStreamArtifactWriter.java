@@ -21,17 +21,18 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.apache.commons.io.IOUtils;
+import org.jetbrains.annotations.NotNull;
 
 public class InputStreamArtifactWriter implements ArtifactWriter {
 
     private final InputStream input;
 
-    public InputStreamArtifactWriter(InputStream input) {
+    public InputStreamArtifactWriter(@NotNull InputStream input) {
         this.input = input;
     }
 
     @Override
-    public void write(OutputStream output) throws IOException {
+    public void write(@NotNull OutputStream output) throws IOException {
         IOUtils.copy(input, output);
     }
 

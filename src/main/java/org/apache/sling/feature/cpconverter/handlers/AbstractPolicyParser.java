@@ -21,6 +21,7 @@ import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.shared.AbstractJcrNodeParser;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -54,7 +55,7 @@ abstract class AbstractPolicyParser extends AbstractJcrNodeParser<Boolean> {
         this.aclManager = aclManager;
     }
 
-    private static String extractValue(String expression) {
+    private static @Nullable String extractValue(@Nullable String expression) {
         if (expression == null || expression.isEmpty()) {
             return expression;
         }
