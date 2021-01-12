@@ -16,11 +16,18 @@
  */
 package org.apache.sling.feature.cpconverter.accesscontrol;
 
+import org.apache.jackrabbit.spi.Name;
+import org.apache.jackrabbit.spi.PrivilegeDefinition;
+import org.apache.jackrabbit.spi.commons.conversion.DefaultNamePathResolver;
+import org.apache.jackrabbit.spi.commons.conversion.NameResolver;
+import org.apache.jackrabbit.vault.fs.spi.PrivilegeDefinitions;
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
+import org.jetbrains.annotations.NotNull;
 
+import javax.jcr.NamespaceException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Formatter;
@@ -55,7 +62,7 @@ public final class DefaultAclManager implements AclManager {
 
     private List<String> nodetypeRegistrationSentences = new LinkedList<>();
 
-    private Set<String> privileges = new LinkedHashSet<>();
+    private PrivilegeDefinitions privilegeDefinitions;
 
     public boolean addSystemUser(SystemUser systemUser) {
         if (preProvidedSystemUsers.add(systemUser)) {
@@ -88,10 +95,8 @@ public final class DefaultAclManager implements AclManager {
         try {
             formatter = new Formatter();
 
-            if (!privileges.isEmpty()) {
-                for (String privilege : privileges) {
-                    formatter.format("register privilege %s%n", privilege);
-                }
+            if (privilegeDefinitions != null) {
+                registerPrivileges(privilegeDefinitions, formatter);
             }
 
             for (String nodetypeRegistrationSentence : nodetypeRegistrationSentences) {
@@ -187,15 +192,15 @@ public final class DefaultAclManager implements AclManager {
     }
 
     @Override
-    public void addPrivilege(String privilege) {
-        privileges.add(privilege);
+    public void addPrivilegeDefinitions(@NotNull PrivilegeDefinitions privilegeDefinitions) {
+        this.privilegeDefinitions = privilegeDefinitions;
     }
 
     public void reset() {
         systemUsers.clear();
         acls.clear();
         nodetypeRegistrationSentences.clear();
-        privileges.clear();
+        privilegeDefinitions = null;
     }
 
     private void addPaths(List<AccessControlEntry> authorizations, List<VaultPackageAssembler> packageAssemblers, Formatter formatter) {
@@ -265,5 +270,39 @@ public final class DefaultAclManager implements AclManager {
 
     private static boolean areEmpty(List<AccessControlEntry> authorizations) {
         return authorizations == null || authorizations.isEmpty();
+    }
+
+    private static void registerPrivileges(@NotNull PrivilegeDefinitions definitions, @NotNull Formatter formatter) {
+        NameResolver nameResolver = new DefaultNamePathResolver(definitions.getNamespaceMapping());
+        for (PrivilegeDefinition privilege : definitions.getDefinitions()) {
+            try {
+                String name = nameResolver.getJCRName(privilege.getName());
+                String aggregates = getAggregatedNames(privilege, nameResolver);
+                if (privilege.isAbstract()) {
+                    formatter.format("register abstract privilege %s%s%n", name, aggregates);
+                } else {
+                    formatter.format("register privilege %s%s%n", name, aggregates);
+                }
+            } catch (NamespaceException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+    }
+
+    @NotNull
+    private static String getAggregatedNames(@NotNull PrivilegeDefinition definition, @NotNull NameResolver nameResolver) {
+        Set<Name> aggregatedNames = definition.getDeclaredAggregateNames();
+        if (aggregatedNames.isEmpty()) {
+            return "";
+        } else {
+            Set<String> names = aggregatedNames.stream().map(name -> {
+                try {
+                    return nameResolver.getJCRName(name);
+                } catch (NamespaceException e) {
+                    throw new IllegalStateException(e);
+                }
+            }).collect(Collectors.toSet());
+            return " with "+String.join(",", names);
+        }
     }
 }

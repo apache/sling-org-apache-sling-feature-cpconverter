@@ -18,8 +18,10 @@ package org.apache.sling.feature.cpconverter.accesscontrol;
 
 import java.util.List;
 
+import org.apache.jackrabbit.vault.fs.spi.PrivilegeDefinitions;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * The Manager able to collect and build System Users and related ACL policies.
@@ -34,7 +36,7 @@ public interface AclManager {
 
     void addNodetypeRegistrationSentence(String nodetypeRegistrationSentence);
 
-    void addPrivilege(String privilege);
+    void addPrivilegeDefinitions(@NotNull PrivilegeDefinitions privilegeDefinitions);
 
     void reset();
 

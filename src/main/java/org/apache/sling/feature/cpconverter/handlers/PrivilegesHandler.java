@@ -16,57 +16,20 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
+import org.apache.jackrabbit.vault.fs.spi.PrivilegeDefinitions;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 public class PrivilegesHandler extends AbstractRegexEntryHandler {
-
-    private static final String PRIVILEGE = "privilege";
-
-    private static final String NAME = "name";
-
-    private final SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
 
     public PrivilegesHandler() {
         super("META-INF/vault/privileges\\.xml");
     }
 
     @Override
-    public void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter)
-            throws Exception {
-        SAXParser saxParser = saxParserFactory.newSAXParser();
-        AclManager aclManager = converter.getAclManager();
-        PrivilegeHandler handler = new PrivilegeHandler(aclManager);
-        saxParser.parse(archive.openInputStream(entry), handler);
+    public void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter) {
+        PrivilegeDefinitions privileges = archive.getMetaInf().getPrivileges();
+        converter.getAclManager().addPrivilegeDefinitions(privileges);
     }
-
-    private static final class PrivilegeHandler extends DefaultHandler {
-
-        private final AclManager aclManager;
-
-        public PrivilegeHandler(AclManager aclManager) {
-            this.aclManager = aclManager;
-        }
-
-        @Override
-        public void startElement(String uri, String localName, String qName, Attributes attributes)
-                throws SAXException {
-            if (PRIVILEGE.equals(qName)) {
-                String privilege = attributes.getValue(NAME);
-                if (privilege != null && !privilege.isEmpty()) {
-                    aclManager.addPrivilege(privilege);
-                }
-            }
-        }
-
-    }
-
 }
