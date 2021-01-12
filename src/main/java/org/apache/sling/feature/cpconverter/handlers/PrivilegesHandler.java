@@ -30,6 +30,8 @@ public class PrivilegesHandler extends AbstractRegexEntryHandler {
     @Override
     public void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter) {
         PrivilegeDefinitions privileges = archive.getMetaInf().getPrivileges();
-        converter.getAclManager().addPrivilegeDefinitions(privileges);
+        if (privileges != null) {
+            converter.getAclManager().addPrivilegeDefinitions(privileges);
+        }
     }
 }
