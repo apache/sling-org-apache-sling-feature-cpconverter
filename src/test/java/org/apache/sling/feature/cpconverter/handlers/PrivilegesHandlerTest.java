@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 
+import org.apache.jackrabbit.vault.fs.config.DefaultMetaInf;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.ArtifactId;
@@ -69,7 +70,11 @@ public class PrivilegesHandlerTest {
         Archive archive = mock(Archive.class);
         Entry entry = mock(Entry.class);
 
+        DefaultMetaInf metaInf = new DefaultMetaInf();
+        metaInf.load(getClass().getResourceAsStream(path.substring(1)), "privileges.xml");
+
         when(archive.openInputStream(entry)).thenReturn(getClass().getResourceAsStream(path.substring(1)));
+        when(archive.getMetaInf()).thenReturn(metaInf);
 
         VaultPackageAssembler packageAssembler = mock(VaultPackageAssembler.class);
 
@@ -86,7 +91,13 @@ public class PrivilegesHandlerTest {
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
-        assertTrue(repoinitExtension.getText().contains("register privilege rx:replicate" + System.lineSeparator()));
+        String str = "register privilege sling:replicate" + System.lineSeparator() +
+                     "register abstract privilege sling:test with ";
+        String txt = repoinitExtension.getText();
+        assertTrue("Expect '"+txt+"' contains '"+str+"'", txt.contains(str));
+        String aggregation1 = "with sling:replicate,jcr:read" + System.lineSeparator();
+        String aggregation2 = "with jcr:read,sling:replicate" + System.lineSeparator();
+        assertTrue(txt.contains(aggregation1) || txt.contains(aggregation2));
     }
 
 }

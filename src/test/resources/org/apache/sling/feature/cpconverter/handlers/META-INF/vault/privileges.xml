@@ -15,6 +15,7 @@
  License for the specific language governing permissions and limitations under
  the License.
 -->
-<privileges xmlns:crx="http://sling.apache.org/rx/1.0">
-   <privilege name="rx:replicate"/>
+<privileges xmlns:sling="http://sling.apache.org/jcr/sling/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+   <privilege name="sling:replicate"/>
+   <privilege name="sling:test" abstract="true"><contains name="sling:replicate"/><contains name="jcr:read"/></privilege>
 </privileges>
