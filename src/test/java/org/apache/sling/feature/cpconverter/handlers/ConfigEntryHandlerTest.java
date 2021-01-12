@@ -45,6 +45,7 @@ import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.apache.sling.feature.io.json.FeatureJSONWriter;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -109,7 +110,7 @@ public class ConfigEntryHandlerTest {
 
         AbstractConfigurationEntryHandler handler = new AbstractConfigurationEntryHandler("cfg") {
             @Override
-            protected Dictionary<String, Object> parseConfiguration(String name, InputStream input) throws Exception {
+            protected @NotNull Dictionary<String, Object> parseConfiguration(@NotNull String name, @NotNull InputStream input) throws Exception {
                 return new Hashtable(){{put("foo", "bar");}};
             }
         };

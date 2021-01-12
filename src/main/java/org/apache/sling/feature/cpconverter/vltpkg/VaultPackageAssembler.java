@@ -34,11 +34,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
@@ -74,7 +70,7 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
     private static final Pattern OSGI_BUNDLE_PATTERN = Pattern.compile("(jcr_root)?/apps/[^/]+/install(\\.([^/]+))?/.+\\.jar");
     
     public static @NotNull VaultPackageAssembler create(@NotNull VaultPackage vaultPackage) {
-        return create(vaultPackage, vaultPackage.getMetaInf().getFilter());
+        return create(vaultPackage, Objects.requireNonNull(vaultPackage.getMetaInf().getFilter()));
     }
 
     public static @NotNull File createSynthetic(@NotNull VaultPackage vaultPackage) throws Exception {
@@ -100,7 +96,9 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
         }
         // avoid any possible Stream is not a content package. Missing 'jcr_root' error
         File jcrRootDirectory = new File(storingDirectory, ROOT_DIR);
-        jcrRootDirectory.mkdirs();
+        if (!jcrRootDirectory.mkdirs() && jcrRootDirectory.isDirectory()) {
+            throw new IllegalStateException("Unable to create jcr root dir: " + jcrRootDirectory);
+        }
 
         PackageProperties packageProperties = vaultPackage.getProperties();
 
@@ -142,12 +140,12 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
     private final Properties properties;
 
     @Override
-    public boolean matches(String path) {
+    public boolean matches(@NotNull String path) {
         return true;
     }
 
     @Override
-    public void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter)
+    public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter)
             throws Exception {
         addEntry(path, archive, entry);
     }
@@ -174,7 +172,7 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
     }
 
     public void addEntry(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry) throws IOException {
-        try (InputStream input = archive.openInputStream(entry)) {
+        try (InputStream input = Objects.requireNonNull(archive.openInputStream(entry))) {
             addEntry(path, input);
         }
     }
@@ -193,7 +191,9 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
 
     public @NotNull OutputStream createEntry(@NotNull String path) throws IOException {
         File target = new File(storingDirectory, path);
-        target.getParentFile().mkdirs();
+        if (!target.getParentFile().mkdirs() && !target.getParentFile().isDirectory()) {
+            throw new IOException("Could not create parent directory: " + target.getParentFile());
+        }
         return new FileOutputStream(target);
     }
 
@@ -233,8 +233,8 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
         // generate the Vault properties XML file
 
         File metaDir = new File(storingDirectory, META_DIR);
-        if (!metaDir.exists()) {
-            metaDir.mkdirs();
+        if (!metaDir.exists() && !metaDir.mkdirs()) {
+            throw new IOException("Could not create meta Dir: " + metaDir);
         }
 
         setDependencies(dependencies, properties);

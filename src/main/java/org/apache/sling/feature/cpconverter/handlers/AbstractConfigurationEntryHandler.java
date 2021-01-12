@@ -18,6 +18,7 @@ package org.apache.sling.feature.cpconverter.handlers;
 
 import java.io.InputStream;
 import java.util.Dictionary;
+import java.util.Objects;
 import java.util.regex.Matcher;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
@@ -42,7 +43,7 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
 
         Matcher matcher = getPattern().matcher(path);
         
-        String runMode = null;
+        String runMode;
         // we are pretty sure it matches, here
         if (matcher.matches()) {
             
@@ -68,13 +69,13 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
             logger.info("Processing configuration '{}'.", id);
     
             Dictionary<String, Object> configurationProperties;
-            try (InputStream input = archive.openInputStream(entry)) {
+            try (InputStream input = Objects.requireNonNull(archive.openInputStream(entry))) {
                 configurationProperties = parseConfiguration(id, input);
             }
     
             if (configurationProperties == null) {
                 logger.info("{} entry does not contain a valid OSGi configuration, treating it as a regular resource", path);
-                converter.getMainPackageAssembler().addEntry(path, archive, entry);
+                Objects.requireNonNull(converter.getMainPackageAssembler()).addEntry(path, archive, entry);
                 return;
             }
             // there is a specified RunMode
@@ -85,7 +86,7 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
                 if (scripts != null && scripts.length > 0 ) {
                     for(final String text : scripts) {
                         if ( text != null && !text.trim().isEmpty() ) {
-                            converter.getFeaturesManager().addOrAppendRepoInitExtension(text, runMode);
+                            Objects.requireNonNull(converter.getFeaturesManager()).addOrAppendRepoInitExtension(text, runMode);
                         }
                     }
                 }
@@ -94,7 +95,7 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
                 checkReferences(configurationProperties, pid);
 
             } else {
-                converter.getFeaturesManager().addConfiguration(runMode, id, configurationProperties);
+                Objects.requireNonNull(converter.getFeaturesManager()).addConfiguration(runMode, id, configurationProperties);
             }
         } else {
             throw new IllegalStateException("Something went terribly wrong: pattern '"
