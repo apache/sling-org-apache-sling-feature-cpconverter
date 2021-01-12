@@ -199,7 +199,7 @@ public final class DefaultAclManager implements AclManager {
     }
 
     private void addPaths(@NotNull List<AccessControlEntry> authorizations, @NotNull List<VaultPackageAssembler> packageAssemblers, @NotNull Formatter formatter) {
-        if (areEmpty(authorizations)) {
+        if (authorizations.isEmpty()) {
             return;
         }
 
@@ -240,7 +240,7 @@ public final class DefaultAclManager implements AclManager {
     }
 
     private static void addAclStatement(@NotNull Formatter formatter, @NotNull String systemUser, @NotNull List<AccessControlEntry> authorizations) {
-        if (areEmpty(authorizations)) {
+        if (authorizations.isEmpty()) {
             return;
         }
 
@@ -261,10 +261,6 @@ public final class DefaultAclManager implements AclManager {
         }
 
         formatter.format("end%n");
-    }
-
-    private static boolean areEmpty(@Nullable List<AccessControlEntry> authorizations) {
-        return authorizations == null || authorizations.isEmpty();
     }
 
     private static void registerPrivileges(@NotNull PrivilegeDefinitions definitions, @NotNull Formatter formatter) {

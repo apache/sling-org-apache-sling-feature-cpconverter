@@ -26,6 +26,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import javax.xml.transform.sax.TransformerHandler;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -79,7 +80,7 @@ abstract class AbstractPolicyParser extends AbstractJcrNodeParser<Boolean> {
     }
 
     AccessControlEntry createEntry(boolean isAllow, @NotNull Attributes attributes) {
-        return new AccessControlEntry(isAllow, extractValue(attributes.getValue(REP_PRIVILEGES)), repositoryPath);
+        return new AccessControlEntry(isAllow, Objects.requireNonNull(extractValue(attributes.getValue(REP_PRIVILEGES))), repositoryPath);
     }
 
     @Override

@@ -36,7 +36,7 @@ public final class AccessControlEntry {
 
     private final List<String> restrictions = new LinkedList<>();
 
-    public AccessControlEntry(boolean isAllow, @Nullable String privileges, @NotNull RepoPath repositoryPath) {
+    public AccessControlEntry(boolean isAllow, @NotNull String privileges, @NotNull RepoPath repositoryPath) {
         this.isAllow = isAllow;
         this.privileges = privileges;
         this.repositoryPath = repositoryPath;
@@ -52,7 +52,7 @@ public final class AccessControlEntry {
         return isAllow ? "allow" : "deny";
     }
 
-    public @Nullable String getPrivileges() {
+    public @NotNull String getPrivileges() {
         return privileges;
     }
 
