@@ -16,10 +16,13 @@
  */
 package org.apache.sling.feature.cpconverter.interpolator;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.Map;
 
 public interface VariablesInterpolator {
 
-    String interpolate(String format, Map<String, String> properties);
+    @NotNull String interpolate(@NotNull String format, @Nullable Map<String, String> properties);
 
 }

@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.util.StringTokenizer;
 
 import org.apache.sling.feature.ArtifactId;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +34,7 @@ public final class DefaultArtifactsDeployer implements ArtifactsDeployer {
 
     private final File artifactsDirectory;
 
-    public DefaultArtifactsDeployer(File outputDirectory) {
+    public DefaultArtifactsDeployer(@NotNull File outputDirectory) {
         artifactsDirectory = outputDirectory;
         if (!artifactsDirectory.exists()) {
             artifactsDirectory.mkdirs();
@@ -41,12 +42,12 @@ public final class DefaultArtifactsDeployer implements ArtifactsDeployer {
     }
 
     @Override
-    public File getBundlesDirectory() {
+    public @NotNull File getBundlesDirectory() {
         return artifactsDirectory;
     }
 
     @Override
-    public void deploy(ArtifactWriter artifactWriter, ArtifactId id) throws IOException {
+    public void deploy(@NotNull ArtifactWriter artifactWriter, @NotNull ArtifactId id) throws IOException {
         requireNonNull(artifactWriter, "Null ArtifactWriter can not install an artifact to a Maven repository.");
         requireNonNull(id, "Bundle can not be installed to a Maven repository without specifying a valid id.");
 

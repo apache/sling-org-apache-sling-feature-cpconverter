@@ -23,6 +23,7 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 
 import org.apache.felix.cm.json.Configurations;
+import org.jetbrains.annotations.NotNull;
 
 public final class JsonConfigurationEntryHandler extends AbstractConfigurationEntryHandler {
 
@@ -31,7 +32,7 @@ public final class JsonConfigurationEntryHandler extends AbstractConfigurationEn
     }
 
     @Override
-    protected Dictionary<String, Object> parseConfiguration(String name, InputStream input) throws Exception {
+    protected @NotNull Dictionary<String, Object> parseConfiguration(@NotNull String name, @NotNull InputStream input) throws Exception {
         final Hashtable<String, Object> props = Configurations.buildReader()
             .withIdentifier(name)
             .build(new InputStreamReader(input, StandardCharsets.UTF_8))

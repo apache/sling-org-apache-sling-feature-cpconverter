@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.util.Dictionary;
 
 import org.apache.felix.cm.file.ConfigurationHandler;
+import org.jetbrains.annotations.NotNull;
 
 public final class ConfigurationEntryHandler extends AbstractConfigurationEntryHandler {
 
@@ -29,7 +30,7 @@ public final class ConfigurationEntryHandler extends AbstractConfigurationEntryH
 
     @Override
     @SuppressWarnings("unchecked")
-    protected Dictionary<String, Object> parseConfiguration(String name, InputStream input) throws Exception {
+    protected @NotNull Dictionary<String, Object> parseConfiguration(@NotNull String name, @NotNull InputStream input) throws Exception {
         return ConfigurationHandler.read(input);
     }
 

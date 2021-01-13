@@ -22,6 +22,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +32,7 @@ public final class RegexBasedResourceFilter implements ResourceFilter {
 
     private final List<Pattern> patterns = new LinkedList<>();
 
-    public void addFilteringPattern(String filteringPattern) {
+    public void addFilteringPattern(@NotNull String filteringPattern) {
         requireNonNull(filteringPattern, "Null pattern to filter resources out is not a valid filtering pattern");
 
         if (filteringPattern.isEmpty()) {
@@ -41,7 +42,7 @@ public final class RegexBasedResourceFilter implements ResourceFilter {
         patterns.add(Pattern.compile(filteringPattern));
     }
 
-    public boolean isFilteredOut(String path) {
+    public boolean isFilteredOut(@NotNull String path) {
         for (Pattern pattern : patterns) {
             logger.debug("Checking if path '{}' matches against '{}' pattern...", path, pattern);
 

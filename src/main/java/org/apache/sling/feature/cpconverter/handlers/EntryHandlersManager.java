@@ -16,10 +16,13 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 public interface EntryHandlersManager {
 
-    EntryHandler getEntryHandlerByEntryPath(String path);
+    @Nullable EntryHandler getEntryHandlerByEntryPath(@NotNull String path);
 
-    void addEntryHandler(EntryHandler handler);
+    void addEntryHandler(@NotNull EntryHandler handler);
 
 }

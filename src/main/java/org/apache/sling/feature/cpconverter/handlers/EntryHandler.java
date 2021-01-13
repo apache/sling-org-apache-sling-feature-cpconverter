@@ -19,11 +19,12 @@ package org.apache.sling.feature.cpconverter.handlers;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.jetbrains.annotations.NotNull;
 
 public interface EntryHandler {
 
-    boolean matches(String path);
+    boolean matches(@NotNull String path);
 
-    void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter) throws Exception;
+    void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter) throws Exception;
 
 }

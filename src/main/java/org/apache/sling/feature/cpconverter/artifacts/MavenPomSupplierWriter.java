@@ -22,17 +22,18 @@ import java.io.OutputStream;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.apache.sling.feature.ArtifactId;
+import org.jetbrains.annotations.NotNull;
 
 public final class MavenPomSupplierWriter implements ArtifactWriter {
 
     private final ArtifactId id;
 
-    public MavenPomSupplierWriter(ArtifactId id) {
+    public MavenPomSupplierWriter(@NotNull ArtifactId id) {
         this.id = id;
     }
 
     @Override
-    public void write(OutputStream outputStream) throws IOException {
+    public void write(@NotNull OutputStream outputStream) throws IOException {
         Model model = new Model();
         // Maven complains if Model Version is not set
         model.setModelVersion("4.0.0");

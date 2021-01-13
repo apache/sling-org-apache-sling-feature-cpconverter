@@ -26,6 +26,7 @@ import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter
 import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
 import org.apache.sling.feature.cpconverter.handlers.SystemUsersEntryHandler;
 import org.apache.sling.feature.cpconverter.handlers.VersionResolverContentPackageEntryHandler;
+import org.jetbrains.annotations.NotNull;
 
 public final class RecollectorVaultPackageScanner extends BaseVaultPackageScanner {
 
@@ -33,10 +34,10 @@ public final class RecollectorVaultPackageScanner extends BaseVaultPackageScanne
 
     private final EntryHandler[] handlers;
 
-    public RecollectorVaultPackageScanner(ContentPackage2FeatureModelConverter converter,
-                                          PackageManager packageManager,
+    public RecollectorVaultPackageScanner(@NotNull ContentPackage2FeatureModelConverter converter,
+                                          @NotNull PackageManager packageManager,
                                           boolean strictValidation,
-                                          Map<PackageId, String> subContentPackages) {
+                                          @NotNull Map<PackageId, String> subContentPackages) {
         super(packageManager, strictValidation);
         this.converter = converter;
         handlers = new EntryHandler[] {

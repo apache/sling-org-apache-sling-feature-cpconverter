@@ -54,6 +54,8 @@ import org.apache.sling.feature.cpconverter.vltpkg.BaseVaultPackageScanner;
 import org.apache.sling.feature.cpconverter.vltpkg.PackagesEventsEmitter;
 import org.apache.sling.feature.cpconverter.vltpkg.RecollectorVaultPackageScanner;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanner {
 
@@ -79,9 +81,9 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     private ArtifactsDeployer artifactsDeployer;
 
-    private VaultPackageAssembler mainPackageAssembler = null;
+    private VaultPackageAssembler mainPackageAssembler;
 
-    private RecollectorVaultPackageScanner recollectorVaultPackageScanner;
+    private final RecollectorVaultPackageScanner recollectorVaultPackageScanner;
 
     private PackagesEventsEmitter emitter;
 
@@ -98,68 +100,68 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         this.recollectorVaultPackageScanner = new RecollectorVaultPackageScanner(this, this.packageManager, strictValidation, subContentPackages);
     }
 
-    public ContentPackage2FeatureModelConverter setEntryHandlersManager(EntryHandlersManager handlersManager) {
+    public @NotNull ContentPackage2FeatureModelConverter setEntryHandlersManager(@Nullable EntryHandlersManager handlersManager) {
         this.handlersManager = handlersManager;
         return this;
     }
 
-    public FeaturesManager getFeaturesManager() {
+    public @Nullable FeaturesManager getFeaturesManager() {
         return featuresManager;
     }
 
-    public ContentPackage2FeatureModelConverter setFeaturesManager(FeaturesManager featuresManager) {
+    public @NotNull ContentPackage2FeatureModelConverter setFeaturesManager(@Nullable FeaturesManager featuresManager) {
         this.featuresManager = featuresManager;
         return this;
     }
 
-    public ContentPackage2FeatureModelConverter setResourceFilter(ResourceFilter resourceFilter) {
+    public @NotNull ContentPackage2FeatureModelConverter setResourceFilter(@Nullable ResourceFilter resourceFilter) {
         this.resourceFilter = resourceFilter;
         return this;
     }
 
-    public ArtifactsDeployer getArtifactsDeployer() {
+    public @Nullable ArtifactsDeployer getArtifactsDeployer() {
         return artifactsDeployer;
     }
 
-    public ContentPackage2FeatureModelConverter setBundlesDeployer(ArtifactsDeployer bundlesDeployer) {
+    public @NotNull ContentPackage2FeatureModelConverter setBundlesDeployer(@Nullable ArtifactsDeployer bundlesDeployer) {
         this.artifactsDeployer = bundlesDeployer;
         return this;
     }
 
-    public AclManager getAclManager() {
+    public @Nullable AclManager getAclManager() {
         return aclManager;
     }
 
-    public ContentPackage2FeatureModelConverter setAclManager(AclManager aclManager) {
+    public @NotNull ContentPackage2FeatureModelConverter setAclManager(@Nullable AclManager aclManager) {
         this.aclManager = aclManager;
         return this;
     }
 
-    public VaultPackageAssembler getMainPackageAssembler() {
+    public @Nullable VaultPackageAssembler getMainPackageAssembler() {
         return mainPackageAssembler;
     }
 
-    public ContentPackage2FeatureModelConverter setEmitter(PackagesEventsEmitter emitter) {
+    public @NotNull ContentPackage2FeatureModelConverter setEmitter(@Nullable PackagesEventsEmitter emitter) {
         this.emitter = emitter;
         return this;
     }
     
-    public ContentPackage2FeatureModelConverter setDropContent(boolean dropContent) {
+    public @NotNull ContentPackage2FeatureModelConverter setDropContent(boolean dropContent) {
         this.dropContent = dropContent;
         return this;
     }
 
-    public ContentPackage2FeatureModelConverter setFailOnMixedPackages(boolean failOnMixedPackages) {
+    public @NotNull ContentPackage2FeatureModelConverter setFailOnMixedPackages(boolean failOnMixedPackages) {
         this.failOnMixedPackages = failOnMixedPackages;
         return this;
     }
 
-    public void convert(File...contentPackages) throws Exception {
+    public void convert(@NotNull File...contentPackages) throws Exception {
         requireNonNull(contentPackages , "Null content-package(s) can not be converted.");
         secondPass(firstPass(contentPackages));
     }
 
-    protected Collection<VaultPackage> firstPass(File...contentPackages) throws Exception {
+    protected @NotNull Collection<VaultPackage> firstPass(@NotNull File...contentPackages) throws Exception {
         Map<PackageId, VaultPackage> idFileMap = new LinkedHashMap<>();
         Map<PackageId, VaultPackage> idPackageMapping = new ConcurrentHashMap<>();
 
@@ -185,7 +187,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         logger.info("Ordering input content-package(s) {}...", idPackageMapping.keySet());
 
         for (VaultPackage pack : idPackageMapping.values()) {
-            orderDependencies(idFileMap, idPackageMapping, pack, new HashSet<PackageId>());
+            orderDependencies(idFileMap, idPackageMapping, pack, new HashSet<>());
         }
 
         logger.info("New content-package(s) order: {}", idFileMap.keySet());
@@ -193,7 +195,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return idFileMap.values();
     }
 
-    protected void secondPass(Collection<VaultPackage> orderedContentPackages) throws Exception {
+    protected void secondPass(@NotNull Collection<VaultPackage> orderedContentPackages) throws Exception {
         emitter.start();
 
         for (VaultPackage vaultPackage : orderedContentPackages) {
@@ -210,7 +212,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
                 traverse(vaultPackage);
 
-                // make sure 
+                // make sure
 
                 mainPackageAssembler.updateDependencies(mutableContentsIds);
 
@@ -247,10 +249,10 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         emitter.end();
     }
 
-    private void orderDependencies(Map<PackageId, VaultPackage> idFileMap,
-                                   Map<PackageId, VaultPackage> idPackageMapping,
-                                   VaultPackage pack,
-                                   Set<PackageId> visited) throws CyclicDependencyException {
+    private void orderDependencies(@NotNull Map<PackageId, VaultPackage> idFileMap,
+                                   @NotNull Map<PackageId, VaultPackage> idPackageMapping,
+                                   @NotNull VaultPackage pack,
+                                   @NotNull Set<PackageId> visited) throws CyclicDependencyException {
         if (!visited.add(pack.getId())) {
             throw new CyclicDependencyException("Cyclic dependency detected, " + pack.getId() + " was previously visited already");
         }
@@ -268,7 +270,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         idPackageMapping.remove(pack.getId());
     }
 
-    public void processSubPackage(String path, String runMode, VaultPackage vaultPackage, boolean isEmbeddedPackage) throws Exception {
+    public void processSubPackage(@NotNull String path, @Nullable String runMode, @NotNull VaultPackage vaultPackage, boolean isEmbeddedPackage) throws Exception {
         requireNonNull(path, "Impossible to process a null vault package");
         requireNonNull(vaultPackage, "Impossible to process a null vault package");
 
@@ -315,10 +317,10 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         emitter.endSubPackage();
     }
 
-    private void processContentPackageArchive(File contentPackageArchive,
-                                              String runMode,
-                                              ArtifactId mvnPackageId,
-                                              PackageId originalPackageId) throws Exception {
+    private void processContentPackageArchive(@NotNull File contentPackageArchive,
+                                              @Nullable String runMode,
+                                              @NotNull ArtifactId mvnPackageId,
+                                              @NotNull PackageId originalPackageId) throws Exception {
         try (VaultPackage vaultPackage = open(contentPackageArchive)) {
             PackageType packageType = detectPackageType(vaultPackage);
 
@@ -344,12 +346,12 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         }
     }
 
-    protected boolean isSubContentPackageIncluded(String path) {
+    protected boolean isSubContentPackageIncluded(@NotNull String path) {
         return subContentPackages.containsValue(path);
     }
 
     @Override
-    protected void onFile(String entryPath, Archive archive, Entry entry) throws Exception {
+    protected void onFile(@NotNull String entryPath, @NotNull Archive archive, @NotNull Entry entry) throws Exception {
         if (resourceFilter != null && resourceFilter.isFilteredOut(entryPath)) {
             throw new IllegalArgumentException("Path '"
                                                + entryPath
@@ -366,7 +368,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         entryHandler.handle(entryPath, archive, entry, this);
     }
 
-    private static ArtifactId toArtifactId(VaultPackage vaultPackage) {
+    private static @NotNull ArtifactId toArtifactId(@NotNull VaultPackage vaultPackage) {
         PackageId packageId = vaultPackage.getId();
         String groupId = requireNonNull(packageId.getGroup(),
             PackageProperties.NAME_GROUP
@@ -393,7 +395,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     }
 
     @Override
-    protected void addCdnPattern(Pattern cndPattern) {
+    protected void addCdnPattern(@NotNull Pattern cndPattern) {
         handlersManager.addEntryHandler(new NodeTypesEntryHandler(cndPattern));
     }
 

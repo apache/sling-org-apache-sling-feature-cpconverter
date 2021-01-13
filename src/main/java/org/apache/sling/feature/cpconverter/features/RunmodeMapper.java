@@ -16,6 +16,9 @@
  */
 package org.apache.sling.feature.cpconverter.features;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -26,7 +29,7 @@ final class RunmodeMapper {
 
     private static final String FILENAME = "runmode.mapping";
 
-    public static RunmodeMapper open(File featureModelsOutputDirectory) throws IOException {
+    public static @NotNull RunmodeMapper open(@NotNull File featureModelsOutputDirectory) throws IOException {
         Properties properties = new Properties();
 
         File runmodeMappingFile = new File(featureModelsOutputDirectory, FILENAME);
@@ -45,12 +48,12 @@ final class RunmodeMapper {
 
     private final Properties properties;
 
-    private RunmodeMapper(File runmodeMappingFile, Properties properties) {
+    private RunmodeMapper(@NotNull File runmodeMappingFile, @NotNull Properties properties) {
         this.runmodeMappingFile = runmodeMappingFile;
         this.properties = properties;
     }
 
-    public void addOrUpdate(String runMode, String jsonFileName) {
+    public void addOrUpdate(@Nullable String runMode, @NotNull String jsonFileName) {
         if (runMode == null) {
             runMode = DEFAULT;
         }

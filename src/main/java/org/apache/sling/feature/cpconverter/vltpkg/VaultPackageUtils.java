@@ -28,6 +28,8 @@ import org.apache.jackrabbit.vault.packaging.Dependency;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class VaultPackageUtils {
 
@@ -37,7 +39,7 @@ public class VaultPackageUtils {
         // this class must not be instantiated from outside
     }
 
-    public static PackageType detectPackageType(VaultPackage vaultPackage) {
+    public static @NotNull PackageType detectPackageType(@NotNull VaultPackage vaultPackage) {
         PackageType packageType = vaultPackage.getPackageType();
         if (packageType != null) {
             return packageType;
@@ -72,7 +74,7 @@ public class VaultPackageUtils {
         return PackageType.MIXED;
     }
 
-    public static Set<Dependency> getDependencies(VaultPackage vaultPackage) {
+    public static @NotNull Set<Dependency> getDependencies(@NotNull VaultPackage vaultPackage) {
         Dependency[] originalDepenencies = vaultPackage.getDependencies();
 
         Set<Dependency> dependencies = new HashSet<>();
@@ -84,7 +86,7 @@ public class VaultPackageUtils {
         return dependencies;
     }
 
-    public static void setDependencies(Set<Dependency> dependencies, Properties properties) {
+    public static void setDependencies(@Nullable Set<Dependency> dependencies, @NotNull Properties properties) {
         if (dependencies == null || dependencies.isEmpty()) {
             return;
         }

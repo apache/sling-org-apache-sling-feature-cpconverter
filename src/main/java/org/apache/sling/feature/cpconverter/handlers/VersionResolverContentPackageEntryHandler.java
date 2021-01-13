@@ -22,6 +22,8 @@ import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.vltpkg.RecollectorVaultPackageScanner;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,16 +35,16 @@ public final class VersionResolverContentPackageEntryHandler extends AbstractCon
 
     private final Map<PackageId, String> subContentPackages;
 
-    public VersionResolverContentPackageEntryHandler(RecollectorVaultPackageScanner scanner, Map<PackageId, String> subContentPackages) {
+    public VersionResolverContentPackageEntryHandler(@NotNull RecollectorVaultPackageScanner scanner, @NotNull Map<PackageId, String> subContentPackages) {
         this.scanner = scanner;
         this.subContentPackages = subContentPackages;
     }
 
     @Override
-    protected void processSubPackage(String path, String runMode, VaultPackage contentPackage, ContentPackage2FeatureModelConverter converter, boolean isEmbeddedPackage)
+    protected void processSubPackage(@NotNull String path, @Nullable String runMode, @NotNull VaultPackage contentPackage, @NotNull ContentPackage2FeatureModelConverter converter, boolean isEmbeddedPackage)
             throws Exception {
 
-        boolean addPackage = false;
+        boolean addPackage;
         PackageId currentId = contentPackage.getId();
 
         logger.info("Checking if other {}:{} content-package versions were handled already", currentId.getGroup(), currentId.getName());
@@ -75,7 +77,7 @@ public final class VersionResolverContentPackageEntryHandler extends AbstractCon
         }
     }
 
-    private PackageId getPackage(PackageId expectedId) {
+    private @Nullable PackageId getPackage(@NotNull PackageId expectedId) {
         for (PackageId currentId : subContentPackages.keySet()) {
             if (expectedId.getGroup().equals(currentId.getGroup())
                     && expectedId.getName().equals(currentId.getName())) {

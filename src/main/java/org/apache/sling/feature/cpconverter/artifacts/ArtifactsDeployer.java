@@ -20,11 +20,12 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.sling.feature.ArtifactId;
+import org.jetbrains.annotations.NotNull;
 
 public interface ArtifactsDeployer {
 
-    File getBundlesDirectory();
+    @NotNull File getBundlesDirectory();
 
-    void deploy(ArtifactWriter artifactWriter, ArtifactId id) throws IOException;
+    void deploy(@NotNull ArtifactWriter artifactWriter, @NotNull ArtifactId id) throws IOException;
 
 }

@@ -18,6 +18,7 @@ package org.apache.sling.feature.cpconverter.handlers;
 
 import java.util.regex.Pattern;
 
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,20 +28,20 @@ abstract class AbstractRegexEntryHandler implements EntryHandler {
 
     private final Pattern pattern;
 
-    public AbstractRegexEntryHandler(String regex) {
+    public AbstractRegexEntryHandler(@NotNull String regex) {
         this(Pattern.compile(regex));
     }
 
-    public AbstractRegexEntryHandler(Pattern pattern) {
+    public AbstractRegexEntryHandler(@NotNull Pattern pattern) {
         this.pattern = pattern;
     }
 
     @Override
-    public final boolean matches(String path) {
+    public final boolean matches(@NotNull String path) {
         return pattern.matcher(path).matches();
     }
 
-    protected final Pattern getPattern() {
+    protected final @NotNull Pattern getPattern() {
         return pattern;
     }
 

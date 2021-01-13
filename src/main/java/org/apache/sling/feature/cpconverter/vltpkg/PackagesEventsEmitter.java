@@ -17,6 +17,7 @@
 package org.apache.sling.feature.cpconverter.vltpkg;
 
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
+import org.jetbrains.annotations.NotNull;
 
 public interface PackagesEventsEmitter {
 
@@ -24,11 +25,11 @@ public interface PackagesEventsEmitter {
 
     void end();
 
-    void startPackage(VaultPackage vaultPackage);
+    void startPackage(@NotNull VaultPackage vaultPackage);
 
     void endPackage();
 
-    void startSubPackage(String path, VaultPackage vaultPackage);
+    void startSubPackage(@NotNull String path, @NotNull VaultPackage vaultPackage);
 
     void endSubPackage();
 

@@ -18,11 +18,13 @@ package org.apache.sling.feature.cpconverter.handlers;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.jetbrains.annotations.NotNull;
 
 public class NodeTypesEntryHandler extends AbstractRegexEntryHandler {
 
@@ -30,16 +32,16 @@ public class NodeTypesEntryHandler extends AbstractRegexEntryHandler {
         super("/META-INF/vault/nodetypes\\.cnd");
     }
 
-    public NodeTypesEntryHandler(Pattern pattern) {
+    public NodeTypesEntryHandler(@NotNull Pattern pattern) {
         super(pattern);
     }
 
     @Override
-    public void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter)
+    public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter)
             throws Exception {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(archive.openInputStream(entry)))) {
-            converter.getAclManager().addNodetypeRegistrationSentence("register nodetypes");
-            converter.getAclManager().addNodetypeRegistrationSentence("<<===");
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(archive.openInputStream(entry))))) {
+            Objects.requireNonNull(converter.getAclManager()).addNodetypeRegistrationSentence("register nodetypes");
+            Objects.requireNonNull(converter.getAclManager()).addNodetypeRegistrationSentence("<<===");
 
             String nodetypeRegistrationSentence;
             while ((nodetypeRegistrationSentence = reader.readLine()) != null) {

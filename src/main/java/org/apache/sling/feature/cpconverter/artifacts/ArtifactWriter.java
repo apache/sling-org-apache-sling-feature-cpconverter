@@ -16,11 +16,13 @@
  */
 package org.apache.sling.feature.cpconverter.artifacts;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.io.OutputStream;
 
 public interface ArtifactWriter {
 
-    void write(OutputStream output) throws IOException;
+    void write(@NotNull OutputStream output) throws IOException;
 
 }

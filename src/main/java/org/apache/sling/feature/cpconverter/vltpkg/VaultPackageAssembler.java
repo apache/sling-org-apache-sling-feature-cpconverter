@@ -34,11 +34,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
@@ -58,6 +54,8 @@ import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
 import org.codehaus.plexus.archiver.Archiver;
 import org.codehaus.plexus.archiver.util.DefaultFileSet;
 import org.codehaus.plexus.archiver.zip.ZipArchiver;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class VaultPackageAssembler implements EntryHandler, FileFilter {
 
@@ -71,11 +69,11 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
 
     private static final Pattern OSGI_BUNDLE_PATTERN = Pattern.compile("(jcr_root)?/apps/[^/]+/install(\\.([^/]+))?/.+\\.jar");
     
-    public static VaultPackageAssembler create(VaultPackage vaultPackage) {
-        return create(vaultPackage, vaultPackage.getMetaInf().getFilter());
+    public static @NotNull VaultPackageAssembler create(@NotNull VaultPackage vaultPackage) {
+        return create(vaultPackage, Objects.requireNonNull(vaultPackage.getMetaInf().getFilter()));
     }
 
-    public static File createSynthetic(VaultPackage vaultPackage) throws Exception {
+    public static @NotNull File createSynthetic(@NotNull VaultPackage vaultPackage) throws Exception {
         DefaultWorkspaceFilter filter = new DefaultWorkspaceFilter();
         PathFilterSet filterSet = new PathFilterSet();
         SyntheticPathFilter pathFilter = new SyntheticPathFilter();
@@ -85,7 +83,7 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
         return create(vaultPackage, filter).createPackage();
     }
 
-    private static VaultPackageAssembler create(VaultPackage vaultPackage, WorkspaceFilter filter) {
+    private static @NotNull VaultPackageAssembler create(@NotNull VaultPackage vaultPackage, @NotNull WorkspaceFilter filter) {
         PackageId packageId = vaultPackage.getId();
         String fileName = packageId.toString().replaceAll("/", "-").replaceAll(":", "-") + "-" + vaultPackage.getFile().getName();
         File storingDirectory = new File(TMP_DIR, fileName + "-deflated");
@@ -98,7 +96,9 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
         }
         // avoid any possible Stream is not a content package. Missing 'jcr_root' error
         File jcrRootDirectory = new File(storingDirectory, ROOT_DIR);
-        jcrRootDirectory.mkdirs();
+        if (!jcrRootDirectory.mkdirs() && jcrRootDirectory.isDirectory()) {
+            throw new IllegalStateException("Unable to create jcr root dir: " + jcrRootDirectory);
+        }
 
         PackageProperties packageProperties = vaultPackage.getProperties();
 
@@ -140,12 +140,12 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
     private final Properties properties;
 
     @Override
-    public boolean matches(String path) {
+    public boolean matches(@NotNull String path) {
         return true;
     }
 
     @Override
-    public void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter)
+    public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter)
             throws Exception {
         addEntry(path, archive, entry);
     }
@@ -153,17 +153,17 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
     /**
      * This class can not be instantiated from outside
      */
-    private VaultPackageAssembler(File storingDirectory, Properties properties, Set<Dependency> dependencies) {
+    private VaultPackageAssembler(@NotNull File storingDirectory, @NotNull Properties properties, @NotNull Set<Dependency> dependencies) {
         this.storingDirectory = storingDirectory;
         this.properties = properties;
         this.dependencies = dependencies;
     }
     
-    public Properties getPackageProperties() {
+    public @NotNull Properties getPackageProperties() {
         return this.properties;
     }
 
-    public void mergeFilters(WorkspaceFilter filter) {
+    public void mergeFilters(@NotNull WorkspaceFilter filter) {
         for (PathFilterSet pathFilterSet : filter.getFilterSets()) {
             if (!OSGI_BUNDLE_PATTERN.matcher(pathFilterSet.getRoot()).matches()) {
                 this.filter.add(pathFilterSet);
@@ -171,31 +171,33 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
         }
     }
 
-    public void addEntry(String path, Archive archive, Entry entry) throws IOException {
-        try (InputStream input = archive.openInputStream(entry)) {
+    public void addEntry(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry) throws IOException {
+        try (InputStream input = Objects.requireNonNull(archive.openInputStream(entry))) {
             addEntry(path, input);
         }
     }
 
-    public void addEntry(String path, File file) throws IOException {
+    public void addEntry(@NotNull String path, @NotNull File file) throws IOException {
         try (InputStream input = new FileInputStream(file)) {
             addEntry(path, input);
         }
     }
 
-    public void addEntry(String path, InputStream input) throws IOException {
+    public void addEntry(@NotNull String path, @NotNull InputStream input) throws IOException {
         try (OutputStream output = createEntry(path)) {
             IOUtils.copy(input, output);
         }
     }
 
-    public OutputStream createEntry(String path) throws IOException {
+    public @NotNull OutputStream createEntry(@NotNull String path) throws IOException {
         File target = new File(storingDirectory, path);
-        target.getParentFile().mkdirs();
+        if (!target.getParentFile().mkdirs() && !target.getParentFile().isDirectory()) {
+            throw new IOException("Could not create parent directory: " + target.getParentFile());
+        }
         return new FileOutputStream(target);
     }
 
-    public File getEntry(String path) {
+    public @NotNull File getEntry(@NotNull String path) {
         if (!path.startsWith(ROOT_DIR)) {
             path = ROOT_DIR + path;
         }
@@ -203,7 +205,7 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
         return new File(storingDirectory, path);
     }
 
-    public void updateDependencies(Map<PackageId, Set<Dependency>> mutableContentsIds) {
+    public void updateDependencies(@NotNull Map<PackageId, Set<Dependency>> mutableContentsIds) {
         Map<Dependency, Set<Dependency>> matches = new HashMap<>();
         for (Dependency dependency : dependencies) {
             for (java.util.Map.Entry<PackageId, Set<Dependency>> mutableContentId : mutableContentsIds.entrySet()) {
@@ -219,20 +221,20 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
     }
     
 
-    public void addDependency(Dependency dependency) {
+    public void addDependency(@NotNull Dependency dependency) {
         dependencies.add(dependency);
     }
 
-    public File createPackage() throws IOException {
+    public @NotNull File createPackage() throws IOException {
         return createPackage(TMP_DIR);
     }
 
-    public File createPackage(File outputDirectory) throws IOException {
+    public @NotNull File createPackage(@NotNull File outputDirectory) throws IOException {
         // generate the Vault properties XML file
 
         File metaDir = new File(storingDirectory, META_DIR);
-        if (!metaDir.exists()) {
-            metaDir.mkdirs();
+        if (!metaDir.exists() && !metaDir.mkdirs()) {
+            throw new IOException("Could not create meta Dir: " + metaDir);
         }
 
         setDependencies(dependencies, properties);
@@ -274,12 +276,13 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
         return destFile;
     }
 
-    private void computeFilters(File outputDirectory) {
+    private void computeFilters(@NotNull File outputDirectory) {
         File jcrRootDir = new File(outputDirectory, JCR_ROOT_DIR);
 
         if (jcrRootDir.exists() && jcrRootDir.isDirectory()) {
             for (File child : jcrRootDir.listFiles(this)) {
-                File lowestCommonAncestor = lowestCommonAncestor(new TreeNode(child)).val;
+                TreeNode node = lowestCommonAncestor(new TreeNode(child));
+                File lowestCommonAncestor = node != null ? node.val : null;
                 if (lowestCommonAncestor != null) {
                     String root = outputDirectory.toURI().relativize(lowestCommonAncestor.toURI()).getPath();
 
@@ -290,11 +293,11 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
     }
 
     @Override
-    public boolean accept(File pathname) {
+    public boolean accept(@NotNull File pathname) {
         return pathname.isDirectory();
     }
 
-    private TreeNode lowestCommonAncestor(TreeNode root) {
+    private @Nullable TreeNode lowestCommonAncestor(@NotNull TreeNode root) {
         int currMaxDepth = 0;//curr tree's deepest leaf depth
         int countMaxDepth = 0;//num of deepest leaves
         TreeNode node = null;
@@ -337,7 +340,7 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
 
         int maxDepth;//this means the maxDepth of curr treenode-rooted (sub)tree
 
-        TreeNode(File x) {
+        TreeNode(@NotNull File x) {
             val = x;
             maxDepth = 0;
         }
@@ -345,11 +348,11 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
     }
 
     public static class FolderDeletionException extends RuntimeException {
-        public FolderDeletionException(String message) {
+        public FolderDeletionException(@NotNull String message) {
             super(message);
         }
 
-        public FolderDeletionException(String message, Throwable cause) {
+        public FolderDeletionException(@NotNull String message, @NotNull Throwable cause) {
             super(message, cause);
         }
     }

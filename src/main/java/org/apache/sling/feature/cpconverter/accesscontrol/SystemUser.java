@@ -17,6 +17,7 @@
 package org.apache.sling.feature.cpconverter.accesscontrol;
 
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
@@ -32,21 +33,21 @@ public class SystemUser {
      * @param path - the original repository path of the user in the content-package.
      * @param intermediatePath - the intermediate path the user should have - most likely the (direct) parent of the path.
      */
-    public SystemUser(String id, RepoPath path, RepoPath intermediatePath) {
+    public SystemUser(@NotNull String id, @NotNull RepoPath path, @NotNull RepoPath intermediatePath) {
         this.id = id;
         this.path = path;
         this.intermediatePath = intermediatePath;
     }
 
-    public String getId() {
+    public @NotNull String getId() {
         return id;
     }
 
-    public RepoPath getPath() {
+    public @NotNull RepoPath getPath() {
         return path;
     }
 
-    public RepoPath getIntermediatePath() {
+    public @NotNull RepoPath getIntermediatePath() {
         return intermediatePath;
     }
 

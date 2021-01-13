@@ -29,6 +29,7 @@ import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
 import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -178,7 +179,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
         }
     }
 
-    private static void printVersion(final Logger logger) {
+    private static void printVersion(@NotNull final Logger logger) {
         logger.info("{} v{} (built on {})",
                 System.getProperty("project.artifactId"),
                 System.getProperty("project.version"),
@@ -200,7 +201,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
         logger.info("+-----------------------------------------------------+");
     }
 
-    private static final String getOsFamily() {
+    private static final @NotNull String getOsFamily() {
         String osName = System.getProperty("os.name").toLowerCase();
         String pathSep = System.getProperty("path.separator");
 
@@ -230,7 +231,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
         return "undefined";
     }
 
-    public static void main(String[] args) {
+    public static void main(@NotNull String[] args) {
         CommandLine.run(new ContentPackage2FeatureModelConverterLauncher(), args);
     }
 

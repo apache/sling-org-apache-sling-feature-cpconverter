@@ -21,6 +21,7 @@ import static org.apache.jackrabbit.vault.packaging.PackageProperties.NAME_VERSI
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
@@ -36,6 +37,7 @@ import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.artifacts.InputStreamArtifactWriter;
 import org.codehaus.plexus.util.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.osgi.framework.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +67,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
     }
 
     @Override
-    public void handle(String path, Archive archive, Entry entry, ContentPackage2FeatureModelConverter converter) throws Exception {
+    public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter) throws Exception {
         logger.info("Processing bundle {}...", entry.getName());
 
         String groupId;
@@ -74,7 +76,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         String classifier = null;
         Manifest manifest;
 
-        try (JarInputStream jarInput = new JarInputStream(archive.openInputStream(entry))) {
+        try (JarInputStream jarInput = new JarInputStream(Objects.requireNonNull(archive.openInputStream(entry)))) {
             Properties properties = readGav(entry.getName(), jarInput);
             manifest = jarInput.getManifest();
 
@@ -119,23 +121,25 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         }
 
         try (InputStream input = archive.openInputStream(entry)) {
-            ArtifactId id = new ArtifactId(groupId, artifactId, version, classifier, JAR_TYPE);
+            if (input != null) {
+                ArtifactId id = new ArtifactId(groupId, artifactId, version, classifier, JAR_TYPE);
 
-            converter.getArtifactsDeployer().deploy(new InputStreamArtifactWriter(input), id);
+                Objects.requireNonNull(converter.getArtifactsDeployer()).deploy(new InputStreamArtifactWriter(input), id);
 
-            converter.getFeaturesManager().addArtifact(runMode, id, startLevel);
+                Objects.requireNonNull(converter.getFeaturesManager()).addArtifact(runMode, id, startLevel);
 
-            String epHeader = manifest.getMainAttributes().getValue(Constants.EXPORT_PACKAGE);
-            if (epHeader != null) {
-                for (Clause clause : Parser.parseHeader(epHeader)) {
-                    converter.getFeaturesManager().addAPIRegionExport(runMode, clause.getName());
+                String epHeader = manifest.getMainAttributes().getValue(Constants.EXPORT_PACKAGE);
+                if (epHeader != null) {
+                    for (Clause clause : Parser.parseHeader(epHeader)) {
+                        converter.getFeaturesManager().addAPIRegionExport(runMode, clause.getName());
+                    }
                 }
             }
         }
     }
 
     // method visibility set to 'protected' fot testing purposes
-    protected Properties readGav(String entryName, JarInputStream jarInput) throws IOException {
+    protected @NotNull Properties readGav(@NotNull String entryName, @NotNull JarInputStream jarInput) throws IOException {
         Properties properties = new Properties();
 
         String bundleName = entryName;
@@ -151,7 +155,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         }
 
         JarEntry jarEntry;
-        dance : while ((jarEntry = jarInput.getNextJarEntry()) != null) {
+        while ((jarEntry = jarInput.getNextJarEntry()) != null) {
             String nextEntryName = jarEntry.getName();
 
             if (pomPropertiesPattern.matcher(nextEntryName).matches()) {
@@ -188,7 +192,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
                         }
                     }
 
-                    break dance;
+                    break;
                 }
             }
         }
@@ -196,14 +200,14 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         return properties;
     }
 
-    private static String getCheckedProperty(Manifest manifest, String name) {
+    private static @NotNull String getCheckedProperty(@NotNull Manifest manifest, @NotNull String name) {
         String property = manifest.getMainAttributes().getValue(name).trim();
         return requireNonNull(property, "Jar file can not be defined as a valid OSGi bundle without specifying a valid '"
                                          + name
                                          + "' property.");
     }
 
-    private static String getCheckedProperty(Properties properties, String name) {
+    private static String getCheckedProperty(@NotNull Properties properties, @NotNull String name) {
         String property = properties.getProperty(name).trim();
         return requireNonNull(property, "Jar file can not be defined as a valid Maven artifact without specifying a valid '"
                                          + name

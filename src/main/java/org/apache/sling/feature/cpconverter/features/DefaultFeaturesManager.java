@@ -47,6 +47,8 @@ import org.apache.sling.feature.extension.apiregions.api.ApiExport;
 import org.apache.sling.feature.extension.apiregions.api.ApiRegion;
 import org.apache.sling.feature.extension.apiregions.api.ApiRegions;
 import org.apache.sling.feature.io.json.FeatureJSONWriter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,16 +91,16 @@ public class DefaultFeaturesManager implements FeaturesManager {
         this(null);
     }
 
-    public DefaultFeaturesManager(File tempDir) {
+    public DefaultFeaturesManager(@NotNull File tempDir) {
         this(true, 20, tempDir, null, null, null);
     }
 
     public DefaultFeaturesManager(boolean mergeConfigurations,
                                   int bundlesStartOrder,
-                                  File featureModelsOutputDirectory,
-                                  String artifactIdOverride,
-                                  String prefix,
-                                  Map<String, String> properties) {
+                                  @NotNull File featureModelsOutputDirectory,
+                                  @Nullable String artifactIdOverride,
+                                  @Nullable String prefix,
+                                  @NotNull Map<String, String> properties) {
         this.mergeConfigurations = mergeConfigurations;
         this.bundlesStartOrder = bundlesStartOrder;
         this.featureModelsOutputDirectory = featureModelsOutputDirectory;
@@ -108,19 +110,19 @@ public class DefaultFeaturesManager implements FeaturesManager {
     }
 
     @Override
-    public void init(String groupId, String artifactId, String version) {
+    public void init(@NotNull String groupId, @NotNull String artifactId, @NotNull String version) {
         targetFeature = new Feature(new ArtifactId(groupId, artifactId, version, null, SLING_OSGI_FEATURE_TILE_TYPE));
 
         runModes.clear();
     }
 
     @Override
-    public Feature getTargetFeature() {
+    public @Nullable Feature getTargetFeature() {
         return targetFeature;
     }
 
     @Override
-    public Feature getRunMode(String runMode) {
+    public @NotNull Feature getRunMode(@Nullable String runMode) {
         if (getTargetFeature() == null) {
             throw new IllegalStateException("Target Feature not initialized yet, please make sure convert() method was invoked first.");
         }
@@ -138,12 +140,12 @@ public class DefaultFeaturesManager implements FeaturesManager {
     }
 
     @Override
-    public void addArtifact(String runMode, ArtifactId id) {
+    public void addArtifact(@Nullable String runMode, @NotNull ArtifactId id) {
         addArtifact(runMode, id, null);
     }
 
     @Override
-    public void addArtifact(String runMode, ArtifactId id, Integer startOrder) {
+    public void addArtifact(@Nullable String runMode, @NotNull ArtifactId id, @Nullable Integer startOrder) {
         requireNonNull(id, "Artifact can not be attached to a feature without specifying a valid ArtifactId.");
 
         Artifact artifact = new Artifact(id);
@@ -170,7 +172,7 @@ public class DefaultFeaturesManager implements FeaturesManager {
         artifacts.add(artifact);
     }
 
-    private ArtifactId appendRunmode(ArtifactId id, String runMode) {
+    private @NotNull ArtifactId appendRunmode(@NotNull ArtifactId id, @Nullable String runMode) {
         ArtifactId newId;
         if (runMode == null) {
             newId = id;
@@ -188,7 +190,7 @@ public class DefaultFeaturesManager implements FeaturesManager {
     }
 
     @Override
-    public void addAPIRegionExport(String runMode, String exportedPackage) {
+    public void addAPIRegionExport(@Nullable String runMode, @NotNull String exportedPackage) {
         if (exportsToAPIRegion == null)
             return; // Ignore if we're not exporting to an API region
 
@@ -200,7 +202,7 @@ public class DefaultFeaturesManager implements FeaturesManager {
     }
 
     @Override
-    public void addConfiguration(String runMode, String pid, Dictionary<String, Object> configurationProperties) {
+    public void addConfiguration(@Nullable String runMode, @NotNull String pid, @Nullable Dictionary<String, Object> configurationProperties) {
         Feature feature = getRunMode(runMode);
         Configuration configuration = feature.getConfigurations().getConfiguration(pid);
 
@@ -232,7 +234,7 @@ public class DefaultFeaturesManager implements FeaturesManager {
         configuration.getProperties().remove("service.factoryPid");
     }
 
-    private void addAPIRegions(Feature feature, List<String> exportedPackages) throws IOException {
+    private void addAPIRegions(@NotNull Feature feature, @Nullable List<String> exportedPackages) throws IOException {
         if (exportedPackages == null)
             exportedPackages = Collections.emptyList();
 
@@ -315,19 +317,19 @@ public class DefaultFeaturesManager implements FeaturesManager {
         }
     }
 
-    public synchronized DefaultFeaturesManager setAPIRegions(List<String> regions) {
+    public synchronized @NotNull DefaultFeaturesManager setAPIRegions(@NotNull List<String> regions) {
         targetAPIRegions.clear();
         targetAPIRegions.addAll(regions);
         return this;
     }
 
-    public synchronized DefaultFeaturesManager setExportToAPIRegion(String region) {
+    public synchronized @NotNull DefaultFeaturesManager setExportToAPIRegion(@NotNull String region) {
         exportsToAPIRegion = region;
         return this;
     }
 
     @Override
-    public void addOrAppendRepoInitExtension(String text, String runMode) {
+    public void addOrAppendRepoInitExtension(@NotNull String text, @Nullable String runMode) {
 
         logger.info("Adding/Appending RepoInitExtension for runMode: {}", runMode );
         Extension repoInitExtension = getRunMode(runMode).getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);

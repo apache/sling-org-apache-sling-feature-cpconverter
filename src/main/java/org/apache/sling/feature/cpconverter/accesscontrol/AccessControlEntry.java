@@ -17,6 +17,8 @@
 package org.apache.sling.feature.cpconverter.accesscontrol;
 
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -34,31 +36,31 @@ public final class AccessControlEntry {
 
     private final List<String> restrictions = new LinkedList<>();
 
-    public AccessControlEntry(boolean isAllow, String privileges, RepoPath repositoryPath) {
+    public AccessControlEntry(boolean isAllow, @NotNull String privileges, @NotNull RepoPath repositoryPath) {
         this.isAllow = isAllow;
         this.privileges = privileges;
         this.repositoryPath = repositoryPath;
     }
 
-    public void addRestriction(String restriction) {
+    public void addRestriction(@Nullable String restriction) {
         if (restriction != null && !restriction.isEmpty()) {
             restrictions.add(restriction);
         }
     }
 
-    public String getOperation() {
+    public @NotNull String getOperation() {
         return isAllow ? "allow" : "deny";
     }
 
-    public String getPrivileges() {
+    public @NotNull String getPrivileges() {
         return privileges;
     }
 
-    public RepoPath getRepositoryPath() {
+    public @NotNull RepoPath getRepositoryPath() {
         return repositoryPath;
     }
 
-    public List<String> getRestrictions() {
+    public @NotNull List<String> getRestrictions() {
         return restrictions;
     }
 
