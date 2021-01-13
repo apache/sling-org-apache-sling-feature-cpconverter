@@ -31,6 +31,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.jcr.NamespaceException;
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.Optional;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,10 +40,11 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
+import java.util.Collection;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public final class DefaultAclManager implements AclManager {
@@ -104,6 +106,21 @@ public final class DefaultAclManager implements AclManager {
                 formatter.format("create service user %s with path %s%n", systemUser.getId(), systemUser.getIntermediatePath());
             }
 
+            Set<RepoPath> paths = acls.entrySet().stream()
+                    .filter(entry -> getSystemUser(entry.getKey()).isPresent())
+                    .map(Entry::getValue)
+                    .flatMap(Collection::stream)
+                    .map(AccessControlEntry::getRepositoryPath).collect(Collectors.toSet());
+
+            paths.stream()
+                    .filter(path -> !paths.stream().anyMatch(other -> !other.equals(path) && other.startsWith(path)))
+                    .filter(((Predicate<RepoPath>)RepoPath::isRepositoryPath).negate())
+                    .map(path -> computePathWithTypes(path, packageAssemblers))
+                    .filter(Objects::nonNull)
+                    .forEach(
+                            path -> formatter.format("create path %s%n", path)
+                    );
+
             // add the acls
             acls.forEach((systemUserID, authorizations) ->
                 getSystemUser(systemUserID).ifPresent(systemUser ->
@@ -131,11 +148,6 @@ public final class DefaultAclManager implements AclManager {
                 authorizationsIterator.remove();
             }
         }
-
-        // make sure all paths are created first
-
-        addPaths(authorizations, packageAssemblers, formatter);
-
         // finally add ACLs
 
         addAclStatement(formatter, systemUser, authorizations);
@@ -164,49 +176,43 @@ public final class DefaultAclManager implements AclManager {
         privilegeDefinitions = null;
     }
 
-    private void addPaths(@NotNull List<AccessControlEntry> authorizations, @NotNull List<VaultPackageAssembler> packageAssemblers, @NotNull Formatter formatter) {
-        if (authorizations.isEmpty()) {
-            return;
-        }
-
-        Set<RepoPath> paths = new TreeSet<>();
-        for (AccessControlEntry authorization : authorizations) {
-            RepoPath rp = authorization.getRepositoryPath();
-            // exclude special paths: user/group home nodes and subtrees therein, repository-level marker path
-            if (!(rp.isRepositoryPath())) {
-                addPath(authorization.getRepositoryPath(), paths);
-            }
-        }
-
-        for (RepoPath path : paths) {
-            String type = computePathType(path, packageAssemblers);
-
-            formatter.format("create path (%s) %s%n", type, path);
-        }
-    }
-
-	private static @NotNull String computePathType(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
+    private static @Nullable String computePathWithTypes(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
         path = new RepoPath(PlatformNameFormat.getPlatformPath(path.toString()));
 
-        for (VaultPackageAssembler packageAssembler: packageAssemblers) {
-            File currentDir = packageAssembler.getEntry(path.toString());
-
-            if (currentDir.exists()) {
-                File currentContent = new File(currentDir, CONTENT_XML_FILE_NAME);
-                if (currentContent.exists()) {
-                    try (FileInputStream input = new FileInputStream(currentContent)) {
-                        return new PrimaryTypeParser(DEFAULT_TYPE).parse(input);
+        boolean type = false;
+        String current = "";
+        for (String part : path.toString().substring(1).split("/")) {
+            current += current.isEmpty() ? part : "/" + part;
+            for (VaultPackageAssembler packageAssembler : packageAssemblers) {
+                File currentContent = packageAssembler.getEntry(current + "/" + CONTENT_XML_FILE_NAME);
+                if (currentContent.isFile()) {
+                    String primary;
+                    String mixin;
+                    try (FileInputStream input = new FileInputStream(currentContent);
+                        FileInputStream input2 = new FileInputStream(currentContent)) {
+                        primary = new PrimaryTypeParser().parse(input);
+                        mixin = new MixinParser().parse(input2);
+                        current += "(" + primary;
+                        if (mixin != null) {
+                            mixin = mixin.trim();
+                            if (mixin.startsWith("[")) {
+                                mixin = mixin.substring(1, mixin.length() - 1);
+                            }
+                            current += " mixin " + mixin;
+                        }
+                        current += ")";
+                        type = true;
                     } catch (Exception e) {
                         throw new RuntimeException("A fatal error occurred while parsing the '"
-                            + currentContent
-                            + "' file, see nested exceptions: "
-                            + e);
+                                + currentContent
+                                + "' file, see nested exceptions: "
+                                + e);
                     }
                 }
             }
         }
 
-        return DEFAULT_TYPE;
+        return type ? new RepoPath(current).toString() : null;
     }
 
     private static void addAclStatement(@NotNull Formatter formatter, @NotNull SystemUser systemUser, @NotNull List<AccessControlEntry> authorizations) {

@@ -16,27 +16,26 @@
  */
 package org.apache.sling.feature.cpconverter.accesscontrol;
 
+import org.apache.jackrabbit.JcrConstants;
 import org.apache.sling.feature.cpconverter.shared.AbstractJcrNodeParser;
 import org.jetbrains.annotations.NotNull;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
-final class PrimaryTypeParser extends AbstractJcrNodeParser<String> {
+final class MixinParser extends AbstractJcrNodeParser<String> {
+    private String mixins;
 
-    private String detectedPrimaryType;
-
-    public PrimaryTypeParser() {
+    public MixinParser() {
         this("sling:Folder");
     }
-
-    public PrimaryTypeParser(@NotNull String primaryType) {
+    public MixinParser(@NotNull String primaryType) {
         super(primaryType);
     }
 
     @Override
     protected void onJcrRootNode(String uri, String localName, String qName, Attributes attributes, String primaryType)
             throws SAXException {
-        detectedPrimaryType = primaryType;
+        mixins = attributes.getValue(JcrConstants.JCR_MIXINTYPES);
     }
 
     @Override
@@ -47,7 +46,7 @@ final class PrimaryTypeParser extends AbstractJcrNodeParser<String> {
 
     @Override
     protected String getParsingResult() {
-        return detectedPrimaryType != null ? detectedPrimaryType : getPrimaryType();
+        return mixins;
     }
 
 }
