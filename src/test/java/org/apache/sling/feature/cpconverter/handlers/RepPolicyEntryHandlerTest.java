@@ -94,7 +94,7 @@ public final class RepPolicyEntryHandlerTest {
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
         // commented ACLs are due SLING-8561
-        String expected = "create path (rep:AuthorizableFolder) /home/users/system" + System.lineSeparator() + // SLING-8586
+        String expected =
                 "create service user acs-commons-ensure-oak-index-service with path /home/users/system" + System.lineSeparator() +
                 // "create path (sling:Folder) /asd\n" +
                 // "create path (sling:Folder) /asd/public\n" +
@@ -141,7 +141,7 @@ public final class RepPolicyEntryHandlerTest {
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
         // commented ACLs are due SLING-8561
-        String expected = "create path (rep:AuthorizableFolder) /home/users/system" + System.lineSeparator() + // SLING-8586
+        String expected =
                 "create service user acs-commons-package-replication-status-event-service with path /home/users/system" + System.lineSeparator() +
                 // "create path (sling:Folder) /asd\n" +
                 // "create path (sling:Folder) /asd/public\n" +
@@ -188,7 +188,7 @@ public final class RepPolicyEntryHandlerTest {
         assertNotNull(repoinitExtension);
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
-        String expected = "create path (rep:AuthorizableFolder) /this/is/a/completely/different/path" + System.lineSeparator() + // SLING-8586
+        String expected =
                 "create service user acs-commons-package-replication-status-event-service with path /this/is/a/completely/different/path" + System.lineSeparator() +
                 "create path (sling:Folder) /home" + System.lineSeparator() +
                 "create path (sling:Folder) /home/users" + System.lineSeparator() +
