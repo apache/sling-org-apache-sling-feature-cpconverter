@@ -162,7 +162,7 @@ public final class DefaultAclManager implements AclManager {
 
         // finally add ACLs
 
-        addAclStatement(formatter, systemUser.getId(), authorizations);
+        addAclStatement(formatter, systemUser, authorizations);
     }
 
     private @NotNull Optional<SystemUser> getSystemUser(@NotNull String id) {
@@ -187,6 +187,7 @@ public final class DefaultAclManager implements AclManager {
         }
     }
 
+    @Override
     public void addPrivilegeDefinitions(@NotNull PrivilegeDefinitions privilegeDefinitions) {
         this.privilegeDefinitions = privilegeDefinitions;
     }
@@ -239,28 +240,44 @@ public final class DefaultAclManager implements AclManager {
         return DEFAULT_TYPE;
     }
 
-    private static void addAclStatement(@NotNull Formatter formatter, @NotNull String systemUser, @NotNull List<AccessControlEntry> authorizations) {
+    private static void addAclStatement(@NotNull Formatter formatter, @NotNull SystemUser systemUser, @NotNull List<AccessControlEntry> authorizations) {
         if (authorizations.isEmpty()) {
             return;
         }
 
-        formatter.format("set ACL for %s%n", systemUser);
+        writeAccessControl(authorizations, "set ACL for %s%n", systemUser, formatter);
+    }
 
-        for (AccessControlEntry authorization : authorizations) {
+    private static void writeAccessControl(@NotNull List<AccessControlEntry> accessControlEntries, @NotNull String statement, @NotNull SystemUser systemUser, @NotNull Formatter formatter) {
+        formatter.format(statement, systemUser.getId());
+        writeEntries(accessControlEntries, systemUser, formatter);
+        formatter.format("end%n");
+    }
+
+    private static void writeEntries(@NotNull List<AccessControlEntry> accessControlEntries, @NotNull SystemUser systemUser, @NotNull Formatter formatter) {
+        for (AccessControlEntry entry : accessControlEntries) {
             formatter.format("%s %s on %s",
-                             authorization.getOperation(),
-                             authorization.getPrivileges(),
-                             authorization.getRepositoryPath());
+                    entry.getOperation(),
+                    entry.getPrivileges(),
+                    getRepoInitPath(entry.getRepositoryPath(), systemUser));
 
-            if (!authorization.getRestrictions().isEmpty()) {
+            if (!entry.getRestrictions().isEmpty()) {
                 formatter.format(" restriction(%s)",
-                        String.join(",", authorization.getRestrictions()));
+                        String.join(",", entry.getRestrictions()));
             }
 
             formatter.format("%n");
         }
+    }
 
-        formatter.format("end%n");
+    @NotNull
+    private static String getRepoInitPath(@NotNull RepoPath path, @NotNull SystemUser systemUser) {
+        // FIXME SLING-9953 : add special handing for path pointing to the system-user home or some other user/group home
+        if (path.isRepositoryPath()) {
+            return ":repository";
+        } else {
+            return path.toString();
+        }
     }
 
     private static void registerPrivileges(@NotNull PrivilegeDefinitions definitions, @NotNull Formatter formatter) {
