@@ -92,7 +92,7 @@ public class DefaultFeaturesManager implements FeaturesManager {
     }
 
     public DefaultFeaturesManager(@NotNull File tempDir) {
-        this(true, 20, tempDir, null, null, null);
+        this(true, 20, tempDir, null, null, new HashMap<>());
     }
 
     public DefaultFeaturesManager(boolean mergeConfigurations,

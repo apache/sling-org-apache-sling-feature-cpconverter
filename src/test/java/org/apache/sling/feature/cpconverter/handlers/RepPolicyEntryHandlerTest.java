@@ -190,10 +190,6 @@ public final class RepPolicyEntryHandlerTest {
 
         String expected =
                 "create service user acs-commons-package-replication-status-event-service with path /this/is/a/completely/different/path" + System.lineSeparator() +
-                "create path (sling:Folder) /home" + System.lineSeparator() +
-                "create path (sling:Folder) /home/users" + System.lineSeparator() +
-                "create path (sling:Folder) /home/users/system" + System.lineSeparator() +
-                "create path (sling:Folder) /home/users/system/asd" + System.lineSeparator() +
                 "set ACL for acs-commons-package-replication-status-event-service" + System.lineSeparator() +
                 "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /home/users/system/asd" + System.lineSeparator() +
                 "deny jcr:write on /home/users/system/asd" + System.lineSeparator() +

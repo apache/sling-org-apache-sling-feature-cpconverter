@@ -31,18 +31,9 @@ import org.jetbrains.annotations.Nullable;
 import javax.jcr.NamespaceException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.Formatter;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public final class DefaultAclManager implements AclManager {
@@ -104,6 +95,22 @@ public final class DefaultAclManager implements AclManager {
                 formatter.format("create service user %s with path %s%n", systemUser.getId(), systemUser.getIntermediatePath());
             }
 
+            Set<RepoPath> paths = acls.entrySet().stream()
+                    .filter(entry -> getSystemUser(entry.getKey()).isPresent())
+                    .map(Entry::getValue)
+                    .flatMap(Collection::stream)
+                    .map(AccessControlEntry::getRepositoryPath).collect(Collectors.toSet());
+
+            paths.stream()
+                    .filter(path -> !paths.stream().anyMatch(other -> !other.equals(path) && other.startsWith(path))).
+                    filter(((Predicate<RepoPath>)RepoPath::isRepositoryPath).negate()).
+                    map(path -> computePathWithTypes(path, packageAssemblers))
+                    .filter(Objects::nonNull)
+                    .
+                    forEach(
+                            path -> formatter.format("create path %s%n", path)
+                    );
+
             // add the acls
             acls.forEach((systemUserID, authorizations) ->
                 getSystemUser(systemUserID).ifPresent(systemUser ->
@@ -131,11 +138,6 @@ public final class DefaultAclManager implements AclManager {
                 authorizationsIterator.remove();
             }
         }
-
-        // make sure all paths are created first
-
-        addPaths(authorizations, packageAssemblers, formatter);
-
         // finally add ACLs
 
         addAclStatement(formatter, systemUser, authorizations);
@@ -183,6 +185,45 @@ public final class DefaultAclManager implements AclManager {
 
             formatter.format("create path (%s) %s%n", type, path);
         }
+    }
+
+    private static @Nullable String computePathWithTypes(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
+        path = new RepoPath(PlatformNameFormat.getPlatformPath(path.toString()));
+
+        boolean type = false;
+        String current = "";
+        for (String part : path.toString().substring(1).split("/")) {
+            current += current.isEmpty() ? part : "/" + part;
+            for (VaultPackageAssembler packageAssembler : packageAssemblers) {
+                File currentContent = packageAssembler.getEntry(current + "/" + CONTENT_XML_FILE_NAME);
+                if (currentContent.isFile()) {
+                    String primary;
+                    String mixin;
+                    try (FileInputStream input = new FileInputStream(currentContent);
+                        FileInputStream input2 = new FileInputStream(currentContent)) {
+                        primary = new PrimaryTypeParser(DEFAULT_TYPE).parse(input);
+                        mixin = new MixinParser(DEFAULT_TYPE).parse(input2);
+                        current += "(" + primary;
+                        if (mixin != null) {
+                            mixin = mixin.trim();
+                            if (mixin.startsWith("[")) {
+                                mixin = mixin.substring(1, mixin.length() - 1);
+                            }
+                            current += " mixin " + mixin;
+                        }
+                        current += ")";
+                        type = true;
+                    } catch (Exception e) {
+                        throw new RuntimeException("A fatal error occurred while parsing the '"
+                                + currentContent
+                                + "' file, see nested exceptions: "
+                                + e);
+                    }
+                }
+            }
+        }
+
+        return type ? new RepoPath(current).toString() : null;
     }
 
 	private static @NotNull String computePathType(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
