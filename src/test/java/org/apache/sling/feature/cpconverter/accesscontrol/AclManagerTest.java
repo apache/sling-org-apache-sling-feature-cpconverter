@@ -88,7 +88,7 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         // acs-commons-on-deploy-scripts-service will be missed
-        String expected = "create path (rep:AuthorizableFolder) /home/users/system" + System.lineSeparator() + // SLING-8586
+        String expected =
                 "create service user acs-commons-package-replication-status-event-service with path /home/users/system" + System.lineSeparator() +
                 "create path (sling:Folder) /asd" + System.lineSeparator() +
                 "create path (sling:Folder) /asd/not" + System.lineSeparator() +
@@ -135,7 +135,7 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         // aacs-commons-ensure-oak-index-service will be missed
-        String expected = "create path (rep:AuthorizableFolder) /home/users/system" + System.lineSeparator() + // SLING-8586
+        String expected =
                 "create service user acs-commons-package-replication-status-event-service with path /home/users/system" + System.lineSeparator() +
                 "create path (sling:Folder) /asd" + System.lineSeparator() +
                 "create path (sling:Folder) /asd/not" + System.lineSeparator() +
@@ -189,7 +189,7 @@ public class AclManagerTest {
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
 
-        String expected = "create path (rep:AuthorizableFolder) /home/users/system" + System.lineSeparator() + // SLING-8586
+        String expected =
                 "create service user sys-usr with path /home/users/system" + System.lineSeparator() +
                 "create path (sling:Folder) /content" + System.lineSeparator() +
                 "create path (sling:Folder) /content/cq:tags" + System.lineSeparator() +
