@@ -93,7 +93,7 @@ public class AclManagerTest {
         // acs-commons-on-deploy-scripts-service will be missed
         String expected =
                 "create service user acs-commons-package-replication-status-event-service with path /home/users/system" + System.lineSeparator() +
-                "create path /asd/not(any:Type mixin rep:AccessControllable)/system/user/path" + System.lineSeparator() +
+                "create path /asd/not(nt:unstructured mixin rep:AccessControllable,mix:created)/system/user/path" + System.lineSeparator() +
                 // see SLING-8561
                 // "set ACL for acs-commons-package-replication-status-event-service\n" +
                 // "allow jcr:read,crx:replicate,jcr:removeNode on /asd/public\n" +
@@ -138,7 +138,7 @@ public class AclManagerTest {
         // aacs-commons-ensure-oak-index-service will be missed
         String expected =
                 "create service user acs-commons-package-replication-status-event-service with path /home/users/system" + System.lineSeparator() +
-                "create path /asd/not(any:Type mixin rep:AccessControllable)/system/user/path" + System.lineSeparator() +
+                "create path /asd/not(nt:unstructured mixin rep:AccessControllable,mix:created)/system/user/path" + System.lineSeparator() +
                 "set ACL for acs-commons-package-replication-status-event-service" + System.lineSeparator() +
                 "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/not/system/user/path" + System.lineSeparator() +
                 "end" + System.lineSeparator();

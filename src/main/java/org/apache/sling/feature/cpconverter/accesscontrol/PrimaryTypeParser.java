@@ -25,6 +25,10 @@ final class PrimaryTypeParser extends AbstractJcrNodeParser<String> {
 
     private String detectedPrimaryType;
 
+    public PrimaryTypeParser() {
+        this("sling:Folder");
+    }
+
     public PrimaryTypeParser(@NotNull String primaryType) {
         super(primaryType);
     }

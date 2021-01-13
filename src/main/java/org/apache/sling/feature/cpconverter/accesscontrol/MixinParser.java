@@ -23,10 +23,11 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 final class MixinParser extends AbstractJcrNodeParser<String> {
-
-    private String detectedPrimaryType;
     private String mixins;
 
+    public MixinParser() {
+        this("sling:Folder");
+    }
     public MixinParser(@NotNull String primaryType) {
         super(primaryType);
     }
@@ -34,7 +35,6 @@ final class MixinParser extends AbstractJcrNodeParser<String> {
     @Override
     protected void onJcrRootNode(String uri, String localName, String qName, Attributes attributes, String primaryType)
             throws SAXException {
-        detectedPrimaryType = primaryType;
         mixins = attributes.getValue(JcrConstants.JCR_MIXINTYPES);
     }
 

@@ -16,5 +16,5 @@
  the License.
 -->
 <jcr:root xmlns:sling="http://sling.apache.org/jcr/sling/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:rep="internal"
-          jcr:mixinTypes="[rep:AccessControllable]"
-          jcr:primaryType="any:Type"/>
+          jcr:mixinTypes="[rep:AccessControllable,mix:created]"
+          jcr:primaryType="nt:unstructured"/>

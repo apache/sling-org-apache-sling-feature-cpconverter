@@ -31,8 +31,19 @@ import org.jetbrains.annotations.Nullable;
 import javax.jcr.NamespaceException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.*;
+import java.util.Optional;
+import java.util.Formatter;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Collection;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -102,12 +113,11 @@ public final class DefaultAclManager implements AclManager {
                     .map(AccessControlEntry::getRepositoryPath).collect(Collectors.toSet());
 
             paths.stream()
-                    .filter(path -> !paths.stream().anyMatch(other -> !other.equals(path) && other.startsWith(path))).
-                    filter(((Predicate<RepoPath>)RepoPath::isRepositoryPath).negate()).
-                    map(path -> computePathWithTypes(path, packageAssemblers))
+                    .filter(path -> !paths.stream().anyMatch(other -> !other.equals(path) && other.startsWith(path)))
+                    .filter(((Predicate<RepoPath>)RepoPath::isRepositoryPath).negate())
+                    .map(path -> computePathWithTypes(path, packageAssemblers))
                     .filter(Objects::nonNull)
-                    .
-                    forEach(
+                    .forEach(
                             path -> formatter.format("create path %s%n", path)
                     );
 
@@ -180,8 +190,8 @@ public final class DefaultAclManager implements AclManager {
                     String mixin;
                     try (FileInputStream input = new FileInputStream(currentContent);
                         FileInputStream input2 = new FileInputStream(currentContent)) {
-                        primary = new PrimaryTypeParser(DEFAULT_TYPE).parse(input);
-                        mixin = new MixinParser(DEFAULT_TYPE).parse(input2);
+                        primary = new PrimaryTypeParser().parse(input);
+                        mixin = new MixinParser().parse(input2);
                         current += "(" + primary;
                         if (mixin != null) {
                             mixin = mixin.trim();
