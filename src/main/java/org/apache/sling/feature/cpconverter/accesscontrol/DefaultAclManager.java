@@ -51,8 +51,6 @@ public final class DefaultAclManager implements AclManager {
 
     private static final String DEFAULT_TYPE = "sling:Folder";
 
-    private final Set<SystemUser> preProvidedSystemUsers = new LinkedHashSet<>();
-
     private final Set<RepoPath> preProvidedSystemPaths = new HashSet<>();
 
     private final Set<RepoPath> preProvidedPaths = new HashSet<>();
@@ -66,10 +64,7 @@ public final class DefaultAclManager implements AclManager {
     private volatile PrivilegeDefinitions privilegeDefinitions;
 
     public boolean addSystemUser(@NotNull SystemUser systemUser) {
-        if (preProvidedSystemUsers.add(systemUser)) {
-            return systemUsers.add(systemUser);
-        }
-        return false;
+        return systemUsers.add(systemUser);
     }
 
     public boolean addAcl(@NotNull String systemUser, @NotNull AccessControlEntry acl) {
@@ -105,34 +100,15 @@ public final class DefaultAclManager implements AclManager {
             // system users
 
             for (SystemUser systemUser : systemUsers) {
-                // TODO does it harm?!?
-                addSystemUserPath(formatter, systemUser.getIntermediatePath());
-
                 // make sure all users are created first
-
                 formatter.format("create service user %s with path %s%n", systemUser.getId(), systemUser.getIntermediatePath());
-
-                // clean the unneeded ACLs, see SLING-8561
-
-                List<AccessControlEntry> authorizations = acls.remove(systemUser.getId());
-
-                if (authorizations != null) {
-                    addStatements(systemUser, authorizations, packageAssemblers, formatter);
-                }
             }
 
-            // all the resting ACLs can now be set
-
-            for (Entry<String, List<AccessControlEntry>> currentAcls : acls.entrySet()) {
-                Optional<SystemUser> systemUser = getSystemUser(currentAcls.getKey());
-
-                if (systemUser.isPresent()) {
-                    List<AccessControlEntry> authorizations = currentAcls.getValue();
-                    if (authorizations != null) {
-                        addStatements(systemUser.get(), authorizations, packageAssemblers, formatter);
-                    }
-                }
-            }
+            // add the acls
+            acls.forEach((systemUserID, authorizations) ->
+                getSystemUser(systemUserID).ifPresent(systemUser ->
+                    addStatements(systemUser, authorizations, packageAssemblers, formatter)
+                ));
 
             String text = formatter.toString();
 
@@ -166,18 +142,7 @@ public final class DefaultAclManager implements AclManager {
     }
 
     private @NotNull Optional<SystemUser> getSystemUser(@NotNull String id) {
-        for (SystemUser systemUser : preProvidedSystemUsers) {
-            if (id.equals(systemUser.getId())) {
-                return Optional.of(systemUser);
-            }
-        }
-        return Optional.empty();
-    }
-
-    private void addSystemUserPath(@NotNull Formatter formatter, @NotNull RepoPath path) {
-        if (preProvidedSystemPaths.add(path)) {
-            formatter.format("create path (rep:AuthorizableFolder) %s%n", path);
-        }
+        return systemUsers.stream().filter(systemUser ->  systemUser.getId().equals(id)).findFirst();
     }
 
     @Override
