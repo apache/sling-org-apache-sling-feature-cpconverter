@@ -166,27 +166,6 @@ public final class DefaultAclManager implements AclManager {
         privilegeDefinitions = null;
     }
 
-    private void addPaths(@NotNull List<AccessControlEntry> authorizations, @NotNull List<VaultPackageAssembler> packageAssemblers, @NotNull Formatter formatter) {
-        if (authorizations.isEmpty()) {
-            return;
-        }
-
-        Set<RepoPath> paths = new TreeSet<>();
-        for (AccessControlEntry authorization : authorizations) {
-            RepoPath rp = authorization.getRepositoryPath();
-            // exclude special paths: user/group home nodes and subtrees therein, repository-level marker path
-            if (!(rp.isRepositoryPath())) {
-                addPath(authorization.getRepositoryPath(), paths);
-            }
-        }
-
-        for (RepoPath path : paths) {
-            String type = computePathType(path, packageAssemblers);
-
-            formatter.format("create path (%s) %s%n", type, path);
-        }
-    }
-
     private static @Nullable String computePathWithTypes(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
         path = new RepoPath(PlatformNameFormat.getPlatformPath(path.toString()));
 
@@ -224,30 +203,6 @@ public final class DefaultAclManager implements AclManager {
         }
 
         return type ? new RepoPath(current).toString() : null;
-    }
-
-	private static @NotNull String computePathType(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
-        path = new RepoPath(PlatformNameFormat.getPlatformPath(path.toString()));
-
-        for (VaultPackageAssembler packageAssembler: packageAssemblers) {
-            File currentDir = packageAssembler.getEntry(path.toString());
-
-            if (currentDir.exists()) {
-                File currentContent = new File(currentDir, CONTENT_XML_FILE_NAME);
-                if (currentContent.exists()) {
-                    try (FileInputStream input = new FileInputStream(currentContent)) {
-                        return new PrimaryTypeParser(DEFAULT_TYPE).parse(input);
-                    } catch (Exception e) {
-                        throw new RuntimeException("A fatal error occurred while parsing the '"
-                            + currentContent
-                            + "' file, see nested exceptions: "
-                            + e);
-                    }
-                }
-            }
-        }
-
-        return DEFAULT_TYPE;
     }
 
     private static void addAclStatement(@NotNull Formatter formatter, @NotNull SystemUser systemUser, @NotNull List<AccessControlEntry> authorizations) {
