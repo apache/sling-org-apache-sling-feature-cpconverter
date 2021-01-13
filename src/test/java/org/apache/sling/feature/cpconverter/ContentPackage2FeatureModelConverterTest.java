@@ -63,6 +63,7 @@ import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
+import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
 import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.junit.After;
@@ -86,17 +87,25 @@ public class ContentPackage2FeatureModelConverterTest {
                                                                 "test_e-1.0.zip" };
 
     private ContentPackage2FeatureModelConverter converter;
+    private EntryHandlersManager handlersManager;
 
     @Before
     public void setUp() {
+        handlersManager = new DefaultEntryHandlersManager();
         converter = new ContentPackage2FeatureModelConverter()
-                    .setEntryHandlersManager(new DefaultEntryHandlersManager())
+                    .setEntryHandlersManager(handlersManager)
                     .setAclManager(new DefaultAclManager());
     }
 
     @After
     public void tearDowd() {
         converter = null;
+    }
+
+    @Test
+    public void testHandlersPresent() {
+        assertNotNull(handlersManager.getEntryHandlerByEntryPath("/jcr_root/_rep_policy.xml"));
+        assertNotNull(handlersManager.getEntryHandlerByEntryPath("/jcr_root/_rep_repoPolicy.xml"));
     }
 
     @Test(expected = NullPointerException.class)

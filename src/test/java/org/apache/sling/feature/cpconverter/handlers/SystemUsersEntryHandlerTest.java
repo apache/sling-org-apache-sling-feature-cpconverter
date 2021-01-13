@@ -21,25 +21,13 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.*;
 
-import java.io.File;
-import java.util.Arrays;
 import java.io.StringReader;
 import java.util.List;
 
-import org.apache.jackrabbit.vault.fs.io.Archive;
-import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
-import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
-import org.apache.sling.feature.Feature;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
-import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
-import org.apache.sling.feature.cpconverter.features.FeaturesManager;
-import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.repoinit.parser.RepoInitParser;
 import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
 import org.apache.sling.repoinit.parser.operations.Operation;
@@ -114,25 +102,6 @@ public class SystemUsersEntryHandlerTest {
     }
 
     private Extension parseAndSetRepoinit(String path) throws Exception {
-        Archive archive = mock(Archive.class);
-        Entry entry = mock(Entry.class);
-        VaultPackageAssembler packageAssembler = mock(VaultPackageAssembler.class);
-
-        when(archive.openInputStream(entry)).thenReturn(getClass().getResourceAsStream(path.substring(1)));
-
-        Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
-        FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);
-        when(featuresManager.getTargetFeature()).thenReturn(feature);
-        ContentPackage2FeatureModelConverter converter = spy(ContentPackage2FeatureModelConverter.class);
-        when(converter.getFeaturesManager()).thenReturn(featuresManager);
-        when(converter.getAclManager()).thenReturn(new DefaultAclManager());
-
-        systemUsersEntryHandler.handle(path, archive, entry, converter);
-
-        when(packageAssembler.getEntry(anyString())).thenReturn(new File("itdoesnotexist"));
-
-        converter.getAclManager().addRepoinitExtension(Arrays.asList(packageAssembler), featuresManager);
-        return feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+        return TestUtils.createRepoInitExtension(systemUsersEntryHandler, new DefaultAclManager(), path, getClass().getResourceAsStream(path.substring(1)));
     }
-
 }

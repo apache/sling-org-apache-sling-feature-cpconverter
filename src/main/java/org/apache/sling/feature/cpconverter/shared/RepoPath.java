@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
  */
 public class RepoPath implements Comparable<RepoPath>{
     private final List<String> path;
+    private final boolean isRepositoryPath;
 
     /**
      * Construct a Repo Path from a string. The string should separate the path
@@ -44,6 +45,8 @@ public class RepoPath implements Comparable<RepoPath>{
      */
     public RepoPath(@NotNull String path) {
         path = path.trim();
+        isRepositoryPath = path.isEmpty();
+
         if (path.startsWith("/"))
             path = path.substring(1);
 
@@ -58,6 +61,7 @@ public class RepoPath implements Comparable<RepoPath>{
      */
     public RepoPath(@NotNull List<String> list) {
         this.path = new ArrayList<>(list);
+        this.isRepositoryPath = false;
     }
 
     @Override
@@ -108,6 +112,10 @@ public class RepoPath implements Comparable<RepoPath>{
 
         List<String> l = new ArrayList<>(path.subList(0, otherPath.path.size()));
         return l.equals(otherPath.path);
+    }
+
+    public boolean isRepositoryPath() {
+        return isRepositoryPath;
     }
 
     @Override

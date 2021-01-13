@@ -30,10 +30,14 @@ import java.util.Stack;
 
 import static org.apache.jackrabbit.JcrConstants.JCR_PRIMARYTYPE;
 
-public final class RepPolicyEntryHandler extends AbstractPolicyEntryHandler {
+public class RepPolicyEntryHandler extends AbstractPolicyEntryHandler {
 
     public RepPolicyEntryHandler() {
         super("/jcr_root(.*/)_rep_policy.xml");
+    }
+
+    RepPolicyEntryHandler(@NotNull String regex) {
+        super(regex);
     }
 
     @NotNull
@@ -41,7 +45,7 @@ public final class RepPolicyEntryHandler extends AbstractPolicyEntryHandler {
         return new RepPolicyParser(repositoryPath, aclManager, handler);
     }
 
-    private static final class RepPolicyParser extends AbstractPolicyParser {
+    static final class RepPolicyParser extends AbstractPolicyParser {
 
         private static final String REP_ACL = "rep:ACL";
         private static final String REP_GRANT_ACE = "rep:GrantACE";
