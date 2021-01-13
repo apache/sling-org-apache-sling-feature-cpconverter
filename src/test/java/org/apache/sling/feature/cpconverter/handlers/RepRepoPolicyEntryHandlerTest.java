@@ -79,6 +79,8 @@ public class RepRepoPolicyEntryHandlerTest {
                 "end" + System.lineSeparator();
         String actual = repoinitExtension.getText();
         assertTrue(actual.endsWith(expectedEnd));
+        // no path must be create for repository level entries
+        assertFalse(actual, actual.contains("create path (sling:Folder) /"));
 
         RepoInitParser repoInitParser = new RepoInitParserService();
         List<Operation> operations = repoInitParser.parse(new StringReader(actual));

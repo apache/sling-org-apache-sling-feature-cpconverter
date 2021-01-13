@@ -206,7 +206,11 @@ public final class DefaultAclManager implements AclManager {
 
         Set<RepoPath> paths = new TreeSet<>();
         for (AccessControlEntry authorization : authorizations) {
-            addPath(authorization.getRepositoryPath(), paths);
+            RepoPath rp = authorization.getRepositoryPath();
+            // exclude special paths: user/group home nodes and subtrees therein, repository-level marker path
+            if (!(rp.isRepositoryPath())) {
+                addPath(authorization.getRepositoryPath(), paths);
+            }
         }
 
         for (RepoPath path : paths) {
