@@ -17,39 +17,38 @@
 package org.apache.sling.feature.cpconverter.handlers;
 
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.accesscontrol.SystemUser;
+import org.apache.sling.feature.cpconverter.accesscontrol.Group;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.jetbrains.annotations.NotNull;
 
-public final class SystemUsersEntryHandler extends AbstractUserEntryHandler {
+public final class GroupEntryHandler extends AbstractUserEntryHandler {
 
-    public SystemUsersEntryHandler() {
+    public GroupEntryHandler() {
         // FIXME: SLING-9969
-        super("/jcr_root(/home/users/system.*/)\\.content.xml");
+        super("/jcr_root(/home/groups.*/)\\.content.xml");
     }
 
     @Override
     AbstractUserParser createParser(@NotNull ContentPackage2FeatureModelConverter converter, @NotNull RepoPath originalPath, @NotNull RepoPath intermediatePath) {
-        return new SystemUserParser(converter, originalPath, intermediatePath);
+        return new GroupParser(converter, originalPath, intermediatePath);
     }
 
-    private static final class SystemUserParser extends AbstractUserParser {
+    private static final class GroupParser extends AbstractUserParser {
 
-        private static final String REP_SYSTEM_USER = "rep:SystemUser";
+        private final static String REP_GROUP = "rep:Group";
 
         /**
          * @param converter - the converter to use.
          * @param path - the original repository path of the user in the content-package.
          * @param intermediatePath - the intermediate path the user should have - most likely the (direct) parent of the path.
          */
-        public SystemUserParser(@NotNull ContentPackage2FeatureModelConverter converter, @NotNull RepoPath path, @NotNull RepoPath intermediatePath) {
-            super(REP_SYSTEM_USER, converter, path, intermediatePath);
+        public GroupParser(@NotNull ContentPackage2FeatureModelConverter converter, @NotNull RepoPath path, @NotNull RepoPath intermediatePath) {
+            super(REP_GROUP, converter, path, intermediatePath);
         }
 
         @Override
         void handleUser(@NotNull String id) {
-            converter.getAclManager().addSystemUser(new SystemUser(id, path, intermediatePath));
+            converter.getAclManager().addGroup(new Group(id, path, intermediatePath));
         }
     }
-
 }

@@ -19,14 +19,7 @@ package org.apache.sling.feature.cpconverter.accesscontrol;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Objects;
-
-public class SystemUser {
-
-    private final String id;
-
-    private final RepoPath path;
-    private final RepoPath intermediatePath;
+public class SystemUser extends AbstractUser {
 
     /**
      * @param id - the authorizableId to use.
@@ -34,49 +27,6 @@ public class SystemUser {
      * @param intermediatePath - the intermediate path the user should have - most likely the (direct) parent of the path.
      */
     public SystemUser(@NotNull String id, @NotNull RepoPath path, @NotNull RepoPath intermediatePath) {
-        this.id = id;
-        this.path = path;
-        this.intermediatePath = intermediatePath;
+        super(id, path, intermediatePath);
     }
-
-    public @NotNull String getId() {
-        return id;
-    }
-
-    public @NotNull RepoPath getPath() {
-        return path;
-    }
-
-    public @NotNull RepoPath getIntermediatePath() {
-        return intermediatePath;
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + Objects.hash(id);
-        result = prime * result + Objects.hash(path);
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-
-        SystemUser other = (SystemUser) obj;
-        return Objects.equals(id, other.getId()) && Objects.equals(path, other.getPath());
-    }
-
-    @Override
-    public String toString() {
-        return "SystemUser [id=" + id + ", path=" + path + "]";
-    }
-
 }

@@ -53,20 +53,23 @@ public final class DefaultAclManager implements AclManager {
 
     private static final String DEFAULT_TYPE = "sling:Folder";
 
-    // FIXME: SLING-9969. avoid hardcoding
-    private static final RepoPath USER_GROUP_ROOT = new RepoPath("/home");
-
     private final Set<RepoPath> preProvidedSystemPaths = new HashSet<>();
 
     private final Set<RepoPath> preProvidedPaths = new HashSet<>();
 
     private final Set<SystemUser> systemUsers = new LinkedHashSet<>();
 
+    private final Set<Group> groups = new LinkedHashSet<>();
+
     private final Map<String, List<AccessControlEntry>> acls = new HashMap<>();
 
     private final List<String> nodetypeRegistrationSentences = new LinkedList<>();
 
     private volatile PrivilegeDefinitions privilegeDefinitions;
+
+    public boolean addGroup(@NotNull Group group) {
+        return groups.add(group);
+    }
 
     public boolean addSystemUser(@NotNull SystemUser systemUser) {
         return systemUsers.add(systemUser);
@@ -229,14 +232,17 @@ public final class DefaultAclManager implements AclManager {
             return ":repository";
         } else if (isHomePath(path, systemUser.getPath())) {
             return getHomePath(path, systemUser);
-        } else if (isUserGroupPath(path)) {
-            SystemUser otherSystemUser = getOtherSystemUser(path);
+        } else {
+            AbstractUser otherSystemUser = getOtherUser(path, systemUsers);
             if (otherSystemUser != null) {
                 return getHomePath(path, otherSystemUser);
-            } else {
-                return path.toString();
             }
-        } else {
+            AbstractUser gr = getOtherUser(path, groups);
+            if (gr != null) {
+                // TODO: or rather ignore?
+                return getHomePath(path, gr);
+            }
+            // not a special path
             return path.toString();
         }
     }
@@ -245,25 +251,25 @@ public final class DefaultAclManager implements AclManager {
         return path.startsWith(systemUserPath);
     }
 
-    private static boolean isUserGroupPath(@NotNull RepoPath path) {
-        return path.startsWith(USER_GROUP_ROOT);
-    }
-
     @Nullable
-    private SystemUser getOtherSystemUser(@NotNull RepoPath path) {
-        for (SystemUser su : systemUsers) {
-            if (path.startsWith(su.getPath())) {
-                return su;
+    private static AbstractUser getOtherUser(@NotNull RepoPath path, @NotNull Set<? extends AbstractUser> abstractUsers) {
+        for (AbstractUser au : abstractUsers) {
+            if (path.startsWith(au.getPath())) {
+                return au;
             }
         }
         return null;
     }
 
     @NotNull
-    private static String getHomePath(@NotNull RepoPath path, @NotNull SystemUser systemUser) {
-        RepoPath systemUserPath = systemUser.getPath();
-        String subpath = (path.equals(systemUserPath) ? "" : path.toString().substring(systemUserPath.toString().length()));
-        return "home("+systemUser.getId()+")"+subpath;
+    private static String getHomePath(@NotNull RepoPath path, @NotNull AbstractUser abstractUser) {
+        return getHomePath(path, abstractUser.getPath(), abstractUser.getId());
+    }
+
+    @NotNull
+    private static String getHomePath(@NotNull RepoPath path, @NotNull RepoPath userPath, @NotNull String id) {
+        String subpath = (path.equals(userPath) ? "" : path.toString().substring(userPath.toString().length()));
+        return "home("+id+")"+subpath;
     }
 
     private static void registerPrivileges(@NotNull PrivilegeDefinitions definitions, @NotNull Formatter formatter) {
