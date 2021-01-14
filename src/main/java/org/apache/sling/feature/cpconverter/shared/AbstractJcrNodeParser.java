@@ -19,8 +19,6 @@ package org.apache.sling.feature.cpconverter.shared;
 import static org.apache.jackrabbit.JcrConstants.JCR_PRIMARYTYPE;
 
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 
 import javax.xml.parsers.SAXParser;
@@ -28,7 +26,6 @@ import javax.xml.parsers.SAXParserFactory;
 
 import com.google.common.collect.ImmutableSet;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -43,7 +40,7 @@ public abstract class AbstractJcrNodeParser<O> extends DefaultHandler {
 
     protected String detectedPrimaryType;
 
-    public AbstractJcrNodeParser(@NotNull String... primaryTypes) {
+    protected AbstractJcrNodeParser(@NotNull String... primaryTypes) {
         this.primaryTypes = ImmutableSet.of(primaryTypes);
     }
 

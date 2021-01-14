@@ -20,7 +20,6 @@ import java.util.List;
 
 import org.apache.jackrabbit.vault.fs.spi.PrivilegeDefinitions;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
-import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.jetbrains.annotations.NotNull;
 

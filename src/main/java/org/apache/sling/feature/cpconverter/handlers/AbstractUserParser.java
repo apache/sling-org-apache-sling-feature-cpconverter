@@ -24,7 +24,7 @@ import org.xml.sax.Attributes;
 
 abstract class AbstractUserParser extends AbstractJcrNodeParser<Void> {
 
-    private final static String REP_AUTHORIZABLE_ID = "rep:authorizableId";
+    private static final String REP_AUTHORIZABLE_ID = "rep:authorizableId";
 
     final ContentPackage2FeatureModelConverter converter;
 
@@ -38,7 +38,7 @@ abstract class AbstractUserParser extends AbstractJcrNodeParser<Void> {
      * @param intermediatePath - the intermediate path the user should have - most likely the (direct) parent of the path.
      * @param primaryTypes - the primary type of the user/group nodes to be parsed
      */
-    public AbstractUserParser(@NotNull ContentPackage2FeatureModelConverter converter, @NotNull RepoPath path, @NotNull RepoPath intermediatePath, @NotNull String... primaryTypes) {
+    protected AbstractUserParser(@NotNull ContentPackage2FeatureModelConverter converter, @NotNull RepoPath path, @NotNull RepoPath intermediatePath, @NotNull String... primaryTypes) {
         super(primaryTypes);
         this.converter = converter;
         this.path = path;

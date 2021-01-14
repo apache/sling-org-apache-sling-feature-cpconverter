@@ -33,7 +33,7 @@ abstract class AbstractUser {
      * @param path - the original repository path of the user in the content-package.
      * @param intermediatePath - the intermediate path the user should have - most likely the (direct) parent of the path.
      */
-    public AbstractUser(@NotNull String id, @NotNull RepoPath path, @NotNull RepoPath intermediatePath) {
+    protected AbstractUser(@NotNull String id, @NotNull RepoPath path, @NotNull RepoPath intermediatePath) {
         this.id = id;
         this.path = path;
         this.intermediatePath = intermediatePath;

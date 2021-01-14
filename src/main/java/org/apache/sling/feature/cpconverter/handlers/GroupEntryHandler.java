@@ -35,7 +35,7 @@ public final class GroupEntryHandler extends AbstractUserEntryHandler {
 
     private static final class GroupParser extends AbstractUserParser {
 
-        private final static String REP_GROUP = "rep:Group";
+        private static final String REP_GROUP = "rep:Group";
 
         /**
          * @param converter - the converter to use.
