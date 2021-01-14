@@ -88,7 +88,7 @@ public class DefaultFeaturesManager implements FeaturesManager {
     private Feature targetFeature = null;
 
     DefaultFeaturesManager() {
-        this(null);
+        this(new File(""));
     }
 
     public DefaultFeaturesManager(@NotNull File tempDir) {

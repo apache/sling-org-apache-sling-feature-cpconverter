@@ -35,15 +35,15 @@ import java.util.Optional;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.Collection;
-import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Map.Entry;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -52,6 +52,9 @@ public final class DefaultAclManager implements AclManager {
     private static final String CONTENT_XML_FILE_NAME = ".content.xml";
 
     private static final String DEFAULT_TYPE = "sling:Folder";
+
+    // FIXME: SLING-9969. avoid hardcoding
+    private static final RepoPath USER_GROUP_ROOT = new RepoPath("/home");
 
     private final Set<RepoPath> preProvidedSystemPaths = new HashSet<>();
 
@@ -75,17 +78,6 @@ public final class DefaultAclManager implements AclManager {
             return true;
         }
         return false;
-    }
-
-    private void addPath(@NotNull RepoPath path, @NotNull Set<RepoPath> paths) {
-        if (preProvidedPaths.add(path)) {
-            paths.add(path);
-        }
-
-        RepoPath parent = path.getParent();
-        if (parent != null && parent.getSegmentCount() > 0) {
-            addPath(parent, paths);
-        }
     }
 
     public void addRepoinitExtension(@NotNull List<VaultPackageAssembler> packageAssemblers, @NotNull FeaturesManager featureManager) {
@@ -139,18 +131,34 @@ public final class DefaultAclManager implements AclManager {
                                @NotNull List<AccessControlEntry> authorizations,
                                @NotNull List<VaultPackageAssembler> packageAssemblers,
                                @NotNull Formatter formatter) {
-        // clean the unneeded ACLs, see SLING-8561
-        Iterator<AccessControlEntry> authorizationsIterator = authorizations.iterator();
-        while (authorizationsIterator.hasNext()) {
-            AccessControlEntry acl = authorizationsIterator.next();
-
-            if (acl.getRepositoryPath().startsWith(systemUser.getIntermediatePath())) {
-                authorizationsIterator.remove();
-            }
+        if (authorizations.isEmpty()) {
+            return;
         }
-        // finally add ACLs
 
-        addAclStatement(formatter, systemUser, authorizations);
+        Map<AccessControlEntry, String> entries = new LinkedHashMap<>();
+        authorizations.forEach(entry -> {
+            String path = getRepoInitPath(entry.getRepositoryPath(), systemUser);
+            if (path != null) {
+                entries.put(entry, path);
+            }
+        });
+        if (!entries.isEmpty()) {
+            formatter.format("set ACL for %s%n", systemUser.getId());
+            entries.forEach((entry, path) -> {
+                formatter.format("%s %s on %s",
+                        entry.getOperation(),
+                        entry.getPrivileges(),
+                        path);
+
+                if (!entry.getRestrictions().isEmpty()) {
+                    formatter.format(" restriction(%s)",
+                            String.join(",", entry.getRestrictions()));
+                }
+
+                formatter.format("%n");
+            });
+            formatter.format("end%n");
+        }
     }
 
     private @NotNull Optional<SystemUser> getSystemUser(@NotNull String id) {
@@ -215,44 +223,47 @@ public final class DefaultAclManager implements AclManager {
         return type ? new RepoPath(current).toString() : null;
     }
 
-    private static void addAclStatement(@NotNull Formatter formatter, @NotNull SystemUser systemUser, @NotNull List<AccessControlEntry> authorizations) {
-        if (authorizations.isEmpty()) {
-            return;
-        }
-
-        writeAccessControl(authorizations, "set ACL for %s%n", systemUser, formatter);
-    }
-
-    private static void writeAccessControl(@NotNull List<AccessControlEntry> accessControlEntries, @NotNull String statement, @NotNull SystemUser systemUser, @NotNull Formatter formatter) {
-        formatter.format(statement, systemUser.getId());
-        writeEntries(accessControlEntries, systemUser, formatter);
-        formatter.format("end%n");
-    }
-
-    private static void writeEntries(@NotNull List<AccessControlEntry> accessControlEntries, @NotNull SystemUser systemUser, @NotNull Formatter formatter) {
-        for (AccessControlEntry entry : accessControlEntries) {
-            formatter.format("%s %s on %s",
-                    entry.getOperation(),
-                    entry.getPrivileges(),
-                    getRepoInitPath(entry.getRepositoryPath(), systemUser));
-
-            if (!entry.getRestrictions().isEmpty()) {
-                formatter.format(" restriction(%s)",
-                        String.join(",", entry.getRestrictions()));
-            }
-
-            formatter.format("%n");
-        }
-    }
-
-    @NotNull
-    private static String getRepoInitPath(@NotNull RepoPath path, @NotNull SystemUser systemUser) {
-        // FIXME SLING-9953 : add special handing for path pointing to the system-user home or some other user/group home
+    @Nullable
+    private String getRepoInitPath(@NotNull RepoPath path, @NotNull SystemUser systemUser) {
         if (path.isRepositoryPath()) {
             return ":repository";
+        } else if (isHomePath(path, systemUser.getPath())) {
+            return getHomePath(path, systemUser);
+        } else if (isUserGroupPath(path)) {
+            SystemUser otherSystemUser = getOtherSystemUser(path);
+            if (otherSystemUser != null) {
+                return getHomePath(path, otherSystemUser);
+            } else {
+                return path.toString();
+            }
         } else {
             return path.toString();
         }
+    }
+
+    private static boolean isHomePath(@NotNull RepoPath path, @NotNull RepoPath systemUserPath) {
+        return path.startsWith(systemUserPath);
+    }
+
+    private static boolean isUserGroupPath(@NotNull RepoPath path) {
+        return path.startsWith(USER_GROUP_ROOT);
+    }
+
+    @Nullable
+    private SystemUser getOtherSystemUser(@NotNull RepoPath path) {
+        for (SystemUser su : systemUsers) {
+            if (path.startsWith(su.getPath())) {
+                return su;
+            }
+        }
+        return null;
+    }
+
+    @NotNull
+    private static String getHomePath(@NotNull RepoPath path, @NotNull SystemUser systemUser) {
+        RepoPath systemUserPath = systemUser.getPath();
+        String subpath = (path.equals(systemUserPath) ? "" : path.toString().substring(systemUserPath.toString().length()));
+        return "home("+systemUser.getId()+")"+subpath;
     }
 
     private static void registerPrivileges(@NotNull PrivilegeDefinitions definitions, @NotNull Formatter formatter) {

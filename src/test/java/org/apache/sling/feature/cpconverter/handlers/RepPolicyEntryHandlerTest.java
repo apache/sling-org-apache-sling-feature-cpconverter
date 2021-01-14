@@ -96,31 +96,32 @@ public final class RepPolicyEntryHandlerTest {
         // commented ACLs are due SLING-8561
         String expected =
                 "create service user acs-commons-ensure-oak-index-service with path /home/users/system" + System.lineSeparator() +
-                // "create path (sling:Folder) /asd\n" +
-                // "create path (sling:Folder) /asd/public\n" +
-                // "set ACL for acs-commons-ensure-oak-index-service\n" +
-                // "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/public restriction(rep:glob,*/oak:index/*)\n" +
-                // "end\n" +
                 "create service user acs-commons-dispatcher-flush-service with path /home/users/system" + System.lineSeparator() +
-                // "set ACL for acs-commons-dispatcher-flush-service\n" +
-                // "allow jcr:read,crx:replicate,jcr:removeNode on /asd/public\n" +
-                // "end\n" +
                 "create service user acs-commons-package-replication-status-event-service with path /home/users/system" + System.lineSeparator() +
-                // "set ACL for acs-commons-package-replication-status-event-service\n" +
-                // "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" +
-                // "end\n" +
                 "create service user acs-commons-ensure-service-user-service with path /home/users/system" + System.lineSeparator() +
-                // "set ACL for acs-commons-ensure-service-user-service\n" +
-                // "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" +
-                // "end\n" +
                 "create service user acs-commons-automatic-package-replicator-service with path /home/users/system" + System.lineSeparator() +
-                // "set ACL for acs-commons-automatic-package-replicator-service\n" +
-                // "allow jcr:read on /asd/public\n" +
-                // "end\n" +
-                "create service user acs-commons-on-deploy-scripts-service with path /home/users/system" + System.lineSeparator();
-                // "set ACL for acs-commons-on-deploy-scripts-service\n" +
-                // "allow jcr:read on /asd/public\n" +
-                // "end\n";
+                "create service user acs-commons-on-deploy-scripts-service with path /home/users/system" + System.lineSeparator() +
+                "set ACL for acs-commons-automatic-package-replicator-service" + System.lineSeparator() +
+                "allow jcr:read on home(acs-commons-automatic-package-replicator-service)" + System.lineSeparator() +
+                "end" + System.lineSeparator() +
+                "set ACL for acs-commons-package-replication-status-event-service" + System.lineSeparator() +
+                "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on home(acs-commons-package-replication-status-event-service)" + System.lineSeparator() +
+                "deny jcr:write on home(acs-commons-package-replication-status-event-service)" + System.lineSeparator() +
+                "end" + System.lineSeparator() +
+                "set ACL for acs-commons-dispatcher-flush-service" + System.lineSeparator() +
+                "allow jcr:read,crx:replicate,jcr:removeNode on home(acs-commons-dispatcher-flush-service)" + System.lineSeparator() +
+                "deny jcr:write on home(acs-commons-dispatcher-flush-service)" + System.lineSeparator() +
+                "end" + System.lineSeparator() +
+                "set ACL for acs-commons-ensure-oak-index-service" + System.lineSeparator() +
+                "allow jcr:read,rep:write,rep:indexDefinitionManagement on home(acs-commons-ensure-oak-index-service) restriction(rep:glob,*/oak:index/*)" + System.lineSeparator() +
+                "end" + System.lineSeparator() +
+                "set ACL for acs-commons-on-deploy-scripts-service" + System.lineSeparator() +
+                "allow jcr:read on home(acs-commons-on-deploy-scripts-service)" + System.lineSeparator() +
+                "end" + System.lineSeparator() +
+                "set ACL for acs-commons-ensure-service-user-service" + System.lineSeparator() +
+                "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on home(acs-commons-ensure-service-user-service)" + System.lineSeparator() +
+                "end" + System.lineSeparator();
+
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
 
@@ -140,26 +141,24 @@ public final class RepPolicyEntryHandlerTest {
         assertNotNull(repoinitExtension);
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
-        // commented ACLs are due SLING-8561
         String expected =
                 "create service user acs-commons-package-replication-status-event-service with path /home/users/system" + System.lineSeparator() +
-                // "create path (sling:Folder) /asd\n" +
-                // "create path (sling:Folder) /asd/public\n" +
-                // "set ACL for acs-commons-package-replication-status-event-service\n" +
-                // "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" +
-                // "end\n" +
                 "create service user acs-commons-ensure-service-user-service with path /home/users/system" + System.lineSeparator() +
-                // "set ACL for acs-commons-ensure-service-user-service\n" +
-                // "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /asd/public\n" +
-                // "end\n" +
                 "create service user acs-commons-automatic-package-replicator-service with path /home/users/system" + System.lineSeparator() +
-                // "set ACL for acs-commons-automatic-package-replicator-service\n" +
-                // "allow jcr:read on /asd/public\n" +
-                // "end\n" +
-                "create service user acs-commons-on-deploy-scripts-service with path /home/users/system" + System.lineSeparator();
-                //"set ACL for acs-commons-on-deploy-scripts-service\n" +
-                //"allow jcr:read on /asd/public\n" +
-                //"end\n";
+                "create service user acs-commons-on-deploy-scripts-service with path /home/users/system" + System.lineSeparator() +
+                "set ACL for acs-commons-automatic-package-replicator-service" + System.lineSeparator() +
+                "allow jcr:read on home(acs-commons-automatic-package-replicator-service)" + System.lineSeparator() +
+                "end" + System.lineSeparator() +
+                "set ACL for acs-commons-package-replication-status-event-service" + System.lineSeparator() +
+                "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on home(acs-commons-package-replication-status-event-service)" + System.lineSeparator() +
+                "deny jcr:write on home(acs-commons-package-replication-status-event-service)" + System.lineSeparator() +
+                "end" + System.lineSeparator() +
+                "set ACL for acs-commons-on-deploy-scripts-service" + System.lineSeparator() +
+                "allow jcr:read on home(acs-commons-on-deploy-scripts-service)" + System.lineSeparator() +
+                "end" + System.lineSeparator() +
+                "set ACL for acs-commons-ensure-service-user-service" + System.lineSeparator() +
+                "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on home(acs-commons-ensure-service-user-service)" + System.lineSeparator() +
+                "end" + System.lineSeparator();
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
 
