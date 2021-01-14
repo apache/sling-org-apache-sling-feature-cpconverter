@@ -18,14 +18,16 @@ package org.apache.sling.feature.cpconverter.handlers;
 
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.accesscontrol.SystemUser;
+import org.apache.sling.feature.cpconverter.accesscontrol.User;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.jetbrains.annotations.NotNull;
 
+// TODO: rename to UserEntryHandler
 public final class SystemUsersEntryHandler extends AbstractUserEntryHandler {
 
     public SystemUsersEntryHandler() {
         // FIXME: SLING-9969
-        super("/jcr_root(/home/users/system.*/)\\.content.xml");
+        super("/jcr_root(/home/users/.*/)\\.content.xml");
     }
 
     @Override
@@ -36,6 +38,7 @@ public final class SystemUsersEntryHandler extends AbstractUserEntryHandler {
     private static final class SystemUserParser extends AbstractUserParser {
 
         private static final String REP_SYSTEM_USER = "rep:SystemUser";
+        private static final String REP_USER = "rep:User";
 
         /**
          * @param converter - the converter to use.
@@ -43,12 +46,16 @@ public final class SystemUsersEntryHandler extends AbstractUserEntryHandler {
          * @param intermediatePath - the intermediate path the user should have - most likely the (direct) parent of the path.
          */
         public SystemUserParser(@NotNull ContentPackage2FeatureModelConverter converter, @NotNull RepoPath path, @NotNull RepoPath intermediatePath) {
-            super(REP_SYSTEM_USER, converter, path, intermediatePath);
+            super(converter, path, intermediatePath, REP_SYSTEM_USER, REP_USER);
         }
 
         @Override
         void handleUser(@NotNull String id) {
-            converter.getAclManager().addSystemUser(new SystemUser(id, path, intermediatePath));
+            if (REP_USER.equals(detectedPrimaryType)) {
+                converter.getAclManager().addUser(new User(id, path, intermediatePath));
+            } else{
+                converter.getAclManager().addSystemUser(new SystemUser(id, path, intermediatePath));
+            }
         }
     }
 

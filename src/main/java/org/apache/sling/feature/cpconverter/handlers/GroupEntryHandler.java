@@ -43,7 +43,7 @@ public final class GroupEntryHandler extends AbstractUserEntryHandler {
          * @param intermediatePath - the intermediate path the user should have - most likely the (direct) parent of the path.
          */
         public GroupParser(@NotNull ContentPackage2FeatureModelConverter converter, @NotNull RepoPath path, @NotNull RepoPath intermediatePath) {
-            super(REP_GROUP, converter, path, intermediatePath);
+            super(converter, path, intermediatePath, REP_GROUP);
         }
 
         @Override

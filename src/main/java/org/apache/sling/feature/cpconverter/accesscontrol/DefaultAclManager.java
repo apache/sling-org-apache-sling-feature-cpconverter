@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.accesscontrol;
 
+import com.google.common.collect.Iterables;
 import org.apache.jackrabbit.spi.Name;
 import org.apache.jackrabbit.spi.PrivilegeDefinition;
 import org.apache.jackrabbit.spi.commons.conversion.DefaultNamePathResolver;
@@ -31,6 +32,7 @@ import org.jetbrains.annotations.Nullable;
 import javax.jcr.NamespaceException;
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.Formatter;
 import java.util.HashMap;
@@ -51,21 +53,20 @@ public final class DefaultAclManager implements AclManager {
 
     private static final String CONTENT_XML_FILE_NAME = ".content.xml";
 
-    private static final String DEFAULT_TYPE = "sling:Folder";
-
-    private final Set<RepoPath> preProvidedSystemPaths = new HashSet<>();
-
-    private final Set<RepoPath> preProvidedPaths = new HashSet<>();
-
     private final Set<SystemUser> systemUsers = new LinkedHashSet<>();
-
     private final Set<Group> groups = new LinkedHashSet<>();
+    private final Set<User> users = new LinkedHashSet<>();
 
     private final Map<String, List<AccessControlEntry>> acls = new HashMap<>();
 
     private final List<String> nodetypeRegistrationSentences = new LinkedList<>();
 
     private volatile PrivilegeDefinitions privilegeDefinitions;
+
+    @Override
+    public boolean addUser(@NotNull User user) {
+        return users.add(user);
+    }
 
     public boolean addGroup(@NotNull Group group) {
         return groups.add(group);
@@ -233,14 +234,10 @@ public final class DefaultAclManager implements AclManager {
         } else if (isHomePath(path, systemUser.getPath())) {
             return getHomePath(path, systemUser);
         } else {
-            AbstractUser otherSystemUser = getOtherUser(path, systemUsers);
-            if (otherSystemUser != null) {
-                return getHomePath(path, otherSystemUser);
-            }
-            AbstractUser gr = getOtherUser(path, groups);
-            if (gr != null) {
-                // TODO: or rather ignore?
-                return getHomePath(path, gr);
+            // TODO: decide if regular users and groups should be ignored altogether or convertion aborted
+            AbstractUser other = getOtherUser(path, Iterables.concat(systemUsers, groups, users));
+            if (other != null) {
+                return getHomePath(path, other);
             }
             // not a special path
             return path.toString();
@@ -252,7 +249,7 @@ public final class DefaultAclManager implements AclManager {
     }
 
     @Nullable
-    private static AbstractUser getOtherUser(@NotNull RepoPath path, @NotNull Set<? extends AbstractUser> abstractUsers) {
+    private static AbstractUser getOtherUser(@NotNull RepoPath path, @NotNull Iterable<? extends AbstractUser> abstractUsers) {
         for (AbstractUser au : abstractUsers) {
             if (path.startsWith(au.getPath())) {
                 return au;

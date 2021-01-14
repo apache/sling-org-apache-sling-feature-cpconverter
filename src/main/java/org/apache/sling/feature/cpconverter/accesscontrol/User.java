@@ -16,32 +16,17 @@
  */
 package org.apache.sling.feature.cpconverter.accesscontrol;
 
-import org.apache.jackrabbit.JcrConstants;
-import org.apache.sling.feature.cpconverter.shared.AbstractJcrNodeParser;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
+import org.apache.sling.feature.cpconverter.shared.RepoPath;
+import org.jetbrains.annotations.NotNull;
 
-final class MixinParser extends AbstractJcrNodeParser<String> {
-    private String mixins;
+public class User extends AbstractUser {
 
-    public MixinParser() {
-        super();
+    /**
+     * @param id               - the authorizableId to use.
+     * @param path             - the original repository path of the user in the content-package.
+     * @param intermediatePath - the intermediate path the user should have - most likely the (direct) parent of the path.
+     */
+    public User(@NotNull String id, @NotNull RepoPath path, @NotNull RepoPath intermediatePath) {
+        super(id, path, intermediatePath);
     }
-
-    @Override
-    protected void onJcrRootNode(String uri, String localName, String qName, Attributes attributes, String primaryType) {
-        mixins = attributes.getValue(JcrConstants.JCR_MIXINTYPES);
-    }
-
-    @Override
-    protected void onJcrRootElement(String uri, String localName, String qName, Attributes attributes)
-            throws SAXException {
-        // not needed
-    }
-
-    @Override
-    protected String getParsingResult() {
-        return mixins;
-    }
-
 }

@@ -29,6 +29,8 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface AclManager {
 
+    boolean addUser(@NotNull User user);
+
     boolean addGroup(@NotNull Group group);
 
     boolean addSystemUser(@NotNull SystemUser systemUser);

@@ -33,13 +33,13 @@ abstract class AbstractUserParser extends AbstractJcrNodeParser<Void> {
     final RepoPath intermediatePath;
 
     /**
-     * @param primaryType - the primary type of the user/group nodes to be parsed
      * @param converter - the converter to use.
      * @param path - the original repository path of the user in the content-package.
      * @param intermediatePath - the intermediate path the user should have - most likely the (direct) parent of the path.
+     * @param primaryTypes - the primary type of the user/group nodes to be parsed
      */
-    public AbstractUserParser(@NotNull String primaryType, @NotNull ContentPackage2FeatureModelConverter converter, @NotNull RepoPath path, @NotNull RepoPath intermediatePath) {
-        super(primaryType);
+    public AbstractUserParser(@NotNull ContentPackage2FeatureModelConverter converter, @NotNull RepoPath path, @NotNull RepoPath intermediatePath, @NotNull String... primaryTypes) {
+        super(primaryTypes);
         this.converter = converter;
         this.path = path;
         this.intermediatePath = intermediatePath;
