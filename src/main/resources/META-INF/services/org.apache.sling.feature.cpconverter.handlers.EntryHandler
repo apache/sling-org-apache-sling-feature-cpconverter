@@ -8,5 +8,5 @@ org.apache.sling.feature.cpconverter.handlers.PrivilegesHandler
 org.apache.sling.feature.cpconverter.handlers.PropertiesConfigurationEntryHandler
 org.apache.sling.feature.cpconverter.handlers.RepPolicyEntryHandler
 org.apache.sling.feature.cpconverter.handlers.RepRepoPolicyEntryHandler
-org.apache.sling.feature.cpconverter.handlers.SystemUsersEntryHandler
+org.apache.sling.feature.cpconverter.handlers.UsersEntryHandler
 org.apache.sling.feature.cpconverter.handlers.XmlConfigurationEntryHandler

@@ -16,7 +16,6 @@
  */
 package org.apache.sling.feature.cpconverter.accesscontrol;
 
-import com.google.common.collect.Iterables;
 import org.apache.jackrabbit.spi.Name;
 import org.apache.jackrabbit.spi.PrivilegeDefinition;
 import org.apache.jackrabbit.spi.commons.conversion.DefaultNamePathResolver;
@@ -99,26 +98,22 @@ public final class DefaultAclManager implements AclManager {
             for (SystemUser systemUser : systemUsers) {
                 // make sure all users are created first
                 formatter.format("create service user %s with path %s%n", systemUser.getId(), systemUser.getIntermediatePath());
-                if (acls.values().stream().flatMap(List::stream).anyMatch(acl ->
-                        acl.getRepositoryPath().startsWith(systemUser.getPath()) && !acl.getRepositoryPath().equals(systemUser.getPath()) )) {
+                if (aclIsBelow(systemUser.getPath())) {
                     throw new IllegalStateException("Detected policy on subpath of system-user: " + systemUser);
                 }
             }
 
             for (Group group : groups) {
-                if (acls.values().stream().flatMap(List::stream).anyMatch(acl ->
-                    acl.getRepositoryPath().equals(group.getPath()))) {
+                if (aclStartsWith(group.getPath())) {
                     formatter.format("create group %s with path %s%n", group.getId(), group.getIntermediatePath());
                 }
-                if (acls.values().stream().flatMap(List::stream).anyMatch(acl ->
-                        acl.getRepositoryPath().startsWith(group.getPath()) && !acl.getRepositoryPath().equals(group.getPath()) )) {
+                if (aclIsBelow(group.getPath())) {
                     throw new IllegalStateException("Detected policy on subpath of group: " + group);
                 }
             }
 
             for (User user : users) {
-                if (acls.values().stream().flatMap(List::stream).anyMatch(acl ->
-                        acl.getRepositoryPath().startsWith(user.getPath()))) {
+                if (aclStartsWith(user.getPath())) {
                     throw new IllegalStateException("Detected policy on user: " + user);
                 }
             }
@@ -127,7 +122,8 @@ public final class DefaultAclManager implements AclManager {
                     .filter(entry -> getSystemUser(entry.getKey()).isPresent())
                     .map(Entry::getValue)
                     .flatMap(Collection::stream)
-                    .map(AccessControlEntry::getRepositoryPath).collect(Collectors.toSet());
+                    .map(AccessControlEntry::getRepositoryPath)
+                    .collect(Collectors.toSet());
 
             paths.stream()
                     .filter(path -> !paths.stream().anyMatch(other -> !other.equals(path) && other.startsWith(path)))
@@ -152,6 +148,14 @@ public final class DefaultAclManager implements AclManager {
                 featureManager.addOrAppendRepoInitExtension(text, null);
             }
         }
+    }
+
+    private boolean aclStartsWith(RepoPath path) {
+        return acls.values().stream().flatMap(List::stream).anyMatch(acl -> acl.getRepositoryPath().startsWith(path));
+    }
+
+    private boolean aclIsBelow(RepoPath path) {
+        return acls.values().stream().flatMap(List::stream).anyMatch(acl -> acl.getRepositoryPath().startsWith(path) && !acl.getRepositoryPath().equals(path));
     }
 
     private void addStatements(@NotNull SystemUser systemUser,
@@ -257,8 +261,7 @@ public final class DefaultAclManager implements AclManager {
         } else if (isHomePath(path, systemUser.getPath())) {
             return getHomePath(path, systemUser);
         } else {
-            // TODO: decide if regular users and groups should be ignored altogether or convertion aborted
-            AbstractUser other = getOtherUser(path, Iterables.concat(systemUsers, groups, users));
+            AbstractUser other = getOtherUser(path, Stream.of(systemUsers, groups).flatMap(Collection::stream));
             if (other != null) {
                 return getHomePath(path, other);
             }
@@ -272,13 +275,8 @@ public final class DefaultAclManager implements AclManager {
     }
 
     @Nullable
-    private static AbstractUser getOtherUser(@NotNull RepoPath path, @NotNull Iterable<? extends AbstractUser> abstractUsers) {
-        for (AbstractUser au : abstractUsers) {
-            if (path.startsWith(au.getPath())) {
-                return au;
-            }
-        }
-        return null;
+    private static AbstractUser getOtherUser(@NotNull RepoPath path, @NotNull Stream<? extends AbstractUser> abstractUsers) {
+        return abstractUsers.filter(au -> path.startsWith(au.getPath())).findFirst().orElse(null);
     }
 
     @NotNull

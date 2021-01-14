@@ -22,10 +22,9 @@ import org.apache.sling.feature.cpconverter.accesscontrol.User;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.jetbrains.annotations.NotNull;
 
-// TODO: rename to UserEntryHandler
-public final class SystemUsersEntryHandler extends AbstractUserEntryHandler {
+public final class UsersEntryHandler extends AbstractUserEntryHandler {
 
-    public SystemUsersEntryHandler() {
+    public UsersEntryHandler() {
         // FIXME: SLING-9969
         super("/jcr_root(/home/users/.*/)\\.content.xml");
     }
