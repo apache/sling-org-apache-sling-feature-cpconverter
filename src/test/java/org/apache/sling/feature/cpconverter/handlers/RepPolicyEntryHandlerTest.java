@@ -227,6 +227,27 @@ public final class RepPolicyEntryHandlerTest {
     }
 
     @Test
+    public void policyAtAuthorizableFolder() throws Exception {
+        SystemUser s1 = new SystemUser("service1", new RepoPath("/home/users/system/services/random1"), new RepoPath("/home/users/system/services"));
+
+        AclManager aclManager = new DefaultAclManager();
+        aclManager.addSystemUser(s1);
+
+        ParseResult result = parseAndSetRepoInit("/jcr_root/home/groups/g/_rep_policy.xml", aclManager);
+        Extension repoinitExtension = result.getRepoinitExtension();
+        assertNotNull(repoinitExtension);
+        assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
+
+        String expected =
+                "create service user service1 with path /home/users/system/services" + System.lineSeparator() +
+                "set ACL for service1" + System.lineSeparator() +
+                "allow jcr:read,rep:userManagement on /home/groups/g" + System.lineSeparator() +
+                "end" + System.lineSeparator();
+        assertEquals(expected, repoinitExtension.getText());
+        assertTrue(result.excludedAcls.isEmpty());
+    }
+
+    @Test
     public void policyAtGroupNode() throws Exception {
         SystemUser s1 = new SystemUser("service1", new RepoPath("/home/users/system/services/random1"), new RepoPath("/home/users/system/services"));
         Group gr = new Group("testgroup", new RepoPath("/home/groups/g/HjDnfdMCjekaF4jhhUvO"), new RepoPath("/home/groups/g"));

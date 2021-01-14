@@ -19,7 +19,7 @@
           jcr:primaryType="rep:ACL">
     <allow
             jcr:primaryType="rep:GrantACE"
-            rep:principalName="service2"
+            rep:principalName="service1"
             rep:privileges="{Name}[jcr:read,rep:userManagement]">
     </allow>
 </jcr:root>
