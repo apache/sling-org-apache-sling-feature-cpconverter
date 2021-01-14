@@ -48,6 +48,7 @@ import java.util.Objects;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class DefaultAclManager implements AclManager {
 
@@ -100,6 +101,28 @@ public final class DefaultAclManager implements AclManager {
             for (SystemUser systemUser : systemUsers) {
                 // make sure all users are created first
                 formatter.format("create service user %s with path %s%n", systemUser.getId(), systemUser.getIntermediatePath());
+                if (acls.values().stream().flatMap(List::stream).anyMatch(acl ->
+                        acl.getRepositoryPath().startsWith(systemUser.getPath()) && !acl.getRepositoryPath().equals(systemUser.getPath()) )) {
+                    throw new IllegalStateException("Detected policy on subpath of system-user: " + systemUser);
+                }
+            }
+
+            for (Group group : groups) {
+                if (acls.values().stream().flatMap(List::stream).anyMatch(acl ->
+                    acl.getRepositoryPath().equals(group.getPath()))) {
+                    formatter.format("create group %s with path %s%n", group.getId(), group.getIntermediatePath());
+                }
+                if (acls.values().stream().flatMap(List::stream).anyMatch(acl ->
+                        acl.getRepositoryPath().startsWith(group.getPath()) && !acl.getRepositoryPath().equals(group.getPath()) )) {
+                    throw new IllegalStateException("Detected policy on subpath of group: " + group);
+                }
+            }
+
+            for (User user : users) {
+                if (acls.values().stream().flatMap(List::stream).anyMatch(acl ->
+                        acl.getRepositoryPath().startsWith(user.getPath()))) {
+                    throw new IllegalStateException("Detected policy on user: " + user);
+                }
             }
 
             Set<RepoPath> paths = acls.entrySet().stream()
@@ -111,6 +134,8 @@ public final class DefaultAclManager implements AclManager {
             paths.stream()
                     .filter(path -> !paths.stream().anyMatch(other -> !other.equals(path) && other.startsWith(path)))
                     .filter(((Predicate<RepoPath>)RepoPath::isRepositoryPath).negate())
+                    .filter(path -> Stream.of(systemUsers, users, groups).flatMap(Collection::stream)
+                            .noneMatch(user -> user.getPath().startsWith(path)))
                     .map(path -> computePathWithTypes(path, packageAssemblers))
                     .filter(Objects::nonNull)
                     .forEach(
