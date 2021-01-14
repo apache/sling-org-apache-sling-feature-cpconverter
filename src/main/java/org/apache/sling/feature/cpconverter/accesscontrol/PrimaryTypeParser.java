@@ -17,20 +17,13 @@
 package org.apache.sling.feature.cpconverter.accesscontrol;
 
 import org.apache.sling.feature.cpconverter.shared.AbstractJcrNodeParser;
-import org.jetbrains.annotations.NotNull;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 final class PrimaryTypeParser extends AbstractJcrNodeParser<String> {
 
-    private String detectedPrimaryType;
-
     public PrimaryTypeParser() {
-        this("sling:Folder");
-    }
-
-    public PrimaryTypeParser(@NotNull String primaryType) {
-        super(primaryType);
+        super();
     }
 
     @Override
@@ -47,7 +40,7 @@ final class PrimaryTypeParser extends AbstractJcrNodeParser<String> {
 
     @Override
     protected String getParsingResult() {
-        return detectedPrimaryType != null ? detectedPrimaryType : getPrimaryType();
+        return detectedPrimaryType;
     }
 
 }

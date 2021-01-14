@@ -16,32 +16,17 @@
  */
 package org.apache.sling.feature.cpconverter.accesscontrol;
 
-import java.util.List;
-
-import org.apache.jackrabbit.vault.fs.spi.PrivilegeDefinitions;
-import org.apache.sling.feature.cpconverter.features.FeaturesManager;
-import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
+import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * The Manager able to collect and build System Users and related ACL policies.
- */
-public interface AclManager {
+public class Group extends AbstractUser {
 
-    boolean addUser(@NotNull User user);
-
-    boolean addGroup(@NotNull Group group);
-
-    boolean addSystemUser(@NotNull SystemUser systemUser);
-
-    boolean addAcl(String systemUser, AccessControlEntry acl);
-
-    void addRepoinitExtension(List<VaultPackageAssembler> packageAssemblers, FeaturesManager featureManager);
-
-    void addNodetypeRegistrationSentence(String nodetypeRegistrationSentence);
-
-    void addPrivilegeDefinitions(@NotNull PrivilegeDefinitions privilegeDefinitions);
-
-    void reset();
-
+    /**
+     * @param id               - the authorizableId to use.
+     * @param path             - the original repository path of the user in the content-package.
+     * @param intermediatePath - the intermediate path the user should have - most likely the (direct) parent of the path.
+     */
+    public Group(@NotNull String id, @NotNull RepoPath path, @NotNull RepoPath intermediatePath) {
+        super(id, path, intermediatePath);
+    }
 }

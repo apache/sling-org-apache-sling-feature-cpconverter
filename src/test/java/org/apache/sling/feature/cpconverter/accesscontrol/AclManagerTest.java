@@ -66,7 +66,6 @@ public class AclManagerTest {
             .map(Path::toFile)
             .forEach(File::delete);
     }
-
     @Test
     public void makeSureAclsAreCreatedOnlyoutsideSytemUsersPaths() throws Exception {
         aclManager.addSystemUser(new SystemUser("acs-commons-package-replication-status-event-service", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
@@ -93,14 +92,11 @@ public class AclManagerTest {
         // acs-commons-on-deploy-scripts-service will be missed
         String expected =
                 "create service user acs-commons-package-replication-status-event-service with path /home/users/system" + System.lineSeparator() +
-                "create path /asd/not(nt:unstructured mixin rep:AccessControllable,mix:created)/system/user/path" + System.lineSeparator() +
-                // see SLING-8561
-                // "set ACL for acs-commons-package-replication-status-event-service\n" +
-                // "allow jcr:read,crx:replicate,jcr:removeNode on /asd/public\n" +
-                // "end\n" +
-                "set ACL for acs-commons-package-replication-status-event-service" + System.lineSeparator() +
-                "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/not/system/user/path" + System.lineSeparator() +
-                "end" + System.lineSeparator();
+                        "create path /asd/not(nt:unstructured mixin rep:AccessControllable,mix:created)/system/user/path" + System.lineSeparator() +
+                        "set ACL for acs-commons-package-replication-status-event-service" + System.lineSeparator() +
+                        "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/not/system/user/path" + System.lineSeparator() +
+                        "allow jcr:read,crx:replicate,jcr:removeNode on /home/users/system" + System.lineSeparator() +
+                        "end" + System.lineSeparator();
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
 
@@ -199,6 +195,151 @@ public class AclManagerTest {
         RepoInitParser repoInitParser = new RepoInitParserService();
         List<Operation> operations = repoInitParser.parse(new StringReader(actual));
         assertFalse(operations.isEmpty());
+    }
+
+    @Test
+    public void testGroupHandlingWithGroupUsed() {
+        aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
+
+        aclManager.addGroup(new Group("test", new RepoPath("/home/groups/test"),  new RepoPath("/home/groups/test")));
+        aclManager.addAcl("sys-usr", newAcl(true, "jcr:read", "/home/groups/test"));
+        VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
+        when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
+        Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
+
+        FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
+        when(fm.getTargetFeature()).thenReturn(feature);
+
+        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+
+        Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+        assertNotNull(repoinitExtension);
+
+        String expected =
+                "create service user sys-usr with path /home/users/system" + System.lineSeparator() +
+                        "create group test with path /home/groups/test" + System.lineSeparator() +
+                        "set ACL for sys-usr" + System.lineSeparator() +
+                        "allow jcr:read on home(test)" + System.lineSeparator() +
+                        "end" + System.lineSeparator();
+
+        String actual = repoinitExtension.getText();
+        assertEquals(expected, actual);
+
+    }
+
+    @Test
+    public void testGroupHandlingWithGroupNotUsed() {
+        aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
+
+        aclManager.addGroup(new Group("test", new RepoPath("/home/groups/test"),  new RepoPath("/home/groups/test")));
+        aclManager.addAcl("sys-usr", newAcl(true, "jcr:read", "/content/test"));
+        VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
+        when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
+        Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
+
+        FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
+        when(fm.getTargetFeature()).thenReturn(feature);
+
+        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+
+        Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+        assertNotNull(repoinitExtension);
+
+        String expected =
+                "create service user sys-usr with path /home/users/system" + System.lineSeparator() +
+                        "set ACL for sys-usr" + System.lineSeparator() +
+                        "allow jcr:read on /content/test" + System.lineSeparator() +
+                        "end" + System.lineSeparator();
+
+        String actual = repoinitExtension.getText();
+        assertEquals(expected, actual);
+
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testGroupHandlingWithGroupMatchingSubPath() {
+        aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
+
+        aclManager.addGroup(new Group("test", new RepoPath("/home/groups/test"),  new RepoPath("/home/groups/test")));
+        aclManager.addAcl("sys-usr", newAcl(true, "jcr:read", "/home/groups/test/foo"));
+        VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
+        when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
+        Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
+
+        FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
+        when(fm.getTargetFeature()).thenReturn(feature);
+        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testUserHandlingWithMatchingUser() {
+        aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
+
+        aclManager.addUser(new User("test", new RepoPath("/home/users/test"),  new RepoPath("/home/users/test")));
+        aclManager.addAcl("sys-usr", newAcl(true, "jcr:read", "/home/users/test/foo"));
+        VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
+        when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
+        Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
+
+        FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
+        when(fm.getTargetFeature()).thenReturn(feature);
+        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+    }
+
+    @Test
+    public void testUserHandlingWithNonMatchingUser() {
+        aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
+
+        aclManager.addUser(new User("test", new RepoPath("/home/users/test"),  new RepoPath("/home/users/test")));
+        aclManager.addAcl("sys-usr", newAcl(true, "jcr:read", "/content/test"));
+        VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
+        when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
+        Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
+
+        FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
+        when(fm.getTargetFeature()).thenReturn(feature);
+
+        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+
+        Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+        assertNotNull(repoinitExtension);
+
+        String expected =
+                "create service user sys-usr with path /home/users/system" + System.lineSeparator() +
+                        "set ACL for sys-usr" + System.lineSeparator() +
+                        "allow jcr:read on /content/test" + System.lineSeparator() +
+                        "end" + System.lineSeparator();
+
+        String actual = repoinitExtension.getText();
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testPathHandlingWithUser() {
+        aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
+
+        aclManager.addUser(new User("test", new RepoPath("/home/users/test"),  new RepoPath("/home/users/test")));
+        aclManager.addAcl("sys-usr", newAcl(true, "jcr:read", "/home/users/test2"));
+        VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
+        when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
+        Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
+
+        FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
+        when(fm.getTargetFeature()).thenReturn(feature);
+
+        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+
+        Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+        assertNotNull(repoinitExtension);
+
+        String expected =
+                "create service user sys-usr with path /home/users/system" + System.lineSeparator() +
+                        "set ACL for sys-usr" + System.lineSeparator() +
+                        "allow jcr:read on /home/users/test2" + System.lineSeparator() +
+                        "end" + System.lineSeparator();
+
+        String actual = repoinitExtension.getText();
+        assertEquals(expected, actual);
     }
 
     private static AccessControlEntry newAcl(boolean isAllow, String privileges, String path) {

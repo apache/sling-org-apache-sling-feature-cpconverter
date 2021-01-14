@@ -35,29 +35,29 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-public class SystemUsersEntryHandlerTest {
+public class UsersEntryHandlerTest {
 
-    private SystemUsersEntryHandler systemUsersEntryHandler;
+    private UsersEntryHandler usersEntryHandler;
 
     @Before
     public void setUp() {
-        systemUsersEntryHandler = new SystemUsersEntryHandler();
+        usersEntryHandler = new UsersEntryHandler();
     }
 
     @After
     public void tearDown() {
-        systemUsersEntryHandler = null;
+        usersEntryHandler = null;
     }
 
     @Test
     public void doesNotMatch() {
-        assertFalse(systemUsersEntryHandler.matches("/this/is/a/path/not/pointing/to/a/valid/configuration.asd"));
-        assertFalse(systemUsersEntryHandler.matches("/home/users/system/asd-share-commons/asd-index-definition-reader/.content.xml"));
+        assertFalse(usersEntryHandler.matches("/this/is/a/path/not/pointing/to/a/valid/configuration.asd"));
+        assertFalse(usersEntryHandler.matches("/home/users/system/asd-share-commons/asd-index-definition-reader/.content.xml"));
     }
 
     @Test
     public void matches() {
-        assertTrue(systemUsersEntryHandler.matches("/jcr_root/home/users/system/asd-share-commons/asd-index-definition-reader/.content.xml"));
+        assertTrue(usersEntryHandler.matches("/jcr_root/home/users/system/asd-share-commons/asd-index-definition-reader/.content.xml"));
     }
 
     @Test
@@ -102,6 +102,6 @@ public class SystemUsersEntryHandlerTest {
     }
 
     private Extension parseAndSetRepoinit(String path) throws Exception {
-        return TestUtils.createRepoInitExtension(systemUsersEntryHandler, new DefaultAclManager(), path, getClass().getResourceAsStream(path.substring(1)));
+        return TestUtils.createRepoInitExtension(usersEntryHandler, new DefaultAclManager(), path, getClass().getResourceAsStream(path.substring(1)));
     }
 }

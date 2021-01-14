@@ -26,11 +26,13 @@ import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 
 import static org.mockito.ArgumentMatchers.anyString;
@@ -45,9 +47,15 @@ class TestUtils {
     private TestUtils() {}
 
     static Extension createRepoInitExtension(@NotNull EntryHandler handler, @NotNull AclManager aclManager, @NotNull String path, @NotNull InputStream is) throws Exception {
+        return createRepoInitExtension(handler, aclManager, path, is, null);
+    }
+    static Extension createRepoInitExtension(@NotNull EntryHandler handler, @NotNull AclManager aclManager, @NotNull String path, @NotNull InputStream is, @Nullable OutputStream out) throws Exception {
         Archive archive = mock(Archive.class);
         Archive.Entry entry = mock(Archive.Entry.class);
         VaultPackageAssembler packageAssembler = mock(VaultPackageAssembler.class);
+        if (out != null) {
+            when(packageAssembler.createEntry(anyString())).thenReturn(out);
+        }
 
         when(archive.openInputStream(entry)).thenReturn(is);
 
@@ -57,6 +65,7 @@ class TestUtils {
         ContentPackage2FeatureModelConverter converter = spy(ContentPackage2FeatureModelConverter.class);
         when(converter.getFeaturesManager()).thenReturn(featuresManager);
         when(converter.getAclManager()).thenReturn(aclManager);
+        when(converter.getMainPackageAssembler()).thenReturn(packageAssembler);
 
         handler.handle(path, archive, entry, converter);
 

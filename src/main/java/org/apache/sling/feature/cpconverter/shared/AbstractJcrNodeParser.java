@@ -19,10 +19,12 @@ package org.apache.sling.feature.cpconverter.shared;
 import static org.apache.jackrabbit.JcrConstants.JCR_PRIMARYTYPE;
 
 import java.io.InputStream;
+import java.util.Set;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import com.google.common.collect.ImmutableSet;
 import org.jetbrains.annotations.NotNull;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -34,10 +36,12 @@ public abstract class AbstractJcrNodeParser<O> extends DefaultHandler {
 
     private static final SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
 
-    private final String primaryType;
+    private final Set<String> primaryTypes;
 
-    public AbstractJcrNodeParser(@NotNull String primaryType) {
-        this.primaryType = primaryType;
+    protected String detectedPrimaryType;
+
+    protected AbstractJcrNodeParser(@NotNull String... primaryTypes) {
+        this.primaryTypes = ImmutableSet.of(primaryTypes);
     }
 
     public O parse(InputStream input) throws Exception {
@@ -54,12 +58,9 @@ public abstract class AbstractJcrNodeParser<O> extends DefaultHandler {
         }
     }
 
-    protected final @NotNull String getPrimaryType() {
-        return primaryType;
-    }
-
     protected void onJcrRootNode(String uri, String localName, String qName, Attributes attributes, String primaryType) throws SAXException {
-        if (this.primaryType.equals(primaryType)) {
+        if (this.primaryTypes.contains(primaryType)) {
+            detectedPrimaryType = primaryType;
             onJcrRootElement(uri, localName, qName, attributes);
         }
     }
@@ -67,5 +68,4 @@ public abstract class AbstractJcrNodeParser<O> extends DefaultHandler {
     protected abstract void onJcrRootElement(String uri, String localName, String qName, Attributes attributes) throws SAXException;
 
     protected abstract O getParsingResult();
-
 }
