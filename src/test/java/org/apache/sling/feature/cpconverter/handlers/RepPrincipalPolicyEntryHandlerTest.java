@@ -69,9 +69,6 @@ public final class RepPrincipalPolicyEntryHandlerTest {
     @Test
     public void parseSimplePolicy() throws Exception {
         Extension repoinitExtension = parseAndSetRepoinit("service1", "random1").getRepoinitExtension();
-        assertNotNull(repoinitExtension);
-        assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
-
         String expected =
                 "create service user service1 with path /home/users/system/services" + System.lineSeparator() +
                 "set principal ACL for service1\n" +
@@ -89,9 +86,6 @@ public final class RepPrincipalPolicyEntryHandlerTest {
     @Test
     public void parseMvRestrictions() throws Exception {
         Extension repoinitExtension = parseAndSetRepoinit("service2", "random2").getRepoinitExtension();
-        assertNotNull(repoinitExtension);
-        assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
-
         String expected =
                 "create service user service2 with path /home/users/system/services" + System.lineSeparator() +
                         "set principal ACL for service2\n" +
@@ -116,9 +110,6 @@ public final class RepPrincipalPolicyEntryHandlerTest {
         SystemUser systemUser4 = createSystemUser("service4", "random4");
 
         Extension repoinitExtension = parseAndSetRepoinit(getPolicyPath(systemUser4), systemUser4).getRepoinitExtension();
-        assertNotNull(repoinitExtension);
-        assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
-
         String expected =
                 "create service user service4 with path /home/users/system/services" + System.lineSeparator() +
                 "set principal ACL for service4" + System.lineSeparator() +
@@ -140,9 +131,6 @@ public final class RepPrincipalPolicyEntryHandlerTest {
         SystemUser systemUser4 = createSystemUser("service4", "random4");
 
         Extension repoinitExtension = parseAndSetRepoinit(getPolicyPath(systemUser4), systemUser4, systemUser3).getRepoinitExtension();
-        assertNotNull(repoinitExtension);
-        assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
-
         String expected =
                 "create service user service4 with path /home/users/system/services" + System.lineSeparator() +
                 "create service user service3 with path /home/users/system/services" + System.lineSeparator() +

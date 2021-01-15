@@ -82,8 +82,6 @@ public final class RepPolicyEntryHandlerTest {
                                                           "acs-commons-ensure-service-user-service",
                                                           "acs-commons-automatic-package-replicator-service",
                                                           "acs-commons-on-deploy-scripts-service").getRepoinitExtension();
-        assertNotNull(repoinitExtension);
-        assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
         // commented ACLs are due SLING-8561
         String expected =
@@ -130,9 +128,6 @@ public final class RepPolicyEntryHandlerTest {
                                                  "acs-commons-on-deploy-scripts-service");
         Extension repoinitExtension = result.getRepoinitExtension();
 
-        assertNotNull(repoinitExtension);
-        assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
-
         String expected =
                 "create service user acs-commons-package-replication-status-event-service with path /home/users/system" + System.lineSeparator() +
                 "create service user acs-commons-ensure-service-user-service with path /home/users/system" + System.lineSeparator() +
@@ -176,9 +171,6 @@ public final class RepPolicyEntryHandlerTest {
         ParseResult result = parseAndSetRepoinit(new SystemUser("acs-commons-package-replication-status-event-service",
                 new RepoPath("/this/is/a/completely/different/path/foo"), new RepoPath("/this/is/a/completely/different/path")));
         Extension repoinitExtension = result.getRepoinitExtension();
-        assertNotNull(repoinitExtension);
-        assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
-
         String expected =
                 "create service user acs-commons-package-replication-status-event-service with path /this/is/a/completely/different/path" + System.lineSeparator() +
                 "set ACL for acs-commons-package-replication-status-event-service" + System.lineSeparator() +
@@ -210,8 +202,8 @@ public final class RepPolicyEntryHandlerTest {
 
     @Test
     public void parseEmptyAcl() throws Exception {
-        Extension repoinitExtension = parseAndSetRepoinit(new String[] {}).getRepoinitExtension();
-        assertNull(repoinitExtension);
+        Extension extension = TestUtils.createRepoInitExtension(handler, new DefaultAclManager(), "/jcr_root/home/users/system/asd/_rep_policy.xml", getClass().getResourceAsStream("/jcr_root/home/users/system/asd/_rep_policy.xml".substring(1)), new ByteArrayOutputStream());
+        assertNull(extension);
     }
 
     @Test
@@ -223,8 +215,6 @@ public final class RepPolicyEntryHandlerTest {
 
         ParseResult result = parseAndSetRepoInit("/jcr_root/home/groups/g/_rep_policy.xml", aclManager);
         Extension repoinitExtension = result.getRepoinitExtension();
-        assertNotNull(repoinitExtension);
-        assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
         String expected =
                 "create service user service1 with path /home/users/system/services" + System.lineSeparator() +
@@ -246,8 +236,6 @@ public final class RepPolicyEntryHandlerTest {
 
         ParseResult result = parseAndSetRepoInit("/jcr_root/home/groups/g/HjDnfdMCjekaF4jhhUvO/_rep_policy.xml", aclManager);
         Extension repoinitExtension = result.getRepoinitExtension();
-        assertNotNull(repoinitExtension);
-        assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
         String expected =
                 "create service user service1 with path /home/users/system/services" + System.lineSeparator() +
@@ -305,8 +293,7 @@ public final class RepPolicyEntryHandlerTest {
         for (SystemUser systemUser : systemUsers) {
             aclManager.addSystemUser(systemUser);
         }
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        return new ParseResult(TestUtils.createRepoInitExtension(handler, aclManager, path, getClass().getResourceAsStream(path.substring(1)), baos), new String(baos.toByteArray()));
+        return parseAndSetRepoInit(path, aclManager);
     }
 
     @NotNull

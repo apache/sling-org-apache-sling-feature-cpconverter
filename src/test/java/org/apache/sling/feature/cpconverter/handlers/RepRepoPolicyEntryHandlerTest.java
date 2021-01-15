@@ -29,6 +29,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.io.StringReader;
 import java.util.List;
 
@@ -67,11 +69,8 @@ public class RepRepoPolicyEntryHandlerTest {
         String path = "/jcr_root/_rep_repoPolicy.xml";
         AclManager aclManager = new DefaultAclManager();
         aclManager.addSystemUser(new SystemUser("repolevel-service", new RepoPath("/home/users/system/test"), new RepoPath("/home/users/system")));
-        Extension repoinitExtension = TestUtils.createRepoInitExtension(handler, aclManager, path, getClass().getResourceAsStream(path.substring(1)));
-
-        assertNotNull(repoinitExtension);
-        assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
-        assertTrue(repoinitExtension.isRequired());
+        OutputStream out = new ByteArrayOutputStream();
+        Extension repoinitExtension = new ParseResult(TestUtils.createRepoInitExtension(handler, aclManager, path, getClass().getResourceAsStream(path.substring(1)), out), out.toString()).getRepoinitExtension();
 
         String expectedEnd =
                 "set ACL for repolevel-service" + System.lineSeparator() +

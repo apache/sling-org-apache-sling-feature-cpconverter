@@ -17,22 +17,32 @@
 package org.apache.sling.feature.cpconverter.handlers;
 
 import org.apache.sling.feature.Extension;
+import org.apache.sling.feature.ExtensionType;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 final class ParseResult {
 
     private final Extension repoinitExtension;
     private final String excludedAcls;
 
-    public ParseResult(Extension repoinitExtension, String excludedAcls) {
+    ParseResult(@Nullable Extension repoinitExtension, @NotNull String excludedAcls) {
+        assertNotNull(repoinitExtension);
+        assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
         this.repoinitExtension = repoinitExtension;
         this.excludedAcls = excludedAcls;
     }
 
-    public Extension getRepoinitExtension() {
+    @NotNull
+    Extension getRepoinitExtension() {
         return repoinitExtension;
     }
 
-    public String getExcludedAcls() {
+    @NotNull
+    String getExcludedAcls() {
         return excludedAcls;
     }
 }
