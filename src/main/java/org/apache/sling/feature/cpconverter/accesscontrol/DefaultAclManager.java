@@ -166,15 +166,18 @@ public class DefaultAclManager implements AclManager {
         }
     }
 
+    @NotNull
     private String calculateIntermediatePath(@NotNull RepoPath intermediatePath) {
-        if (enforcePrincipalBased && supportedPrincipalBasedPath!= null && !intermediatePath.startsWith(supportedPrincipalBasedPath)) {
-            RepoPath parent = supportedPrincipalBasedPath.getParent();
-            if (parent.equals(intermediatePath)) {
-                return supportedPrincipalBasedPath.toString();
-            } else {
-                String relpath = intermediatePath.toString().substring(parent.toString().length());
-                return supportedPrincipalBasedPath.toString() + relpath;
+        if (enforcePrincipalBased && supportedPrincipalBasedPath != null && !intermediatePath.startsWith(supportedPrincipalBasedPath)) {
+            RepoPath parent = intermediatePath.getParent();
+            while (parent != null) {
+                if (supportedPrincipalBasedPath.startsWith(parent)) {
+                    String relpath = intermediatePath.toString().substring(parent.toString().length());
+                    return supportedPrincipalBasedPath.toString() + relpath;
+                }
+                parent = parent.getParent();
             }
+            throw new IllegalStateException("Cannot calculate intermediate path for service user. Configured Supported path " +supportedPrincipalBasedPath+" has no common ancestor with "+intermediatePath);
         } else {
             return intermediatePath.toString();
         }

@@ -84,9 +84,21 @@ public class EnforcePrincipalBasedTest {
                 .forEach(File::delete);
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void testInvalidSupportedPath() {
+        AclManager aclManager = new DefaultAclManager(true, "/an/invalid/supported/path");
+        aclManager.addSystemUser(systemUser);
+
+        RepoPath accessControlledPath = new RepoPath("/content/feature");
+        aclManager.addAcl(systemUser.getId(), new AccessControlEntry(true, "jcr:read", accessControlledPath , false));
+
+        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+
+    }
+
     @Test
     public void testResourceBasedConversionWithoutForce() throws RepoInitParsingException {
-        AclManager aclManager = new DefaultAclManager(false, "/home/users/system/cq:services"){
+        AclManager aclManager = new DefaultAclManager(false, "/home/users/system/some/subtree"){
             @Override
             protected @Nullable String computePathWithTypes(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
                 return "/content/feature(sling:Folder)";
@@ -95,7 +107,7 @@ public class EnforcePrincipalBasedTest {
         aclManager.addSystemUser(systemUser);
 
         RepoPath accessControlledPath = new RepoPath("/content/feature");
-        aclManager.addAcl("user1", new AccessControlEntry(true, "jcr:read", accessControlledPath , false));
+        aclManager.addAcl(systemUser.getId(), new AccessControlEntry(true, "jcr:read", accessControlledPath , false));
 
         aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
 
@@ -103,11 +115,11 @@ public class EnforcePrincipalBasedTest {
         assertNotNull(repoinitExtension);
 
         String expected =
-                "create service user user1 with path /home/users/system/some/subtree/intermediate" + System.lineSeparator() +
-                        "create path /content/feature(sling:Folder)" + System.lineSeparator() +
-                        "set ACL for user1" + System.lineSeparator() +
-                        "allow jcr:read on /content/feature" + System.lineSeparator() +
-                        "end" + System.lineSeparator();
+                "create service user user1 with path /home/users/system/intermediate" + System.lineSeparator() +
+                "create path /content/feature(sling:Folder)" + System.lineSeparator() +
+                "set ACL for user1" + System.lineSeparator() +
+                "allow jcr:read on /content/feature" + System.lineSeparator() +
+                "end" + System.lineSeparator();
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -120,7 +132,7 @@ public class EnforcePrincipalBasedTest {
         feature.getExtensions().clear();
 
         accessControlledPath = new RepoPath("/content/feature");
-        aclManager.addAcl("user1", new AccessControlEntry(true, "jcr:read", accessControlledPath , false));
+        aclManager.addAcl(systemUser.getId(), new AccessControlEntry(true, "jcr:read", accessControlledPath , false));
 
         aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
 
@@ -146,7 +158,7 @@ public class EnforcePrincipalBasedTest {
         aclManager.addSystemUser(systemUser);
 
         RepoPath accessControlledPath = new RepoPath("/content/feature");
-        aclManager.addAcl("user1", new AccessControlEntry(true, "jcr:read", accessControlledPath , false));
+        aclManager.addAcl(systemUser.getId(), new AccessControlEntry(true, "jcr:read", accessControlledPath , false));
 
         aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
 
