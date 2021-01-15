@@ -127,16 +127,19 @@ public final class RepPrincipalPolicyEntryHandlerTest {
     }
 
     @Test
-    public void parseOtherUserHomeSubtree() throws Exception {
-        Extension repoinitExtension = parseAndSetRepoinit("service4", "random4").getRepoinitExtension();
+    public void parseOtherUserHomeMissing() throws Exception {
+        SystemUser systemUser4 = createSystemUser("service4", "random4");
+
+        Extension repoinitExtension = parseAndSetRepoinit(getPolicyPath(systemUser4), systemUser4).getRepoinitExtension();
         assertNotNull(repoinitExtension);
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
 
         String expected =
                 "create service user service4 with path /home/users/system/services" + System.lineSeparator() +
-                "set principal ACL for service4\n" +
-                "allow jcr:read,rep:userManagement on home(service3)\n" +
-                "end\n";
+                "set principal ACL for service4" + System.lineSeparator() +
+                // since service3 is not known to the AclManager it treats the effective path as a regular node.
+                "allow jcr:read,rep:userManagement on /home/users/system/services/random3" + System.lineSeparator() +
+                "end"+ System.lineSeparator();
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -146,15 +149,52 @@ public final class RepPrincipalPolicyEntryHandlerTest {
         assertFalse(operations.isEmpty());
     }
 
-    private ParseResult parseAndSetRepoinit(@NotNull String systemUsersName, @NotNull String nodeName) throws Exception {
-        RepoPath repoPath = new RepoPath("/home/users/system/services/"+nodeName);
-        return parseAndSetRepoinit(new SystemUser(systemUsersName, repoPath, new RepoPath("/home/users/system/services")));
+    @Test
+    public void parseOtherUserHome() throws Exception {
+        SystemUser systemUser3 = createSystemUser("service3", "random3");
+        SystemUser systemUser4 = createSystemUser("service4", "random4");
+
+        Extension repoinitExtension = parseAndSetRepoinit(getPolicyPath(systemUser4), systemUser4, systemUser3).getRepoinitExtension();
+        assertNotNull(repoinitExtension);
+        assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
+
+        String expected =
+                "create service user service4 with path /home/users/system/services" + System.lineSeparator() +
+                "create service user service3 with path /home/users/system/services" + System.lineSeparator() +
+                "set principal ACL for service4" + System.lineSeparator() +
+                "allow jcr:read,rep:userManagement on home(service3)" + System.lineSeparator() +
+                "end"+ System.lineSeparator();
+
+        String actual = repoinitExtension.getText();
+        assertEquals(expected, actual);
+
+        RepoInitParser repoInitParser = new RepoInitParserService();
+        List<Operation> operations = repoInitParser.parse(new StringReader(actual));
+        assertFalse(operations.isEmpty());
     }
 
-    private ParseResult parseAndSetRepoinit(SystemUser systemUser) throws Exception {
-        String path = "/jcr_root"+systemUser.getPath().toString() + "/_rep_principalPolicy.xml";
+    @NotNull
+    private static SystemUser createSystemUser(@NotNull String systemUsersName, @NotNull String nodeName) {
+        RepoPath repoPath = new RepoPath("/home/users/system/services/"+nodeName);
+        return new SystemUser(systemUsersName, repoPath, new RepoPath("/home/users/system/services"));
+    }
+
+    @NotNull
+    private static String getPolicyPath(@NotNull SystemUser systemUser) {
+        return "/jcr_root"+systemUser.getPath().toString() + "/_rep_principalPolicy.xml";
+    }
+
+    private ParseResult parseAndSetRepoinit(@NotNull String systemUsersName, @NotNull String nodeName) throws Exception {
+        SystemUser systemUser = createSystemUser(systemUsersName, nodeName);
+
+        return parseAndSetRepoinit(getPolicyPath(systemUser), systemUser);
+    }
+
+    private ParseResult parseAndSetRepoinit(@NotNull String path, @NotNull SystemUser... systemUsers) throws Exception {
         AclManager aclManager = new DefaultAclManager();
-        aclManager.addSystemUser(systemUser);
+        for (SystemUser systemUser : systemUsers) {
+            aclManager.addSystemUser(systemUser);
+        }
 
         InputStream is = getClass().getResourceAsStream(path.substring(1));
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
