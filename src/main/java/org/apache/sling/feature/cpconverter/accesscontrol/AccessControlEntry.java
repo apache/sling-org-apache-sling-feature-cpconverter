@@ -18,7 +18,6 @@ package org.apache.sling.feature.cpconverter.accesscontrol;
 
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -49,8 +48,8 @@ public final class AccessControlEntry {
         this.isPrincipalBased = isPrincipalBased;
     }
 
-    public void addRestriction(@Nullable String restriction) {
-        if (restriction != null && !restriction.isEmpty()) {
+    public void addRestriction(@NotNull String restriction) {
+        if (!restriction.isEmpty()) {
             restrictions.add(restriction);
         }
     }

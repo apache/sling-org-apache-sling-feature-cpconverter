@@ -72,20 +72,22 @@ public class DefaultAclManager implements AclManager {
         this.supportedPrincipalBasedPath = (supportedPrincipalBasedPath == null) ? null : new RepoPath(supportedPrincipalBasedPath);
     }
 
-
     @Override
     public boolean addUser(@NotNull User user) {
         return users.add(user);
     }
 
+    @Override
     public boolean addGroup(@NotNull Group group) {
         return groups.add(group);
     }
 
+    @Override
     public boolean addSystemUser(@NotNull SystemUser systemUser) {
         return systemUsers.add(systemUser);
     }
 
+    @Override
     public boolean addAcl(@NotNull String systemUser, @NotNull AccessControlEntry acl) {
         if (getSystemUser(systemUser).isPresent()) {
             acls.computeIfAbsent(systemUser, k -> new LinkedList<>()).add(acl);
@@ -94,6 +96,7 @@ public class DefaultAclManager implements AclManager {
         return false;
     }
 
+    @Override
     public void addRepoinitExtension(@NotNull List<VaultPackageAssembler> packageAssemblers, @NotNull FeaturesManager featureManager) {
         try (Formatter formatter = new Formatter()) {
 
@@ -105,52 +108,8 @@ public class DefaultAclManager implements AclManager {
                 formatter.format("%s%n", nodetypeRegistrationSentence);
             }
 
-            // system users
-
-            for (SystemUser systemUser : systemUsers) {
-                // make sure all users are created first
-                formatter.format("create service user %s with path %s%n", systemUser.getId(), calculateIntermediatePath(systemUser.getIntermediatePath()));
-                if (aclIsBelow(systemUser.getPath())) {
-                    throw new IllegalStateException("Detected policy on subpath of system-user: " + systemUser);
-                }
-            }
-
-            for (Group group : groups) {
-                if (aclStartsWith(group.getPath())) {
-                    formatter.format("create group %s with path %s%n", group.getId(), group.getIntermediatePath());
-                }
-                if (aclIsBelow(group.getPath())) {
-                    throw new IllegalStateException("Detected policy on subpath of group: " + group);
-                }
-            }
-
-            for (User user : users) {
-                if (aclStartsWith(user.getPath())) {
-                    throw new IllegalStateException("Detected policy on user: " + user);
-                }
-            }
-
-            if (!enforcePrincipalBased) {
-                Set<RepoPath> paths = acls.entrySet().stream()
-                        .filter(entry -> getSystemUser(entry.getKey()).isPresent())
-                        .map(Entry::getValue)
-                        .flatMap(Collection::stream)
-                        // paths only should/need to be create with resource-based access control
-                        .filter(((Predicate<AccessControlEntry>) AccessControlEntry::isPrincipalBased).negate())
-                        .map(AccessControlEntry::getRepositoryPath)
-                        .collect(Collectors.toSet());
-
-                paths.stream()
-                        .filter(path -> paths.stream().noneMatch(other -> !other.equals(path) && other.startsWith(path)))
-                        .filter(((Predicate<RepoPath>)RepoPath::isRepositoryPath).negate())
-                        .filter(path -> Stream.of(systemUsers, users, groups).flatMap(Collection::stream)
-                                .noneMatch(user -> user.getPath().startsWith(path)))
-                        .map(path -> computePathWithTypes(path, packageAssemblers))
-                        .filter(Objects::nonNull)
-                        .forEach(
-                                path -> formatter.format("create path %s%n", path)
-                        );
-            }
+            addUsersAndGroups(formatter);
+            addPaths(formatter, packageAssemblers);
 
             // add the acls
             acls.forEach((systemUserID, authorizations) ->
@@ -162,6 +121,31 @@ public class DefaultAclManager implements AclManager {
 
             if (!text.isEmpty()) {
                 featureManager.addOrAppendRepoInitExtension(text, null);
+            }
+        }
+    }
+
+    private void addUsersAndGroups(@NotNull Formatter formatter) {
+        for (SystemUser systemUser : systemUsers) {
+            // make sure all system users are created first
+            formatter.format("create service user %s with path %s%n", systemUser.getId(), calculateIntermediatePath(systemUser.getIntermediatePath()));
+            if (aclIsBelow(systemUser.getPath())) {
+                throw new IllegalStateException("Detected policy on subpath of system-user: " + systemUser);
+            }
+        }
+
+        for (Group group : groups) {
+            if (aclStartsWith(group.getPath())) {
+                formatter.format("create group %s with path %s%n", group.getId(), group.getIntermediatePath());
+            }
+            if (aclIsBelow(group.getPath())) {
+                throw new IllegalStateException("Detected policy on subpath of group: " + group);
+            }
+        }
+
+        for (User user : users) {
+            if (aclStartsWith(user.getPath())) {
+                throw new IllegalStateException("Detected policy on user: " + user);
             }
         }
     }
@@ -183,6 +167,30 @@ public class DefaultAclManager implements AclManager {
         }
     }
 
+    private void addPaths(@NotNull Formatter formatter, @NotNull List<VaultPackageAssembler> packageAssemblers) {
+        if (!enforcePrincipalBased) {
+            Set<RepoPath> paths = acls.entrySet().stream()
+                    .filter(entry -> getSystemUser(entry.getKey()).isPresent())
+                    .map(Entry::getValue)
+                    .flatMap(Collection::stream)
+                    // paths only should/need to be create with resource-based access control
+                    .filter(((Predicate<AccessControlEntry>) AccessControlEntry::isPrincipalBased).negate())
+                    .map(AccessControlEntry::getRepositoryPath)
+                    .collect(Collectors.toSet());
+
+            paths.stream()
+                    .filter(path -> paths.stream().noneMatch(other -> !other.equals(path) && other.startsWith(path)))
+                    .filter(((Predicate<RepoPath>)RepoPath::isRepositoryPath).negate())
+                    .filter(path -> Stream.of(systemUsers, users, groups).flatMap(Collection::stream)
+                            .noneMatch(user -> user.getPath().startsWith(path)))
+                    .map(path -> computePathWithTypes(path, packageAssemblers))
+                    .filter(Objects::nonNull)
+                    .forEach(
+                            path -> formatter.format("create path %s%n", path)
+                    );
+        }
+    }
+
     private boolean aclStartsWith(@NotNull RepoPath path) {
         return acls.values().stream().flatMap(List::stream).anyMatch(acl -> acl.getRepositoryPath().startsWith(path));
     }
@@ -194,10 +202,6 @@ public class DefaultAclManager implements AclManager {
     private void addStatements(@NotNull SystemUser systemUser,
                                @NotNull List<AccessControlEntry> authorizations,
                                @NotNull Formatter formatter) {
-        if (authorizations.isEmpty()) {
-            return;
-        }
-
         Map<AccessControlEntry, String> resourceEntries = new LinkedHashMap<>();
         Map<AccessControlEntry, String> principalEntries = new LinkedHashMap<>();
 
@@ -241,10 +245,8 @@ public class DefaultAclManager implements AclManager {
     }
 
     @Override
-    public void addNodetypeRegistrationSentence(@Nullable String nodetypeRegistrationSentence) {
-        if (nodetypeRegistrationSentence != null) {
-            nodetypeRegistrationSentences.add(nodetypeRegistrationSentence);
-        }
+    public void addNodetypeRegistrationSentence(@NotNull String nodetypeRegistrationSentence) {
+        nodetypeRegistrationSentences.add(nodetypeRegistrationSentence);
     }
 
     @Override
@@ -252,6 +254,7 @@ public class DefaultAclManager implements AclManager {
         this.privilegeDefinitions = privilegeDefinitions;
     }
 
+    @Override
     public void reset() {
         systemUsers.clear();
         acls.clear();

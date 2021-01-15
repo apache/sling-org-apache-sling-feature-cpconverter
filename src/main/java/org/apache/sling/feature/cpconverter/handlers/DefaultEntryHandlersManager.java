@@ -36,9 +36,7 @@ public class DefaultEntryHandlersManager implements EntryHandlersManager {
 
     @Override
     public void addEntryHandler(@NotNull EntryHandler handler) {
-        if (handler != null) {
-            entryHandlers.add(handler);
-        }
+        entryHandlers.add(handler);
     }
 
     @Override
@@ -48,7 +46,6 @@ public class DefaultEntryHandlersManager implements EntryHandlersManager {
                 return entryHandler;
             }
         }
-
         return null;
     }
 

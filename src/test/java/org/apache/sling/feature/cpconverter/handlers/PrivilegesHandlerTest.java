@@ -16,15 +16,6 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
-
-import java.util.Arrays;
-
 import org.apache.jackrabbit.vault.fs.config.DefaultMetaInf;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
@@ -39,6 +30,15 @@ import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.Collections;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 public class PrivilegesHandlerTest {
 
@@ -87,7 +87,7 @@ public class PrivilegesHandlerTest {
 
         handler.handle(path, archive, entry, converter);
 
-        converter.getAclManager().addRepoinitExtension(Arrays.asList(packageAssembler), featuresManager);
+        converter.getAclManager().addRepoinitExtension(Collections.singletonList(packageAssembler), featuresManager);
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);

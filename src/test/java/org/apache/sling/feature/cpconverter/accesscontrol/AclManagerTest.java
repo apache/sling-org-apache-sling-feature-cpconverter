@@ -37,11 +37,14 @@ import java.io.File;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -83,7 +86,7 @@ public class AclManagerTest {
         FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
         when(fm.getTargetFeature()).thenReturn(feature);
 
-        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+        aclManager.addRepoinitExtension(Collections.singletonList(assembler), fm);
 
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
@@ -125,7 +128,7 @@ public class AclManagerTest {
         FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
         when(fm.getTargetFeature()).thenReturn(feature);
 
-        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+        aclManager.addRepoinitExtension(Collections.singletonList(assembler), fm);
 
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
@@ -147,7 +150,7 @@ public class AclManagerTest {
     }
 
     @Test
-    public void testAddACLforUnknownUser() throws RepoInitParsingException {
+    public void testAddACLforUnknownUser() {
         // we expect this acl to not show up because the user is unknown
         aclManager.addAcl("acs-commons-on-deploy-scripts-service", newAcl(true, "jcr:read,crx:replicate,jcr:removeNode", "/home/users/system"));
 
@@ -158,7 +161,7 @@ public class AclManagerTest {
         FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
         when(fm.getTargetFeature()).thenReturn(feature);
 
-        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+        aclManager.addRepoinitExtension(Collections.singletonList(assembler), fm);
 
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
@@ -177,7 +180,7 @@ public class AclManagerTest {
         FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
         when(fm.getTargetFeature()).thenReturn(feature);
 
-        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+        aclManager.addRepoinitExtension(Collections.singletonList(assembler), fm);
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
@@ -210,7 +213,7 @@ public class AclManagerTest {
         FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
         when(fm.getTargetFeature()).thenReturn(feature);
 
-        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+        aclManager.addRepoinitExtension(Collections.singletonList(assembler), fm);
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
@@ -240,7 +243,7 @@ public class AclManagerTest {
         FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
         when(fm.getTargetFeature()).thenReturn(feature);
 
-        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+        aclManager.addRepoinitExtension(Collections.singletonList(assembler), fm);
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
@@ -268,7 +271,7 @@ public class AclManagerTest {
 
         FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
         when(fm.getTargetFeature()).thenReturn(feature);
-        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+        aclManager.addRepoinitExtension(Collections.singletonList(assembler), fm);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -283,7 +286,7 @@ public class AclManagerTest {
 
         FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
         when(fm.getTargetFeature()).thenReturn(feature);
-        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+        aclManager.addRepoinitExtension(Collections.singletonList(assembler), fm);
     }
 
     @Test
@@ -299,7 +302,7 @@ public class AclManagerTest {
         FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
         when(fm.getTargetFeature()).thenReturn(feature);
 
-        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+        aclManager.addRepoinitExtension(Collections.singletonList(assembler), fm);
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
@@ -327,7 +330,7 @@ public class AclManagerTest {
         FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
         when(fm.getTargetFeature()).thenReturn(feature);
 
-        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+        aclManager.addRepoinitExtension(Collections.singletonList(assembler), fm);
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);

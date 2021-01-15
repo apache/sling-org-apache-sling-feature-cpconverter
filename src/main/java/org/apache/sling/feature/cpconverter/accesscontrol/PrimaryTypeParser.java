@@ -18,7 +18,6 @@ package org.apache.sling.feature.cpconverter.accesscontrol;
 
 import org.apache.sling.feature.cpconverter.shared.AbstractJcrNodeParser;
 import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
 
 final class PrimaryTypeParser extends AbstractJcrNodeParser<String> {
 
@@ -27,14 +26,12 @@ final class PrimaryTypeParser extends AbstractJcrNodeParser<String> {
     }
 
     @Override
-    protected void onJcrRootNode(String uri, String localName, String qName, Attributes attributes, String primaryType)
-            throws SAXException {
+    protected void onJcrRootNode(String uri, String localName, String qName, Attributes attributes, String primaryType) {
         detectedPrimaryType = primaryType;
     }
 
     @Override
-    protected void onJcrRootElement(String uri, String localName, String qName, Attributes attributes)
-            throws SAXException {
+    protected void onJcrRootElement(String uri, String localName, String qName, Attributes attributes) {
         // not needed
     }
 

@@ -58,14 +58,14 @@ public abstract class AbstractJcrNodeParser<O> extends DefaultHandler {
         }
     }
 
-    protected void onJcrRootNode(String uri, String localName, String qName, Attributes attributes, String primaryType) throws SAXException {
+    protected void onJcrRootNode(String uri, String localName, String qName, Attributes attributes, String primaryType) {
         if (this.primaryTypes.contains(primaryType)) {
             detectedPrimaryType = primaryType;
             onJcrRootElement(uri, localName, qName, attributes);
         }
     }
 
-    protected abstract void onJcrRootElement(String uri, String localName, String qName, Attributes attributes) throws SAXException;
+    protected abstract void onJcrRootElement(String uri, String localName, String qName, Attributes attributes);
 
     protected abstract O getParsingResult();
 }

@@ -16,8 +16,16 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
-import static java.util.Objects.requireNonNull;
-import static org.apache.jackrabbit.vault.packaging.PackageProperties.NAME_VERSION;
+import org.apache.felix.utils.manifest.Clause;
+import org.apache.felix.utils.manifest.Parser;
+import org.apache.jackrabbit.vault.fs.io.Archive;
+import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
+import org.apache.sling.feature.ArtifactId;
+import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.artifacts.InputStreamArtifactWriter;
+import org.codehaus.plexus.util.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.osgi.framework.Constants;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,18 +37,8 @@ import java.util.jar.Manifest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.felix.utils.manifest.Clause;
-import org.apache.felix.utils.manifest.Parser;
-import org.apache.jackrabbit.vault.fs.io.Archive;
-import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
-import org.apache.sling.feature.ArtifactId;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.artifacts.InputStreamArtifactWriter;
-import org.codehaus.plexus.util.StringUtils;
-import org.jetbrains.annotations.NotNull;
-import org.osgi.framework.Constants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.util.Objects.requireNonNull;
+import static org.apache.jackrabbit.vault.packaging.PackageProperties.NAME_VERSION;
 
 public final class BundleEntryHandler extends AbstractRegexEntryHandler {
 
@@ -57,8 +55,6 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
     private static final String BUNDLE_VERSION = "Bundle-Version";
 
     private static final String JAR_TYPE = "jar";
-
-    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final Pattern pomPropertiesPattern = Pattern.compile("META-INF/maven/[^/]+/[^/]+/pom.properties");
 
