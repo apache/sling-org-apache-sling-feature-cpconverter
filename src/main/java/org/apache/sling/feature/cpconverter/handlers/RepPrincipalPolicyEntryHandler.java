@@ -91,12 +91,10 @@ public final class RepPrincipalPolicyEntryHandler extends AbstractPolicyEntryHan
                     } else {
                         hasRejectedNodes = true;
                     }
-                } else if (REP_RESTRICTIONS.equals(primaryType) && !aces.isEmpty()) {
-                    if (processCurrentAcl) {
-                        AccessControlEntry ace = aces.peek();
-                        aces.add(ace);
-                        addRestrictions(ace, attributes);
-                    }
+                } else if (REP_RESTRICTIONS.equals(primaryType) && !aces.isEmpty() && processCurrentAcl) {
+                    AccessControlEntry ace = aces.peek();
+                    aces.add(ace);
+                    addRestrictions(ace, attributes);
                 }
             } else {
                 super.startElement(uri, localName, qName, attributes);

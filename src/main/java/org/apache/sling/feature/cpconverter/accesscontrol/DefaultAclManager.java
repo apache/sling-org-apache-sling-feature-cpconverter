@@ -210,16 +210,12 @@ public final class DefaultAclManager implements AclManager {
 
         if (!principalEntries.isEmpty()) {
             formatter.format("set principal ACL for %s%n", systemUser.getId());
-            principalEntries.forEach((entry, path) -> {
-                writeEntry(entry, path, formatter);
-            });
+            principalEntries.forEach((entry, path) -> writeEntry(entry, path, formatter));
             formatter.format("end%n");
         }
         if (!enforcePrincipalBased && !resourceEntries.isEmpty()) {
             formatter.format("set ACL for %s%n", systemUser.getId());
-            resourceEntries.forEach((entry, path) -> {
-                writeEntry(entry, path, formatter);
-            });
+            resourceEntries.forEach((entry, path) -> writeEntry(entry, path, formatter));
             formatter.format("end%n");
         }
     }
