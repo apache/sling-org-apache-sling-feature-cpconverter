@@ -194,9 +194,6 @@ public final class DefaultAclManager implements AclManager {
             return;
         }
 
-
-        // TODO: generate 2 set of access control entries: principal-based und resource-based.
-        // TODO: if 'enforce-principal-based' is turned on all entries should be generated as prinicpal-based
         Map<AccessControlEntry, String> resourceEntries = new LinkedHashMap<>();
         Map<AccessControlEntry, String> principalEntries = new LinkedHashMap<>();
 
