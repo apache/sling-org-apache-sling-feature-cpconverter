@@ -19,7 +19,6 @@ package org.apache.sling.feature.cpconverter.accesscontrol;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.sling.feature.cpconverter.shared.AbstractJcrNodeParser;
 import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
 
 final class MixinParser extends AbstractJcrNodeParser<String> {
     private String mixins;
@@ -34,8 +33,7 @@ final class MixinParser extends AbstractJcrNodeParser<String> {
     }
 
     @Override
-    protected void onJcrRootElement(String uri, String localName, String qName, Attributes attributes)
-            throws SAXException {
+    protected void onJcrRootElement(String uri, String localName, String qName, Attributes attributes) {
         // not needed
     }
 

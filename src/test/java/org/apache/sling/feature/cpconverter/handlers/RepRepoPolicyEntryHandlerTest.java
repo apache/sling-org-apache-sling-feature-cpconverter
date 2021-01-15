@@ -17,7 +17,6 @@
 package org.apache.sling.feature.cpconverter.handlers;
 
 import org.apache.sling.feature.Extension;
-import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.SystemUser;
@@ -34,9 +33,7 @@ import java.io.OutputStream;
 import java.io.StringReader;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class RepRepoPolicyEntryHandlerTest {

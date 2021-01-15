@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.jackrabbit.vault.fs.io.ImportOptions;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -47,7 +48,7 @@ public class NodeTypesDetectionTest {
 
         new BaseVaultPackageScanner(true) {
 
-            protected void addCdnPattern(Pattern cndPattern) {
+            protected void addCdnPattern(@NotNull Pattern cndPattern) {
                 detectedCndFiles.add(cndPattern.pattern());
             }
 
