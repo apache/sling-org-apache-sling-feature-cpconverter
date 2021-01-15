@@ -107,23 +107,8 @@ public final class RepPrincipalPolicyEntryHandlerTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void parseUserHome() throws Exception {
-        Extension repoinitExtension = parseAndSetRepoinit("service3", "random3").getRepoinitExtension();
-        assertNotNull(repoinitExtension);
-        assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
-
-        String expected =
-                "create service user service3 with path /home/users/system/services" + System.lineSeparator() +
-                        "set principal ACL for service3\n" +
-                        "allow jcr:all on home(service3)/subtree\n" +
-                        "end\n";
-
-        String actual = repoinitExtension.getText();
-        assertEquals(expected, actual);
-
-        RepoInitParser repoInitParser = new RepoInitParserService();
-        List<Operation> operations = repoInitParser.parse(new StringReader(actual));
-        assertFalse(operations.isEmpty());
+    public void parsePolicyInSubtree() throws Exception {
+        parseAndSetRepoinit("service3", "random3").getRepoinitExtension();
     }
 
     @Test
