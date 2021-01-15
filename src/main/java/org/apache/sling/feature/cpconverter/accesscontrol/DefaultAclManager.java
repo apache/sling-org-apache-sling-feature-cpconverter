@@ -51,6 +51,9 @@ public final class DefaultAclManager implements AclManager {
 
     private static final String CONTENT_XML_FILE_NAME = ".content.xml";
 
+    private final boolean enforcePrincipalBased;
+    private RepoPath supportedPrincipalBasedPath;
+
     private final Set<SystemUser> systemUsers = new LinkedHashSet<>();
     private final Set<Group> groups = new LinkedHashSet<>();
     private final Set<User> users = new LinkedHashSet<>();
@@ -60,6 +63,15 @@ public final class DefaultAclManager implements AclManager {
     private final List<String> nodetypeRegistrationSentences = new LinkedList<>();
 
     private volatile PrivilegeDefinitions privilegeDefinitions;
+
+    public DefaultAclManager() {
+        this(false, null);
+    }
+    public DefaultAclManager(boolean enforcePrincipalBased, @Nullable String supportedPrincipalBasedPath) {
+        this.enforcePrincipalBased = enforcePrincipalBased;
+        this.supportedPrincipalBasedPath = (supportedPrincipalBasedPath == null) ? null : new RepoPath(supportedPrincipalBasedPath);
+    }
+
 
     @Override
     public boolean addUser(@NotNull User user) {
@@ -118,6 +130,7 @@ public final class DefaultAclManager implements AclManager {
                 }
             }
 
+            // TODO: paths only should/need to be create with resource-based access control
             Set<RepoPath> paths = acls.entrySet().stream()
                     .filter(entry -> getSystemUser(entry.getKey()).isPresent())
                     .map(Entry::getValue)
@@ -136,6 +149,8 @@ public final class DefaultAclManager implements AclManager {
                             path -> formatter.format("create path %s%n", path)
                     );
 
+            // TODO: generate 2 set of access control entries: principal-based und resource-based.
+            // TODO: if 'enforce-principal-based' is turned on all entries should be generated as prinicpal-based
             // add the acls
             acls.forEach((systemUserID, authorizations) ->
                 getSystemUser(systemUserID).ifPresent(systemUser ->

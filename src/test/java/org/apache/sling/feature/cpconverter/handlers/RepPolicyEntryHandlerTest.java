@@ -16,22 +16,14 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
-import org.apache.jackrabbit.vault.fs.io.Archive;
-import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
-import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
-import org.apache.sling.feature.Feature;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.Group;
 import org.apache.sling.feature.cpconverter.accesscontrol.SystemUser;
 import org.apache.sling.feature.cpconverter.accesscontrol.User;
-import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
-import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
-import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.repoinit.parser.RepoInitParser;
 import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
 import org.apache.sling.repoinit.parser.operations.Operation;
@@ -41,9 +33,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.StringReader;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -51,10 +41,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 public final class RepPolicyEntryHandlerTest {
 
@@ -244,7 +232,7 @@ public final class RepPolicyEntryHandlerTest {
                 "allow jcr:read,rep:userManagement on /home/groups/g" + System.lineSeparator() +
                 "end" + System.lineSeparator();
         assertEquals(expected, repoinitExtension.getText());
-        assertTrue(result.excludedAcls.isEmpty());
+        assertTrue(result.getExcludedAcls().isEmpty());
     }
 
     @Test
@@ -272,7 +260,7 @@ public final class RepPolicyEntryHandlerTest {
         String expectedExclusions = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><jcr:root xmlns:jcr=\"http://www.jcp.org/jcr/1.0\" xmlns:rep=\"internal\" jcr:primaryType=\"rep:ACL\">\n" +
                 "    <allow1 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"testgroup\" rep:privileges=\"{Name}[jcr:read]\"/>\n" +
                 "</jcr:root>\n";
-        assertEquals(expectedExclusions, result.excludedAcls);
+        assertEquals(expectedExclusions, result.getExcludedAcls());
     }
 
     @Test(expected = IllegalStateException.class)
@@ -325,24 +313,5 @@ public final class RepPolicyEntryHandlerTest {
     private ParseResult parseAndSetRepoInit(@NotNull String path, @NotNull AclManager aclManager) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         return new ParseResult(TestUtils.createRepoInitExtension(handler, aclManager, path, getClass().getResourceAsStream(path.substring(1)), baos), new String(baos.toByteArray()));
-    }
-
-    private static final class ParseResult {
-
-        private final Extension repoinitExtension;
-        private final String excludedAcls;
-
-        public ParseResult(Extension repoinitExtension, String excludedAcls) {
-            this.repoinitExtension = repoinitExtension;
-            this.excludedAcls = excludedAcls;
-        }
-
-        public Extension getRepoinitExtension() {
-            return repoinitExtension;
-        }
-
-        public String getExcludedAcls() {
-            return excludedAcls;
-        }
     }
 }

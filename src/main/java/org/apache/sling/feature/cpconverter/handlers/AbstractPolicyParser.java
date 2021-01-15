@@ -56,7 +56,7 @@ abstract class AbstractPolicyParser extends AbstractJcrNodeParser<Boolean> {
         this.aclManager = aclManager;
     }
 
-    private static @Nullable String extractValue(@Nullable String expression) {
+    static @Nullable String extractValue(@Nullable String expression) {
         if (expression == null || expression.isEmpty()) {
             return expression;
         }
