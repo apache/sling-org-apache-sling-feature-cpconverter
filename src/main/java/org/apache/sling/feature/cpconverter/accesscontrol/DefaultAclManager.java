@@ -52,7 +52,7 @@ public final class DefaultAclManager implements AclManager {
     private static final String CONTENT_XML_FILE_NAME = ".content.xml";
 
     private final boolean enforcePrincipalBased;
-    private RepoPath supportedPrincipalBasedPath;
+    private final RepoPath supportedPrincipalBasedPath;
 
     private final Set<SystemUser> systemUsers = new LinkedHashSet<>();
     private final Set<Group> groups = new LinkedHashSet<>();
@@ -152,9 +152,9 @@ public final class DefaultAclManager implements AclManager {
 
             // add the acls
             acls.forEach((systemUserID, authorizations) ->
-                getSystemUser(systemUserID).ifPresent(systemUser ->
-                    addStatements(systemUser, authorizations, packageAssemblers, formatter)
-                ));
+                    getSystemUser(systemUserID).ifPresent(systemUser ->
+                            addStatements(systemUser, authorizations, formatter)
+                    ));
 
             String text = formatter.toString();
 
@@ -164,7 +164,7 @@ public final class DefaultAclManager implements AclManager {
         }
     }
 
-    private String calculateIntermediatePath(RepoPath intermediatePath) {
+    private String calculateIntermediatePath(@NotNull RepoPath intermediatePath) {
         if (enforcePrincipalBased && supportedPrincipalBasedPath!= null && !intermediatePath.startsWith(supportedPrincipalBasedPath)) {
             RepoPath parent = supportedPrincipalBasedPath.getParent();
             if (parent.equals(intermediatePath)) {
@@ -178,17 +178,16 @@ public final class DefaultAclManager implements AclManager {
         }
     }
 
-    private boolean aclStartsWith(RepoPath path) {
+    private boolean aclStartsWith(@NotNull RepoPath path) {
         return acls.values().stream().flatMap(List::stream).anyMatch(acl -> acl.getRepositoryPath().startsWith(path));
     }
 
-    private boolean aclIsBelow(RepoPath path) {
+    private boolean aclIsBelow(@NotNull RepoPath path) {
         return acls.values().stream().flatMap(List::stream).anyMatch(acl -> acl.getRepositoryPath().startsWith(path) && !acl.getRepositoryPath().equals(path));
     }
 
     private void addStatements(@NotNull SystemUser systemUser,
                                @NotNull List<AccessControlEntry> authorizations,
-                               @NotNull List<VaultPackageAssembler> packageAssemblers,
                                @NotNull Formatter formatter) {
         if (authorizations.isEmpty()) {
             return;
@@ -199,12 +198,10 @@ public final class DefaultAclManager implements AclManager {
 
         authorizations.forEach(entry -> {
             String path = getRepoInitPath(entry.getRepositoryPath(), systemUser);
-            if (path != null) {
-                if (enforcePrincipalBased || entry.isPrincipalBased()) {
-                    principalEntries.put(entry, path);
-                } else {
-                    resourceEntries.put(entry, path);
-                }
+            if (enforcePrincipalBased || entry.isPrincipalBased()) {
+                principalEntries.put(entry, path);
+            } else {
+                resourceEntries.put(entry, path);
             }
         });
 
@@ -220,7 +217,7 @@ public final class DefaultAclManager implements AclManager {
         }
     }
 
-    private void writeEntry(AccessControlEntry entry, String path, Formatter formatter) {
+    private void writeEntry(@NotNull AccessControlEntry entry, @NotNull String path, @NotNull Formatter formatter) {
         formatter.format("%s %s on %s",
                 entry.getOperation(),
                 entry.getPrivileges(),
@@ -270,7 +267,7 @@ public final class DefaultAclManager implements AclManager {
                     String primary;
                     String mixin;
                     try (FileInputStream input = new FileInputStream(currentContent);
-                        FileInputStream input2 = new FileInputStream(currentContent)) {
+                         FileInputStream input2 = new FileInputStream(currentContent)) {
                         primary = new PrimaryTypeParser().parse(input);
                         mixin = new MixinParser().parse(input2);
                         current += "(" + primary;
@@ -296,7 +293,7 @@ public final class DefaultAclManager implements AclManager {
         return type ? new RepoPath(current).toString() : null;
     }
 
-    @Nullable
+    @NotNull
     private String getRepoInitPath(@NotNull RepoPath path, @NotNull SystemUser systemUser) {
         if (path.isRepositoryPath()) {
             return ":repository";
