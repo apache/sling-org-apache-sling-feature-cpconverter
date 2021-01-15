@@ -60,7 +60,7 @@ public class EnforcePrincipalBasedTest {
 
     @Before
     public void setUp() throws Exception {
-        aclManager = new DefaultAclManager(true, "/home/users/system/cq:services");
+        aclManager = new DefaultAclManager(true, "/home/users/system/some/subtree");
         tempDir = Files.createTempDirectory(getClass().getSimpleName());
 
         assembler = mock(VaultPackageAssembler.class);
@@ -95,7 +95,7 @@ public class EnforcePrincipalBasedTest {
         assertNotNull(repoinitExtension);
 
         String expected =
-                "create service user user1 with path /home/users/system/cq:services/intermediate" + System.lineSeparator() +
+                "create service user user1 with path /home/users/system/some/subtree/intermediate" + System.lineSeparator() +
                 "set principal ACL for user1" + System.lineSeparator() +
                 "allow jcr:read on /content/feature" + System.lineSeparator() +
                 "end" + System.lineSeparator();
@@ -121,7 +121,7 @@ public class EnforcePrincipalBasedTest {
         assertNotNull(repoinitExtension);
 
         String expected =
-                "create service user user1 with path /home/users/system/cq:services/intermediate" + System.lineSeparator() +
+                "create service user user1 with path /home/users/system/some/subtree/intermediate" + System.lineSeparator() +
                         "set principal ACL for user1" + System.lineSeparator() +
                         "allow jcr:read on /content/feature" + System.lineSeparator() +
                         "end" + System.lineSeparator();
@@ -138,7 +138,7 @@ public class EnforcePrincipalBasedTest {
     public void testPrincipalBasedForUserHome() throws RepoInitParsingException {
         aclManager.addSystemUser(systemUser);
 
-        RepoPath accessControlledPath = new RepoPath("/home/users/system/cq:services/intermediate/usernode");
+        RepoPath accessControlledPath = new RepoPath("/home/users/system/some/subtree/intermediate/usernode");
         AccessControlEntry acl = new AccessControlEntry(true, "jcr:read", accessControlledPath, true);
         aclManager.addAcl("user1", acl);
 
@@ -148,7 +148,7 @@ public class EnforcePrincipalBasedTest {
         assertNotNull(repoinitExtension);
 
         String expected =
-                "create service user user1 with path /home/users/system/cq:services/intermediate" + System.lineSeparator() +
+                "create service user user1 with path /home/users/system/some/subtree/intermediate" + System.lineSeparator() +
                 "set principal ACL for user1" + System.lineSeparator() +
                 "allow jcr:read on home(user1)" + System.lineSeparator() +
                 "end" + System.lineSeparator();
