@@ -303,11 +303,11 @@ public class DefaultAclManager implements AclManager {
         if (path.isRepositoryPath()) {
             return ":repository";
         } else if (isHomePath(path, systemUser.getPath())) {
-            return getHomePath(path, systemUser);
+            return getHomePath(systemUser);
         } else {
             AbstractUser other = getOtherUser(path, Stream.of(systemUsers, groups).flatMap(Collection::stream));
             if (other != null) {
-                return getHomePath(path, other);
+                return getHomePath(other);
             }
             // not a special path
             return path.toString();
@@ -315,7 +315,8 @@ public class DefaultAclManager implements AclManager {
     }
 
     private boolean isHomePath(@NotNull RepoPath path, @NotNull RepoPath systemUserPath) {
-        return path.startsWith(new RepoPath(calculateIntermediatePath(systemUserPath)));
+        // ACE located in the subtree are not supported
+        return path.equals(systemUserPath);
     }
 
     @Nullable
@@ -324,14 +325,10 @@ public class DefaultAclManager implements AclManager {
     }
 
     @NotNull
-    private String getHomePath(@NotNull RepoPath path, @NotNull AbstractUser abstractUser) {
-        return getHomePath(path, abstractUser.getPath(), abstractUser.getId());
-    }
-
-    @NotNull
-    private String getHomePath(@NotNull RepoPath path, @NotNull RepoPath userPath, @NotNull String id) {
-        String subpath = (path.equals(new RepoPath(calculateIntermediatePath(userPath))) ? "" : path.toString().substring(userPath.toString().length()));
-        return "home("+id+")"+subpath;
+    private String getHomePath(@NotNull AbstractUser abstractUser) {
+        // since ACEs located in the subtree of a user are not supported by the converter,
+        // there is no need to calculate a potential sub-path to be appended.
+        return "home("+abstractUser.getId()+")";
     }
 
     private static void registerPrivileges(@NotNull PrivilegeDefinitions definitions, @NotNull Formatter formatter) {

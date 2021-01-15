@@ -209,7 +209,7 @@ public class EnforcePrincipalBasedTest {
     public void testPrincipalBasedForUserHome() throws RepoInitParsingException {
         aclManager.addSystemUser(systemUser);
 
-        RepoPath accessControlledPath = new RepoPath("/home/users/system/some/subtree/intermediate/usernode");
+        RepoPath accessControlledPath = systemUser.getPath();
         AccessControlEntry acl = new AccessControlEntry(true, "jcr:read", accessControlledPath, true);
         aclManager.addAcl("user1", acl);
 
