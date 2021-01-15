@@ -25,8 +25,16 @@ import org.jetbrains.annotations.NotNull;
 public final class UsersEntryHandler extends AbstractUserEntryHandler {
 
     public UsersEntryHandler() {
-        // FIXME: SLING-9969
-        super("/jcr_root(/home/users/.*/)\\.content.xml");
+        this("/jcr_root(/home/users/.*/)\\.content.xml");
+    }
+
+    public UsersEntryHandler(@NotNull String regex) {
+        super(regex);
+    }
+
+    @Override
+    public EntryHandler withConfig(@NotNull String config) {
+        return new UsersEntryHandler(config);
     }
 
     @Override

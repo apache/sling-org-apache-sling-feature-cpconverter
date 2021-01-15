@@ -102,6 +102,9 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Option(names = { "--supported-principal-based-path" }, description = "Path supported for principal-based access control setup", required = false)
     private String supportedPrincipalBasedPath = null;
 
+    @Option(names = { "--entry-handler-config" }, description = "Config for entry handlers that support it (classname:<config-string>", required = false)
+    private List<String> entryHandlerConfigs = null;
+
     @Override
     public void run() {
         if (quiet) {
@@ -145,10 +148,19 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
             if (exportsToRegion != null)
                 featuresManager.setExportToAPIRegion(exportsToRegion);
 
+            Map<String, String> entryHandlerConfigsMap = new HashMap<>();
+            if (entryHandlerConfigs != null) {
+                for (String config : entryHandlerConfigs) {
+                    int idx = config.indexOf(':');
+                    if (idx != -1) {
+                        entryHandlerConfigsMap.put(config.substring(0, idx), config.substring(idx + 1));
+                    }
+                }
+            }
             ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation)
                                                              .setFeaturesManager(featuresManager)
                                                              .setBundlesDeployer(new DefaultArtifactsDeployer(artifactsOutputDirectory))
-                                                             .setEntryHandlersManager(new DefaultEntryHandlersManager())
+                                                             .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap))
                                                              .setAclManager(new DefaultAclManager(enforcePrincipalBased, supportedPrincipalBasedPath))
                                                              .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
                                                              .setFailOnMixedPackages(failOnMixedPackages)

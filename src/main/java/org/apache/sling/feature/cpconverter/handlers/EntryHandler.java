@@ -27,4 +27,7 @@ public interface EntryHandler {
 
     void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter) throws Exception;
 
+    default EntryHandler withConfig(@NotNull String config) {
+        return this;
+    }
 }

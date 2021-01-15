@@ -33,7 +33,7 @@ import static org.apache.jackrabbit.JcrConstants.JCR_PRIMARYTYPE;
 public class RepPolicyEntryHandler extends AbstractPolicyEntryHandler {
 
     public RepPolicyEntryHandler() {
-        super("/jcr_root(.*/)_rep_policy.xml");
+        this("/jcr_root(.*/)_rep_policy.xml");
     }
 
     RepPolicyEntryHandler(@NotNull String regex) {
