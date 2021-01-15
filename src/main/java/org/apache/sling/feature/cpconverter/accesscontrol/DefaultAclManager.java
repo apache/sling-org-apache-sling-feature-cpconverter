@@ -109,7 +109,7 @@ public final class DefaultAclManager implements AclManager {
 
             for (SystemUser systemUser : systemUsers) {
                 // make sure all users are created first
-                formatter.format("create service user %s with path %s%n", systemUser.getId(), systemUser.getIntermediatePath());
+                formatter.format("create service user %s with path %s%n", systemUser.getId(), calculateIntermediatePath(systemUser.getIntermediatePath()));
                 if (aclIsBelow(systemUser.getPath())) {
                     throw new IllegalStateException("Detected policy on subpath of system-user: " + systemUser);
                 }
@@ -130,11 +130,12 @@ public final class DefaultAclManager implements AclManager {
                 }
             }
 
-            // TODO: paths only should/need to be create with resource-based access control
             Set<RepoPath> paths = acls.entrySet().stream()
                     .filter(entry -> getSystemUser(entry.getKey()).isPresent())
                     .map(Entry::getValue)
                     .flatMap(Collection::stream)
+                    // paths only should/need to be create with resource-based access control
+                    .filter(((Predicate<AccessControlEntry>) AccessControlEntry::isPrincipalBased).negate())
                     .map(AccessControlEntry::getRepositoryPath)
                     .collect(Collectors.toSet());
 
@@ -149,8 +150,6 @@ public final class DefaultAclManager implements AclManager {
                             path -> formatter.format("create path %s%n", path)
                     );
 
-            // TODO: generate 2 set of access control entries: principal-based und resource-based.
-            // TODO: if 'enforce-principal-based' is turned on all entries should be generated as prinicpal-based
             // add the acls
             acls.forEach((systemUserID, authorizations) ->
                 getSystemUser(systemUserID).ifPresent(systemUser ->
@@ -162,6 +161,20 @@ public final class DefaultAclManager implements AclManager {
             if (!text.isEmpty()) {
                 featureManager.addOrAppendRepoInitExtension(text, null);
             }
+        }
+    }
+
+    private String calculateIntermediatePath(RepoPath intermediatePath) {
+        if (enforcePrincipalBased && supportedPrincipalBasedPath!= null && !intermediatePath.startsWith(supportedPrincipalBasedPath)) {
+            RepoPath parent = supportedPrincipalBasedPath.getParent();
+            if (parent.equals(intermediatePath)) {
+                return supportedPrincipalBasedPath.toString();
+            } else {
+                String relpath = intermediatePath.toString().substring(parent.toString().length());
+                return supportedPrincipalBasedPath.toString() + relpath;
+            }
+        } else {
+            return intermediatePath.toString();
         }
     }
 
@@ -181,30 +194,51 @@ public final class DefaultAclManager implements AclManager {
             return;
         }
 
-        Map<AccessControlEntry, String> entries = new LinkedHashMap<>();
+
+        // TODO: generate 2 set of access control entries: principal-based und resource-based.
+        // TODO: if 'enforce-principal-based' is turned on all entries should be generated as prinicpal-based
+        Map<AccessControlEntry, String> resourceEntries = new LinkedHashMap<>();
+        Map<AccessControlEntry, String> principalEntries = new LinkedHashMap<>();
+
         authorizations.forEach(entry -> {
             String path = getRepoInitPath(entry.getRepositoryPath(), systemUser);
             if (path != null) {
-                entries.put(entry, path);
+                if (enforcePrincipalBased || entry.isPrincipalBased()) {
+                    principalEntries.put(entry, path);
+                } else {
+                    resourceEntries.put(entry, path);
+                }
             }
         });
-        if (!entries.isEmpty()) {
-            formatter.format("set ACL for %s%n", systemUser.getId());
-            entries.forEach((entry, path) -> {
-                formatter.format("%s %s on %s",
-                        entry.getOperation(),
-                        entry.getPrivileges(),
-                        path);
 
-                if (!entry.getRestrictions().isEmpty()) {
-                    formatter.format(" restriction(%s)",
-                            String.join(",", entry.getRestrictions()));
-                }
-
-                formatter.format("%n");
+        if (!principalEntries.isEmpty()) {
+            formatter.format("set principal ACL for %s%n", systemUser.getId());
+            principalEntries.forEach((entry, path) -> {
+                writeEntry(entry, path, formatter);
             });
             formatter.format("end%n");
         }
+        if (!enforcePrincipalBased && !resourceEntries.isEmpty()) {
+            formatter.format("set ACL for %s%n", systemUser.getId());
+            resourceEntries.forEach((entry, path) -> {
+                writeEntry(entry, path, formatter);
+            });
+            formatter.format("end%n");
+        }
+    }
+
+    private void writeEntry(AccessControlEntry entry, String path, Formatter formatter) {
+        formatter.format("%s %s on %s",
+                entry.getOperation(),
+                entry.getPrivileges(),
+                path);
+
+        if (!entry.getRestrictions().isEmpty()) {
+            formatter.format(" restriction(%s)",
+                    String.join(",", entry.getRestrictions()));
+        }
+
+        formatter.format("%n");
     }
 
     private @NotNull Optional<SystemUser> getSystemUser(@NotNull String id) {
@@ -285,8 +319,8 @@ public final class DefaultAclManager implements AclManager {
         }
     }
 
-    private static boolean isHomePath(@NotNull RepoPath path, @NotNull RepoPath systemUserPath) {
-        return path.startsWith(systemUserPath);
+    private boolean isHomePath(@NotNull RepoPath path, @NotNull RepoPath systemUserPath) {
+        return path.startsWith(new RepoPath(calculateIntermediatePath(systemUserPath)));
     }
 
     @Nullable
@@ -295,13 +329,13 @@ public final class DefaultAclManager implements AclManager {
     }
 
     @NotNull
-    private static String getHomePath(@NotNull RepoPath path, @NotNull AbstractUser abstractUser) {
+    private String getHomePath(@NotNull RepoPath path, @NotNull AbstractUser abstractUser) {
         return getHomePath(path, abstractUser.getPath(), abstractUser.getId());
     }
 
     @NotNull
-    private static String getHomePath(@NotNull RepoPath path, @NotNull RepoPath userPath, @NotNull String id) {
-        String subpath = (path.equals(userPath) ? "" : path.toString().substring(userPath.toString().length()));
+    private String getHomePath(@NotNull RepoPath path, @NotNull RepoPath userPath, @NotNull String id) {
+        String subpath = (path.equals(new RepoPath(calculateIntermediatePath(userPath))) ? "" : path.toString().substring(userPath.toString().length()));
         return "home("+id+")"+subpath;
     }
 

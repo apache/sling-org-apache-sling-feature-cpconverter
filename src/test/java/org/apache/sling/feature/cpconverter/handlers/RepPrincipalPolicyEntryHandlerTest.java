@@ -106,7 +106,7 @@ public final class RepPrincipalPolicyEntryHandlerTest {
         assertFalse(operations.isEmpty());
     }
 
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void parseUserHome() throws Exception {
         Extension repoinitExtension = parseAndSetRepoinit("service3", "random3").getRepoinitExtension();
         assertNotNull(repoinitExtension);
