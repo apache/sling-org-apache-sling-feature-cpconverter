@@ -96,6 +96,12 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Option(names = { "-Z", "--fail-on-mixed-packages" }, description = "Fail the conversion if the resulting attached content-package is MIXED type", required = false)
     private boolean failOnMixedPackages = false;
 
+    @Option(names = { "--enforce-principal-based" }, description = "Converts all service user access control entries to principal-based setup", required = false)
+    private boolean enforcePrincipalBased = false;
+
+    @Option(names = { "--supported-principal-based-path" }, description = "Path supported for principal-based access control setup", required = false)
+    private String supportedPrincipalBasedPath = null;
+
     @Override
     public void run() {
         if (quiet) {
@@ -143,7 +149,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                                                              .setFeaturesManager(featuresManager)
                                                              .setBundlesDeployer(new DefaultArtifactsDeployer(artifactsOutputDirectory))
                                                              .setEntryHandlersManager(new DefaultEntryHandlersManager())
-                                                             .setAclManager(new DefaultAclManager())
+                                                             .setAclManager(new DefaultAclManager(enforcePrincipalBased, supportedPrincipalBasedPath))
                                                              .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
                                                              .setFailOnMixedPackages(failOnMixedPackages)
                                                              .setDropContent(true);

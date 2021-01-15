@@ -47,9 +47,12 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public final class DefaultAclManager implements AclManager {
+public class DefaultAclManager implements AclManager {
 
     private static final String CONTENT_XML_FILE_NAME = ".content.xml";
+
+    private final boolean enforcePrincipalBased;
+    private final RepoPath supportedPrincipalBasedPath;
 
     private final Set<SystemUser> systemUsers = new LinkedHashSet<>();
     private final Set<Group> groups = new LinkedHashSet<>();
@@ -60,6 +63,15 @@ public final class DefaultAclManager implements AclManager {
     private final List<String> nodetypeRegistrationSentences = new LinkedList<>();
 
     private volatile PrivilegeDefinitions privilegeDefinitions;
+
+    public DefaultAclManager() {
+        this(false, null);
+    }
+    public DefaultAclManager(boolean enforcePrincipalBased, @Nullable String supportedPrincipalBasedPath) {
+        this.enforcePrincipalBased = enforcePrincipalBased;
+        this.supportedPrincipalBasedPath = (supportedPrincipalBasedPath == null) ? null : new RepoPath(supportedPrincipalBasedPath);
+    }
+
 
     @Override
     public boolean addUser(@NotNull User user) {
@@ -97,7 +109,7 @@ public final class DefaultAclManager implements AclManager {
 
             for (SystemUser systemUser : systemUsers) {
                 // make sure all users are created first
-                formatter.format("create service user %s with path %s%n", systemUser.getId(), systemUser.getIntermediatePath());
+                formatter.format("create service user %s with path %s%n", systemUser.getId(), calculateIntermediatePath(systemUser.getIntermediatePath()));
                 if (aclIsBelow(systemUser.getPath())) {
                     throw new IllegalStateException("Detected policy on subpath of system-user: " + systemUser);
                 }
@@ -118,29 +130,33 @@ public final class DefaultAclManager implements AclManager {
                 }
             }
 
-            Set<RepoPath> paths = acls.entrySet().stream()
-                    .filter(entry -> getSystemUser(entry.getKey()).isPresent())
-                    .map(Entry::getValue)
-                    .flatMap(Collection::stream)
-                    .map(AccessControlEntry::getRepositoryPath)
-                    .collect(Collectors.toSet());
+            if (!enforcePrincipalBased) {
+                Set<RepoPath> paths = acls.entrySet().stream()
+                        .filter(entry -> getSystemUser(entry.getKey()).isPresent())
+                        .map(Entry::getValue)
+                        .flatMap(Collection::stream)
+                        // paths only should/need to be create with resource-based access control
+                        .filter(((Predicate<AccessControlEntry>) AccessControlEntry::isPrincipalBased).negate())
+                        .map(AccessControlEntry::getRepositoryPath)
+                        .collect(Collectors.toSet());
 
-            paths.stream()
-                    .filter(path -> !paths.stream().anyMatch(other -> !other.equals(path) && other.startsWith(path)))
-                    .filter(((Predicate<RepoPath>)RepoPath::isRepositoryPath).negate())
-                    .filter(path -> Stream.of(systemUsers, users, groups).flatMap(Collection::stream)
-                            .noneMatch(user -> user.getPath().startsWith(path)))
-                    .map(path -> computePathWithTypes(path, packageAssemblers))
-                    .filter(Objects::nonNull)
-                    .forEach(
-                            path -> formatter.format("create path %s%n", path)
-                    );
+                paths.stream()
+                        .filter(path -> paths.stream().noneMatch(other -> !other.equals(path) && other.startsWith(path)))
+                        .filter(((Predicate<RepoPath>)RepoPath::isRepositoryPath).negate())
+                        .filter(path -> Stream.of(systemUsers, users, groups).flatMap(Collection::stream)
+                                .noneMatch(user -> user.getPath().startsWith(path)))
+                        .map(path -> computePathWithTypes(path, packageAssemblers))
+                        .filter(Objects::nonNull)
+                        .forEach(
+                                path -> formatter.format("create path %s%n", path)
+                        );
+            }
 
             // add the acls
             acls.forEach((systemUserID, authorizations) ->
-                getSystemUser(systemUserID).ifPresent(systemUser ->
-                    addStatements(systemUser, authorizations, packageAssemblers, formatter)
-                ));
+                    getSystemUser(systemUserID).ifPresent(systemUser ->
+                            addStatements(systemUser, authorizations, formatter)
+                    ));
 
             String text = formatter.toString();
 
@@ -150,46 +166,74 @@ public final class DefaultAclManager implements AclManager {
         }
     }
 
-    private boolean aclStartsWith(RepoPath path) {
+    @NotNull
+    private String calculateIntermediatePath(@NotNull RepoPath intermediatePath) {
+        if (enforcePrincipalBased && supportedPrincipalBasedPath != null && !intermediatePath.startsWith(supportedPrincipalBasedPath)) {
+            RepoPath parent = intermediatePath.getParent();
+            while (parent != null) {
+                if (supportedPrincipalBasedPath.startsWith(parent)) {
+                    String relpath = intermediatePath.toString().substring(parent.toString().length());
+                    return supportedPrincipalBasedPath.toString() + relpath;
+                }
+                parent = parent.getParent();
+            }
+            throw new IllegalStateException("Cannot calculate intermediate path for service user. Configured Supported path " +supportedPrincipalBasedPath+" has no common ancestor with "+intermediatePath);
+        } else {
+            return intermediatePath.toString();
+        }
+    }
+
+    private boolean aclStartsWith(@NotNull RepoPath path) {
         return acls.values().stream().flatMap(List::stream).anyMatch(acl -> acl.getRepositoryPath().startsWith(path));
     }
 
-    private boolean aclIsBelow(RepoPath path) {
+    private boolean aclIsBelow(@NotNull RepoPath path) {
         return acls.values().stream().flatMap(List::stream).anyMatch(acl -> acl.getRepositoryPath().startsWith(path) && !acl.getRepositoryPath().equals(path));
     }
 
     private void addStatements(@NotNull SystemUser systemUser,
                                @NotNull List<AccessControlEntry> authorizations,
-                               @NotNull List<VaultPackageAssembler> packageAssemblers,
                                @NotNull Formatter formatter) {
         if (authorizations.isEmpty()) {
             return;
         }
 
-        Map<AccessControlEntry, String> entries = new LinkedHashMap<>();
+        Map<AccessControlEntry, String> resourceEntries = new LinkedHashMap<>();
+        Map<AccessControlEntry, String> principalEntries = new LinkedHashMap<>();
+
         authorizations.forEach(entry -> {
             String path = getRepoInitPath(entry.getRepositoryPath(), systemUser);
-            if (path != null) {
-                entries.put(entry, path);
+            if (enforcePrincipalBased || entry.isPrincipalBased()) {
+                principalEntries.put(entry, path);
+            } else {
+                resourceEntries.put(entry, path);
             }
         });
-        if (!entries.isEmpty()) {
-            formatter.format("set ACL for %s%n", systemUser.getId());
-            entries.forEach((entry, path) -> {
-                formatter.format("%s %s on %s",
-                        entry.getOperation(),
-                        entry.getPrivileges(),
-                        path);
 
-                if (!entry.getRestrictions().isEmpty()) {
-                    formatter.format(" restriction(%s)",
-                            String.join(",", entry.getRestrictions()));
-                }
-
-                formatter.format("%n");
-            });
+        if (!principalEntries.isEmpty()) {
+            formatter.format("set principal ACL for %s%n", systemUser.getId());
+            principalEntries.forEach((entry, path) -> writeEntry(entry, path, formatter));
             formatter.format("end%n");
         }
+        if (!resourceEntries.isEmpty()) {
+            formatter.format("set ACL for %s%n", systemUser.getId());
+            resourceEntries.forEach((entry, path) -> writeEntry(entry, path, formatter));
+            formatter.format("end%n");
+        }
+    }
+
+    private void writeEntry(@NotNull AccessControlEntry entry, @NotNull String path, @NotNull Formatter formatter) {
+        formatter.format("%s %s on %s",
+                entry.getOperation(),
+                entry.getPrivileges(),
+                path);
+
+        if (!entry.getRestrictions().isEmpty()) {
+            formatter.format(" restriction(%s)",
+                    String.join(",", entry.getRestrictions()));
+        }
+
+        formatter.format("%n");
     }
 
     private @NotNull Optional<SystemUser> getSystemUser(@NotNull String id) {
@@ -215,7 +259,7 @@ public final class DefaultAclManager implements AclManager {
         privilegeDefinitions = null;
     }
 
-    private static @Nullable String computePathWithTypes(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
+     protected @Nullable String computePathWithTypes(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
         path = new RepoPath(PlatformNameFormat.getPlatformPath(path.toString()));
 
         boolean type = false;
@@ -228,7 +272,7 @@ public final class DefaultAclManager implements AclManager {
                     String primary;
                     String mixin;
                     try (FileInputStream input = new FileInputStream(currentContent);
-                        FileInputStream input2 = new FileInputStream(currentContent)) {
+                         FileInputStream input2 = new FileInputStream(currentContent)) {
                         primary = new PrimaryTypeParser().parse(input);
                         mixin = new MixinParser().parse(input2);
                         current += "(" + primary;
@@ -254,24 +298,25 @@ public final class DefaultAclManager implements AclManager {
         return type ? new RepoPath(current).toString() : null;
     }
 
-    @Nullable
+    @NotNull
     private String getRepoInitPath(@NotNull RepoPath path, @NotNull SystemUser systemUser) {
         if (path.isRepositoryPath()) {
             return ":repository";
         } else if (isHomePath(path, systemUser.getPath())) {
-            return getHomePath(path, systemUser);
+            return getHomePath(systemUser);
         } else {
             AbstractUser other = getOtherUser(path, Stream.of(systemUsers, groups).flatMap(Collection::stream));
             if (other != null) {
-                return getHomePath(path, other);
+                return getHomePath(other);
             }
             // not a special path
             return path.toString();
         }
     }
 
-    private static boolean isHomePath(@NotNull RepoPath path, @NotNull RepoPath systemUserPath) {
-        return path.startsWith(systemUserPath);
+    private boolean isHomePath(@NotNull RepoPath path, @NotNull RepoPath systemUserPath) {
+        // ACE located in the subtree are not supported
+        return path.equals(systemUserPath);
     }
 
     @Nullable
@@ -280,14 +325,10 @@ public final class DefaultAclManager implements AclManager {
     }
 
     @NotNull
-    private static String getHomePath(@NotNull RepoPath path, @NotNull AbstractUser abstractUser) {
-        return getHomePath(path, abstractUser.getPath(), abstractUser.getId());
-    }
-
-    @NotNull
-    private static String getHomePath(@NotNull RepoPath path, @NotNull RepoPath userPath, @NotNull String id) {
-        String subpath = (path.equals(userPath) ? "" : path.toString().substring(userPath.toString().length()));
-        return "home("+id+")"+subpath;
+    private String getHomePath(@NotNull AbstractUser abstractUser) {
+        // since ACEs located in the subtree of a user are not supported by the converter,
+        // there is no need to calculate a potential sub-path to be appended.
+        return "home("+abstractUser.getId()+")";
     }
 
     private static void registerPrivileges(@NotNull PrivilegeDefinitions definitions, @NotNull Formatter formatter) {

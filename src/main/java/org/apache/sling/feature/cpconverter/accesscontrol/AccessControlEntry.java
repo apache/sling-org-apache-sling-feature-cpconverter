@@ -36,10 +36,17 @@ public final class AccessControlEntry {
 
     private final List<String> restrictions = new LinkedList<>();
 
+    private final boolean isPrincipalBased;
+
     public AccessControlEntry(boolean isAllow, @NotNull String privileges, @NotNull RepoPath repositoryPath) {
+        this(isAllow, privileges, repositoryPath, false);
+    }
+
+    public AccessControlEntry(boolean isAllow, @NotNull String privileges, @NotNull RepoPath repositoryPath, boolean isPrincipalBased) {
         this.isAllow = isAllow;
         this.privileges = privileges;
         this.repositoryPath = repositoryPath;
+        this.isPrincipalBased = isPrincipalBased;
     }
 
     public void addRestriction(@Nullable String restriction) {
@@ -64,6 +71,10 @@ public final class AccessControlEntry {
         return restrictions;
     }
 
+    public boolean isPrincipalBased() {
+        return isPrincipalBased;
+    }
+
     @Override
     public String toString() {
         return "Acl [isAllow="
@@ -74,6 +85,8 @@ public final class AccessControlEntry {
                + repositoryPath
                + ", restrictions="
                + restrictions
+               + ", isPrincipalBased="
+               + isPrincipalBased
                + "]";
     }
 
