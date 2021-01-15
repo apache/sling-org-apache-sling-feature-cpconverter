@@ -47,7 +47,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public final class DefaultAclManager implements AclManager {
+public class DefaultAclManager implements AclManager {
 
     private static final String CONTENT_XML_FILE_NAME = ".content.xml";
 
@@ -130,25 +130,27 @@ public final class DefaultAclManager implements AclManager {
                 }
             }
 
-            Set<RepoPath> paths = acls.entrySet().stream()
-                    .filter(entry -> getSystemUser(entry.getKey()).isPresent())
-                    .map(Entry::getValue)
-                    .flatMap(Collection::stream)
-                    // paths only should/need to be create with resource-based access control
-                    .filter(((Predicate<AccessControlEntry>) AccessControlEntry::isPrincipalBased).negate())
-                    .map(AccessControlEntry::getRepositoryPath)
-                    .collect(Collectors.toSet());
+            if (!enforcePrincipalBased) {
+                Set<RepoPath> paths = acls.entrySet().stream()
+                        .filter(entry -> getSystemUser(entry.getKey()).isPresent())
+                        .map(Entry::getValue)
+                        .flatMap(Collection::stream)
+                        // paths only should/need to be create with resource-based access control
+                        .filter(((Predicate<AccessControlEntry>) AccessControlEntry::isPrincipalBased).negate())
+                        .map(AccessControlEntry::getRepositoryPath)
+                        .collect(Collectors.toSet());
 
-            paths.stream()
-                    .filter(path -> paths.stream().noneMatch(other -> !other.equals(path) && other.startsWith(path)))
-                    .filter(((Predicate<RepoPath>)RepoPath::isRepositoryPath).negate())
-                    .filter(path -> Stream.of(systemUsers, users, groups).flatMap(Collection::stream)
-                            .noneMatch(user -> user.getPath().startsWith(path)))
-                    .map(path -> computePathWithTypes(path, packageAssemblers))
-                    .filter(Objects::nonNull)
-                    .forEach(
-                            path -> formatter.format("create path %s%n", path)
-                    );
+                paths.stream()
+                        .filter(path -> paths.stream().noneMatch(other -> !other.equals(path) && other.startsWith(path)))
+                        .filter(((Predicate<RepoPath>)RepoPath::isRepositoryPath).negate())
+                        .filter(path -> Stream.of(systemUsers, users, groups).flatMap(Collection::stream)
+                                .noneMatch(user -> user.getPath().startsWith(path)))
+                        .map(path -> computePathWithTypes(path, packageAssemblers))
+                        .filter(Objects::nonNull)
+                        .forEach(
+                                path -> formatter.format("create path %s%n", path)
+                        );
+            }
 
             // add the acls
             acls.forEach((systemUserID, authorizations) ->
@@ -210,7 +212,7 @@ public final class DefaultAclManager implements AclManager {
             principalEntries.forEach((entry, path) -> writeEntry(entry, path, formatter));
             formatter.format("end%n");
         }
-        if (!enforcePrincipalBased && !resourceEntries.isEmpty()) {
+        if (!resourceEntries.isEmpty()) {
             formatter.format("set ACL for %s%n", systemUser.getId());
             resourceEntries.forEach((entry, path) -> writeEntry(entry, path, formatter));
             formatter.format("end%n");
@@ -254,7 +256,7 @@ public final class DefaultAclManager implements AclManager {
         privilegeDefinitions = null;
     }
 
-    private static @Nullable String computePathWithTypes(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
+     protected @Nullable String computePathWithTypes(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
         path = new RepoPath(PlatformNameFormat.getPlatformPath(path.toString()));
 
         boolean type = false;

@@ -27,6 +27,8 @@ import org.apache.sling.repoinit.parser.RepoInitParser;
 import org.apache.sling.repoinit.parser.RepoInitParsingException;
 import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
 import org.apache.sling.repoinit.parser.operations.Operation;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -80,6 +82,63 @@ public class EnforcePrincipalBasedTest {
                 .sorted(Comparator.reverseOrder())
                 .map(Path::toFile)
                 .forEach(File::delete);
+    }
+
+    @Test
+    public void testResourceBasedConversionWithoutForce() throws RepoInitParsingException {
+        AclManager aclManager = new DefaultAclManager(false, "/home/users/system/cq:services"){
+            @Override
+            protected @Nullable String computePathWithTypes(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
+                return "/content/feature(sling:Folder)";
+            }
+        };
+        aclManager.addSystemUser(systemUser);
+
+        RepoPath accessControlledPath = new RepoPath("/content/feature");
+        aclManager.addAcl("user1", new AccessControlEntry(true, "jcr:read", accessControlledPath , false));
+
+        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+
+        Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+        assertNotNull(repoinitExtension);
+
+        String expected =
+                "create service user user1 with path /home/users/system/some/subtree/intermediate" + System.lineSeparator() +
+                        "create path /content/feature(sling:Folder)" + System.lineSeparator() +
+                        "set ACL for user1" + System.lineSeparator() +
+                        "allow jcr:read on /content/feature" + System.lineSeparator() +
+                        "end" + System.lineSeparator();
+
+        String actual = repoinitExtension.getText();
+        assertEquals(expected, actual);
+
+        RepoInitParser repoInitParser = new RepoInitParserService();
+        List<Operation> operations = repoInitParser.parse(new StringReader(actual));
+        assertFalse(operations.isEmpty());
+
+        aclManager = EnforcePrincipalBasedTest.this.aclManager;aclManager.addSystemUser(systemUser);
+        feature.getExtensions().clear();
+
+        accessControlledPath = new RepoPath("/content/feature");
+        aclManager.addAcl("user1", new AccessControlEntry(true, "jcr:read", accessControlledPath , false));
+
+        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+
+        repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+        assertNotNull(repoinitExtension);
+
+        expected =
+                "create service user user1 with path /home/users/system/some/subtree/intermediate" + System.lineSeparator() +
+                        "set principal ACL for user1" + System.lineSeparator() +
+                        "allow jcr:read on /content/feature" + System.lineSeparator() +
+                        "end" + System.lineSeparator();
+
+        actual = repoinitExtension.getText();
+        assertEquals(expected, actual);
+
+        repoInitParser = new RepoInitParserService();
+        operations = repoInitParser.parse(new StringReader(actual));
+        assertFalse(operations.isEmpty());
     }
 
     @Test
