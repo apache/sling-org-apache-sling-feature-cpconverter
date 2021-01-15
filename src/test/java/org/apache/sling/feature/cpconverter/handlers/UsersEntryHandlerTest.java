@@ -21,13 +21,22 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.io.StringReader;
 import java.util.List;
 
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
+import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
+import org.apache.sling.feature.cpconverter.accesscontrol.SystemUser;
+import org.apache.sling.feature.cpconverter.accesscontrol.User;
 import org.apache.sling.repoinit.parser.RepoInitParser;
 import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
 import org.apache.sling.repoinit.parser.operations.Operation;
@@ -99,6 +108,15 @@ public class UsersEntryHandlerTest {
         assertFalse(actual.contains("/jcr_root/home/users/system/_my_feature"));
         assertFalse(actual.contains("/home/users/system/_my_feature"));
         assertTrue(actual.contains("/home/users/system/my:feature"));
+    }
+
+    @Test
+    public void testUser() throws Exception {
+        String path = "/jcr_root/home/users/a/author/.content.xml";
+        AclManager aclManager = mock(AclManager.class);
+        TestUtils.createRepoInitExtension(usersEntryHandler, aclManager, path, getClass().getResourceAsStream(path.substring(1)));
+        verify(aclManager, times(1)).addUser(any(User.class));
+        verify(aclManager, never()).addSystemUser(any(SystemUser.class));
     }
 
     private Extension parseAndSetRepoinit(String path) throws Exception {
