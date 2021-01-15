@@ -140,7 +140,7 @@ public final class DefaultAclManager implements AclManager {
                     .collect(Collectors.toSet());
 
             paths.stream()
-                    .filter(path -> !paths.stream().anyMatch(other -> !other.equals(path) && other.startsWith(path)))
+                    .filter(path -> paths.stream().noneMatch(other -> !other.equals(path) && other.startsWith(path)))
                     .filter(((Predicate<RepoPath>)RepoPath::isRepositoryPath).negate())
                     .filter(path -> Stream.of(systemUsers, users, groups).flatMap(Collection::stream)
                             .noneMatch(user -> user.getPath().startsWith(path)))
