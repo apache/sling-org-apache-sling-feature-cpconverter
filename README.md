@@ -374,7 +374,9 @@ All handlers are managed by the [org.apache.sling.feature.cpconverter.handlers.E
 | Node types | `/META-INF/vault/nodetypes\.cnd` | [org.apache.sling.feature.cpconverter.handlers.NodeTypesEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/NodeTypesEntryHandler.java) |
 | Privileges | `/META-INF/vault/privileges\.xml` | [org.apache.sling.feature.cpconverter.handlers.PrivilegesHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/PrivilegesHandler.java) |
 | Rep Policy | `/jcr_root(*/)_rep_policy.xml` | [org.apache.sling.feature.cpconverter.handlers.RepPolicyEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/RepPolicyEntryHandler.java) |
-| System Users | `/jcr_root(/home/users/*/)\.content.xml` | [org.apache.sling.feature.cpconverter.handlers.SystemUsersEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/SystemUsersEntryHandler.java) |
+| Rep Repo Policy | `/jcr_root(*/)_rep_policy.xml` | [org.apache.sling.feature.cpconverter.handlers.RepRepoPolicyEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/RepRepoPolicyEntryHandler.java) |
+| Rep Principal Policy | `/jcr_root(/)_rep_repoPolicy.xml` | [org.apache.sling.feature.cpconverter.handlers.RepPrincipalPolicyEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/RepPrincipalPolicyEntryHandler.java) |
+| (System/Group) Users | `/jcr_root(/home/users/*/)\.content.xml` | [org.apache.sling.feature.cpconverter.handlers.UsersEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/UsersEntryHandler.java) |
 | Sub content-packages | `/jcr_root/(etc/packages\|apps/*/install[\.${runMode}]/*.zip` | [org.apache.sling.feature.cpconverter.handlers.ContentPackageEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/ContentPackageEntryHandler.java) |
 | OSGi Bundle | `/jcr_root/(apps\|libs)/*/install[\.${runMode}]/[startLevel/]*.jar` | [org.apache.sling.feature.cpconverter.handlers.BundleEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/BundleEntryHandler.java) |
 | OSGi Configuration | `/jcr_root/(apps\|libs)/*/config[\.${runMode}]/*.config` | [org.apache.sling.feature.cpconverter.handlers.ConfigurationEntryHandler](./src/main/java/org/apache/sling/feature/cpconverter/handlers/ConfigurationEntryHandler.java) |
@@ -520,6 +522,10 @@ Apache Sling Content Package to Sling Feature converter
   -Z, --fail-on-mixed-packages
                             Fail the conversion if the resulting attached
                               content-package is MIXED type
+  --enforce-principal-based
+                            Converts all service user access control entries to principal-based setup 
+  --supported-principal-based-path
+                            Path supported for principal-based access control setup
 Copyright(c) 2019 The Apache Software Foundation.
 ```
 
