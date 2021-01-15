@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Arrays;
+import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -71,7 +71,7 @@ class TestUtils {
 
         when(packageAssembler.getEntry(anyString())).thenReturn(new File("itdoesnotexist"));
 
-        converter.getAclManager().addRepoinitExtension(Arrays.asList(packageAssembler), featuresManager);
+        converter.getAclManager().addRepoinitExtension(Collections.singletonList(packageAssembler), featuresManager);
         return feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
     }
 }

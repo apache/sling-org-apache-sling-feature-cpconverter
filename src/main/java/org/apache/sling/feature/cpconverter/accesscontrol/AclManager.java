@@ -34,11 +34,11 @@ public interface AclManager {
 
     boolean addSystemUser(@NotNull SystemUser systemUser);
 
-    boolean addAcl(String systemUser, AccessControlEntry acl);
+    boolean addAcl(@NotNull String systemUser, @NotNull AccessControlEntry acl);
 
-    void addRepoinitExtension(List<VaultPackageAssembler> packageAssemblers, FeaturesManager featureManager);
+    void addRepoinitExtension(@NotNull List<VaultPackageAssembler> packageAssemblers, @NotNull FeaturesManager featureManager);
 
-    void addNodetypeRegistrationSentence(String nodetypeRegistrationSentence);
+    void addNodetypeRegistrationSentence(@NotNull String nodetypeRegistrationSentence);
 
     void addPrivilegeDefinitions(@NotNull PrivilegeDefinitions privilegeDefinitions);
 

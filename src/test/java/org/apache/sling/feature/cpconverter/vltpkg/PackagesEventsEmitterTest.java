@@ -16,32 +16,23 @@
  */
 package org.apache.sling.feature.cpconverter.vltpkg;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.apache.jackrabbit.vault.packaging.Dependency;
+import org.apache.jackrabbit.vault.packaging.PackageException;
+import org.apache.jackrabbit.vault.packaging.PackageId;
+import org.apache.jackrabbit.vault.packaging.PackageType;
+import org.apache.jackrabbit.vault.packaging.VaultPackage;
+import org.junit.Test;
+
+import javax.jcr.RepositoryException;
+import java.io.File;
+import java.io.StringWriter;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.StringWriter;
-import java.util.Calendar;
-
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
-
-import org.apache.jackrabbit.vault.fs.config.MetaInf;
-import org.apache.jackrabbit.vault.fs.io.AccessControlHandling;
-import org.apache.jackrabbit.vault.fs.io.Archive;
-import org.apache.jackrabbit.vault.fs.io.ImportOptions;
-import org.apache.jackrabbit.vault.packaging.Dependency;
-import org.apache.jackrabbit.vault.packaging.PackageException;
-import org.apache.jackrabbit.vault.packaging.PackageId;
-import org.apache.jackrabbit.vault.packaging.PackageProperties;
-import org.apache.jackrabbit.vault.packaging.PackageType;
-import org.apache.jackrabbit.vault.packaging.SubPackageHandling;
-import org.apache.jackrabbit.vault.packaging.VaultPackage;
-import org.junit.Test;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class PackagesEventsEmitterTest {
 

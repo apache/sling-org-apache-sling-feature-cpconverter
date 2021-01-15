@@ -17,7 +17,6 @@
 package org.apache.sling.feature.cpconverter.handlers;
 
 import org.apache.sling.feature.Extension;
-import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.SystemUser;
@@ -37,7 +36,6 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public final class RepPrincipalPolicyEntryHandlerTest {
@@ -102,7 +100,7 @@ public final class RepPrincipalPolicyEntryHandlerTest {
 
     @Test(expected = IllegalStateException.class)
     public void parsePolicyInSubtree() throws Exception {
-        parseAndSetRepoinit("service3", "random3").getRepoinitExtension();
+        parseAndSetRepoinit("service3", "random3");
     }
 
     @Test

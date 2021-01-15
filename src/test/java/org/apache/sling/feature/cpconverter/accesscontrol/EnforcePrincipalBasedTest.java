@@ -38,13 +38,14 @@ import java.io.File;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -92,8 +93,21 @@ public class EnforcePrincipalBasedTest {
         RepoPath accessControlledPath = new RepoPath("/content/feature");
         aclManager.addAcl(systemUser.getId(), new AccessControlEntry(true, "jcr:read", accessControlledPath , false));
 
-        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+        aclManager.addRepoinitExtension(Collections.singletonList(assembler), fm);
+    }
 
+    @Test
+    public void testMissingSupportedPath() {
+        AclManager aclManager = new DefaultAclManager(true, null);
+        aclManager.addSystemUser(systemUser);
+
+        RepoPath accessControlledPath = new RepoPath("/content/feature");
+        aclManager.addAcl(systemUser.getId(), new AccessControlEntry(true, "jcr:read", accessControlledPath , false));
+
+        aclManager.addRepoinitExtension(Collections.singletonList(assembler), fm);
+        String txt = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT).getText();
+        assertFalse(txt.contains("create service user user1 with path /home/users/system/some/subtree/intermediate"));
+        assertTrue(txt.contains("create service user user1 with path " + systemUser.getIntermediatePath()));
     }
 
     @Test
@@ -109,13 +123,13 @@ public class EnforcePrincipalBasedTest {
         RepoPath accessControlledPath = new RepoPath("/content/feature");
         aclManager.addAcl(systemUser.getId(), new AccessControlEntry(true, "jcr:read", accessControlledPath , false));
 
-        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+        aclManager.addRepoinitExtension(Collections.singletonList(assembler), fm);
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
 
         String expected =
-                "create service user user1 with path /home/users/system/intermediate" + System.lineSeparator() +
+                "create service user user1 with path " + systemUser.getIntermediatePath() + System.lineSeparator() +
                 "create path /content/feature(sling:Folder)" + System.lineSeparator() +
                 "set ACL for user1" + System.lineSeparator() +
                 "allow jcr:read on /content/feature" + System.lineSeparator() +
@@ -134,7 +148,7 @@ public class EnforcePrincipalBasedTest {
         accessControlledPath = new RepoPath("/content/feature");
         aclManager.addAcl(systemUser.getId(), new AccessControlEntry(true, "jcr:read", accessControlledPath , false));
 
-        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+        aclManager.addRepoinitExtension(Collections.singletonList(assembler), fm);
 
         repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
@@ -160,7 +174,7 @@ public class EnforcePrincipalBasedTest {
         RepoPath accessControlledPath = new RepoPath("/content/feature");
         aclManager.addAcl(systemUser.getId(), new AccessControlEntry(true, "jcr:read", accessControlledPath , false));
 
-        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+        aclManager.addRepoinitExtension(Collections.singletonList(assembler), fm);
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
@@ -186,7 +200,7 @@ public class EnforcePrincipalBasedTest {
         RepoPath accessControlledPath = new RepoPath("/content/feature");
         aclManager.addAcl("user1", new AccessControlEntry(true, "jcr:read", accessControlledPath, true));
 
-        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+        aclManager.addRepoinitExtension(Collections.singletonList(assembler), fm);
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
@@ -213,7 +227,7 @@ public class EnforcePrincipalBasedTest {
         AccessControlEntry acl = new AccessControlEntry(true, "jcr:read", accessControlledPath, true);
         aclManager.addAcl("user1", acl);
 
-        aclManager.addRepoinitExtension(Arrays.asList(assembler), fm);
+        aclManager.addRepoinitExtension(Collections.singletonList(assembler), fm);
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);

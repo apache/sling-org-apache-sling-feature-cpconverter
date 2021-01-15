@@ -55,7 +55,6 @@ public class DefaultEntryHandlersManager implements EntryHandlersManager {
                 return entryHandler;
             }
         }
-
         return null;
     }
 
