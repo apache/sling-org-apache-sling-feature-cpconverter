@@ -221,7 +221,7 @@ public final class RepPolicyEntryHandlerTest {
         assertTrue(result.getExcludedAcls().isEmpty());
     }
 
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void policyAtGroupNode() throws Exception {
         SystemUser s1 = new SystemUser("service1", new RepoPath("/home/users/system/services/random1"), new RepoPath("/home/users/system/services"));
         Group gr = new Group("testgroup", new RepoPath("/home/groups/g/HjDnfdMCjekaF4jhhUvO"), new RepoPath("/home/groups/g"));
@@ -230,21 +230,7 @@ public final class RepPolicyEntryHandlerTest {
         aclManager.addSystemUser(s1);
         aclManager.addGroup(gr);
 
-        ParseResult result = parseAndSetRepoInit("/jcr_root/home/groups/g/HjDnfdMCjekaF4jhhUvO/_rep_policy.xml", aclManager);
-        Extension repoinitExtension = result.getRepoinitExtension();
-
-        String expected =
-                "create service user service1 with path /home/users/system/services" + System.lineSeparator() +
-                "create group testgroup with path /home/groups/g" + System.lineSeparator() +
-                "set ACL for service1" + System.lineSeparator() +
-                "allow jcr:read on home(testgroup)" + System.lineSeparator() +
-                "end" + System.lineSeparator();
-        assertEquals(expected, repoinitExtension.getText());
-
-        String expectedExclusions = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><jcr:root xmlns:jcr=\"http://www.jcp.org/jcr/1.0\" xmlns:rep=\"internal\" jcr:primaryType=\"rep:ACL\">\n" +
-                "    <allow1 jcr:primaryType=\"rep:GrantACE\" rep:principalName=\"testgroup\" rep:privileges=\"{Name}[jcr:read]\"/>\n" +
-                "</jcr:root>\n";
-        assertEquals(expectedExclusions, result.getExcludedAcls());
+        parseAndSetRepoInit("/jcr_root/home/groups/g/HjDnfdMCjekaF4jhhUvO/_rep_policy.xml", aclManager);
     }
 
     @Test(expected = IllegalStateException.class)
