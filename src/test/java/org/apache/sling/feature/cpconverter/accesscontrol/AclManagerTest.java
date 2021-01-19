@@ -200,7 +200,7 @@ public class AclManagerTest {
         assertFalse(operations.isEmpty());
     }
 
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void testGroupHandlingWithGroupUsed() {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
@@ -216,18 +216,6 @@ public class AclManagerTest {
         aclManager.addRepoinitExtension(Collections.singletonList(assembler), fm);
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
-        assertNotNull(repoinitExtension);
-
-        String expected =
-                "create service user sys-usr with path /home/users/system" + System.lineSeparator() +
-                        "create group test with path /home/groups/test" + System.lineSeparator() +
-                        "set ACL for sys-usr" + System.lineSeparator() +
-                        "allow jcr:read on home(test)" + System.lineSeparator() +
-                        "end" + System.lineSeparator();
-
-        String actual = repoinitExtension.getText();
-        assertEquals(expected, actual);
-
     }
 
     @Test

@@ -31,18 +31,18 @@ import org.jetbrains.annotations.Nullable;
 import javax.jcr.NamespaceException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.Optional;
+import java.util.Collection;
 import java.util.Formatter;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.Collection;
-import java.util.Objects;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -134,20 +134,13 @@ public class DefaultAclManager implements AclManager {
             }
         }
 
-        for (Group group : groups) {
-            if (aclStartsWith(group.getPath())) {
-                formatter.format("create group %s with path %s%n", group.getId(), group.getIntermediatePath());
+        // abort the conversion if an access control entry takes effect at or below a user/group which is not
+        // created by repo-init statements generated here.
+        Stream.concat(groups.stream(), users.stream()).forEach(abstractUser -> {
+            if (aclStartsWith(abstractUser.getPath())) {
+                throw new IllegalStateException("Detected policy on user: " + abstractUser);
             }
-            if (aclIsBelow(group.getPath())) {
-                throw new IllegalStateException("Detected policy on subpath of group: " + group);
-            }
-        }
-
-        for (User user : users) {
-            if (aclStartsWith(user.getPath())) {
-                throw new IllegalStateException("Detected policy on user: " + user);
-            }
-        }
+        });
     }
 
     @NotNull
