@@ -24,12 +24,15 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Dictionary;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
@@ -39,6 +42,8 @@ import org.apache.sling.feature.Configurations;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
+import org.apache.sling.feature.cpconverter.accesscontrol.Mapping;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.io.json.ConfigurationJSONWriter;
@@ -71,9 +76,10 @@ public class ConfigurationEntryHandlerTest {
         "    \"test.dateproperty\":1604743842669,\n" + 
         "    \"test.booleanproperty\":true,\n" + 
         "    \"user.mapping\":[\n" + 
-        "      \"com.adobe.acs.acs-aem-samples-bundle=admin\",\n" + 
-        "      \"com.adobe.acs.acs-aem-samples-bundle:sample-service=oauthservice\"\n" + 
-        "    ]\n" + 
+        "      \"org.apache.sling.testbundle:sub-service-1=service1\",\n" +
+        "      \"org.apache.sling.testbundle:sub-service-2=[service1,service2]\",\n" +
+        "      \"org.apache.sling.testbundle=[service1,external-service-user]\"\n" +
+        "    ]\n" +
         "  }\n" + 
         "}";
     
@@ -122,6 +128,8 @@ public class ConfigurationEntryHandlerTest {
         when(featuresManager.getRunMode(anyString())).thenReturn(feature);
         ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
         when(converter.getFeaturesManager()).thenReturn(featuresManager);
+        AclManager aclManager = mock(AclManager.class);
+        when(converter.getAclManager()).thenReturn(aclManager);
 
         configurationEntryHandler.handle(resourceConfiguration, archive, entry, converter);
 
@@ -138,10 +146,12 @@ public class ConfigurationEntryHandlerTest {
 
             assertTrue(configuration.getPid(), configuration.getPid().startsWith(EXPECTED_PID));
 
+            Dictionary<String,Object> props = configuration.getProperties();
             if (configuration.getPid().contains(".empty")) {
-                assertTrue(configuration.getProperties().isEmpty());
+                assertTrue(props.isEmpty());
             } else {
-                assertEquals("Unmatching size: " + configuration.getProperties().size(), expectedConfigurationsEntrySize, configuration.getProperties().size());
+                assertEquals("Unmatching size: " + props.size(), expectedConfigurationsEntrySize, configuration.getProperties().size());
+                verify(aclManager, times(3)).addMapping(any(Mapping.class));
             }
             // type & value check for typed configuration
             if (this.resourceConfiguration.equals(TYPED_TESTCONFIG_PATH)) {

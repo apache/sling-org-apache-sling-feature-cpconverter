@@ -22,4 +22,4 @@
     test.doubleproperty="{Double}1.23"
     test.dateproperty="{Date}2020-11-07T10:10:42.669"
     test.booleanproperty="{Boolean}true"
-    user.mapping="[com.adobe.acs.acs-aem-samples-bundle=admin,com.adobe.acs.acs-aem-samples-bundle:sample-service=oauthservice]"/>
+    user.mapping="[org.apache.sling.testbundle:sub-service-1=service1,org.apache.sling.testbundle:sub-service-2=\[service1\,service2\],org.apache.sling.testbundle=\[service1\,external-service-user\]]"/>

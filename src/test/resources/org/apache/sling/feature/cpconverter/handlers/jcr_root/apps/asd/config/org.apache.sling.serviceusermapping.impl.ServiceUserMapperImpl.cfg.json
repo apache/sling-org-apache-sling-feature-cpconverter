@@ -1,7 +1,8 @@
 {
     "user.default":"admin",
     "user.mapping": [
-        "com.adobe.acs.acs-aem-samples-bundle=admin",
-        "com.adobe.acs.acs-aem-samples-bundle:sample-service=oauthservice"
+        "org.apache.sling.testbundle:sub-service-1=service1",
+        "org.apache.sling.testbundle:sub-service-2=[service1,service2]",
+        "org.apache.sling.testbundle=[service1,external-service-user]"
     ]
 }

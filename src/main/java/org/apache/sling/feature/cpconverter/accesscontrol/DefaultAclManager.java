@@ -32,6 +32,8 @@ import javax.jcr.NamespaceException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Optional;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -41,7 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -57,6 +58,7 @@ public class DefaultAclManager implements AclManager {
     private final Set<SystemUser> systemUsers = new LinkedHashSet<>();
     private final Set<Group> groups = new LinkedHashSet<>();
     private final Set<User> users = new LinkedHashSet<>();
+    private final Set<Mapping> mappings = new HashSet<>();
 
     private final Map<String, List<AccessControlEntry>> acls = new HashMap<>();
 
@@ -85,6 +87,11 @@ public class DefaultAclManager implements AclManager {
     @Override
     public boolean addSystemUser(@NotNull SystemUser systemUser) {
         return systemUsers.add(systemUser);
+    }
+
+    @Override
+    public void addMapping(@NotNull Mapping mapping) {
+        mappings.add(mapping);
     }
 
     @Override
@@ -128,7 +135,7 @@ public class DefaultAclManager implements AclManager {
     private void addUsersAndGroups(@NotNull Formatter formatter) {
         for (SystemUser systemUser : systemUsers) {
             // make sure all system users are created first
-            formatter.format("create service user %s with path %s%n", systemUser.getId(), calculateIntermediatePath(systemUser.getIntermediatePath()));
+            formatter.format("create service user %s with path %s%n", systemUser.getId(), calculateIntermediatePath(systemUser));
             if (aclIsBelow(systemUser.getPath())) {
                 throw new IllegalStateException("Detected policy on subpath of system-user: " + systemUser);
             }
@@ -144,8 +151,9 @@ public class DefaultAclManager implements AclManager {
     }
 
     @NotNull
-    private String calculateIntermediatePath(@NotNull RepoPath intermediatePath) {
-        if (enforcePrincipalBased && supportedPrincipalBasedPath != null && !intermediatePath.startsWith(supportedPrincipalBasedPath)) {
+    private String calculateIntermediatePath(@NotNull SystemUser systemUser) {
+        RepoPath intermediatePath = systemUser.getIntermediatePath();
+        if (enforcePrincipalBased(systemUser) && supportedPrincipalBasedPath != null && !intermediatePath.startsWith(supportedPrincipalBasedPath)) {
             RepoPath parent = intermediatePath.getParent();
             while (parent != null) {
                 if (supportedPrincipalBasedPath.startsWith(parent)) {
@@ -161,27 +169,30 @@ public class DefaultAclManager implements AclManager {
     }
 
     private void addPaths(@NotNull Formatter formatter, @NotNull List<VaultPackageAssembler> packageAssemblers) {
-        if (!enforcePrincipalBased) {
-            Set<RepoPath> paths = acls.entrySet().stream()
-                    .filter(entry -> getSystemUser(entry.getKey()).isPresent())
-                    .map(Entry::getValue)
-                    .flatMap(Collection::stream)
-                    // paths only should/need to be create with resource-based access control
-                    .filter(((Predicate<AccessControlEntry>) AccessControlEntry::isPrincipalBased).negate())
-                    .map(AccessControlEntry::getRepositoryPath)
-                    .collect(Collectors.toSet());
+        Set<RepoPath> paths = acls.entrySet().stream()
+                // filter paths if service user does not exist or will have principal-based ac setup enforced
+                .filter(entry -> {
+                    Optional<SystemUser> su = getSystemUser(entry.getKey());
+                    return su.isPresent() && !enforcePrincipalBased(su.get());
+                })
+                .filter(entry -> getSystemUser(entry.getKey()).isPresent())
+                .map(Entry::getValue)
+                .flatMap(Collection::stream)
+                // paths only should/need to be create with resource-based access control
+                .filter(((Predicate<AccessControlEntry>) AccessControlEntry::isPrincipalBased).negate())
+                .map(AccessControlEntry::getRepositoryPath)
+                .collect(Collectors.toSet());
 
-            paths.stream()
-                    .filter(path -> paths.stream().noneMatch(other -> !other.equals(path) && other.startsWith(path)))
-                    .filter(((Predicate<RepoPath>)RepoPath::isRepositoryPath).negate())
-                    .filter(path -> Stream.of(systemUsers, users, groups).flatMap(Collection::stream)
-                            .noneMatch(user -> user.getPath().startsWith(path)))
-                    .map(path -> computePathWithTypes(path, packageAssemblers))
-                    .filter(Objects::nonNull)
-                    .forEach(
-                            path -> formatter.format("create path %s%n", path)
-                    );
-        }
+        paths.stream()
+                .filter(path -> paths.stream().noneMatch(other -> !other.equals(path) && other.startsWith(path)))
+                .filter(((Predicate<RepoPath>)RepoPath::isRepositoryPath).negate())
+                .filter(path -> Stream.of(systemUsers, users, groups).flatMap(Collection::stream)
+                        .noneMatch(user -> user.getPath().startsWith(path)))
+                .map(path -> computePathWithTypes(path, packageAssemblers))
+                .filter(Objects::nonNull)
+                .forEach(
+                        path -> formatter.format("create path %s%n", path)
+                );
     }
 
     private boolean aclStartsWith(@NotNull RepoPath path) {
@@ -200,7 +211,7 @@ public class DefaultAclManager implements AclManager {
 
         authorizations.forEach(entry -> {
             String path = getRepoInitPath(entry.getRepositoryPath(), systemUser);
-            if (enforcePrincipalBased || entry.isPrincipalBased()) {
+            if (entry.isPrincipalBased() || enforcePrincipalBased(systemUser)) {
                 principalEntries.put(entry, path);
             } else {
                 resourceEntries.put(entry, path);
@@ -216,6 +227,21 @@ public class DefaultAclManager implements AclManager {
             formatter.format("set ACL for %s%n", systemUser.getId());
             resourceEntries.forEach((entry, path) -> writeEntry(entry, path, formatter));
             formatter.format("end%n");
+        }
+    }
+
+    private boolean enforcePrincipalBased(@NotNull SystemUser systemUser) {
+        if (!enforcePrincipalBased) {
+            return false;
+        } else {
+            // FIXME: avoid iterating over mappings multiple times
+            String id = systemUser.getId();
+            for (Mapping mapping : mappings) {
+                if (mapping.mapsUser(id)) {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 
