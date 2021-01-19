@@ -34,7 +34,7 @@ public class Mapping {
     /**
      * Copied from https://github.com/apache/sling-org-apache-sling-serviceusermapper/blob/master/src/main/java/org/apache/sling/serviceusermapping/Mapping.java
      */
-    public Mapping(final String spec) {
+    public Mapping(@NotNull final String spec) {
 
         final int colon = spec.indexOf(':');
         final int equals = spec.indexOf('=');
@@ -68,7 +68,8 @@ public class Mapping {
     /**
      * Copied from https://github.com/apache/sling-org-apache-sling-serviceusermapper/blob/master/src/main/java/org/apache/sling/serviceusermapping/Mapping.java
      */
-    private static Set<String> extractPrincipalNames(String s) {
+    @NotNull
+    private static Set<String> extractPrincipalNames(@NotNull String s) {
         String[] sArr = s.substring(1, s.length() - 1).split(",");
         Set<String> set = new LinkedHashSet<>();
         for (String name : sArr) {
