@@ -38,14 +38,14 @@ abstract class AbstractUserEntryHandler extends AbstractRegexEntryHandler {
         Matcher matcher = getPattern().matcher(path);
         if (matcher.matches()) {
             path = matcher.group(1);
-        }
 
-        RepoPath originalPath = new RepoPath(PlatformNameFormat.getRepositoryPath(path));
-        RepoPath intermediatePath = originalPath.getParent();
+            RepoPath originalPath = new RepoPath(PlatformNameFormat.getRepositoryPath(path));
+            RepoPath intermediatePath = originalPath.getParent();
 
-        AbstractUserParser parser = createParser(converter, originalPath, intermediatePath);
-        try (InputStream input = archive.openInputStream(entry)) {
-            parser.parse(input);
+            AbstractUserParser parser = createParser(converter, originalPath, intermediatePath);
+            try (InputStream input = archive.openInputStream(entry)) {
+                parser.parse(input);
+            }
         }
     }
 

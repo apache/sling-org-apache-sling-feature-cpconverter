@@ -24,8 +24,16 @@ import org.jetbrains.annotations.NotNull;
 public final class GroupEntryHandler extends AbstractUserEntryHandler {
 
     public GroupEntryHandler() {
-        // FIXME: SLING-9969
-        super("/jcr_root(/home/groups.*/)\\.content.xml");
+        this("/jcr_root(/home/groups.*/)\\.content.xml");
+    }
+
+    public GroupEntryHandler(@NotNull String regex) {
+        super(regex);
+    }
+
+    @Override
+    public EntryHandler withConfig(@NotNull String config) {
+        return new GroupEntryHandler(config);
     }
 
     @Override

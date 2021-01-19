@@ -118,6 +118,18 @@ public class UsersEntryHandlerTest {
         verify(aclManager, never()).addSystemUser(any(SystemUser.class));
     }
 
+    @Test
+    public void parseUserWithConfig() throws Exception {
+        String path = "/jcr_root/rep:security/rep:authorizables/rep:users/a/author/.content.xml";
+        AclManager aclManager = mock(AclManager.class);
+
+        TestUtils.createRepoInitExtension(usersEntryHandler, aclManager, path, getClass().getResourceAsStream(path.substring(1)));
+        verify(aclManager, never()).addUser(any(User.class));
+
+        TestUtils.createRepoInitExtension(usersEntryHandler.withConfig("/jcr_root(/rep:security/rep:authorizables/rep:users.*/)\\.content.xml"), aclManager, path, getClass().getResourceAsStream(path.substring(1)));
+        verify(aclManager, times(1)).addUser(any(User.class));
+    }
+
     private Extension parseAndSetRepoinit(String path) throws Exception {
         return TestUtils.createRepoInitExtension(usersEntryHandler, new DefaultAclManager(), path, getClass().getResourceAsStream(path.substring(1)));
     }

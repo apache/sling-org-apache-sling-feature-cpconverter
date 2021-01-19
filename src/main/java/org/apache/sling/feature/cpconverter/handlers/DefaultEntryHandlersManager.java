@@ -22,14 +22,23 @@ import org.jetbrains.annotations.Nullable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.Collections;
+import java.util.Map;
 
 public class DefaultEntryHandlersManager implements EntryHandlersManager {
 
     private final List<EntryHandler> entryHandlers = new LinkedList<>();
 
     public DefaultEntryHandlersManager() {
+        this(Collections.emptyMap());
+    }
+
+    public DefaultEntryHandlersManager(Map<String, String> configs) {
         ServiceLoader<EntryHandler> entryHandlersLoader = ServiceLoader.load(EntryHandler.class);
         for (EntryHandler entryHandler : entryHandlersLoader) {
+            if (configs.containsKey(entryHandler.getClass().getName())) {
+                entryHandler = entryHandler.withConfig(configs.get(entryHandler.getClass().getName()));
+            }
             addEntryHandler(entryHandler);
         }
     }
