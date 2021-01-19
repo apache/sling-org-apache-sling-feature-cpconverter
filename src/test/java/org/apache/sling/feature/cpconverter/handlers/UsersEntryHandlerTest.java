@@ -18,7 +18,10 @@ package org.apache.sling.feature.cpconverter.handlers;
 
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
-import org.apache.sling.feature.cpconverter.accesscontrol.*;
+import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
+import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
+import org.apache.sling.feature.cpconverter.accesscontrol.SystemUser;
+import org.apache.sling.feature.cpconverter.accesscontrol.User;
 import org.apache.sling.repoinit.parser.RepoInitParser;
 import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
 import org.apache.sling.repoinit.parser.operations.Operation;
@@ -117,13 +120,13 @@ public class UsersEntryHandlerTest {
 
     @Test
     public void parseUserWithConfig() throws Exception {
-        String path = "/jcr_root/system/users/a/author/.content.xml";
+        String path = "/jcr_root/rep:security/rep:authorizables/rep:users/a/author/.content.xml";
         AclManager aclManager = mock(AclManager.class);
 
         TestUtils.createRepoInitExtension(usersEntryHandler, aclManager, path, getClass().getResourceAsStream(path.substring(1)));
         verify(aclManager, never()).addUser(any(User.class));
 
-        TestUtils.createRepoInitExtension(usersEntryHandler.withConfig("/jcr_root(/system/users.*/)\\.content.xml"), aclManager, path, getClass().getResourceAsStream(path.substring(1)));
+        TestUtils.createRepoInitExtension(usersEntryHandler.withConfig("/jcr_root(/rep:security/rep:authorizables/rep:users.*/)\\.content.xml"), aclManager, path, getClass().getResourceAsStream(path.substring(1)));
         verify(aclManager, times(1)).addUser(any(User.class));
     }
 
