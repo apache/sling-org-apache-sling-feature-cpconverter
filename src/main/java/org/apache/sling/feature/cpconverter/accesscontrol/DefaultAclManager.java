@@ -179,7 +179,6 @@ public class DefaultAclManager implements AclManager {
                     Optional<SystemUser> su = getSystemUser(entry.getKey());
                     return su.isPresent() && !enforcePrincipalBased(su.get());
                 })
-                .filter(entry -> getSystemUser(entry.getKey()).isPresent())
                 .map(Entry::getValue)
                 .flatMap(Collection::stream)
                 // paths only should/need to be create with resource-based access control

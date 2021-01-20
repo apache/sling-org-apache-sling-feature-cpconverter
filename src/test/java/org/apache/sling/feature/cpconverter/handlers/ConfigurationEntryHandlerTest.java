@@ -180,7 +180,7 @@ public class ConfigurationEntryHandlerTest {
             { path + EXPECTED_PID + ".config", 1, 2, 3, new ConfigurationEntryHandler(), null },
 
             { path + EXPECTED_PID + ".empty.xml", 1, 2, 0, new XmlConfigurationEntryHandler(), null },
-            { path + EXPECTED_PID + ".xml", 1, 2, 1, new XmlConfigurationEntryHandler(), null },
+            { path + EXPECTED_PID + ".xml", 1, 2, 3, new XmlConfigurationEntryHandler(), null },
 
             { path + EXPECTED_PID + ".empty.config.xml", 1, 2, 0, new XmlConfigurationEntryHandler(), null },
             { path + EXPECTED_PID + ".config.xml", 1, 2, 3, new XmlConfigurationEntryHandler(), null },
