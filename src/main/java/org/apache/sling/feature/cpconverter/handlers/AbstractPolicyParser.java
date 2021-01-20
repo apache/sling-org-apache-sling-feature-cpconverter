@@ -34,9 +34,7 @@ abstract class AbstractPolicyParser extends AbstractJcrNodeParser<Boolean> {
 
     static final String REP_RESTRICTIONS = "rep:Restrictions";
     static final String REP_PRINCIPAL_NAME = "rep:principalName";
-
-    private static final String REP_PRIVILEGES = "rep:privileges";
-    private static final String[] RESTRICTIONS = new String[] { "rep:glob", "rep:ntNames", "rep:prefixes", "rep:itemNames" };
+    static final String REP_PRIVILEGES = "rep:privileges";
 
     private static final Pattern typeIndicatorPattern = Pattern.compile("\\{[^\\}]+\\}\\[(.+)\\]");
 
@@ -69,14 +67,20 @@ abstract class AbstractPolicyParser extends AbstractJcrNodeParser<Boolean> {
         return expression;
     }
 
-    static void addRestrictions(@NotNull AccessControlEntry ace, @NotNull Attributes attributes) {
-        for (String restriction : RESTRICTIONS) {
-            String v = extractValue(attributes.getValue(restriction));
-
-            if (v != null && !v.isEmpty()) {
-                ace.addRestriction(restriction + ',' + v);
+    void addRestrictions(@NotNull AccessControlEntry ace, @NotNull Attributes attributes) {
+        for (int i = 0; i < attributes.getLength(); i++) {
+            String name = attributes.getQName(i);
+            if (isRestriction(name)) {
+                String v = extractValue(attributes.getValue(name));
+                if (v != null && !v.isEmpty()) {
+                    ace.addRestriction(name + ',' + v);
+                }
             }
         }
+    }
+
+    boolean isRestriction(@NotNull String attributeName) {
+        return !(REP_PRINCIPAL_NAME.equals(attributeName) || REP_PRIVILEGES.equals(attributeName) || attributeName.startsWith("jcr:"));
     }
 
     AccessControlEntry createEntry(boolean isAllow, @NotNull Attributes attributes) {
