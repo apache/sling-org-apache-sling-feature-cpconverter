@@ -96,11 +96,8 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Option(names = { "-Z", "--fail-on-mixed-packages" }, description = "Fail the conversion if the resulting attached content-package is MIXED type", required = false)
     private boolean failOnMixedPackages = false;
 
-    @Option(names = { "--enforce-principal-based" }, description = "Converts all service user access control entries to principal-based setup", required = false)
-    private boolean enforcePrincipalBased = false;
-
-    @Option(names = { "--supported-principal-based-path" }, description = "Path supported for principal-based access control setup", required = false)
-    private String supportedPrincipalBasedPath = null;
+    @Option(names = { "--enforce-principal-based-supported-path" }, description = "Converts service user access control entries to principal-based setup using the given supported path.", required = false)
+    private String enforcePrincipalBasedSupportedPath = null;
 
     @Option(names = { "--entry-handler-config" }, description = "Config for entry handlers that support it (classname:<config-string>", required = false)
     private List<String> entryHandlerConfigs = null;
@@ -161,7 +158,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                                                              .setFeaturesManager(featuresManager)
                                                              .setBundlesDeployer(new DefaultArtifactsDeployer(artifactsOutputDirectory))
                                                              .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap))
-                                                             .setAclManager(new DefaultAclManager(enforcePrincipalBased, supportedPrincipalBasedPath))
+                                                             .setAclManager(new DefaultAclManager(enforcePrincipalBasedSupportedPath))
                                                              .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
                                                              .setFailOnMixedPackages(failOnMixedPackages)
                                                              .setDropContent(true);

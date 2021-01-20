@@ -16,14 +16,24 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
+import org.apache.sling.feature.ArtifactId;
+import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
+import org.apache.sling.feature.cpconverter.accesscontrol.Mapping;
+import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
+import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.junit.Test;
 
 public class JsonConfigurationEntryHandlerTest {
@@ -41,6 +51,30 @@ public class JsonConfigurationEntryHandlerTest {
         ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
 
         new JsonConfigurationEntryHandler().handle(resourceConfiguration, archive, entry, converter);
+    }
+
+    @Test
+    public void validConfigurationThrowsException() throws Exception {
+        String resourceConfiguration = "/jcr_root/apps/asd/config/org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.cfg.json";
+
+        Archive archive = mock(Archive.class);
+        Entry entry = mock(Entry.class);
+
+        when(entry.getName()).thenReturn(resourceConfiguration.substring(resourceConfiguration.lastIndexOf('/') + 1));
+        when(archive.openInputStream(entry)).thenReturn(getClass().getResourceAsStream(resourceConfiguration.substring(1)));
+
+        AclManager aclManager = mock(AclManager.class);
+        Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
+        FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);
+        when(featuresManager.getTargetFeature()).thenReturn(feature);
+
+        ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
+        when(converter.getAclManager()).thenReturn(aclManager);
+        when(converter.getFeaturesManager()).thenReturn(featuresManager);
+
+        new JsonConfigurationEntryHandler().handle(resourceConfiguration, archive, entry, converter);
+
+        verify(aclManager, times(3)).addMapping(any(Mapping.class));
     }
 
 }

@@ -31,8 +31,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.security.acl.Acl;
 import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.anyString;
@@ -49,6 +51,7 @@ class TestUtils {
     static Extension createRepoInitExtension(@NotNull EntryHandler handler, @NotNull AclManager aclManager, @NotNull String path, @NotNull InputStream is) throws Exception {
         return createRepoInitExtension(handler, aclManager, path, is, null);
     }
+
     static Extension createRepoInitExtension(@NotNull EntryHandler handler, @NotNull AclManager aclManager, @NotNull String path, @NotNull InputStream is, @Nullable OutputStream out) throws Exception {
         Archive archive = mock(Archive.class);
         Archive.Entry entry = mock(Archive.Entry.class);

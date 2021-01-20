@@ -34,6 +34,8 @@ public interface AclManager {
 
     boolean addSystemUser(@NotNull SystemUser systemUser);
 
+    void addMapping(@NotNull Mapping mapping);
+
     boolean addAcl(@NotNull String systemUser, @NotNull AccessControlEntry acl);
 
     void addRepoinitExtension(@NotNull List<VaultPackageAssembler> packageAssemblers, @NotNull FeaturesManager featureManager);

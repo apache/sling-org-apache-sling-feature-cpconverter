@@ -24,6 +24,9 @@ import java.util.regex.Matcher;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
+import org.apache.sling.feature.cpconverter.accesscontrol.Mapping;
+import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.util.converter.Converters;
@@ -33,6 +36,8 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
     private static final String REPOINIT_FACTORY_PID = "org.apache.sling.jcr.repoinit.RepositoryInitializer";
 
     private static final String REPOINIT_PID = "org.apache.sling.jcr.repoinit.impl.RepositoryInitializer";
+
+    private static final String SERVICE_USER_MAPPING_PID = "org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl";
 
     public AbstractConfigurationEntryHandler(@NotNull String extension) {
         super("/jcr_root/(?:apps|libs)/.+/config(\\.(?<runmode>[^/]+))?/(?<pid>.*)\\." + extension);
@@ -80,22 +85,31 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
             }
             // there is a specified RunMode
             runMode = matcher.group("runmode");
-            
+
+            FeaturesManager featuresManager = Objects.requireNonNull(converter.getFeaturesManager());
             if (REPOINIT_FACTORY_PID.equals(factoryPid)) {
                 final String[] scripts = Converters.standardConverter().convert(configurationProperties.get("scripts")).to(String[].class);
                 if (scripts != null && scripts.length > 0 ) {
                     for(final String text : scripts) {
                         if ( text != null && !text.trim().isEmpty() ) {
-                            Objects.requireNonNull(converter.getFeaturesManager()).addOrAppendRepoInitExtension(text, runMode);
+                            featuresManager.addOrAppendRepoInitExtension(text, runMode);
                         }
                     }
                 }
                 checkReferences(configurationProperties, pid);
             } else if ( REPOINIT_PID.equals(pid) ) {
                 checkReferences(configurationProperties, pid);
-
+            } else if (pid.startsWith(SERVICE_USER_MAPPING_PID)) {
+                String[] mappings = Converters.standardConverter().convert(configurationProperties.get("user.mapping")).to(String[].class);
+                if (mappings != null) {
+                    AclManager aclManager = Objects.requireNonNull(converter.getAclManager());
+                    for (String usermapping : mappings) {
+                        aclManager.addMapping(new Mapping(usermapping));
+                    }
+                }
+                featuresManager.addConfiguration(runMode, id, configurationProperties);
             } else {
-                Objects.requireNonNull(converter.getFeaturesManager()).addConfiguration(runMode, id, configurationProperties);
+                featuresManager.addConfiguration(runMode, id, configurationProperties);
             }
         } else {
             throw new IllegalStateException("Something went terribly wrong: pattern '"

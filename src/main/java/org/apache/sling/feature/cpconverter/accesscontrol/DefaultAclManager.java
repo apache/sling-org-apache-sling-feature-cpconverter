@@ -27,11 +27,15 @@ import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jcr.NamespaceException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Optional;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -41,7 +45,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -49,14 +52,17 @@ import java.util.stream.Stream;
 
 public class DefaultAclManager implements AclManager {
 
+    private static final Logger log = LoggerFactory.getLogger(DefaultAclManager.class);
+
     private static final String CONTENT_XML_FILE_NAME = ".content.xml";
 
-    private final boolean enforcePrincipalBased;
-    private final RepoPath supportedPrincipalBasedPath;
+    private final RepoPath enforcePrincipalBasedSupportedPath;
 
     private final Set<SystemUser> systemUsers = new LinkedHashSet<>();
     private final Set<Group> groups = new LinkedHashSet<>();
     private final Set<User> users = new LinkedHashSet<>();
+    private final Set<Mapping> mappings = new HashSet<>();
+    private final Set<String> mappedById = new HashSet<>();
 
     private final Map<String, List<AccessControlEntry>> acls = new HashMap<>();
 
@@ -65,11 +71,10 @@ public class DefaultAclManager implements AclManager {
     private volatile PrivilegeDefinitions privilegeDefinitions;
 
     public DefaultAclManager() {
-        this(false, null);
+        this(null);
     }
-    public DefaultAclManager(boolean enforcePrincipalBased, @Nullable String supportedPrincipalBasedPath) {
-        this.enforcePrincipalBased = enforcePrincipalBased;
-        this.supportedPrincipalBasedPath = (supportedPrincipalBasedPath == null) ? null : new RepoPath(supportedPrincipalBasedPath);
+    public DefaultAclManager(@Nullable String enforcePrincipalBasedSupportedPath) {
+        this.enforcePrincipalBasedSupportedPath = (enforcePrincipalBasedSupportedPath == null) ? null : new RepoPath(enforcePrincipalBasedSupportedPath);
     }
 
     @Override
@@ -84,7 +89,26 @@ public class DefaultAclManager implements AclManager {
 
     @Override
     public boolean addSystemUser(@NotNull SystemUser systemUser) {
-        return systemUsers.add(systemUser);
+        if (systemUsers.add(systemUser)) {
+            if (mappings.stream().anyMatch(mapping -> mapping.mapsUser(systemUser.getId()))) {
+                mappedById.add(systemUser.getId());
+            }
+            return true;
+        } else {
+            return false;
+        }
+
+    }
+
+    @Override
+    public void addMapping(@NotNull Mapping mapping) {
+        if (mappings.add(mapping)) {
+            for (SystemUser user : systemUsers) {
+                if (mapping.mapsUser(user.getId())) {
+                    mappedById.add(user.getId());
+                }
+            }
+        }
     }
 
     @Override
@@ -128,7 +152,7 @@ public class DefaultAclManager implements AclManager {
     private void addUsersAndGroups(@NotNull Formatter formatter) {
         for (SystemUser systemUser : systemUsers) {
             // make sure all system users are created first
-            formatter.format("create service user %s with path %s%n", systemUser.getId(), calculateIntermediatePath(systemUser.getIntermediatePath()));
+            formatter.format("create service user %s with path %s%n", systemUser.getId(), calculateIntermediatePath(systemUser));
             if (aclIsBelow(systemUser.getPath())) {
                 throw new IllegalStateException("Detected policy on subpath of system-user: " + systemUser);
             }
@@ -138,50 +162,53 @@ public class DefaultAclManager implements AclManager {
         // created by repo-init statements generated here.
         Stream.concat(groups.stream(), users.stream()).forEach(abstractUser -> {
             if (aclStartsWith(abstractUser.getPath())) {
-                throw new IllegalStateException("Detected policy on user: " + abstractUser);
+                throw new IllegalStateException("Detected policy on user/group: " + abstractUser);
             }
         });
     }
 
     @NotNull
-    private String calculateIntermediatePath(@NotNull RepoPath intermediatePath) {
-        if (enforcePrincipalBased && supportedPrincipalBasedPath != null && !intermediatePath.startsWith(supportedPrincipalBasedPath)) {
+    private String calculateIntermediatePath(@NotNull SystemUser systemUser) {
+        RepoPath intermediatePath = systemUser.getIntermediatePath();
+        if (enforcePrincipalBased(systemUser) && !intermediatePath.startsWith(enforcePrincipalBasedSupportedPath)) {
             RepoPath parent = intermediatePath.getParent();
             while (parent != null) {
-                if (supportedPrincipalBasedPath.startsWith(parent)) {
+                if (enforcePrincipalBasedSupportedPath.startsWith(parent)) {
                     String relpath = intermediatePath.toString().substring(parent.toString().length());
-                    return supportedPrincipalBasedPath.toString() + relpath;
+                    return enforcePrincipalBasedSupportedPath.toString() + relpath;
                 }
                 parent = parent.getParent();
             }
-            throw new IllegalStateException("Cannot calculate intermediate path for service user. Configured Supported path " +supportedPrincipalBasedPath+" has no common ancestor with "+intermediatePath);
+            throw new IllegalStateException("Cannot calculate intermediate path for service user. Configured Supported path " +enforcePrincipalBasedSupportedPath+" has no common ancestor with "+intermediatePath);
         } else {
             return intermediatePath.toString();
         }
     }
 
     private void addPaths(@NotNull Formatter formatter, @NotNull List<VaultPackageAssembler> packageAssemblers) {
-        if (!enforcePrincipalBased) {
-            Set<RepoPath> paths = acls.entrySet().stream()
-                    .filter(entry -> getSystemUser(entry.getKey()).isPresent())
-                    .map(Entry::getValue)
-                    .flatMap(Collection::stream)
-                    // paths only should/need to be create with resource-based access control
-                    .filter(((Predicate<AccessControlEntry>) AccessControlEntry::isPrincipalBased).negate())
-                    .map(AccessControlEntry::getRepositoryPath)
-                    .collect(Collectors.toSet());
+        Set<RepoPath> paths = acls.entrySet().stream()
+                // filter paths if service user does not exist or will have principal-based ac setup enforced
+                .filter(entry -> {
+                    Optional<SystemUser> su = getSystemUser(entry.getKey());
+                    return su.isPresent() && !enforcePrincipalBased(su.get());
+                })
+                .map(Entry::getValue)
+                .flatMap(Collection::stream)
+                // paths only should/need to be create with resource-based access control
+                .filter(((Predicate<AccessControlEntry>) AccessControlEntry::isPrincipalBased).negate())
+                .map(AccessControlEntry::getRepositoryPath)
+                .collect(Collectors.toSet());
 
-            paths.stream()
-                    .filter(path -> paths.stream().noneMatch(other -> !other.equals(path) && other.startsWith(path)))
-                    .filter(((Predicate<RepoPath>)RepoPath::isRepositoryPath).negate())
-                    .filter(path -> Stream.of(systemUsers, users, groups).flatMap(Collection::stream)
-                            .noneMatch(user -> user.getPath().startsWith(path)))
-                    .map(path -> computePathWithTypes(path, packageAssemblers))
-                    .filter(Objects::nonNull)
-                    .forEach(
-                            path -> formatter.format("create path %s%n", path)
-                    );
-        }
+        paths.stream()
+                .filter(path -> paths.stream().noneMatch(other -> !other.equals(path) && other.startsWith(path)))
+                .filter(((Predicate<RepoPath>)RepoPath::isRepositoryPath).negate())
+                .filter(path -> Stream.of(systemUsers, users, groups).flatMap(Collection::stream)
+                        .noneMatch(user -> user.getPath().startsWith(path)))
+                .map(path -> computePathWithTypes(path, packageAssemblers))
+                .filter(Objects::nonNull)
+                .forEach(
+                        path -> formatter.format("create path %s%n", path)
+                );
     }
 
     private boolean aclStartsWith(@NotNull RepoPath path) {
@@ -200,7 +227,7 @@ public class DefaultAclManager implements AclManager {
 
         authorizations.forEach(entry -> {
             String path = getRepoInitPath(entry.getRepositoryPath(), systemUser);
-            if (enforcePrincipalBased || entry.isPrincipalBased()) {
+            if (entry.isPrincipalBased() || enforcePrincipalBased(systemUser)) {
                 principalEntries.put(entry, path);
             } else {
                 resourceEntries.put(entry, path);
@@ -216,6 +243,19 @@ public class DefaultAclManager implements AclManager {
             formatter.format("set ACL for %s%n", systemUser.getId());
             resourceEntries.forEach((entry, path) -> writeEntry(entry, path, formatter));
             formatter.format("end%n");
+        }
+    }
+
+    private boolean enforcePrincipalBased(@NotNull SystemUser systemUser) {
+        if (enforcePrincipalBasedSupportedPath == null) {
+            return false;
+        } else {
+            if (mappedById.contains(systemUser.getId())) {
+                log.warn("Skip enforcing principalbased access control setup for system user {} due to existing mapping", systemUser.getId());
+                return false;
+            } else {
+                return true;
+            }
         }
     }
 
