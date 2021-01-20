@@ -73,12 +73,12 @@ public class AclManagerTest {
     public void makeSureAclsAreCreatedOnlyoutsideSytemUsersPaths() throws Exception {
         aclManager.addSystemUser(new SystemUser("acs-commons-package-replication-status-event-service", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
-        aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl(true, "jcr:read,rep:write,rep:indexDefinitionManagement", "/asd/not/system/user/path"));
+        aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl(true, "jcr:read,rep:write,rep:indexDefinitionManagement", "/_sling_tests/not/system/user/path"));
         aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl(true, "jcr:read,crx:replicate,jcr:removeNode", "/home/users/system"));
 
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
         when(assembler.getEntry(anyString())).thenReturn(tempDir.toFile());
-        when(assembler.getEntry("asd/not/.content.xml")).thenReturn(new File(getClass().getResource("asd/not/.content.xml").getFile()));
+        when(assembler.getEntry("_sling_tests/not/.content.xml")).thenReturn(new File(getClass().getResource("_sling_tests/not/.content.xml").getFile()));
 
 
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
@@ -95,9 +95,9 @@ public class AclManagerTest {
         // acs-commons-on-deploy-scripts-service will be missed
         String expected =
                 "create service user acs-commons-package-replication-status-event-service with path /home/users/system" + System.lineSeparator() +
-                        "create path /asd/not(nt:unstructured mixin rep:AccessControllable,mix:created)/system/user/path" + System.lineSeparator() +
+                        "create path /sling:tests/not(nt:unstructured mixin rep:AccessControllable,mix:created)/system/user/path" + System.lineSeparator() +
                         "set ACL for acs-commons-package-replication-status-event-service" + System.lineSeparator() +
-                        "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/not/system/user/path" + System.lineSeparator() +
+                        "allow jcr:read,rep:write,rep:indexDefinitionManagement on /sling:tests/not/system/user/path" + System.lineSeparator() +
                         "allow jcr:read,crx:replicate,jcr:removeNode on /home/users/system" + System.lineSeparator() +
                         "end" + System.lineSeparator();
         String actual = repoinitExtension.getText();
@@ -117,11 +117,11 @@ public class AclManagerTest {
         aclManager.reset();
 
         aclManager.addSystemUser(new SystemUser("acs-commons-package-replication-status-event-service", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
-        aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl(true, "jcr:read,rep:write,rep:indexDefinitionManagement", "/asd/not/system/user/path"));
+        aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl(true, "jcr:read,rep:write,rep:indexDefinitionManagement", "/_sling_tests/not/system/user/path"));
 
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
         when(assembler.getEntry(anyString())).thenReturn(tempDir.toFile());
-        when(assembler.getEntry("asd/not/.content.xml")).thenReturn(new File(getClass().getResource("asd/not/.content.xml").getFile()));
+        when(assembler.getEntry("_sling_tests/not/.content.xml")).thenReturn(new File(getClass().getResource("_sling_tests/not/.content.xml").getFile()));
 
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
 
@@ -137,9 +137,9 @@ public class AclManagerTest {
         // aacs-commons-ensure-oak-index-service will be missed
         String expected =
                 "create service user acs-commons-package-replication-status-event-service with path /home/users/system" + System.lineSeparator() +
-                "create path /asd/not(nt:unstructured mixin rep:AccessControllable,mix:created)/system/user/path" + System.lineSeparator() +
+                "create path /sling:tests/not(nt:unstructured mixin rep:AccessControllable,mix:created)/system/user/path" + System.lineSeparator() +
                 "set ACL for acs-commons-package-replication-status-event-service" + System.lineSeparator() +
-                "allow jcr:read,rep:write,rep:indexDefinitionManagement on /asd/not/system/user/path" + System.lineSeparator() +
+                "allow jcr:read,rep:write,rep:indexDefinitionManagement on /sling:tests/not/system/user/path" + System.lineSeparator() +
                 "end" + System.lineSeparator();
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
