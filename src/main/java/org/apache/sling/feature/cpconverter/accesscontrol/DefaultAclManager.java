@@ -294,43 +294,51 @@ public class DefaultAclManager implements AclManager {
         privilegeDefinitions = null;
     }
 
-     protected @Nullable String computePathWithTypes(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
-        path = new RepoPath(PlatformNameFormat.getPlatformPath(path.toString()));
-
-        boolean type = false;
+    protected @Nullable String computePathWithTypes(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
+        String[] parts = PlatformNameFormat.getPlatformPath(path.toString()).substring(1).split("/");
+        boolean foundType = false;
         String current = "";
-        for (String part : path.toString().substring(1).split("/")) {
+        for (String part : parts) {
             current += current.isEmpty() ? part : "/" + part;
             for (VaultPackageAssembler packageAssembler : packageAssemblers) {
                 File currentContent = packageAssembler.getEntry(current + "/" + CONTENT_XML_FILE_NAME);
                 if (currentContent.isFile()) {
-                    String primary;
-                    String mixin;
-                    try (FileInputStream input = new FileInputStream(currentContent);
-                         FileInputStream input2 = new FileInputStream(currentContent)) {
-                        primary = new PrimaryTypeParser().parse(input);
-                        mixin = new MixinParser().parse(input2);
-                        current += "(" + primary;
-                        if (mixin != null) {
-                            mixin = mixin.trim();
-                            if (mixin.startsWith("[")) {
-                                mixin = mixin.substring(1, mixin.length() - 1);
-                            }
-                            current += " mixin " + mixin;
-                        }
-                        current += ")";
-                        type = true;
-                    } catch (Exception e) {
-                        throw new RuntimeException("A fatal error occurred while parsing the '"
-                                + currentContent
-                                + "' file, see nested exceptions: "
-                                + e);
+                    String typeNames = extractTypeNames(currentContent);
+                    if (typeNames != null) {
+                        current += typeNames;
+                        foundType = true;
                     }
                 }
             }
         }
+        return foundType ? new RepoPath(current).toString() : null;
+    }
 
-        return type ? new RepoPath(current).toString() : null;
+    @Nullable
+    private String extractTypeNames(@NotNull File currentContent) {
+        String typeNames = null;
+        try (FileInputStream input = new FileInputStream(currentContent);
+             FileInputStream input2 = new FileInputStream(currentContent)) {
+            String primary = new PrimaryTypeParser().parse(input);
+            if (primary != null) {
+                typeNames = "(" + primary;
+                String mixin = new MixinParser().parse(input2);
+                if (mixin != null) {
+                    mixin = mixin.trim();
+                    if (mixin.startsWith("[")) {
+                        mixin = mixin.substring(1, mixin.length() - 1);
+                    }
+                    typeNames += " mixin " + mixin;
+                }
+                typeNames += ")";
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("A fatal error occurred while parsing the '"
+                    + currentContent
+                    + "' file, see nested exceptions: "
+                    + e);
+        }
+        return typeNames;
     }
 
     @NotNull
