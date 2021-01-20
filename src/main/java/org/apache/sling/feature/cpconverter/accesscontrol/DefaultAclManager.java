@@ -27,6 +27,8 @@ import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jcr.NamespaceException;
 import java.io.File;
@@ -49,6 +51,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class DefaultAclManager implements AclManager {
+
+    private static final Logger log = LoggerFactory.getLogger(DefaultAclManager.class);
 
     private static final String CONTENT_XML_FILE_NAME = ".content.xml";
 
@@ -145,7 +149,7 @@ public class DefaultAclManager implements AclManager {
         // created by repo-init statements generated here.
         Stream.concat(groups.stream(), users.stream()).forEach(abstractUser -> {
             if (aclStartsWith(abstractUser.getPath())) {
-                throw new IllegalStateException("Detected policy on user: " + abstractUser);
+                throw new IllegalStateException("Detected policy on user/group: " + abstractUser);
             }
         });
     }
@@ -238,6 +242,7 @@ public class DefaultAclManager implements AclManager {
             String id = systemUser.getId();
             for (Mapping mapping : mappings) {
                 if (mapping.mapsUser(id)) {
+                    log.info("Skip enforcing principalbased access control setup for system user {} due to '{}'", systemUser.getId(), mapping);
                     return false;
                 }
             }

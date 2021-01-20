@@ -19,6 +19,7 @@ package org.apache.sling.feature.cpconverter.accesscontrol;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 
 public class Mapping {
@@ -87,5 +88,43 @@ public class Mapping {
 
     public boolean mapsPrincipal(@NotNull String principalName) {
         return this.principalNames != null && principalNames.contains(principalName);
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + Objects.hash(serviceName);
+        result = prime * result + Objects.hash(subServiceName);
+        result = prime * result + Objects.hash(userName);
+        result = prime * result + Objects.hash(principalNames);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+
+        Mapping other = (Mapping) obj;
+        return Objects.equals(serviceName, other.serviceName)
+               && Objects.equals(subServiceName, other.subServiceName)
+               && Objects.equals(userName, other.userName)
+               && Objects.equals(principalNames, other.principalNames);
+    }
+
+    /**
+     * Copied from https://github.com/apache/sling-org-apache-sling-serviceusermapper/blob/master/src/main/java/org/apache/sling/serviceusermapping/Mapping.java
+     */
+    @Override
+    public String toString() {
+        String name = (userName != null) ? "userName=" + userName : "principleNames" + principalNames.toString();
+        return "Mapping [serviceName=" + serviceName + ", subServiceName="
+                + subServiceName + ", " + name;
     }
 }

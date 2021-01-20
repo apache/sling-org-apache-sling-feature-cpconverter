@@ -18,7 +18,9 @@ package org.apache.sling.feature.cpconverter.accesscontrol;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 public class MappingTest {
@@ -106,5 +108,27 @@ public class MappingTest {
     @Test(expected = IllegalArgumentException.class)
     public void testMissingSubservice() {
         new Mapping("org.apache.sling.testbundle:=service1");
+    }
+
+    @Test
+    public void testEquals() {
+        Mapping m = new Mapping("org.apache.sling.testbundle:sub-service-1=service1");
+        Mapping m2 = new Mapping("org.apache.sling.testbundle:sub-service-1=[service1,service2]");
+        Mapping m3 = new Mapping("org.apache.sling.testbundle:sub-service-1=[service1]");
+
+        assertEquals(m, new Mapping("org.apache.sling.testbundle:sub-service-1=service1"));
+
+        assertNotEquals(m, new Mapping("org.apache.sling.testbundle=service1"));
+        assertNotEquals(m, new Mapping("org.apache.sling.testbundle:other-sub-service=service1"));
+        assertNotEquals(m, new Mapping("org.apache.sling.otherbundle:sub-service1=service1"));
+        assertNotEquals(m, m2);
+        assertNotEquals(m, m3);
+        assertNotEquals(m2, m3);
+        assertNotEquals(m2, new Mapping("org.apache.sling.testbundle:sub-service-1=[service3,service4]"));
+
+        assertTrue(m.equals(m));
+        assertTrue(m2.equals(m2));
+        assertFalse(m.equals(null));
+        assertFalse(m2.equals(m2.toString()));
     }
 }
