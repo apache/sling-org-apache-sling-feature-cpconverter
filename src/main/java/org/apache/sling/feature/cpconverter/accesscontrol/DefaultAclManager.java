@@ -225,9 +225,8 @@ public class DefaultAclManager implements AclManager {
                 entry.getPrivileges(),
                 path);
 
-        if (!entry.getRestrictions().isEmpty()) {
-            formatter.format(" restriction(%s)",
-                    String.join(",", entry.getRestrictions()));
+        for (String restriction : entry.getRestrictions()) {
+            formatter.format(" restriction(%s)", restriction);
         }
 
         formatter.format("%n");

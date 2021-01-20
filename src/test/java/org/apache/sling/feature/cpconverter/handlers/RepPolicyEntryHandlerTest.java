@@ -267,7 +267,7 @@ public final class RepPolicyEntryHandlerTest {
         String expected =
                 "create service user service1 with path /home/users/system/services" + System.lineSeparator() +
                 "set ACL for service1\n" +
-                "allow jcr:read on /asd/jr2restrictions restriction(rep:glob,*/subtree/*,sling:customRestriction,sling:value1,sling:value2)\n" +
+                "allow jcr:read on /asd/jr2restrictions restriction(rep:glob,*/subtree/*) restriction(sling:customRestriction,sling:value1,sling:value2)\n" +
                 "end\n";
 
         String actual = repoinitExtension.getText();
