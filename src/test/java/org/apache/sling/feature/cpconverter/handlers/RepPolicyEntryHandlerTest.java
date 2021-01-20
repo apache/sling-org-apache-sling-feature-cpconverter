@@ -32,7 +32,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.io.StringReader;
+import java.security.acl.Acl;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -43,15 +45,18 @@ import static org.junit.Assert.assertTrue;
 public final class RepPolicyEntryHandlerTest {
 
     private RepPolicyEntryHandler handler;
+    private AclManager aclManager;
 
     @Before
     public void setUp() {
         handler = new RepPolicyEntryHandler();
+        aclManager = new DefaultAclManager();
     }
 
     @After
     public void tearDown() {
         handler = null;
+        aclManager = null;
     }
 
     @Test
@@ -198,18 +203,16 @@ public final class RepPolicyEntryHandlerTest {
 
     @Test
     public void parseEmptyAcl() throws Exception {
-        Extension extension = TestUtils.createRepoInitExtension(handler, new DefaultAclManager(), "/jcr_root/home/users/system/asd/_rep_policy.xml", getClass().getResourceAsStream("/jcr_root/home/users/system/asd/_rep_policy.xml".substring(1)), new ByteArrayOutputStream());
+        Extension extension = TestUtils.createRepoInitExtension(handler, aclManager, "/jcr_root/home/users/system/asd/_rep_policy.xml", getClass().getResourceAsStream("/jcr_root/home/users/system/asd/_rep_policy.xml".substring(1)), new ByteArrayOutputStream());
         assertNull(extension);
     }
 
     @Test
     public void policyAtAuthorizableFolder() throws Exception {
         SystemUser s1 = new SystemUser("service1", new RepoPath("/home/users/system/services/random1"), new RepoPath("/home/users/system/services"));
-
-        AclManager aclManager = new DefaultAclManager();
         aclManager.addSystemUser(s1);
 
-        ParseResult result = parseAndSetRepoInit("/jcr_root/home/groups/g/_rep_policy.xml", aclManager);
+        ParseResult result = parseAndSetRepoinit("/jcr_root/home/groups/g/_rep_policy.xml", aclManager);
         Extension repoinitExtension = result.getRepoinitExtension();
 
         String expected =
@@ -225,12 +228,10 @@ public final class RepPolicyEntryHandlerTest {
     public void policyAtGroupNode() throws Exception {
         SystemUser s1 = new SystemUser("service1", new RepoPath("/home/users/system/services/random1"), new RepoPath("/home/users/system/services"));
         Group gr = new Group("testgroup", new RepoPath("/home/groups/g/HjDnfdMCjekaF4jhhUvO"), new RepoPath("/home/groups/g"));
-
-        AclManager aclManager = new DefaultAclManager();
         aclManager.addSystemUser(s1);
         aclManager.addGroup(gr);
 
-        parseAndSetRepoInit("/jcr_root/home/groups/g/HjDnfdMCjekaF4jhhUvO/_rep_policy.xml", aclManager);
+        parseAndSetRepoinit("/jcr_root/home/groups/g/HjDnfdMCjekaF4jhhUvO/_rep_policy.xml", aclManager);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -238,11 +239,10 @@ public final class RepPolicyEntryHandlerTest {
         SystemUser s1 = new SystemUser("service1", new RepoPath("/home/users/system/services/random1"), new RepoPath("/home/users/system/services"));
         Group gr = new Group("testgroup3", new RepoPath("/home/groups/g/ouStmkrzT9wCEhtMD9sT"), new RepoPath("/home/groups/g"));
 
-        AclManager aclManager = new DefaultAclManager();
         aclManager.addSystemUser(s1);
         aclManager.addGroup(gr);
 
-        parseAndSetRepoInit("/jcr_root/home/groups/g/ouStmkrzT9wCEhtMD9sT/profile/_rep_policy.xml", aclManager);
+        parseAndSetRepoinit("/jcr_root/home/groups/g/ouStmkrzT9wCEhtMD9sT/profile/_rep_policy.xml", aclManager);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -250,11 +250,32 @@ public final class RepPolicyEntryHandlerTest {
         SystemUser s1 = new SystemUser("service1", new RepoPath("/home/users/system/services/random1"), new RepoPath("/home/users/system/services"));
         User user = new User("author", new RepoPath("/home/users/a/author"), new RepoPath("/home/users/a"));
 
-        AclManager aclManager = new DefaultAclManager();
         aclManager.addSystemUser(s1);
         aclManager.addUser(user);
 
-        parseAndSetRepoInit("/jcr_root/home/users/a/author/_rep_policy.xml", aclManager);
+        parseAndSetRepoinit("/jcr_root/home/users/a/author/_rep_policy.xml", aclManager);
+    }
+
+    @Test
+    public void parseJackrabbit2Restrictions() throws Exception {
+        RepoPath repoPath = new RepoPath("/home/users/system/services/random1");
+        SystemUser systemUser = new SystemUser("service1", repoPath, new RepoPath("/home/users/system/services"));
+        aclManager.addSystemUser(systemUser);
+
+        String path = "/jcr_root/asd/jr2restrictions/_rep_policy.xml";
+        Extension repoinitExtension = parseAndSetRepoinit(path, aclManager).getRepoinitExtension();
+        String expected =
+                "create service user service1 with path /home/users/system/services" + System.lineSeparator() +
+                "set ACL for service1\n" +
+                "allow jcr:read on /asd/jr2restrictions restriction(rep:glob,*/subtree/*,sling:customRestriction,sling:value1,sling:value2)\n" +
+                "end\n";
+
+        String actual = repoinitExtension.getText();
+        assertEquals(expected, actual);
+
+        RepoInitParser repoInitParser = new RepoInitParserService();
+        List<Operation> operations = repoInitParser.parse(new StringReader(actual));
+        assertFalse(operations.isEmpty());
     }
 
     private ParseResult parseAndSetRepoinit(String...systemUsersNames) throws Exception {
@@ -271,15 +292,14 @@ public final class RepPolicyEntryHandlerTest {
 
     private ParseResult parseAndSetRepoinit(@NotNull SystemUser...systemUsers) throws Exception {
         String path = "/jcr_root/home/users/system/asd/_rep_policy.xml";
-        AclManager aclManager = new DefaultAclManager();
         for (SystemUser systemUser : systemUsers) {
             aclManager.addSystemUser(systemUser);
         }
-        return parseAndSetRepoInit(path, aclManager);
+        return parseAndSetRepoinit(path, aclManager);
     }
 
     @NotNull
-    private ParseResult parseAndSetRepoInit(@NotNull String path, @NotNull AclManager aclManager) throws Exception {
+    private ParseResult parseAndSetRepoinit(@NotNull String path, @NotNull AclManager aclManager) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         return new ParseResult(TestUtils.createRepoInitExtension(handler, aclManager, path, getClass().getResourceAsStream(path.substring(1)), baos), new String(baos.toByteArray()));
     }

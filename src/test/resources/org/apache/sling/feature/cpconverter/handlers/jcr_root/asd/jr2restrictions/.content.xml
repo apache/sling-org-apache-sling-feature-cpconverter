@@ -15,16 +15,5 @@
  License for the specific language governing permissions and limitations under
  the License.
 -->
-<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:rep="internal" xmlns:sling="http://sling.apache.org/jcr/sling/1.0"
-          jcr:primaryType="rep:PrincipalPolicy"
-          rep:principalName="service2">
-    <entry0
-            jcr:primaryType="rep:PrincipalEntry"
-            rep:privileges="{Name}[jcr:read]"
-            rep:effectivePath="/asd/public">
-        <rep:restrictions
-                jcr:primaryType="rep:Restrictions"
-                rep:ntNames="{Name}[nt:folder,sling:Folder]"
-                sling:customRestriction="customRestrictionValue"/>
-    </entry0>
-</jcr:root>
+<jcr:root xmlns:sling="http://sling.apache.org/jcr/sling/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0"
+    jcr:primaryType="sling:Folder"/>

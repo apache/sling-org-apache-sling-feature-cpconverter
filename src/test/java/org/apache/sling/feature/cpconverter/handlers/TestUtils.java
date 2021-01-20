@@ -49,6 +49,7 @@ class TestUtils {
     static Extension createRepoInitExtension(@NotNull EntryHandler handler, @NotNull AclManager aclManager, @NotNull String path, @NotNull InputStream is) throws Exception {
         return createRepoInitExtension(handler, aclManager, path, is, null);
     }
+
     static Extension createRepoInitExtension(@NotNull EntryHandler handler, @NotNull AclManager aclManager, @NotNull String path, @NotNull InputStream is, @Nullable OutputStream out) throws Exception {
         Archive archive = mock(Archive.class);
         Archive.Entry entry = mock(Archive.Entry.class);

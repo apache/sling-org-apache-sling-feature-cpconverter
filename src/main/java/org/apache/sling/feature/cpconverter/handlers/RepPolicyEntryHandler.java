@@ -72,11 +72,13 @@ public class RepPolicyEntryHandler extends AbstractPolicyEntryHandler {
                 String primaryType = attributes.getValue(JCR_PRIMARYTYPE);
                 if (REP_GRANT_ACE.equals(primaryType) || REP_DENY_ACE.equals(primaryType)) {
                     String principalName = attributes.getValue(REP_PRINCIPAL_NAME);
-                    AccessControlEntry acl = createEntry(operations.get(primaryType), attributes);
+                    AccessControlEntry ace = createEntry(operations.get(primaryType), attributes);
+                    // handle restrictions added in jr2 format (i.e. not located below rep:restrictions node)
+                    addRestrictions(ace, attributes);
 
-                    processCurrentAcl = aclManager.addAcl(principalName, acl);
+                    processCurrentAcl = aclManager.addAcl(principalName, ace);
                     if (processCurrentAcl) {
-                        acls.add(acl);
+                        acls.add(ace);
                     } else {
                         hasRejectedNodes = true;
                     }

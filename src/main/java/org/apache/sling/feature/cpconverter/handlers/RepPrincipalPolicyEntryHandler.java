@@ -45,10 +45,6 @@ public final class RepPrincipalPolicyEntryHandler extends AbstractPolicyEntryHan
 
         private static final String REP_RESTRICTIONS = "rep:Restrictions";
 
-        private static final String REP_PRINCIPAL_NAME = "rep:principalName";
-
-        private static final String REP_PRIVILEGES = "rep:privileges";
-
         private static final String REP_PRINCIPAL_POLICY = "rep:PrincipalPolicy";
 
         private static final String REP_PRINCIPAL_ENTRY = "rep:PrincipalEntry";
@@ -84,7 +80,8 @@ public final class RepPrincipalPolicyEntryHandler extends AbstractPolicyEntryHan
                     RepoPath effectivePath = new RepoPath(attributes.getValue(REP_EFFECTIVE_PATH));
 
                     AccessControlEntry ace = new AccessControlEntry(true, privileges, effectivePath, true);
-
+                    // NOTE: nt-definition doesn't allow for jr2-stype restrictions defined right below the entry.
+                    // instead always requires rep:restrictions child node
                     processCurrentAcl = aclManager.addAcl(principalName, ace);
                     if (processCurrentAcl) {
                         aces.add(ace);
@@ -113,6 +110,15 @@ public final class RepPrincipalPolicyEntryHandler extends AbstractPolicyEntryHan
                 processCurrentAcl = false;
                 principalName = null;
                 handler.endElement(uri, localName, qName);
+            }
+        }
+
+        @Override
+        boolean isRestriction(@NotNull String attributeName) {
+            if ((REP_EFFECTIVE_PATH.equals(attributeName))) {
+                return false;
+            } else {
+                return super.isRestriction(attributeName);
             }
         }
     }

@@ -16,15 +16,11 @@
  the License.
 -->
 <jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:rep="internal" xmlns:sling="http://sling.apache.org/jcr/sling/1.0"
-          jcr:primaryType="rep:PrincipalPolicy"
-          rep:principalName="service2">
-    <entry0
-            jcr:primaryType="rep:PrincipalEntry"
+          jcr:primaryType="rep:ACL">
+    <allow0
+            jcr:primaryType="rep:GrantACE"
+            rep:principalName="service1"
             rep:privileges="{Name}[jcr:read]"
-            rep:effectivePath="/asd/public">
-        <rep:restrictions
-                jcr:primaryType="rep:Restrictions"
-                rep:ntNames="{Name}[nt:folder,sling:Folder]"
-                sling:customRestriction="customRestrictionValue"/>
-    </entry0>
+            rep:glob="{Name}[*/subtree/*]"
+            sling:customRestriction="{Name}[sling:value1,sling:value2]"/>
 </jcr:root>
