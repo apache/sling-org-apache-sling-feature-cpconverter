@@ -63,6 +63,7 @@ public class DefaultAclManager implements AclManager {
     private final Set<Group> groups = new LinkedHashSet<>();
     private final Set<User> users = new LinkedHashSet<>();
     private final Set<Mapping> mappings = new HashSet<>();
+    private final Set<String> mappedById = new HashSet<>();
 
     private final Map<String, List<AccessControlEntry>> acls = new HashMap<>();
 
@@ -90,12 +91,26 @@ public class DefaultAclManager implements AclManager {
 
     @Override
     public boolean addSystemUser(@NotNull SystemUser systemUser) {
-        return systemUsers.add(systemUser);
+        if (systemUsers.add(systemUser)) {
+            if (mappings.stream().anyMatch(mapping -> mapping.mapsUser(systemUser.getId()))) {
+                mappedById.add(systemUser.getId());
+            }
+            return true;
+        } else {
+            return false;
+        }
+
     }
 
     @Override
     public void addMapping(@NotNull Mapping mapping) {
-        mappings.add(mapping);
+        if (mappings.add(mapping)) {
+            for (SystemUser user : systemUsers) {
+                if (mapping.mapsUser(user.getId())) {
+                    mappedById.add(user.getId());
+                }
+            }
+        }
     }
 
     @Override
@@ -237,15 +252,12 @@ public class DefaultAclManager implements AclManager {
         if (!enforcePrincipalBased) {
             return false;
         } else {
-            // FIXME: avoid iterating over mappings multiple times
-            String id = systemUser.getId();
-            for (Mapping mapping : mappings) {
-                if (mapping.mapsUser(id)) {
-                    log.info("Skip enforcing principalbased access control setup for system user {} due to '{}'", systemUser.getId(), mapping);
-                    return false;
-                }
+            if (mappedById.contains(systemUser.getId())) {
+                log.warn("Skip enforcing principalbased access control setup for system user {} due to existing mapping", systemUser.getId());
+                return false;
+            } else {
+                return true;
             }
-            return true;
         }
     }
 
