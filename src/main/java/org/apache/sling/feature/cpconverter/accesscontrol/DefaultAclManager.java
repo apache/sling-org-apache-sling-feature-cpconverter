@@ -296,24 +296,25 @@ public class DefaultAclManager implements AclManager {
 
     protected @Nullable String computePathWithTypes(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
         boolean foundType = false;
-        String current = "";
-        String platformpath = "";
+        String repoinitPath = "/";
+        String platformPath = "";
         for (String part : path.toString().substring(1).split("/")) {
-            current += current.isEmpty() ? part : "/" + part;
+            repoinitPath += "/".equals(repoinitPath) ? part : "/" + part;
             String platformname = PlatformNameFormat.getPlatformName(part);
-            platformpath += platformpath.isEmpty() ? platformname : "/" + platformname;
+            platformPath += platformPath.isEmpty() ? platformname : "/" + platformname;
             for (VaultPackageAssembler packageAssembler : packageAssemblers) {
-                File currentContent = packageAssembler.getEntry(platformpath + "/" + CONTENT_XML_FILE_NAME);
+                File currentContent = packageAssembler.getEntry(platformPath + "/" + CONTENT_XML_FILE_NAME);
                 if (currentContent.isFile()) {
                     String typeNames = extractTypeNames(currentContent);
                     if (typeNames != null) {
-                        current += typeNames;
+                        repoinitPath += typeNames;
                         foundType = true;
+                        break;
                     }
                 }
             }
         }
-        return foundType ? new RepoPath(current).toString() : null;
+        return foundType ? repoinitPath : null;
     }
 
     @Nullable
