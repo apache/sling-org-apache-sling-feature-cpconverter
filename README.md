@@ -522,11 +522,10 @@ Apache Sling Content Package to Sling Feature converter
   -X, --verbose             Produce execution debug output.
   -Z, --fail-on-mixed-packages
                             Fail the conversion if the resulting attached
-                              content-package is MIXED type
-  --enforce-principal-based
-                            Converts all service user access control entries to principal-based setup 
-  --supported-principal-based-path
-                            Path supported for principal-based access control setup
+                              content-package is MIXED type.
+  --enforce-principal-based-supported-path=<path>
+                            Converts service user access control entries to principal-based 
+                              setup using the given supported path.
 Copyright(c) 2019 The Apache Software Foundation.
 ```
 
