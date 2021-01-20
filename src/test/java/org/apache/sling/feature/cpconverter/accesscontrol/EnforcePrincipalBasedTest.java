@@ -64,7 +64,7 @@ public class EnforcePrincipalBasedTest {
 
     @Before
     public void setUp() throws Exception {
-        aclManager = new DefaultAclManager(true, "/home/users/system/some/subtree");
+        aclManager = new DefaultAclManager("/home/users/system/some/subtree");
         tempDir = Files.createTempDirectory(getClass().getSimpleName());
 
         assembler = mock(VaultPackageAssembler.class);
@@ -88,24 +88,14 @@ public class EnforcePrincipalBasedTest {
 
     @Test(expected = IllegalStateException.class)
     public void testInvalidSupportedPath() {
-        AclManager acMgr = new DefaultAclManager(true, "/an/invalid/supported/path");
+        AclManager acMgr = new DefaultAclManager("/an/invalid/supported/path");
         RepoPath accessControlledPath = new RepoPath("/content/feature");
         getRepoInitExtension(acMgr, accessControlledPath, systemUser, false);
     }
 
     @Test
-    public void testMissingSupportedPath() {
-        AclManager acMgr = new DefaultAclManager(true, null);
-        RepoPath accessControlledPath = new RepoPath("/content/feature");
-        String txt = getRepoInitExtension(acMgr, accessControlledPath, systemUser, false).getText();
-
-        assertFalse(txt.contains("create service user user1 with path "+remappedIntermediatePath));
-        assertTrue(txt.contains("create service user user1 with path " + systemUser.getIntermediatePath()));
-    }
-
-    @Test
     public void testResourceBasedConversionWithoutForce() throws RepoInitParsingException {
-        AclManager acMgr = new DefaultAclManager(false, "/home/users/system/some/subtree"){
+        AclManager acMgr = new DefaultAclManager(null) {
             @Override
             protected @Nullable String computePathWithTypes(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
                 return "/content/feature(sling:Folder)";
@@ -117,35 +107,16 @@ public class EnforcePrincipalBasedTest {
 
         String expected =
                 "create service user user1 with path " + systemUser.getIntermediatePath() + System.lineSeparator() +
-                "create path /content/feature(sling:Folder)" + System.lineSeparator() +
-                "set ACL for user1" + System.lineSeparator() +
-                "allow jcr:read on /content/feature" + System.lineSeparator() +
-                "end" + System.lineSeparator();
+                        "create path /content/feature(sling:Folder)" + System.lineSeparator() +
+                        "set ACL for user1" + System.lineSeparator() +
+                        "allow jcr:read on /content/feature" + System.lineSeparator() +
+                        "end" + System.lineSeparator();
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
 
         RepoInitParser repoInitParser = new RepoInitParserService();
         List<Operation> operations = repoInitParser.parse(new StringReader(actual));
-        assertFalse(operations.isEmpty());
-
-        aclManager.addSystemUser(systemUser);
-        feature.getExtensions().clear();
-
-        accessControlledPath = new RepoPath("/content/feature");
-        repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, false);
-
-        expected =
-                "create service user user1 with path " + remappedIntermediatePath + System.lineSeparator() +
-                        "set principal ACL for user1" + System.lineSeparator() +
-                        "allow jcr:read on /content/feature" + System.lineSeparator() +
-                        "end" + System.lineSeparator();
-
-        actual = repoinitExtension.getText();
-        assertEquals(expected, actual);
-
-        repoInitParser = new RepoInitParserService();
-        operations = repoInitParser.parse(new StringReader(actual));
         assertFalse(operations.isEmpty());
     }
 

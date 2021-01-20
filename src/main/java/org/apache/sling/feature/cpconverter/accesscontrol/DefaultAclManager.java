@@ -56,8 +56,7 @@ public class DefaultAclManager implements AclManager {
 
     private static final String CONTENT_XML_FILE_NAME = ".content.xml";
 
-    private final boolean enforcePrincipalBased;
-    private final RepoPath supportedPrincipalBasedPath;
+    private final RepoPath enforcePrincipalBasedSupportedPath;
 
     private final Set<SystemUser> systemUsers = new LinkedHashSet<>();
     private final Set<Group> groups = new LinkedHashSet<>();
@@ -72,11 +71,10 @@ public class DefaultAclManager implements AclManager {
     private volatile PrivilegeDefinitions privilegeDefinitions;
 
     public DefaultAclManager() {
-        this(false, null);
+        this(null);
     }
-    public DefaultAclManager(boolean enforcePrincipalBased, @Nullable String supportedPrincipalBasedPath) {
-        this.enforcePrincipalBased = enforcePrincipalBased;
-        this.supportedPrincipalBasedPath = (supportedPrincipalBasedPath == null) ? null : new RepoPath(supportedPrincipalBasedPath);
+    public DefaultAclManager(@Nullable String enforcePrincipalBasedSupportedPath) {
+        this.enforcePrincipalBasedSupportedPath = (enforcePrincipalBasedSupportedPath == null) ? null : new RepoPath(enforcePrincipalBasedSupportedPath);
     }
 
     @Override
@@ -172,16 +170,16 @@ public class DefaultAclManager implements AclManager {
     @NotNull
     private String calculateIntermediatePath(@NotNull SystemUser systemUser) {
         RepoPath intermediatePath = systemUser.getIntermediatePath();
-        if (enforcePrincipalBased(systemUser) && supportedPrincipalBasedPath != null && !intermediatePath.startsWith(supportedPrincipalBasedPath)) {
+        if (enforcePrincipalBased(systemUser) && !intermediatePath.startsWith(enforcePrincipalBasedSupportedPath)) {
             RepoPath parent = intermediatePath.getParent();
             while (parent != null) {
-                if (supportedPrincipalBasedPath.startsWith(parent)) {
+                if (enforcePrincipalBasedSupportedPath.startsWith(parent)) {
                     String relpath = intermediatePath.toString().substring(parent.toString().length());
-                    return supportedPrincipalBasedPath.toString() + relpath;
+                    return enforcePrincipalBasedSupportedPath.toString() + relpath;
                 }
                 parent = parent.getParent();
             }
-            throw new IllegalStateException("Cannot calculate intermediate path for service user. Configured Supported path " +supportedPrincipalBasedPath+" has no common ancestor with "+intermediatePath);
+            throw new IllegalStateException("Cannot calculate intermediate path for service user. Configured Supported path " +enforcePrincipalBasedSupportedPath+" has no common ancestor with "+intermediatePath);
         } else {
             return intermediatePath.toString();
         }
@@ -249,7 +247,7 @@ public class DefaultAclManager implements AclManager {
     }
 
     private boolean enforcePrincipalBased(@NotNull SystemUser systemUser) {
-        if (!enforcePrincipalBased) {
+        if (enforcePrincipalBasedSupportedPath == null) {
             return false;
         } else {
             if (mappedById.contains(systemUser.getId())) {
