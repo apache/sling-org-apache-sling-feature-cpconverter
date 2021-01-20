@@ -100,17 +100,10 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
             } else if ( REPOINIT_PID.equals(pid) ) {
                 checkReferences(configurationProperties, pid);
             } else if (pid.startsWith(SERVICE_USER_MAPPING_PID)) {
-                Object mappings = configurationProperties.get("user.mapping");
+                String[] mappings = Converters.standardConverter().convert(configurationProperties.get("user.mapping")).to(String[].class);
                 if (mappings != null) {
-                    String[] usermappings;
-                    if (mappings instanceof String[]) {
-                        usermappings = (String[]) mappings;
-                    } else {
-                        // FIXME
-                        throw new IllegalStateException(path + " => '" + mappings.toString() + "'");
-                    }
                     AclManager aclManager = Objects.requireNonNull(converter.getAclManager());
-                    for (String usermapping : usermappings) {
+                    for (String usermapping : mappings) {
                         aclManager.addMapping(new Mapping(usermapping));
                     }
                 }

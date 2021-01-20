@@ -18,4 +18,4 @@
 <jcr:root xmlns:sling="http://sling.apache.org/jcr/sling/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0"
     jcr:primaryType="sling:OsgiConfig"
     user.default="admin"
-    user.mapping="[org.apache.sling.testbundle:sub-service-1=service1,org.apache.sling.testbundle:sub-service-2=\[service1\,service2\],org.apache.sling.testbundle=\[service1\,external-service-user\]]"/>
+    user.mapping="org.apache.sling.testbundle:sub-service-1=service1"/>

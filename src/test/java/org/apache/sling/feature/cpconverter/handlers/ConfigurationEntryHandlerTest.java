@@ -87,6 +87,7 @@ public class ConfigurationEntryHandlerTest {
 
     private final int expectedConfigurationsSize;
     private final int expectedConfigurationsEntrySize;
+    private final int expectedMappings;
 
     private final AbstractConfigurationEntryHandler configurationEntryHandler;
     private final String expectedRunMode;
@@ -94,11 +95,13 @@ public class ConfigurationEntryHandlerTest {
     public ConfigurationEntryHandlerTest(String resourceConfiguration,
                                          int expectedConfigurationsSize,
                                          int expectedConfigurationsEntrySize,
+                                         int expectedMappings,
                                          AbstractConfigurationEntryHandler configurationEntryHandler, 
                                          String expectedRunMode) {
         this.resourceConfiguration = resourceConfiguration;
         this.expectedConfigurationsSize = expectedConfigurationsSize;
         this.expectedConfigurationsEntrySize = expectedConfigurationsEntrySize;
+        this.expectedMappings = expectedMappings;
         this.configurationEntryHandler = configurationEntryHandler;
         this.expectedRunMode = expectedRunMode;
     }
@@ -151,7 +154,7 @@ public class ConfigurationEntryHandlerTest {
                 assertTrue(props.isEmpty());
             } else {
                 assertEquals("Unmatching size: " + props.size(), expectedConfigurationsEntrySize, configuration.getProperties().size());
-                verify(aclManager, times(3)).addMapping(any(Mapping.class));
+                verify(aclManager, times(expectedMappings)).addMapping(any(Mapping.class));
             }
             // type & value check for typed configuration
             if (this.resourceConfiguration.equals(TYPED_TESTCONFIG_PATH)) {
@@ -167,32 +170,32 @@ public class ConfigurationEntryHandlerTest {
         String path = "/jcr_root/apps/asd/config/";
 
         return Arrays.asList(new Object[][] {
-            { path + EXPECTED_PID + ".empty.cfg", 1, 2, new PropertiesConfigurationEntryHandler(), null },
-            { path + EXPECTED_PID + ".cfg", 1, 2, new PropertiesConfigurationEntryHandler(), null },
+            { path + EXPECTED_PID + ".empty.cfg", 1, 2, 0, new PropertiesConfigurationEntryHandler(), null },
+            { path + EXPECTED_PID + ".cfg", 1, 2, 1, new PropertiesConfigurationEntryHandler(), null },
 
-            { path + EXPECTED_PID + ".empty.cfg.json", 1, 2, new JsonConfigurationEntryHandler(), null },
-            { path + EXPECTED_PID + ".cfg.json", 1, 2, new JsonConfigurationEntryHandler(), null },
+            { path + EXPECTED_PID + ".empty.cfg.json", 1, 2, 0, new JsonConfigurationEntryHandler(), null },
+            { path + EXPECTED_PID + ".cfg.json", 1, 2, 3, new JsonConfigurationEntryHandler(), null },
 
-            { path + EXPECTED_PID + ".empty.config", 1, 2, new ConfigurationEntryHandler(), null },
-            { path + EXPECTED_PID + ".config", 1, 2, new ConfigurationEntryHandler(), null },
+            { path + EXPECTED_PID + ".empty.config", 1, 2, 0, new ConfigurationEntryHandler(), null },
+            { path + EXPECTED_PID + ".config", 1, 2, 3, new ConfigurationEntryHandler(), null },
 
-            { path + EXPECTED_PID + ".empty.xml", 1, 2, new XmlConfigurationEntryHandler(), null },
-            { path + EXPECTED_PID + ".xml", 1, 2, new XmlConfigurationEntryHandler(), null },
+            { path + EXPECTED_PID + ".empty.xml", 1, 2, 0, new XmlConfigurationEntryHandler(), null },
+            { path + EXPECTED_PID + ".xml", 1, 2, 1, new XmlConfigurationEntryHandler(), null },
 
-            { path + EXPECTED_PID + ".empty.config.xml", 1, 2, new XmlConfigurationEntryHandler(), null },
-            { path + EXPECTED_PID + ".config.xml", 1, 2, new XmlConfigurationEntryHandler(), null },
+            { path + EXPECTED_PID + ".empty.config.xml", 1, 2, 0, new XmlConfigurationEntryHandler(), null },
+            { path + EXPECTED_PID + ".config.xml", 1, 2, 3, new XmlConfigurationEntryHandler(), null },
 
             
-            { path + EXPECTED_PID + ".empty.xml.cfg", 1, 2, new PropertiesConfigurationEntryHandler(), null },
-            { path + EXPECTED_PID + ".xml.cfg", 1, 2, new PropertiesConfigurationEntryHandler(), null },
+            { path + EXPECTED_PID + ".empty.xml.cfg", 1, 2, 0,  new PropertiesConfigurationEntryHandler(), null },
+            { path + EXPECTED_PID + ".xml.cfg", 1, 2, 1, new PropertiesConfigurationEntryHandler(), null },
 
             // runmode aware folders
-            { "/jcr_root/apps/asd/config.author/" + EXPECTED_PID + ".config", 1, 2, new ConfigurationEntryHandler(), "author" },
-            { REPOINIT_TESTCONFIG_PATH, 0, 2, new ConfigurationEntryHandler() , "author"},
-            { "/jcr_root/apps/asd/config.publish/" + EXPECTED_PID + ".config", 1, 2, new ConfigurationEntryHandler(), "publish" },
+            { "/jcr_root/apps/asd/config.author/" + EXPECTED_PID + ".config", 1, 2, 3, new ConfigurationEntryHandler(), "author" },
+            { REPOINIT_TESTCONFIG_PATH, 0, 2, 1, new ConfigurationEntryHandler() , "author"},
+            { "/jcr_root/apps/asd/config.publish/" + EXPECTED_PID + ".config", 1, 2, 3, new ConfigurationEntryHandler(), "publish" },
 
             //test typed config
-            { TYPED_TESTCONFIG_PATH, 1, 6, new XmlConfigurationEntryHandler(), null }
+            { TYPED_TESTCONFIG_PATH, 1, 6, 3, new XmlConfigurationEntryHandler(), null }
         });
     }
 
