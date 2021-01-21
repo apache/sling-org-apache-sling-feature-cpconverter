@@ -555,4 +555,4 @@ then execute the command
 
 ## Failures and Restrictions
 
-There could be cases where default handlers would be not enough to create pure content `content-pacake(s)` archives, by enabling the `-Z` option in the CLI tool, or via [ContentPackage2FeatureModelConverter#setFailOnMixedPackages(boolean)](./src/main/java/org/apache/sling/feature/cpconverter/ContentPackage2FeatureModelConverter.java#L151) API, the converter will fail the process if the resulting `content-pacake(s)` is of MIXED type.
+There could be cases where default handlers would be not enough to create pure content `content-package` archives, by enabling the `-Z` option in the CLI tool, or via [ContentPackage2FeatureModelConverter#setFailOnMixedPackages(boolean)](./src/main/java/org/apache/sling/feature/cpconverter/ContentPackage2FeatureModelConverter.java#L151) API, the converter will fail the process if the resulting `content-package` is of MIXED type.
