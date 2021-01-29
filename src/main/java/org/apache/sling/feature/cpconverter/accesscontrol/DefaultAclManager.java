@@ -152,7 +152,9 @@ public class DefaultAclManager implements AclManager {
     private void addUsersAndGroups(@NotNull Formatter formatter) {
         for (SystemUser systemUser : systemUsers) {
             // make sure all system users are created first
-            formatter.format("create service user %s with path %s%n", systemUser.getId(), calculateIntermediatePath(systemUser));
+            String forced = (enforcePrincipalBased(systemUser) ? "forced " : "");
+            formatter.format("create service user %s with %spath %s%n", systemUser.getId(), forced, calculateIntermediatePath(systemUser));
+
             if (aclIsBelow(systemUser.getPath())) {
                 throw new IllegalStateException("Detected policy on subpath of system-user: " + systemUser);
             }
