@@ -66,7 +66,13 @@ public class ConfigurationEntryHandlerTest {
         " create service user test-user2\n" + 
         "    set ACL for test-user2\n" + 
         "        allow    jcr:read    on /conf\n" + 
-        "    end";
+        "    end\n" +
+        " create path /test\n" +
+        "# When replacing = with the plain equals sign will make the test fail but this is not applicable if used inside Repository Initializer\n" +
+        "    set properties on /test\n" +
+        "        set testprop to \"one=two\"\n" +
+        "    end"
+        ;
 
     private static final String EXPECTED_TYPED_CONFIG = "{\n" + 
         "  \"org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.typed\":  {\n" + 
