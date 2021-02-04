@@ -68,7 +68,6 @@ public class ConfigurationEntryHandlerTest {
         "        allow    jcr:read    on /conf\n" + 
         "    end\n" +
         " create path /test\n" +
-        "# When replacing = with the plain equals sign will make the test fail but this is not applicable if used inside Repository Initializer\n" +
         "    set properties on /test\n" +
         "        set testprop to \"one=two\"\n" +
         "    end"
