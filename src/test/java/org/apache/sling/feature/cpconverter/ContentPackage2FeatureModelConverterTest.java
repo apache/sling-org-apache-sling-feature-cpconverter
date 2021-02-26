@@ -100,7 +100,7 @@ public class ContentPackage2FeatureModelConverterTest {
 
     @After
     public void tearDowd() {
-        converter = null;
+        converter.cleanup();
     }
 
     @Test

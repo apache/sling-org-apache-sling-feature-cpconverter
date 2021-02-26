@@ -36,13 +36,10 @@ public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHa
 
     private static final String SNAPSHOT_POSTFIX = "-SNAPSHOT";
 
-    private final File temporaryDir = new File(System.getProperty("java.io.tmpdir"), "sub-content-packages");
-
     private final Pattern EMBEDDED_PACKAGE_PATTERN = Pattern.compile("/jcr_root/apps/.+/install(?:\\\\.([^/]+))?/.+.zip");
     
     public AbstractContentPackageHandler() {
         super("/jcr_root/(?:etc/packages|apps/.+/install(?:\\.([^/]+))?)/.+.zip");
-        temporaryDir.mkdirs();
     }
 
     @Override
@@ -50,6 +47,8 @@ public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHa
             throws Exception {
         logger.info("Processing sub-content package '{}'...", entry.getName());
 
+        final File temporaryDir = new File(converter.getTempDirectory(), "sub-content-packages");
+        temporaryDir.mkdirs();
         File temporaryContentPackage = new File(temporaryDir, entry.getName());
 
         if (entry.getName().contains(SNAPSHOT_POSTFIX) && temporaryContentPackage.exists()) {

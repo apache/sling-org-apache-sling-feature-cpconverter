@@ -39,7 +39,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.jackrabbit.vault.fs.api.ImportMode;
 import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
 import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
 import org.apache.jackrabbit.vault.fs.config.DefaultWorkspaceFilter;
@@ -65,28 +64,17 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
 
     private static final String[] INCLUDE_RESOURCES = { PACKAGE_DEFINITION_XML, CONFIG_XML, SETTINGS_XML };
 
-    private static final File TMP_DIR = new File(System.getProperty("java.io.tmpdir"), "synthetic-content-packages");
-
     private static final Pattern OSGI_BUNDLE_PATTERN = Pattern.compile("(jcr_root)?/apps/[^/]+/install(\\.([^/]+))?/.+\\.jar");
     
-    public static @NotNull VaultPackageAssembler create(@NotNull VaultPackage vaultPackage) {
-        return create(vaultPackage, Objects.requireNonNull(vaultPackage.getMetaInf().getFilter()));
+    public static @NotNull VaultPackageAssembler create(@NotNull File tempDir, @NotNull VaultPackage vaultPackage) {
+        return create(tempDir, vaultPackage, Objects.requireNonNull(vaultPackage.getMetaInf().getFilter()));
     }
-/*
-    public static @NotNull File createSynthetic(@NotNull VaultPackage vaultPackage) throws Exception {
-        DefaultWorkspaceFilter filter = new DefaultWorkspaceFilter();
-        PathFilterSet filterSet = new PathFilterSet();
-        SyntheticPathFilter pathFilter = new SyntheticPathFilter();
-        filterSet.addExclude(pathFilter);
-        filterSet.setImportMode(ImportMode.MERGE);
-        filter.add(filterSet);
-        return create(vaultPackage, filter).createPackage();
-    }
-*/
-    private static @NotNull VaultPackageAssembler create(@NotNull VaultPackage vaultPackage, @NotNull WorkspaceFilter filter) {
+
+    private static @NotNull VaultPackageAssembler create(@NotNull File baseTempDir, @NotNull VaultPackage vaultPackage, @NotNull WorkspaceFilter filter) {
+        final File tempDir = new File(baseTempDir, "synthetic-content-packages_" + System.currentTimeMillis());
         PackageId packageId = vaultPackage.getId();
         String fileName = packageId.toString().replaceAll("/", "-").replaceAll(":", "-") + "-" + vaultPackage.getFile().getName();
-        File storingDirectory = new File(TMP_DIR, fileName + "-deflated");
+        File storingDirectory = new File(tempDir, fileName + "-deflated");
         if(storingDirectory.exists()) {
             try {
                 FileUtils.deleteDirectory(storingDirectory);
@@ -126,7 +114,7 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
 
         Set<Dependency> dependencies = getDependencies(vaultPackage);
 
-        VaultPackageAssembler assembler = new VaultPackageAssembler(storingDirectory, properties, dependencies);
+        VaultPackageAssembler assembler = new VaultPackageAssembler(tempDir, storingDirectory, properties, dependencies);
         assembler.mergeFilters(filter);
         return assembler;
     }
@@ -138,6 +126,12 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
     private final File storingDirectory;
 
     private final Properties properties;
+
+    private final File tmpDir;
+
+    File getTempDir() {
+        return this.tmpDir;
+    }
 
     @Override
     public boolean matches(@NotNull String path) {
@@ -153,10 +147,11 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
     /**
      * This class can not be instantiated from outside
      */
-    private VaultPackageAssembler(@NotNull File storingDirectory, @NotNull Properties properties, @NotNull Set<Dependency> dependencies) {
+    private VaultPackageAssembler(@NotNull File tempDir, @NotNull File storingDirectory, @NotNull Properties properties, @NotNull Set<Dependency> dependencies) {
         this.storingDirectory = storingDirectory;
         this.properties = properties;
         this.dependencies = dependencies;
+        this.tmpDir = tempDir;
     }
     
     public @NotNull Properties getPackageProperties() {
@@ -226,7 +221,7 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
     }
 
     public @NotNull File createPackage() throws IOException {
-        return createPackage(TMP_DIR);
+        return createPackage(this.tmpDir);
     }
 
     public @NotNull File createPackage(@NotNull File outputDirectory) throws IOException {
@@ -267,7 +262,7 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
         archiver.setIncludeEmptyDirs(true);
 
         String destFileName = storingDirectory.getName().substring(0, storingDirectory.getName().lastIndexOf('-'));
-        File destFile = new File(TMP_DIR, destFileName);
+        File destFile = new File(this.tmpDir, destFileName);
 
         archiver.setDestFile(destFile);
         archiver.addFileSet(new DefaultFileSet(storingDirectory));

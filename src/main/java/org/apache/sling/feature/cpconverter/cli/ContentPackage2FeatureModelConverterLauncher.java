@@ -17,11 +17,15 @@
 package org.apache.sling.feature.cpconverter.cli;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.Date;
+import java.util.Formatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
@@ -121,9 +125,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
         //output the current tmp directory
         logger.debug("Using tmp directory {}", System.getProperty("java.io.tmpdir"));
 
-        // Add the Shutdown Hook to the Java virtual machine
-        // in order to destroy all the allocated resources
-        Runtime.getRuntime().addShutdownHook(new ShutDownHook(logger));
+        final long start = System.currentTimeMillis();
 
         if (printVersion) {
             printVersion(logger);
@@ -132,64 +134,119 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
         logger.info(appName);
         logger.info("");
 
+        boolean exitWithError = false;
+
         try {
-            DefaultFeaturesManager featuresManager = new DefaultFeaturesManager(mergeConfigurations,
-                                                            bundlesStartOrder,
-                                                            featureModelsOutputDirectory,
-                                                            artifactIdOverride,
-                                                            fmPrefix,
-                                                            properties);
-            if (apiRegions != null)
-                featuresManager.setAPIRegions(apiRegions);
+            try {
+                DefaultFeaturesManager featuresManager = new DefaultFeaturesManager(mergeConfigurations,
+                                                                bundlesStartOrder,
+                                                                featureModelsOutputDirectory,
+                                                                artifactIdOverride,
+                                                                fmPrefix,
+                                                                properties);
+                if (apiRegions != null)
+                    featuresManager.setAPIRegions(apiRegions);
 
-            if (exportsToRegion != null)
-                featuresManager.setExportToAPIRegion(exportsToRegion);
+                if (exportsToRegion != null)
+                    featuresManager.setExportToAPIRegion(exportsToRegion);
 
-            Map<String, String> entryHandlerConfigsMap = new HashMap<>();
-            if (entryHandlerConfigs != null) {
-                for (String config : entryHandlerConfigs) {
-                    int idx = config.indexOf(':');
-                    if (idx != -1) {
-                        entryHandlerConfigsMap.put(config.substring(0, idx), config.substring(idx + 1));
+                Map<String, String> entryHandlerConfigsMap = new HashMap<>();
+                if (entryHandlerConfigs != null) {
+                    for (String config : entryHandlerConfigs) {
+                        int idx = config.indexOf(':');
+                        if (idx != -1) {
+                            entryHandlerConfigsMap.put(config.substring(0, idx), config.substring(idx + 1));
+                        }
                     }
                 }
-            }
-            ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation)
-                                                             .setFeaturesManager(featuresManager)
-                                                             .setBundlesDeployer(new DefaultArtifactsDeployer(artifactsOutputDirectory))
-                                                             .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap))
-                                                             .setAclManager(new DefaultAclManager(enforcePrincipalBasedSupportedPath))
-                                                             .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
-                                                             .setFailOnMixedPackages(failOnMixedPackages)
-                                                             .setDropContent(true);
 
-            if (filteringPatterns != null && filteringPatterns.length > 0) {
-                RegexBasedResourceFilter filter = new RegexBasedResourceFilter();
+                ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation)
+                                                                .setFeaturesManager(featuresManager)
+                                                                .setBundlesDeployer(new DefaultArtifactsDeployer(artifactsOutputDirectory))
+                                                                .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap))
+                                                                .setAclManager(new DefaultAclManager(enforcePrincipalBasedSupportedPath))
+                                                                .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
+                                                                .setFailOnMixedPackages(failOnMixedPackages)
+                                                                .setDropContent(true);
 
-                for (String filteringPattern : filteringPatterns) {
-                    filter.addFilteringPattern(filteringPattern);
+                try {
+                    if (filteringPatterns != null && filteringPatterns.length > 0) {
+                        RegexBasedResourceFilter filter = new RegexBasedResourceFilter();
+
+                        for (String filteringPattern : filteringPatterns) {
+                            filter.addFilteringPattern(filteringPattern);
+                        }
+
+                        converter.setResourceFilter(filter);
+                    }
+
+                    converter.convert(contentPackages);
+                } finally {
+                    converter.cleanup();
                 }
 
-                converter.setResourceFilter(filter);
+                logger.info( "+-----------------------------------------------------+" );
+                logger.info("{} SUCCESS", appName);
+            } catch (Throwable t) {
+                logger.info( "+-----------------------------------------------------+" );
+                logger.info("{} FAILURE", appName);
+                logger.info( "+-----------------------------------------------------+" );
+
+                if (debug) {
+                    logger.error("Unable to convert content-package {}:", contentPackages, t);
+                } else {
+                    logger.error("Unable to convert content-package {}: {}", contentPackages, t.getMessage());
+                }
+
+                logger.info( "+-----------------------------------------------------+" );
+
+                exitWithError = true;
             }
-
-            converter.convert(contentPackages);
-
-            logger.info( "+-----------------------------------------------------+" );
-            logger.info("{} SUCCESS", appName);
-        } catch (Throwable t) {
-            logger.info( "+-----------------------------------------------------+" );
-            logger.info("{} FAILURE", appName);
-            logger.info( "+-----------------------------------------------------+" );
-
-            if (debug) {
-                logger.error("Unable to convert content-package {}:", contentPackages, t);
+        } finally {
+            // format the uptime string
+            Formatter uptimeFormatter = new Formatter();
+            uptimeFormatter.format("Total time:");
+    
+            long uptime = System.currentTimeMillis() - start;
+            if (uptime < 1000) {
+                uptimeFormatter.format(" %s millisecond%s", uptime, (uptime > 1 ? "s" : ""));
             } else {
-                logger.error("Unable to convert content-package {}: {}", contentPackages, t.getMessage());
+                long uptimeInSeconds = (uptime) / 1000;
+                final long hours = uptimeInSeconds / 3600;
+    
+                if (hours > 0) {
+                    uptimeFormatter.format(" %s hour%s", hours, (hours > 1 ? "s" : ""));
+                }
+    
+                uptimeInSeconds = uptimeInSeconds - (hours * 3600);
+                final long minutes = uptimeInSeconds / 60;
+    
+                if (minutes > 0) {
+                    uptimeFormatter.format(" %s minute%s", minutes, (minutes > 1 ? "s" : ""));
+                }
+    
+                uptimeInSeconds = uptimeInSeconds - (minutes * 60);
+    
+                if (uptimeInSeconds > 0) {
+                    uptimeFormatter.format(" %s second%s", uptimeInSeconds, (uptimeInSeconds > 1 ? "s" : ""));
+                }
             }
+            logger.info(uptimeFormatter.toString());
+    
+            uptimeFormatter.close();
+    
+            logger.info("Finished at: {}", new Date());
+    
+            final Runtime runtime = Runtime.getRuntime();
+            final int megaUnit = 1024 * 1024;
+    
+            logger.info("Final Memory: {}M/{}M",
+                        (runtime.totalMemory() - runtime.freeMemory()) / megaUnit,
+                        runtime.totalMemory() / megaUnit);
+            logger.info("+-----------------------------------------------------+");
+        }
 
-            logger.info( "+-----------------------------------------------------+" );
-
+        if ( exitWithError ) {
             System.exit(1);
         }
     }

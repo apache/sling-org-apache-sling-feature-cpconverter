@@ -21,6 +21,7 @@ import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.dete
 import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.getDependencies;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,6 +34,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
@@ -91,6 +93,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     private boolean dropContent = false;
 
+    private final File tmpDirectory;
+
     public ContentPackage2FeatureModelConverter() {
         this(false);
     }
@@ -98,6 +102,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     public ContentPackage2FeatureModelConverter(boolean strictValidation) {
         super(strictValidation);
         this.recollectorVaultPackageScanner = new RecollectorVaultPackageScanner(this, this.packageManager, strictValidation, subContentPackages);
+        this.tmpDirectory = new File(new File ( System.getProperty("java.io.tmpdir") ), "cp2fm-converter_" + System.currentTimeMillis());
     }
 
     public @NotNull ContentPackage2FeatureModelConverter setEntryHandlersManager(@Nullable EntryHandlersManager handlersManager) {
@@ -156,6 +161,22 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return this;
     }
 
+    public File getTempDirectory() {
+        return this.tmpDirectory;
+    }
+    
+    public void cleanup() {
+        if ( this.tmpDirectory.exists() ) {
+            logger.info( "Cleaning up tmp directory {}", this.tmpDirectory);
+
+            try {
+                FileUtils.deleteDirectory( this.tmpDirectory );
+            } catch (IOException e) {
+                logger.error( "Error Deleting {}", this.tmpDirectory );
+            }
+        }
+    }
+    
     public void convert(@NotNull File...contentPackages) throws Exception {
         requireNonNull(contentPackages , "Null content-package(s) can not be converted.");
         secondPass(firstPass(contentPackages));
@@ -201,7 +222,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         for (VaultPackage vaultPackage : orderedContentPackages) {
             try {
                 emitter.startPackage(vaultPackage);
-                mainPackageAssembler = VaultPackageAssembler.create(vaultPackage);
+                mainPackageAssembler = VaultPackageAssembler.create(this.getTempDirectory(), vaultPackage);
                 assemblers.add(mainPackageAssembler);
 
                 ArtifactId mvnPackageId = toArtifactId(vaultPackage);
@@ -283,7 +304,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
         PackageId originalPackageId = vaultPackage.getId();
         ArtifactId mvnPackageId = toArtifactId(vaultPackage);
-        VaultPackageAssembler clonedPackage = VaultPackageAssembler.create(vaultPackage);
+        VaultPackageAssembler clonedPackage = VaultPackageAssembler.create(this.getTempDirectory(), vaultPackage);
 
         // Please note: THIS IS A HACK to meet the new requirement without drastically change the original design
         // temporary swap the main handler to collect stuff

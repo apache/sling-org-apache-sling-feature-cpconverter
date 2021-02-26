@@ -20,6 +20,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,6 +31,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,24 +41,32 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(Parameterized.class)
 public class VaultPackageAssemblerTest {
 
-    private static final File TMP_DIR = new File(System.getProperty("java.io.tmpdir"), "synthetic-content-packages");
-
     private File testDirectory;
 
-    private final VaultPackageAssembler assembler;
+    private VaultPackageAssembler assembler;
 
     private final String resourceLocation;
 
-    public VaultPackageAssemblerTest(String resourceLocation, VaultPackageAssembler assembler) {
+    public VaultPackageAssemblerTest(String resourceLocation) {
         this.resourceLocation = resourceLocation;
-        this.assembler = assembler;
     }
 
     @Before
-    public void setUp() {
-        testDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+    public void setUp() throws IOException {
+        URL resource = VaultPackageAssemblerTest.class.getResource("../test-content-package.zip");
+        File file = FileUtils.toFile(resource);
+ 
+        VaultPackage vaultPackage = new PackageManagerImpl().open(file);
+
+        this.testDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+        this.assembler = VaultPackageAssembler.create(testDirectory, vaultPackage);
     }
 
+    @After
+    public void tearDown() throws IOException {
+        FileUtils.deleteDirectory(this.testDirectory);
+    }
+    
     @Test
     public void matchAll() {
         assembler.matches(resourceLocation);
@@ -88,26 +98,20 @@ public class VaultPackageAssemblerTest {
         File file = FileUtils.toFile(resource);
         VaultPackage vaultPackage = new PackageManagerImpl().open(file);
 
-        VaultPackageAssembler assembler = VaultPackageAssembler.create(vaultPackage);
+        VaultPackageAssembler assembler = VaultPackageAssembler.create(testDirectory, vaultPackage);
         PackageId packageId = vaultPackage.getId();
         String fileName = packageId.toString().replaceAll("/", "-").replaceAll(":", "-") + "-" + vaultPackage.getFile().getName();
-        File storingDirectory = new File(TMP_DIR, fileName + "-deflated");
+        File storingDirectory = new File(assembler.getTempDir(), fileName + "-deflated");
         assertTrue("Storing Directory for Vault Package does not exist", storingDirectory.exists());
     }
 
     @Parameters
     public static Collection<Object[]> data() throws Exception {
-        URL resource = VaultPackageAssemblerTest.class.getResource("../test-content-package.zip");
-        File file = FileUtils.toFile(resource);
-        VaultPackage vaultPackage = new PackageManagerImpl().open(file);
-
-        VaultPackageAssembler assembler = VaultPackageAssembler.create(vaultPackage);
-
         return Arrays.asList(new Object[][] {
-            { null, assembler },
-            { "/jcr_root/.content.xml", assembler },
-            { "/jcr_root/asd/.content.xml", assembler },
-            { "/jcr_root/asd/public/license.txt", assembler }
+            { null },
+            { "/jcr_root/.content.xml" },
+            { "/jcr_root/asd/.content.xml" },
+            { "/jcr_root/asd/public/license.txt" }
         });
     }
 
