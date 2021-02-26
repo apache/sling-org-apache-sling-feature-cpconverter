@@ -121,12 +121,14 @@ public class UsersEntryHandlerTest {
     @Test
     public void parseUserWithConfig() throws Exception {
         String path = "/jcr_root/rep:security/rep:authorizables/rep:users/a/author/.content.xml";
+        String filePath = path.substring(1).replace("rep:", "_rep_");
+
         AclManager aclManager = mock(AclManager.class);
 
-        TestUtils.createRepoInitExtension(usersEntryHandler, aclManager, path, getClass().getResourceAsStream(path.substring(1)));
+        TestUtils.createRepoInitExtension(usersEntryHandler, aclManager, path, getClass().getResourceAsStream(filePath));
         verify(aclManager, never()).addUser(any(User.class));
 
-        TestUtils.createRepoInitExtension(usersEntryHandler.withConfig("/jcr_root(/rep:security/rep:authorizables/rep:users.*/)\\.content.xml"), aclManager, path, getClass().getResourceAsStream(path.substring(1)));
+        TestUtils.createRepoInitExtension(usersEntryHandler.withConfig("/jcr_root(/rep:security/rep:authorizables/rep:users.*/)\\.content.xml"), aclManager, path, getClass().getResourceAsStream(filePath));
         verify(aclManager, times(1)).addUser(any(User.class));
     }
 

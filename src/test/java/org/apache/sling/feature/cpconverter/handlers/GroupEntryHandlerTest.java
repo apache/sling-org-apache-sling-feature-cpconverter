@@ -74,12 +74,13 @@ public class GroupEntryHandlerTest {
     @Test
     public void parseGroupWithConfig() throws Exception {
         String path = "/jcr_root/rep:security/rep:authorizables/rep:groups/g/V084LLw1ypl2l9G0e28c/.content.xml";
+        String filePath = path.substring(1).replace("rep:", "_rep_");
         AclManager aclManager = mock(AclManager.class);
 
-        TestUtils.createRepoInitExtension(handler, aclManager, path, getClass().getResourceAsStream(path.substring(1)));
+        TestUtils.createRepoInitExtension(handler, aclManager, path, getClass().getResourceAsStream(filePath));
         verify(aclManager, never()).addGroup(any(Group.class));
 
-        TestUtils.createRepoInitExtension(handler.withConfig("/jcr_root(/rep:security/rep:authorizables/rep:groups.*/)\\.content.xml"), aclManager, path, getClass().getResourceAsStream(path.substring(1)));
+        TestUtils.createRepoInitExtension(handler.withConfig("/jcr_root(/rep:security/rep:authorizables/rep:groups.*/)\\.content.xml"), aclManager, path, getClass().getResourceAsStream(filePath));
         verify(aclManager, times(1)).addGroup(any(Group.class));
     }
 }
