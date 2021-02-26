@@ -21,10 +21,11 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Comparator;
 
-import org.apache.sling.feature.cpconverter.artifacts.ArtifactWriter;
-import org.apache.sling.feature.cpconverter.artifacts.ArtifactsDeployer;
-import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,15 +34,25 @@ public class DefaultBundlesDeployerTest {
 
     private ArtifactsDeployer artifactDeployer;
 
+    private File outputDirectory;
+
     @Before
     public void setUp() {
-        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+        outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
         artifactDeployer = new DefaultArtifactsDeployer(outputDirectory);
     }
 
     @After
-    public void tearDown() {
+    public void tearDown() throws IOException {
         artifactDeployer = null;
+        Path tempDir = outputDirectory.toPath();
+    
+        Files.walk(tempDir)
+            .sorted(Comparator.reverseOrder())
+            .map(Path::toFile)
+            .forEach(File::delete);
+
+        outputDirectory = null;
     }
 
     @Test

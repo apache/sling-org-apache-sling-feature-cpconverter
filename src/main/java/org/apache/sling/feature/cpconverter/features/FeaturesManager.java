@@ -37,7 +37,10 @@ public interface FeaturesManager {
 
     void addAPIRegionExport(@Nullable String runMode, @NotNull String exportedPackage);
 
-    void addConfiguration(@Nullable String runMode, @NotNull String pid, @Nullable Dictionary<String, Object> configurationProperties);
+    void addConfiguration(@Nullable String runMode, 
+        @NotNull String pid,
+        @NotNull String path,
+        @Nullable Dictionary<String, Object> configurationProperties);
 
     void serialize() throws Exception;
 

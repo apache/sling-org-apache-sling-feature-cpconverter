@@ -72,7 +72,7 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
     public static @NotNull VaultPackageAssembler create(@NotNull VaultPackage vaultPackage) {
         return create(vaultPackage, Objects.requireNonNull(vaultPackage.getMetaInf().getFilter()));
     }
-
+/*
     public static @NotNull File createSynthetic(@NotNull VaultPackage vaultPackage) throws Exception {
         DefaultWorkspaceFilter filter = new DefaultWorkspaceFilter();
         PathFilterSet filterSet = new PathFilterSet();
@@ -82,7 +82,7 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
         filter.add(filterSet);
         return create(vaultPackage, filter).createPackage();
     }
-
+*/
     private static @NotNull VaultPackageAssembler create(@NotNull VaultPackage vaultPackage, @NotNull WorkspaceFilter filter) {
         PackageId packageId = vaultPackage.getId();
         String fileName = packageId.toString().replaceAll("/", "-").replaceAll(":", "-") + "-" + vaultPackage.getFile().getName();

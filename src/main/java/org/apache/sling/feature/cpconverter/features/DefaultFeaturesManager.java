@@ -55,6 +55,12 @@ import org.slf4j.LoggerFactory;
 
 public class DefaultFeaturesManager implements FeaturesManager {
 
+    public enum ConfigurationHandling {
+        ORDERED,
+        MERGE,
+        STRICT
+    };
+
     private static final String CONTENT_PACKAGES = "content-packages";
 
     private static final String SLING_OSGI_FEATURE_TILE_TYPE = "slingosgifeature";
@@ -67,7 +73,7 @@ public class DefaultFeaturesManager implements FeaturesManager {
 
     private final VariablesInterpolator interpolator = new SimpleVariablesInterpolator();
 
-    private final boolean mergeConfigurations;
+    private final ConfigurationHandling configurationHandling;
 
     private final int bundlesStartOrder;
 
@@ -83,9 +89,11 @@ public class DefaultFeaturesManager implements FeaturesManager {
 
     private final List<String> targetAPIRegions = new ArrayList<>();
 
-    private String exportsToAPIRegion = null;
+    private String exportsToAPIRegion;
 
-    private Feature targetFeature = null;
+    private Feature targetFeature;
+
+    private final Map<String, String> pidToPathMapping = new HashMap<>();
 
     DefaultFeaturesManager() {
         this(new File(""));
@@ -101,7 +109,17 @@ public class DefaultFeaturesManager implements FeaturesManager {
                                   @Nullable String artifactIdOverride,
                                   @Nullable String prefix,
                                   @NotNull Map<String, String> properties) {
-        this.mergeConfigurations = mergeConfigurations;
+        this(mergeConfigurations ? ConfigurationHandling.MERGE : ConfigurationHandling.ORDERED, bundlesStartOrder, featureModelsOutputDirectory,
+                artifactIdOverride, prefix, properties);
+    }
+
+    public DefaultFeaturesManager(@NotNull ConfigurationHandling configurationHandling,
+                                    int bundlesStartOrder,
+                                    @NotNull File featureModelsOutputDirectory,
+                                    @Nullable String artifactIdOverride,
+                                    @Nullable String prefix,
+                                    @NotNull Map<String, String> properties) {
+        this.configurationHandling = configurationHandling;
         this.bundlesStartOrder = bundlesStartOrder;
         this.featureModelsOutputDirectory = featureModelsOutputDirectory;
         this.artifactIdOverride = artifactIdOverride;
@@ -202,19 +220,34 @@ public class DefaultFeaturesManager implements FeaturesManager {
     }
 
     @Override
-    public void addConfiguration(@Nullable String runMode, @NotNull String pid, @Nullable Dictionary<String, Object> configurationProperties) {
+    public void addConfiguration(@Nullable String runMode, 
+        @NotNull String pid, 
+        @NotNull String path,
+        @Nullable Dictionary<String, Object> configurationProperties) {
         Feature feature = getRunMode(runMode);
         Configuration configuration = feature.getConfigurations().getConfiguration(pid);
 
         if (configuration == null) {
             configuration = new Configuration(pid);
             feature.getConfigurations().add(configuration);
-        } else if (!mergeConfigurations) {
-            throw new IllegalStateException("Configuration '"
-                                            + pid
-                                            + "' already defined in Feature Model '"
-                                            + feature.getId().toMvnId()
-                                            + "', set the 'mergeConfigurations' flag to 'true' if you want to merge multiple configurations with same PID");
+        } else {
+            switch ( this.configurationHandling ) {
+                case STRICT : throw new IllegalStateException("Configuration '"
+                               + pid
+                               + "' already defined in Feature Model '"
+                               + feature.getId().toMvnId()
+                               + "', set the 'mergeConfigurations' flag to 'true' if you want to merge multiple configurations with same PID");
+                case ORDERED : final String oldPath = this.pidToPathMapping.get(pid);
+                               if ( oldPath == null || oldPath.compareTo(path) > 0 ) {
+                                   this.pidToPathMapping.put(pid, path);
+                                   feature.getConfigurations().remove(configuration);
+                                   configuration = new Configuration(pid);
+                                   feature.getConfigurations().add(configuration);                       
+                               } else {
+                                   return;
+                               }
+                case MERGE : // nothing to do
+            }
         }
 
         Enumeration<String> keys = configurationProperties.keys();

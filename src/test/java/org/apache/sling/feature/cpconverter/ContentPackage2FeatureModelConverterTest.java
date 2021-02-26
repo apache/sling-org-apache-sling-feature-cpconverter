@@ -55,6 +55,7 @@ import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Artifacts;
+import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Feature;
@@ -141,84 +142,89 @@ public class ContentPackage2FeatureModelConverterTest {
 
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
-        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
-                 .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
-                 .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
-                 .convert(packageFile);
+        try {
 
-        verifyFeatureFile(outputDirectory,
-                          "asd.retail.all.json",
-                          "asd.sample:asd.retail.all:slingosgifeature:0.0.1",
-                          Arrays.asList("org.apache.felix:org.apache.felix.framework:6.0.1"),
-                          Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
-                          Arrays.asList("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1",
-                                        "asd.sample:Asd.Retail.ui.content:zip:cp2fm-converted:0.0.1",
-                                        "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1",
-                                        "asd.sample:asd.retail.all:zip:cp2fm-converted:0.0.1"));
-        verifyFeatureFile(outputDirectory,
-                          "asd.retail.all-author.json",
-                          "asd.sample:asd.retail.all:slingosgifeature:author:0.0.1",
-                          Arrays.asList("org.apache.sling:org.apache.sling.api:2.20.0"),
-                          Collections.emptyList(),
-                          Collections.emptyList());
-        verifyFeatureFile(outputDirectory,
-                          "asd.retail.all-publish.json",
-                          "asd.sample:asd.retail.all:slingosgifeature:publish:0.0.1",
-                          Arrays.asList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
-                          Arrays.asList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
-                          Collections.emptyList());
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
+                    .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                    .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                    .convert(packageFile);
 
-        // verify the runmode.mapper integrity
-        File runmodeMapperFile = new File(outputDirectory, "runmode.mapping");
-        assertTrue(runmodeMapperFile.exists());
-        assertTrue(runmodeMapperFile.isFile());
-        Properties runModes = new Properties();
-        try (FileInputStream input = new FileInputStream(runmodeMapperFile)) {
-            runModes.load(input);
+            verifyFeatureFile(outputDirectory,
+                            "asd.retail.all.json",
+                            "asd.sample:asd.retail.all:slingosgifeature:0.0.1",
+                            Arrays.asList("org.apache.felix:org.apache.felix.framework:6.0.1"),
+                            Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
+                            Arrays.asList("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1",
+                                            "asd.sample:Asd.Retail.ui.content:zip:cp2fm-converted:0.0.1",
+                                            "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1",
+                                            "asd.sample:asd.retail.all:zip:cp2fm-converted:0.0.1"));
+            verifyFeatureFile(outputDirectory,
+                            "asd.retail.all-author.json",
+                            "asd.sample:asd.retail.all:slingosgifeature:author:0.0.1",
+                            Arrays.asList("org.apache.sling:org.apache.sling.api:2.20.0"),
+                            Collections.emptyList(),
+                            Collections.emptyList());
+            verifyFeatureFile(outputDirectory,
+                            "asd.retail.all-publish.json",
+                            "asd.sample:asd.retail.all:slingosgifeature:publish:0.0.1",
+                            Arrays.asList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
+                            Arrays.asList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
+                            Collections.emptyList());
+
+            // verify the runmode.mapper integrity
+            File runmodeMapperFile = new File(outputDirectory, "runmode.mapping");
+            assertTrue(runmodeMapperFile.exists());
+            assertTrue(runmodeMapperFile.isFile());
+            Properties runModes = new Properties();
+            try (FileInputStream input = new FileInputStream(runmodeMapperFile)) {
+                runModes.load(input);
+            }
+            assertFalse(runModes.isEmpty());
+            assertTrue(runModes.containsKey("(default)"));
+            assertEquals("asd.retail.all.json", runModes.getProperty("(default)"));
+            assertEquals("asd.retail.all-author.json", runModes.getProperty("author"));
+            assertEquals("asd.retail.all-publish.json", runModes.getProperty("publish"));
+
+            verifyContentPackage(new File(outputDirectory, "asd/Asd.Retail.config/0.0.1/Asd.Retail.config-0.0.1-cp2fm-converted.zip"),
+                                "META-INF/vault/settings.xml",
+                                "META-INF/vault/properties.xml",
+                                "META-INF/vault/config.xml",
+                                "META-INF/vault/filter.xml",
+                                "jcr_root/settings.xml",
+                                "jcr_root/config.xml",
+                                "jcr_root/definition/.content.xml",
+                                "jcr_root/apps/.content.xml");
+            verifyContentPackage(new File(outputDirectory, "asd/sample/Asd.Retail.ui.content/0.0.1/Asd.Retail.ui.content-0.0.1-cp2fm-converted.zip"),
+                                "META-INF/vault/settings.xml",
+                                "META-INF/vault/properties.xml",
+                                "META-INF/vault/config.xml",
+                                "META-INF/vault/filter.xml",
+                                "META-INF/vault/filter-plugin-generated.xml",
+                                "jcr_root/settings.xml",
+                                "jcr_root/content/asd/.content.xml",
+                                "jcr_root/content/asd/resources.xml",
+                                "jcr_root/config.xml",
+                                "jcr_root/definition/.content.xml");
+            verifyContentPackage(new File(outputDirectory, "asd/sample/asd.retail.apps/0.0.1/asd.retail.apps-0.0.1-cp2fm-converted.zip"),
+                                "META-INF/vault/settings.xml",
+                                "META-INF/vault/properties.xml",
+                                "META-INF/vault/config.xml",
+                                "META-INF/vault/filter.xml",
+                                "META-INF/vault/filter-plugin-generated.xml",
+                                "jcr_root/settings.xml",
+                                "jcr_root/config.xml",
+                                "jcr_root/definition/.content.xml");
+            verifyContentPackage(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip"),
+                                "META-INF/vault/settings.xml",
+                                "META-INF/vault/properties.xml",
+                                "META-INF/vault/config.xml",
+                                "META-INF/vault/filter.xml",
+                                "jcr_root/settings.xml",
+                                "jcr_root/config.xml",
+                                "jcr_root/definition/.content.xml");
+        } finally {
+            deleteDirTree(outputDirectory);
         }
-        assertFalse(runModes.isEmpty());
-        assertTrue(runModes.containsKey("(default)"));
-        assertEquals("asd.retail.all.json", runModes.getProperty("(default)"));
-        assertEquals("asd.retail.all-author.json", runModes.getProperty("author"));
-        assertEquals("asd.retail.all-publish.json", runModes.getProperty("publish"));
-
-        verifyContentPackage(new File(outputDirectory, "asd/Asd.Retail.config/0.0.1/Asd.Retail.config-0.0.1-cp2fm-converted.zip"),
-                             "META-INF/vault/settings.xml",
-                             "META-INF/vault/properties.xml",
-                             "META-INF/vault/config.xml",
-                             "META-INF/vault/filter.xml",
-                             "jcr_root/settings.xml",
-                             "jcr_root/config.xml",
-                             "jcr_root/definition/.content.xml",
-                             "jcr_root/apps/.content.xml");
-        verifyContentPackage(new File(outputDirectory, "asd/sample/Asd.Retail.ui.content/0.0.1/Asd.Retail.ui.content-0.0.1-cp2fm-converted.zip"),
-                             "META-INF/vault/settings.xml",
-                             "META-INF/vault/properties.xml",
-                             "META-INF/vault/config.xml",
-                             "META-INF/vault/filter.xml",
-                             "META-INF/vault/filter-plugin-generated.xml",
-                             "jcr_root/settings.xml",
-                             "jcr_root/content/asd/.content.xml",
-                             "jcr_root/content/asd/resources.xml",
-                             "jcr_root/config.xml",
-                             "jcr_root/definition/.content.xml");
-        verifyContentPackage(new File(outputDirectory, "asd/sample/asd.retail.apps/0.0.1/asd.retail.apps-0.0.1-cp2fm-converted.zip"),
-                             "META-INF/vault/settings.xml",
-                             "META-INF/vault/properties.xml",
-                             "META-INF/vault/config.xml",
-                             "META-INF/vault/filter.xml",
-                             "META-INF/vault/filter-plugin-generated.xml",
-                             "jcr_root/settings.xml",
-                             "jcr_root/config.xml",
-                             "jcr_root/definition/.content.xml");
-        verifyContentPackage(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip"),
-                             "META-INF/vault/settings.xml",
-                             "META-INF/vault/properties.xml",
-                             "META-INF/vault/config.xml",
-                             "META-INF/vault/filter.xml",
-                             "jcr_root/settings.xml",
-                             "jcr_root/config.xml",
-                             "jcr_root/definition/.content.xml");
     }
 
     @Test
@@ -228,67 +234,73 @@ public class ContentPackage2FeatureModelConverterTest {
 
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
-        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
-                 .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
-                 .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
-                 .setDropContent(true)
-                 .convert(packageFile);
+        try {
 
-        verifyFeatureFile(outputDirectory,
-                          "asd.retail.all.json",
-                          "asd.sample:asd.retail.all:slingosgifeature:0.0.1",
-                          Arrays.asList("org.apache.felix:org.apache.felix.framework:6.0.1"),
-                          Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
-                          Arrays.asList("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1",
-                                        "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1"));
-        verifyFeatureFile(outputDirectory,
-                          "asd.retail.all-author.json",
-                          "asd.sample:asd.retail.all:slingosgifeature:author:0.0.1",
-                          Arrays.asList("org.apache.sling:org.apache.sling.api:2.20.0"),
-                          Collections.emptyList(),
-                          Collections.emptyList());
-        verifyFeatureFile(outputDirectory,
-                          "asd.retail.all-publish.json",
-                          "asd.sample:asd.retail.all:slingosgifeature:publish:0.0.1",
-                          Arrays.asList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
-                          Arrays.asList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
-                          Collections.emptyList());
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
+                    .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                    .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                    .setDropContent(true)
+                    .convert(packageFile);
 
-        // verify the runmode.mapper integrity
-        File runmodeMapperFile = new File(outputDirectory, "runmode.mapping");
-        assertTrue(runmodeMapperFile.exists());
-        assertTrue(runmodeMapperFile.isFile());
-        Properties runModes = new Properties();
-        try (FileInputStream input = new FileInputStream(runmodeMapperFile)) {
-            runModes.load(input);
+            verifyFeatureFile(outputDirectory,
+                            "asd.retail.all.json",
+                            "asd.sample:asd.retail.all:slingosgifeature:0.0.1",
+                            Arrays.asList("org.apache.felix:org.apache.felix.framework:6.0.1"),
+                            Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
+                            Arrays.asList("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1",
+                                            "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1"));
+            verifyFeatureFile(outputDirectory,
+                            "asd.retail.all-author.json",
+                            "asd.sample:asd.retail.all:slingosgifeature:author:0.0.1",
+                            Arrays.asList("org.apache.sling:org.apache.sling.api:2.20.0"),
+                            Collections.emptyList(),
+                            Collections.emptyList());
+            verifyFeatureFile(outputDirectory,
+                            "asd.retail.all-publish.json",
+                            "asd.sample:asd.retail.all:slingosgifeature:publish:0.0.1",
+                            Arrays.asList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
+                            Arrays.asList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
+                            Collections.emptyList());
+
+            // verify the runmode.mapper integrity
+            File runmodeMapperFile = new File(outputDirectory, "runmode.mapping");
+            assertTrue(runmodeMapperFile.exists());
+            assertTrue(runmodeMapperFile.isFile());
+            Properties runModes = new Properties();
+            try (FileInputStream input = new FileInputStream(runmodeMapperFile)) {
+                runModes.load(input);
+            }
+            assertFalse(runModes.isEmpty());
+            assertTrue(runModes.containsKey("(default)"));
+            assertEquals("asd.retail.all.json", runModes.getProperty("(default)"));
+            assertEquals("asd.retail.all-author.json", runModes.getProperty("author"));
+            assertEquals("asd.retail.all-publish.json", runModes.getProperty("publish"));
+
+            verifyContentPackage(new File(outputDirectory, "asd/Asd.Retail.config/0.0.1/Asd.Retail.config-0.0.1-cp2fm-converted.zip"),
+                                "META-INF/vault/settings.xml",
+                                "META-INF/vault/properties.xml",
+                                "META-INF/vault/config.xml",
+                                "META-INF/vault/filter.xml",
+                                "jcr_root/settings.xml",
+                                "jcr_root/config.xml",
+                                "jcr_root/definition/.content.xml",
+                                "jcr_root/apps/.content.xml");
+            verifyContentPackage(new File(outputDirectory, "asd/sample/asd.retail.apps/0.0.1/asd.retail.apps-0.0.1-cp2fm-converted.zip"),
+                                "META-INF/vault/settings.xml",
+                                "META-INF/vault/properties.xml",
+                                "META-INF/vault/config.xml",
+                                "META-INF/vault/filter.xml",
+                                "META-INF/vault/filter-plugin-generated.xml",
+                                "jcr_root/settings.xml",
+                                "jcr_root/config.xml",
+                                "jcr_root/definition/.content.xml");
+            // in contrast to previous test when dropping content packages the cases below would be filtered out and files wouldn'T be in cache
+            assertFalse(new File(outputDirectory, "asd/sample/Asd.Retail.ui.content/0.0.1/Asd.Retail.ui.content-0.0.1-cp2fm-converted.zip").exists());
+            assertFalse(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip").exists());
+
+        } finally {
+            deleteDirTree(outputDirectory);
         }
-        assertFalse(runModes.isEmpty());
-        assertTrue(runModes.containsKey("(default)"));
-        assertEquals("asd.retail.all.json", runModes.getProperty("(default)"));
-        assertEquals("asd.retail.all-author.json", runModes.getProperty("author"));
-        assertEquals("asd.retail.all-publish.json", runModes.getProperty("publish"));
-
-        verifyContentPackage(new File(outputDirectory, "asd/Asd.Retail.config/0.0.1/Asd.Retail.config-0.0.1-cp2fm-converted.zip"),
-                             "META-INF/vault/settings.xml",
-                             "META-INF/vault/properties.xml",
-                             "META-INF/vault/config.xml",
-                             "META-INF/vault/filter.xml",
-                             "jcr_root/settings.xml",
-                             "jcr_root/config.xml",
-                             "jcr_root/definition/.content.xml",
-                             "jcr_root/apps/.content.xml");
-        verifyContentPackage(new File(outputDirectory, "asd/sample/asd.retail.apps/0.0.1/asd.retail.apps-0.0.1-cp2fm-converted.zip"),
-                             "META-INF/vault/settings.xml",
-                             "META-INF/vault/properties.xml",
-                             "META-INF/vault/config.xml",
-                             "META-INF/vault/filter.xml",
-                             "META-INF/vault/filter-plugin-generated.xml",
-                             "jcr_root/settings.xml",
-                             "jcr_root/config.xml",
-                             "jcr_root/definition/.content.xml");
-        // in contrast to previous test when dropping content packages the cases below would be filtered out and files wouldn'T be in cache
-        assertFalse(new File(outputDirectory, "asd/sample/Asd.Retail.ui.content/0.0.1/Asd.Retail.ui.content-0.0.1-cp2fm-converted.zip").exists());
-        assertFalse(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip").exists());
     }
 
     @Test
@@ -427,10 +439,15 @@ public class ContentPackage2FeatureModelConverterTest {
 
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
-        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
-                 .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
-                 .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
-                 .convert(packageFile);
+        try {
+
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
+                    .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                    .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                    .convert(packageFile);
+        } finally {
+            deleteDirTree(outputDirectory);
+        }
     }
     
     /** app package containing another app package must lead to an explicit dependency from  
@@ -444,17 +461,22 @@ public class ContentPackage2FeatureModelConverterTest {
 
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
-        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
-                 .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
-                 .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
-                 .convert(packageFile);
-        
-        File contentPackage = new File(outputDirectory, "asd/sample/embedded.test.app/0.0.0/embedded.test.app-0.0.0-cp2fm-converted.zip");
-        VaultPackage vaultPackage = new PackageManagerImpl().open(contentPackage);
-        String dependencies = vaultPackage.getProperties().getProperty(PackageProperties.NAME_DEPENDENCIES);
-        org.apache.jackrabbit.vault.packaging.Dependency dep = org.apache.jackrabbit.vault.packaging.Dependency.fromString(dependencies);
-        PackageId targetId = PackageId.fromString("asd/sample:embedded.package.test:0.0.1-cp2fm-converted");
-        assertTrue(dep.matches(targetId));
+        try {
+
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
+                    .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                    .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                    .convert(packageFile);
+            
+            File contentPackage = new File(outputDirectory, "asd/sample/embedded.test.app/0.0.0/embedded.test.app-0.0.0-cp2fm-converted.zip");
+            VaultPackage vaultPackage = new PackageManagerImpl().open(contentPackage);
+            String dependencies = vaultPackage.getProperties().getProperty(PackageProperties.NAME_DEPENDENCIES);
+            org.apache.jackrabbit.vault.packaging.Dependency dep = org.apache.jackrabbit.vault.packaging.Dependency.fromString(dependencies);
+            PackageId targetId = PackageId.fromString("asd/sample:embedded.package.test:0.0.1-cp2fm-converted");
+            assertTrue(dep.matches(targetId));
+        } finally {
+            deleteDirTree(outputDirectory);
+        }
     }
 
     @Test(expected = IllegalStateException.class)
@@ -469,17 +491,47 @@ public class ContentPackage2FeatureModelConverterTest {
 
     private void addSamePidConfiguration(String runmodeA, String runmodeB) throws Exception {
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
-        URL packageUrl = getClass().getResource("test-content-package.zip");
-        File packageFile = FileUtils.toFile(packageUrl);
+        try {
+            URL packageUrl = getClass().getResource("test-content-package.zip");
+            File packageFile = FileUtils.toFile(packageUrl);
+    
+            converter.setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                     .setFeaturesManager(new DefaultFeaturesManager(DefaultFeaturesManager.ConfigurationHandling.STRICT, 5, outputDirectory, null, null, null))
+                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                     .convert(packageFile);
+    
+            String pid = "this.is.just.a.pid";
+            converter.getFeaturesManager().addConfiguration(runmodeA, pid, "/a", new Hashtable<String, Object>());
+            converter.getFeaturesManager().addConfiguration(runmodeB, pid, "/b", new Hashtable<String, Object>());
+    
+        } finally {
+            deleteDirTree(outputDirectory);
+        }
+    }
 
-        converter.setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
-                 .setFeaturesManager(new DefaultFeaturesManager(false, 5, outputDirectory, null, null, null))
-                 .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
-                 .convert(packageFile);
-
-        String pid = "this.is.just.a.pid";
-        converter.getFeaturesManager().addConfiguration(runmodeA, pid, new Hashtable<String, Object>());
-        converter.getFeaturesManager().addConfiguration(runmodeB, pid, new Hashtable<String, Object>());
+    @Test
+    public void testSameConfigurationPidDifferentPaths() throws Exception {
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+        try {
+            URL packageUrl = getClass().getResource("test-content-package.zip");
+            File packageFile = FileUtils.toFile(packageUrl);
+    
+            converter.setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                     .setFeaturesManager(new DefaultFeaturesManager(false, 5, outputDirectory, null, null, null))
+                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                     .convert(packageFile);
+    
+            String pid = "this.is.just.a.pid";
+            converter.getFeaturesManager().addConfiguration(null, pid, "/apps/b/config/pid.json", new Hashtable<String, Object>(){{put("foo", "b");}});
+            converter.getFeaturesManager().addConfiguration(null, pid, "/apps/a/config/pid.json", new Hashtable<String, Object>(){{put("foo", "a");}});
+            converter.getFeaturesManager().addConfiguration(null, pid, "/apps/c/config/pid.json", new Hashtable<String, Object>(){{put("foo", "c");}});
+    
+            Configuration c = converter.getFeaturesManager().getTargetFeature().getConfigurations().getConfiguration(pid);
+            assertNotNull(c);
+            assertEquals("a", c.getConfigurationProperties().get("foo"));
+        } finally {
+            deleteDirTree(outputDirectory);
+        }
     }
 
     @Test
@@ -528,39 +580,44 @@ public class ContentPackage2FeatureModelConverterTest {
 
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
-        String overrideId = "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0:${project.version}";
-        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, overrideId, null, null))
-                 .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
-                 .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
-                 .convert(packageFile);
+        try {
 
-        verifyFeatureFile(outputDirectory,
-                          "asd.retail.all.json",
-                          "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0:${project.version}",
-                          Arrays.asList("org.apache.felix:org.apache.felix.framework:6.0.1"),
-                          Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
-                          Arrays.asList("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1",
-                                        "asd.sample:Asd.Retail.ui.content:zip:cp2fm-converted:0.0.1",
-                                        "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1",
-                                        "asd.sample:asd.retail.all:zip:cp2fm-converted:0.0.1"));
-        verifyFeatureFile(outputDirectory,
-                          "asd.retail.all-author.json",
-                          "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0-author:${project.version}",
-                          Arrays.asList("org.apache.sling:org.apache.sling.api:2.20.0"),
-                          Collections.emptyList(),
-                          Collections.emptyList());
-        verifyFeatureFile(outputDirectory,
-                          "asd.retail.all-publish.json",
-                          "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0-publish:${project.version}",
-                          Arrays.asList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
-                          Arrays.asList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
-                          Collections.emptyList());
+            String overrideId = "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0:${project.version}";
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, overrideId, null, null))
+                    .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                    .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                    .convert(packageFile);
 
-        verifyContentPackage(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip"),
-                             "META-INF/vault/properties.xml",
-                             "META-INF/vault/config.xml",
-                             "META-INF/vault/settings.xml",
-                             "META-INF/vault/filter.xml");
+            verifyFeatureFile(outputDirectory,
+                            "asd.retail.all.json",
+                            "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0:${project.version}",
+                            Arrays.asList("org.apache.felix:org.apache.felix.framework:6.0.1"),
+                            Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
+                            Arrays.asList("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1",
+                                            "asd.sample:Asd.Retail.ui.content:zip:cp2fm-converted:0.0.1",
+                                            "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1",
+                                            "asd.sample:asd.retail.all:zip:cp2fm-converted:0.0.1"));
+            verifyFeatureFile(outputDirectory,
+                            "asd.retail.all-author.json",
+                            "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0-author:${project.version}",
+                            Arrays.asList("org.apache.sling:org.apache.sling.api:2.20.0"),
+                            Collections.emptyList(),
+                            Collections.emptyList());
+            verifyFeatureFile(outputDirectory,
+                            "asd.retail.all-publish.json",
+                            "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0-publish:${project.version}",
+                            Arrays.asList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
+                            Arrays.asList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
+                            Collections.emptyList());
+
+            verifyContentPackage(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip"),
+                                "META-INF/vault/properties.xml",
+                                "META-INF/vault/config.xml",
+                                "META-INF/vault/settings.xml",
+                                "META-INF/vault/filter.xml");
+        } finally {
+            deleteDirTree(outputDirectory);
+        }
     }
 
     @Test
@@ -597,36 +654,41 @@ public class ContentPackage2FeatureModelConverterTest {
 
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
-        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
-                 .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
-                 .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
-                 .convert(contentPackages[0]);
+        try {
 
-        File featureFile = new File(outputDirectory, "test_a.json");
-        try (Reader reader = new FileReader(featureFile)) {
-            Feature feature = FeatureJSONReader.read(reader, featureFile.getAbsolutePath());
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
+                    .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                    .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                    .convert(contentPackages[0]);
 
-            Extension repoinitExtension = feature.getExtensions().getByName("repoinit");
-            assertNotNull(repoinitExtension);
+            File featureFile = new File(outputDirectory, "test_a.json");
+            try (Reader reader = new FileReader(featureFile)) {
+                Feature feature = FeatureJSONReader.read(reader, featureFile.getAbsolutePath());
 
-            String expected = "register nodetypes" + System.lineSeparator() +
-                    "<<===" + System.lineSeparator() +
-                    "<< <'sling'='http://sling.apache.org/jcr/sling/1.0'>" + System.lineSeparator() +
-                    "<< <'nt'='http://www.jcp.org/jcr/nt/1.0'>" + System.lineSeparator() +
-                    "<< <'rep'='internal'>" + System.lineSeparator() +
-                    "" + System.lineSeparator() +
-                    "<< [sling:Folder] > nt:folder" + System.lineSeparator() +
-                    "<<   - * (undefined) multiple" + System.lineSeparator() +
-                    "<<   - * (undefined)" + System.lineSeparator() +
-                    "<<   + * (nt:base) = sling:Folder version" + System.lineSeparator() +
-                    System.lineSeparator() +
-                    "<< [rep:RepoAccessControllable]" + System.lineSeparator() +
-                    "<<   mixin" + System.lineSeparator() +
-                    "<<   + rep:repoPolicy (rep:Policy) protected ignore" + System.lineSeparator() +
-                    System.lineSeparator() +
-                    "===>>" + System.lineSeparator();
-            String actual = repoinitExtension.getText();
-            assertEquals(expected, actual);
+                Extension repoinitExtension = feature.getExtensions().getByName("repoinit");
+                assertNotNull(repoinitExtension);
+
+                String expected = "register nodetypes" + System.lineSeparator() +
+                        "<<===" + System.lineSeparator() +
+                        "<< <'sling'='http://sling.apache.org/jcr/sling/1.0'>" + System.lineSeparator() +
+                        "<< <'nt'='http://www.jcp.org/jcr/nt/1.0'>" + System.lineSeparator() +
+                        "<< <'rep'='internal'>" + System.lineSeparator() +
+                        "" + System.lineSeparator() +
+                        "<< [sling:Folder] > nt:folder" + System.lineSeparator() +
+                        "<<   - * (undefined) multiple" + System.lineSeparator() +
+                        "<<   - * (undefined)" + System.lineSeparator() +
+                        "<<   + * (nt:base) = sling:Folder version" + System.lineSeparator() +
+                        System.lineSeparator() +
+                        "<< [rep:RepoAccessControllable]" + System.lineSeparator() +
+                        "<<   mixin" + System.lineSeparator() +
+                        "<<   + rep:repoPolicy (rep:Policy) protected ignore" + System.lineSeparator() +
+                        System.lineSeparator() +
+                        "===>>" + System.lineSeparator();
+                String actual = repoinitExtension.getText();
+                assertEquals(expected, actual);
+            }
+        } finally {
+            deleteDirTree(outputDirectory);
         }
     }
 
@@ -639,25 +701,29 @@ public class ContentPackage2FeatureModelConverterTest {
         // expected output: c <- a
 
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+        try {
 
-        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
-                 .setDropContent(true)
-                 .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
-                 .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
-                 .convert(contentPackages);
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
+                    .setDropContent(true)
+                    .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                    .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                    .convert(contentPackages);
 
-        Feature a = getFeature(outputDirectory, "test_a.json");
-        assertNull(a.getExtensions().getByName("content-packages"));
+            Feature a = getFeature(outputDirectory, "test_a.json");
+            assertNull(a.getExtensions().getByName("content-packages"));
 
-        Feature b = getFeature(outputDirectory, "test_b.json");
-        Artifacts artifacts = b.getExtensions().getByName("content-packages").getArtifacts();
-        assertFalse(artifacts.isEmpty());
-        assertEquals("my_packages:test_b:zip:cp2fm-converted:1.0", artifacts.iterator().next().getId().toString());
+            Feature b = getFeature(outputDirectory, "test_b.json");
+            Artifacts artifacts = b.getExtensions().getByName("content-packages").getArtifacts();
+            assertFalse(artifacts.isEmpty());
+            assertEquals("my_packages:test_b:zip:cp2fm-converted:1.0", artifacts.iterator().next().getId().toString());
 
-        File contentPackage = new File(outputDirectory, "my_packages/test_b/1.0/test_b-1.0-cp2fm-converted.zip");
-        VaultPackage vaultPackage = new PackageManagerImpl().open(contentPackage);
-        String dependencies = vaultPackage.getProperties().getProperty(PackageProperties.NAME_DEPENDENCIES);
-        assertEquals("my_packages:test_c", dependencies);
+            File contentPackage = new File(outputDirectory, "my_packages/test_b/1.0/test_b-1.0-cp2fm-converted.zip");
+            VaultPackage vaultPackage = new PackageManagerImpl().open(contentPackage);
+            String dependencies = vaultPackage.getProperties().getProperty(PackageProperties.NAME_DEPENDENCIES);
+            assertEquals("my_packages:test_c", dependencies);
+        } finally {
+            deleteDirTree(outputDirectory);
+        }
     }
 
     private File[] load(String...resources) {

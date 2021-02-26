@@ -27,9 +27,13 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
@@ -76,6 +80,15 @@ public final class BundleEntryHandlerTest {
         assertTrue(bundleEntryHandler.matches(bundleLocation.replace("/apps/", "/libs/")));
     }
 
+    private void deleteDirTree(File dir) throws IOException {
+        Path tempDir = dir.toPath();
+
+        Files.walk(tempDir)
+            .sorted(Comparator.reverseOrder())
+            .map(Path::toFile)
+            .forEach(File::delete);
+    }
+
     @Test
     public void deployBundle() throws Exception {
         Archive archive = mock(Archive.class);
@@ -100,18 +113,23 @@ public final class BundleEntryHandlerTest {
         ContentPackage2FeatureModelConverter converter = spy(ContentPackage2FeatureModelConverter.class);
 
         File testDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
-        when(converter.getArtifactsDeployer()).thenReturn(new DefaultArtifactsDeployer(testDirectory));
-        when(converter.getFeaturesManager()).thenReturn(featuresManager);
+        try {
 
-        bundleEntryHandler.handle(bundleLocation, archive, entry, converter);
+            when(converter.getArtifactsDeployer()).thenReturn(new DefaultArtifactsDeployer(testDirectory));
+            when(converter.getFeaturesManager()).thenReturn(featuresManager);
 
-        assertTrue(new File(testDirectory, "org/apache/felix/org.apache.felix.framework/6.0.1/org.apache.felix.framework-6.0.1.pom").exists());
-        assertTrue(new File(testDirectory, "org/apache/felix/org.apache.felix.framework/6.0.1/org.apache.felix.framework-6.0.1.jar").exists());
+            bundleEntryHandler.handle(bundleLocation, archive, entry, converter);
 
-        assertFalse(featuresManager.getTargetFeature().getBundles().isEmpty());
-        assertEquals(1, feature.getBundles().size());
-        assertEquals("org.apache.felix:org.apache.felix.framework:6.0.1", feature.getBundles().get(0).getId().toMvnId());
-        assertEquals(startOrder, feature.getBundles().get(0).getStartOrder());
+            assertTrue(new File(testDirectory, "org/apache/felix/org.apache.felix.framework/6.0.1/org.apache.felix.framework-6.0.1.pom").exists());
+            assertTrue(new File(testDirectory, "org/apache/felix/org.apache.felix.framework/6.0.1/org.apache.felix.framework-6.0.1.jar").exists());
+
+            assertFalse(featuresManager.getTargetFeature().getBundles().isEmpty());
+            assertEquals(1, feature.getBundles().size());
+            assertEquals("org.apache.felix:org.apache.felix.framework:6.0.1", feature.getBundles().get(0).getId().toMvnId());
+            assertEquals(startOrder, feature.getBundles().get(0).getStartOrder());
+        } finally {
+            deleteDirTree(testDirectory);
+        }
     }
 
     @Parameters

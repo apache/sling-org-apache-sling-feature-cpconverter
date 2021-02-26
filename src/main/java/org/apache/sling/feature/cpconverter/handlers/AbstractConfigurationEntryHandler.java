@@ -107,9 +107,9 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
                         aclManager.addMapping(new Mapping(usermapping));
                     }
                 }
-                featuresManager.addConfiguration(runMode, id, configurationProperties);
+                featuresManager.addConfiguration(runMode, id, path, configurationProperties);
             } else {
-                featuresManager.addConfiguration(runMode, id, configurationProperties);
+                featuresManager.addConfiguration(runMode, id, path, configurationProperties);
             }
         } else {
             throw new IllegalStateException("Something went terribly wrong: pattern '"

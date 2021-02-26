@@ -64,7 +64,7 @@ public class ConfigEntryHandlerTest {
         Feature expected = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
         FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);
         when(featuresManager.getTargetFeature()).thenReturn(expected);
-        doCallRealMethod().when(featuresManager).addConfiguration(anyString(), anyString(), any());
+        doCallRealMethod().when(featuresManager).addConfiguration(anyString(), anyString(), anyString(), any());
 
         ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
         when(converter.getFeaturesManager()).thenReturn(featuresManager);
@@ -116,8 +116,8 @@ public class ConfigEntryHandlerTest {
         };
         handler.handle("/jcr_root/apps/foo/bar/config/baz/blub.cfg", archive, entry, converter);
 
-        Mockito.verify(manager).addConfiguration(null, "blub", new Hashtable(){{put("foo","bar");}});
-        Mockito.verify(manager).addConfiguration(Mockito.any(), Mockito.anyString(), Mockito.any());
+        Mockito.verify(manager).addConfiguration(null, "blub", "/jcr_root/apps/foo/bar/config/baz/blub.cfg", new Hashtable(){{put("foo","bar");}});
+        Mockito.verify(manager).addConfiguration(Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
     }
 
 }
