@@ -16,8 +16,6 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
-import org.apache.commons.io.Charsets;
-import org.apache.commons.io.IOUtils;
 import org.apache.felix.utils.manifest.Clause;
 import org.apache.felix.utils.manifest.Parser;
 import org.apache.jackrabbit.vault.fs.io.Archive;
@@ -88,7 +86,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
                 version = getCheckedProperty(properties, NAME_VERSION);
                 classifier = properties.getProperty(NAME_CLASSIFIER);
             } else { // maybe the included jar is just an OSGi bundle but not a valid Maven artifact
-                groupId = getCheckedProperty(manifest, BUNDLE_SYMBOLIC_NAME).trim();
+                groupId = getCheckedProperty(manifest, BUNDLE_SYMBOLIC_NAME);
                 // Make sure there are not spaces in the name to adhere to the Maven Group Id specification
                 groupId = groupId.replace(' ', '_').replace(':', '_').replace('/', '_').replace('\\', '_');
                 if (groupId.indexOf('.') != -1) {
