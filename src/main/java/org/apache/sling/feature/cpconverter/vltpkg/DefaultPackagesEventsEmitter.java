@@ -86,8 +86,8 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
 
     @Override
     public void start() {
-        writer.printf("# File created on %s by the Apache Sling Content Package to Sling Feature converter%n", new Date())
-              .printf("# content-package path, content-package ID, content-package type, content-package parent ID, path in parent content-package, absolute path%n");
+        writer.printf("# File created on %s by the Apache Sling Content Package to Sling Feature converter\n", new Date())
+              .printf("# content-package path, content-package ID, content-package type, content-package parent ID, path in parent content-package, absolute path\n");
     }
 
     @Override
@@ -118,7 +118,7 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
         current = vaultPackage;
 
         packages.add(getDepOnlyPackage(id, dependencies));
-        idOutputLine.put(id, String.format("%s,%s,%s,,,%n",
+        idOutputLine.put(id, String.format("%s,%s,%s,,,\n",
             paths.peek(),
             hierarchy.peek(),
             detectPackageType(vaultPackage)));
@@ -140,7 +140,7 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
         String absolutePath = paths.stream().collect(joining(PATH_SEPARATOR_CHAR));
 
         packages.add(getDepOnlyPackage(id, dependencies));
-        idOutputLine.put(vaultPackage.getId(), String.format("%s,%s,%s,%s,%s,%s%n",
+        idOutputLine.put(vaultPackage.getId(), String.format("%s,%s,%s,%s,%s,%s\n",
             current.getFile().getAbsolutePath(),
             id,
             detectPackageType(vaultPackage),

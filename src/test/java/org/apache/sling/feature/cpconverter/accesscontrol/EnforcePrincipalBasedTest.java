@@ -106,11 +106,11 @@ public class EnforcePrincipalBasedTest {
         Extension repoinitExtension = getRepoInitExtension(acMgr, accessControlledPath, systemUser, false);
 
         String expected =
-                "create service user user1 with path " + systemUser.getIntermediatePath() + System.lineSeparator() +
-                        "create path /content/feature(sling:Folder)" + System.lineSeparator() +
-                        "set ACL for user1" + System.lineSeparator() +
-                        "allow jcr:read on /content/feature" + System.lineSeparator() +
-                        "end" + System.lineSeparator();
+                "create service user user1 with path " + systemUser.getIntermediatePath() + "\n" +
+                        "create path /content/feature(sling:Folder)\n" +
+                        "set ACL for user1\n" +
+                        "allow jcr:read on /content/feature\n" +
+                        "end\n";
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -126,10 +126,10 @@ public class EnforcePrincipalBasedTest {
         Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, false);
 
         String expected =
-                "create service user user1 with forced path " + remappedIntermediatePath + System.lineSeparator() +
-                "set principal ACL for user1" + System.lineSeparator() +
-                "allow jcr:read on /content/feature" + System.lineSeparator() +
-                "end" + System.lineSeparator();
+                "create service user user1 with forced path " + remappedIntermediatePath + "\n" +
+                "set principal ACL for user1\n" +
+                "allow jcr:read on /content/feature\n" +
+                "end\n";
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -145,10 +145,10 @@ public class EnforcePrincipalBasedTest {
         Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, true);
 
         String expected =
-                "create service user user1 with forced path " + remappedIntermediatePath + System.lineSeparator() +
-                        "set principal ACL for user1" + System.lineSeparator() +
-                        "allow jcr:read on /content/feature" + System.lineSeparator() +
-                        "end" + System.lineSeparator();
+                "create service user user1 with forced path " + remappedIntermediatePath + "\n" +
+                        "set principal ACL for user1\n" +
+                        "allow jcr:read on /content/feature\n" +
+                        "end\n";
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -164,10 +164,10 @@ public class EnforcePrincipalBasedTest {
         Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, true);
 
         String expected =
-                "create service user user1 with forced path " + remappedIntermediatePath + System.lineSeparator() +
-                "set principal ACL for user1" + System.lineSeparator() +
-                "allow jcr:read on home(user1)" + System.lineSeparator() +
-                "end" + System.lineSeparator();
+                "create service user user1 with forced path " + remappedIntermediatePath + "\n" +
+                "set principal ACL for user1\n" +
+                "allow jcr:read on home(user1)\n" +
+                "end\n";
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -185,10 +185,10 @@ public class EnforcePrincipalBasedTest {
         Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, false);
 
         String expected =
-                "create service user user1 with path " +systemUser.getIntermediatePath()+ System.lineSeparator() +
-                "set ACL for user1" + System.lineSeparator() +
-                "allow jcr:read on /content/feature" + System.lineSeparator() +
-                "end" + System.lineSeparator();
+                "create service user user1 with path " +systemUser.getIntermediatePath()+ "\n" +
+                "set ACL for user1\n" +
+                "allow jcr:read on /content/feature\n" +
+                "end\n";
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -202,10 +202,10 @@ public class EnforcePrincipalBasedTest {
         Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, false);
 
         String expected =
-                "create service user user1 with forced path " + remappedIntermediatePath + System.lineSeparator() +
-                "set principal ACL for user1" + System.lineSeparator() +
-                "allow jcr:read on /content/feature" + System.lineSeparator() +
-                "end" + System.lineSeparator();
+                "create service user user1 with forced path " + remappedIntermediatePath + "\n" +
+                "set principal ACL for user1\n" +
+                "allow jcr:read on /content/feature\n" +
+                "end\n";
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);

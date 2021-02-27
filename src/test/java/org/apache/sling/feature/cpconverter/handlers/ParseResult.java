@@ -33,7 +33,7 @@ final class ParseResult {
         assertNotNull(repoinitExtension);
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
         this.repoinitExtension = repoinitExtension;
-        this.excludedAcls = excludedAcls;
+        this.excludedAcls = excludedAcls.replace(System.lineSeparator(), "\n");
     }
 
     @NotNull

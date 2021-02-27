@@ -129,7 +129,7 @@ public class DefaultAclManager implements AclManager {
             }
 
             for (String nodetypeRegistrationSentence : nodetypeRegistrationSentences) {
-                formatter.format("%s%n", nodetypeRegistrationSentence);
+                formatter.format("%s\n", nodetypeRegistrationSentence);
             }
 
             addUsersAndGroups(formatter);
@@ -153,7 +153,7 @@ public class DefaultAclManager implements AclManager {
         for (SystemUser systemUser : systemUsers) {
             // make sure all system users are created first
             String forced = (enforcePrincipalBased(systemUser) ? "forced " : "");
-            formatter.format("create service user %s with %spath %s%n", systemUser.getId(), forced, calculateIntermediatePath(systemUser));
+            formatter.format("create service user %s with %spath %s\n", systemUser.getId(), forced, calculateIntermediatePath(systemUser));
 
             if (aclIsBelow(systemUser.getPath())) {
                 throw new IllegalStateException("Detected policy on subpath of system-user: " + systemUser);
@@ -209,7 +209,7 @@ public class DefaultAclManager implements AclManager {
                 .map(path -> computePathWithTypes(path, packageAssemblers))
                 .filter(Objects::nonNull)
                 .forEach(
-                        path -> formatter.format("create path %s%n", path)
+                        path -> formatter.format("create path %s\n", path)
                 );
     }
 
@@ -237,14 +237,14 @@ public class DefaultAclManager implements AclManager {
         });
 
         if (!principalEntries.isEmpty()) {
-            formatter.format("set principal ACL for %s%n", systemUser.getId());
+            formatter.format("set principal ACL for %s\n", systemUser.getId());
             principalEntries.forEach((entry, path) -> writeEntry(entry, path, formatter));
-            formatter.format("end%n");
+            formatter.format("end\n");
         }
         if (!resourceEntries.isEmpty()) {
-            formatter.format("set ACL for %s%n", systemUser.getId());
+            formatter.format("set ACL for %s\n", systemUser.getId());
             resourceEntries.forEach((entry, path) -> writeEntry(entry, path, formatter));
-            formatter.format("end%n");
+            formatter.format("end\n");
         }
     }
 
@@ -271,7 +271,7 @@ public class DefaultAclManager implements AclManager {
             formatter.format(" restriction(%s)", restriction);
         }
 
-        formatter.format("%n");
+        formatter.format("\n");
     }
 
     private @NotNull Optional<SystemUser> getSystemUser(@NotNull String id) {
@@ -386,9 +386,9 @@ public class DefaultAclManager implements AclManager {
                 String name = nameResolver.getJCRName(privilege.getName());
                 String aggregates = getAggregatedNames(privilege, nameResolver);
                 if (privilege.isAbstract()) {
-                    formatter.format("register abstract privilege %s%s%n", name, aggregates);
+                    formatter.format("register abstract privilege %s%s\n", name, aggregates);
                 } else {
-                    formatter.format("register privilege %s%s%n", name, aggregates);
+                    formatter.format("register privilege %s%s\n", name, aggregates);
                 }
             } catch (NamespaceException e) {
                 throw new IllegalStateException(e);

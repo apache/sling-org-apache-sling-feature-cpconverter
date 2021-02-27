@@ -70,9 +70,9 @@ public class RepRepoPolicyEntryHandlerTest {
         Extension repoinitExtension = new ParseResult(TestUtils.createRepoInitExtension(handler, aclManager, path, getClass().getResourceAsStream(path.substring(1)), out), out.toString()).getRepoinitExtension();
 
         String expectedEnd =
-                "set ACL for repolevel-service" + System.lineSeparator() +
-                "allow jcr:namespaceManagement on :repository" + System.lineSeparator() +
-                "end" + System.lineSeparator();
+                "set ACL for repolevel-service\n" +
+                "allow jcr:namespaceManagement on :repository\n" +
+                "end\n";
         String actual = repoinitExtension.getText();
         assertTrue(actual.endsWith(expectedEnd));
         // no path must be create for repository level entries

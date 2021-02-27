@@ -78,7 +78,7 @@ public class UsersEntryHandlerTest {
         assertTrue(repoinitExtension.isRequired());
 
         String expected =
-                "create service user asd-share-commons-asd-index-definition-reader-service with path /home/users/system/asd-share-commons" + System.lineSeparator();
+                "create service user asd-share-commons-asd-index-definition-reader-service with path /home/users/system/asd-share-commons\n";
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
 

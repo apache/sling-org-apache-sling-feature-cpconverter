@@ -83,10 +83,10 @@ public class PackagesEventsEmitterTest {
 
         String actual = stringWriter.toString();
 
-        String expected = cpFile + ",apache/sling:parent:1.0.0,MIXED,,," + System.lineSeparator() + 
-        		cpFile + ",apache/sling:application-child:1.0.0,APPLICATION,apache/sling:parent:1.0.0,/jcr_root/etc/packages/org/apache/sling/application-child-1.0.zip," + cpFile + "!/jcr_root/etc/packages/org/apache/sling/application-child-1.0.zip" + System.lineSeparator() + 
-        		cpFile + ",apache/sling:content-child:1.0.0,CONTENT,apache/sling:parent:1.0.0,/jcr_root/etc/packages/org/apache/sling/content-child-1.0.zip," + cpFile + "!/jcr_root/etc/packages/org/apache/sling/content-child-1.0.zip" + System.lineSeparator() + 
-        		cpFile + ",apache/sling:nested-child:1.0.0,CONTAINER,apache/sling:application-child:1.0.0,/jcr_root/etc/packages/org/apache/sling/nested-child-1.0.zip," + cpFile + "!/jcr_root/etc/packages/org/apache/sling/application-child-1.0.zip!/jcr_root/etc/packages/org/apache/sling/nested-child-1.0.zip" + System.lineSeparator();
+        String expected = cpFile + ",apache/sling:parent:1.0.0,MIXED,,,\n" + 
+        		cpFile + ",apache/sling:application-child:1.0.0,APPLICATION,apache/sling:parent:1.0.0,/jcr_root/etc/packages/org/apache/sling/application-child-1.0.zip," + cpFile + "!/jcr_root/etc/packages/org/apache/sling/application-child-1.0.zip\n" + 
+        		cpFile + ",apache/sling:content-child:1.0.0,CONTENT,apache/sling:parent:1.0.0,/jcr_root/etc/packages/org/apache/sling/content-child-1.0.zip," + cpFile + "!/jcr_root/etc/packages/org/apache/sling/content-child-1.0.zip\n" + 
+        		cpFile + ",apache/sling:nested-child:1.0.0,CONTAINER,apache/sling:application-child:1.0.0,/jcr_root/etc/packages/org/apache/sling/nested-child-1.0.zip," + cpFile + "!/jcr_root/etc/packages/org/apache/sling/application-child-1.0.zip!/jcr_root/etc/packages/org/apache/sling/nested-child-1.0.zip\n";
         assertTrue(actual.endsWith(expected));
     }
     

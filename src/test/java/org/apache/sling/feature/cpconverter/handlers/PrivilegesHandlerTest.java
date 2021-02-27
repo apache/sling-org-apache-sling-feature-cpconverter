@@ -91,12 +91,12 @@ public class PrivilegesHandlerTest {
 
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
-        String str = "register privilege sling:replicate" + System.lineSeparator() +
+        String str = "register privilege sling:replicate\n" +
                      "register abstract privilege sling:test with ";
         String txt = repoinitExtension.getText();
         assertTrue("Expect '"+txt+"' contains '"+str+"'", txt.contains(str));
-        String aggregation1 = "with sling:replicate,jcr:read" + System.lineSeparator();
-        String aggregation2 = "with jcr:read,sling:replicate" + System.lineSeparator();
+        String aggregation1 = "with sling:replicate,jcr:read\n";
+        String aggregation2 = "with jcr:read,sling:replicate\n";
         assertTrue(txt.contains(aggregation1) || txt.contains(aggregation2));
     }
 

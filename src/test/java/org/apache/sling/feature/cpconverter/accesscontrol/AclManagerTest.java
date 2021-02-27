@@ -94,12 +94,12 @@ public class AclManagerTest {
 
         // acs-commons-on-deploy-scripts-service will be missed
         String expected =
-                "create service user acs-commons-package-replication-status-event-service with path /home/users/system" + System.lineSeparator() +
-                        "create path /sling:tests/not(nt:unstructured mixin rep:AccessControllable,mix:created)/system/user/path" + System.lineSeparator() +
-                        "set ACL for acs-commons-package-replication-status-event-service" + System.lineSeparator() +
-                        "allow jcr:read,rep:write,rep:indexDefinitionManagement on /sling:tests/not/system/user/path" + System.lineSeparator() +
-                        "allow jcr:read,crx:replicate,jcr:removeNode on /home/users/system" + System.lineSeparator() +
-                        "end" + System.lineSeparator();
+                "create service user acs-commons-package-replication-status-event-service with path /home/users/system\n" +
+                        "create path /sling:tests/not(nt:unstructured mixin rep:AccessControllable,mix:created)/system/user/path\n" +
+                        "set ACL for acs-commons-package-replication-status-event-service\n" + 
+                        "allow jcr:read,rep:write,rep:indexDefinitionManagement on /sling:tests/not/system/user/path\n" +
+                        "allow jcr:read,crx:replicate,jcr:removeNode on /home/users/system\n" +
+                        "end\n";
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
 
@@ -136,11 +136,11 @@ public class AclManagerTest {
 
         // aacs-commons-ensure-oak-index-service will be missed
         String expected =
-                "create service user acs-commons-package-replication-status-event-service with path /home/users/system" + System.lineSeparator() +
-                "create path /sling:tests/not(nt:unstructured mixin rep:AccessControllable,mix:created)/system/user/path" + System.lineSeparator() +
-                "set ACL for acs-commons-package-replication-status-event-service" + System.lineSeparator() +
-                "allow jcr:read,rep:write,rep:indexDefinitionManagement on /sling:tests/not/system/user/path" + System.lineSeparator() +
-                "end" + System.lineSeparator();
+                "create service user acs-commons-package-replication-status-event-service with path /home/users/system\n" +
+                "create path /sling:tests/not(nt:unstructured mixin rep:AccessControllable,mix:created)/system/user/path\n" +
+                "set ACL for acs-commons-package-replication-status-event-service\n" +
+                "allow jcr:read,rep:write,rep:indexDefinitionManagement on /sling:tests/not/system/user/path\n" +
+                "end\n";
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
 
@@ -186,11 +186,11 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         String expected =
-                "create service user sys-usr with path /home/users/system" + System.lineSeparator() +
-                "set ACL for sys-usr" + System.lineSeparator() +
-                "allow jcr:read on /content/cq:tags" + System.lineSeparator() +
-                "allow jcr:write on /content/cq:tags" + System.lineSeparator() +
-                "end" + System.lineSeparator();
+                "create service user sys-usr with path /home/users/system\n" +
+                "set ACL for sys-usr\n" +
+                "allow jcr:read on /content/cq:tags\n" +
+                "allow jcr:write on /content/cq:tags\n" +
+                "end\n";
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -237,10 +237,10 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         String expected =
-                "create service user sys-usr with path /home/users/system" + System.lineSeparator() +
-                        "set ACL for sys-usr" + System.lineSeparator() +
-                        "allow jcr:read on /content/test" + System.lineSeparator() +
-                        "end" + System.lineSeparator();
+                "create service user sys-usr with path /home/users/system\n" +
+                        "set ACL for sys-usr\n" +
+                        "allow jcr:read on /content/test\n" +
+                        "end\n";
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -296,10 +296,10 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         String expected =
-                "create service user sys-usr with path /home/users/system" + System.lineSeparator() +
-                        "set ACL for sys-usr" + System.lineSeparator() +
-                        "allow jcr:read on /content/test" + System.lineSeparator() +
-                        "end" + System.lineSeparator();
+                "create service user sys-usr with path /home/users/system\n" +
+                        "set ACL for sys-usr\n" +
+                        "allow jcr:read on /content/test\n" +
+                        "end\n";
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -324,10 +324,10 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         String expected =
-                "create service user sys-usr with path /home/users/system" + System.lineSeparator() +
-                        "set ACL for sys-usr" + System.lineSeparator() +
-                        "allow jcr:read on /home/users/test2" + System.lineSeparator() +
-                        "end" + System.lineSeparator();
+                "create service user sys-usr with path /home/users/system\n" +
+                        "set ACL for sys-usr\n" +
+                        "allow jcr:read on /home/users/test2\n" +
+                        "end\n";
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);

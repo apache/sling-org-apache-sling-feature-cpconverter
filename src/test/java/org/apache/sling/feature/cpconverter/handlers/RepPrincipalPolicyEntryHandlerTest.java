@@ -68,7 +68,7 @@ public final class RepPrincipalPolicyEntryHandlerTest {
     public void parseSimplePolicy() throws Exception {
         Extension repoinitExtension = parseAndSetRepoinit("service1", "random1").getRepoinitExtension();
         String expected =
-                "create service user service1 with path /home/users/system/services" + System.lineSeparator() +
+                "create service user service1 with path /home/users/system/services\n" +
                 "set principal ACL for service1\n" +
                 "allow jcr:read,jcr:readAccessControl on /asd/public\n" +
                 "end\n";
@@ -85,7 +85,7 @@ public final class RepPrincipalPolicyEntryHandlerTest {
     public void parseMvRestrictions() throws Exception {
         Extension repoinitExtension = parseAndSetRepoinit("service2", "random2").getRepoinitExtension();
         String expected =
-                "create service user service2 with path /home/users/system/services" + System.lineSeparator() +
+                "create service user service2 with path /home/users/system/services\n" +
                         "set principal ACL for service2\n" +
                         "allow jcr:read on /asd/public restriction(rep:ntNames,nt:folder,sling:Folder) restriction(sling:customRestriction,customRestrictionValue)\n" +
                         "end\n";
@@ -109,11 +109,11 @@ public final class RepPrincipalPolicyEntryHandlerTest {
 
         Extension repoinitExtension = parseAndSetRepoinit(getPolicyPath(systemUser4), systemUser4).getRepoinitExtension();
         String expected =
-                "create service user service4 with path /home/users/system/services" + System.lineSeparator() +
-                "set principal ACL for service4" + System.lineSeparator() +
+                "create service user service4 with path /home/users/system/services\n" +
+                "set principal ACL for service4\n" +
                 // since service3 is not known to the AclManager it treats the effective path as a regular node.
-                "allow jcr:read,rep:userManagement on /home/users/system/services/random3" + System.lineSeparator() +
-                "end"+ System.lineSeparator();
+                "allow jcr:read,rep:userManagement on /home/users/system/services/random3\n" +
+                "end\n";
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -130,11 +130,11 @@ public final class RepPrincipalPolicyEntryHandlerTest {
 
         Extension repoinitExtension = parseAndSetRepoinit(getPolicyPath(systemUser4), systemUser4, systemUser3).getRepoinitExtension();
         String expected =
-                "create service user service4 with path /home/users/system/services" + System.lineSeparator() +
-                "create service user service3 with path /home/users/system/services" + System.lineSeparator() +
-                "set principal ACL for service4" + System.lineSeparator() +
-                "allow jcr:read,rep:userManagement on home(service3)" + System.lineSeparator() +
-                "end"+ System.lineSeparator();
+                "create service user service4 with path /home/users/system/services\n" +
+                "create service user service3 with path /home/users/system/services\n" +
+                "set principal ACL for service4\n" +
+                "allow jcr:read,rep:userManagement on home(service3)\n" +
+                "end\n";
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
