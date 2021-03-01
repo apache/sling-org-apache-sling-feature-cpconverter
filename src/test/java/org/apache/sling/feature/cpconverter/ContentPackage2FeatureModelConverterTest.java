@@ -99,7 +99,7 @@ public class ContentPackage2FeatureModelConverterTest {
     }
 
     @After
-    public void tearDowd() {
+    public void tearDown() {
         converter.cleanup();
     }
 

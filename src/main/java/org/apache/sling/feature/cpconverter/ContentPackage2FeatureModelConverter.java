@@ -22,6 +22,7 @@ import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.getD
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -102,7 +103,11 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     public ContentPackage2FeatureModelConverter(boolean strictValidation) {
         super(strictValidation);
         this.recollectorVaultPackageScanner = new RecollectorVaultPackageScanner(this, this.packageManager, strictValidation, subContentPackages);
-        this.tmpDirectory = new File(new File ( System.getProperty("java.io.tmpdir") ), "cp2fm-converter_" + System.currentTimeMillis());
+        try {
+            this.tmpDirectory = Files.createTempDirectory("cp2fm-converter").toFile();
+        } catch ( final IOException io) {
+            throw new RuntimeException("Unable to create a temporary directory", io);
+        }
     }
 
     public @NotNull ContentPackage2FeatureModelConverter setEntryHandlersManager(@Nullable EntryHandlersManager handlersManager) {

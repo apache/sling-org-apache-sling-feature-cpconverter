@@ -110,7 +110,7 @@ public final class BundleEntryHandlerTest {
         when(featuresManager.getRunMode(anyString())).thenReturn(feature);
         doCallRealMethod().when(featuresManager).addArtifact(anyString(), any(ArtifactId.class));
 
-        ContentPackage2FeatureModelConverter converter = spy(ContentPackage2FeatureModelConverter.class);
+        ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
 
         File testDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
         try {

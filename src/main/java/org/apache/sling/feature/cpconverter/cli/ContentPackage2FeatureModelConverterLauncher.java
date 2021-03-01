@@ -17,7 +17,6 @@
 package org.apache.sling.feature.cpconverter.cli;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Date;
 import java.util.Formatter;
 import java.util.HashMap;
@@ -25,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;

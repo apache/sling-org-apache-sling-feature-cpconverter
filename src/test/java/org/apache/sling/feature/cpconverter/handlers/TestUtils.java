@@ -65,7 +65,7 @@ class TestUtils {
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
         FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);
         when(featuresManager.getTargetFeature()).thenReturn(feature);
-        ContentPackage2FeatureModelConverter converter = spy(ContentPackage2FeatureModelConverter.class);
+        ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
         when(converter.getFeaturesManager()).thenReturn(featuresManager);
         when(converter.getAclManager()).thenReturn(aclManager);
         when(converter.getMainPackageAssembler()).thenReturn(packageAssembler);

@@ -37,7 +37,7 @@ public class BundleEntryHandlerGAVTest {
         when(entry.getName()).thenReturn(path);
         Archive archive = Mockito.mock(Archive.class);
         when(archive.openInputStream(entry)).thenReturn(BundleEntryHandlerGAVTest.class.getResourceAsStream("core-1.0.0-SNAPSHOT.jar"));
-        ContentPackage2FeatureModelConverter converter = spy(ContentPackage2FeatureModelConverter.class);
+        ContentPackage2FeatureModelConverter converter = Mockito.mock(ContentPackage2FeatureModelConverter.class);
         ArtifactsDeployer deployer = Mockito.spy(ArtifactsDeployer.class);
         when(converter.getArtifactsDeployer()).thenReturn(deployer);
         FeaturesManager manager = Mockito.spy(FeaturesManager.class);
@@ -53,7 +53,7 @@ public class BundleEntryHandlerGAVTest {
         when(entry.getName()).thenReturn(path);
         Archive archive = Mockito.mock(Archive.class);
         when(archive.openInputStream(entry)).thenReturn(BundleEntryHandlerGAVTest.class.getResourceAsStream("org.osgi.service.jdbc-1.0.0.jar"));
-        ContentPackage2FeatureModelConverter converter = spy(ContentPackage2FeatureModelConverter.class);
+        ContentPackage2FeatureModelConverter converter = Mockito.mock(ContentPackage2FeatureModelConverter.class);
         ArtifactsDeployer deployer = Mockito.spy(ArtifactsDeployer.class);
         when(converter.getArtifactsDeployer()).thenReturn(deployer);
         FeaturesManager manager = Mockito.spy(FeaturesManager.class);
@@ -69,7 +69,7 @@ public class BundleEntryHandlerGAVTest {
         when(entry.getName()).thenReturn(path);
         Archive archive = Mockito.mock(Archive.class);
         when(archive.openInputStream(entry)).thenReturn(BundleEntryHandlerGAVTest.class.getResourceAsStream("org.osgi.service.jdbc-1.0.0-nogav.jar"));
-        ContentPackage2FeatureModelConverter converter = spy(ContentPackage2FeatureModelConverter.class);
+        ContentPackage2FeatureModelConverter converter = Mockito.mock(ContentPackage2FeatureModelConverter.class);
         ArtifactsDeployer deployer = Mockito.spy(ArtifactsDeployer.class);
         when(converter.getArtifactsDeployer()).thenReturn(deployer);
         FeaturesManager manager = Mockito.spy(FeaturesManager.class);
