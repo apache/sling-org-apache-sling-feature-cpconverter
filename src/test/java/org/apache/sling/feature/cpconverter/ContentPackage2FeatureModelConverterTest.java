@@ -510,7 +510,31 @@ public class ContentPackage2FeatureModelConverterTest {
     }
 
     @Test
-    public void testSameConfigurationPidDifferentPaths() throws Exception {
+    public void testSameConfigurationPidTwoDifferentPaths() throws Exception {
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+        try {
+            URL packageUrl = getClass().getResource("test-content-package.zip");
+            File packageFile = FileUtils.toFile(packageUrl);
+    
+            converter.setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                     .setFeaturesManager(new DefaultFeaturesManager(false, 5, outputDirectory, null, null, null))
+                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                     .convert(packageFile);
+    
+            String pid = "this.is.just.a.pid";
+            converter.getFeaturesManager().addConfiguration(null, pid, "/apps/a/config/pid.json", new Hashtable<String, Object>(){{put("foo", "a");}});
+            converter.getFeaturesManager().addConfiguration(null, pid, "/apps/b/config/pid.json", new Hashtable<String, Object>(){{put("foo", "b");}});
+    
+            Configuration c = converter.getFeaturesManager().getTargetFeature().getConfigurations().getConfiguration(pid);
+            assertNotNull(c);
+            assertEquals("a", c.getConfigurationProperties().get("foo"));
+        } finally {
+            deleteDirTree(outputDirectory);
+        }
+    }
+
+    @Test
+    public void testSameConfigurationPidThreeDifferentPaths() throws Exception {
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
         try {
             URL packageUrl = getClass().getResource("test-content-package.zip");

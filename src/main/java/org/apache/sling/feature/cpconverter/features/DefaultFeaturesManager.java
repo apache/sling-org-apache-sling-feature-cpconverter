@@ -230,6 +230,7 @@ public class DefaultFeaturesManager implements FeaturesManager {
         if (configuration == null) {
             configuration = new Configuration(pid);
             feature.getConfigurations().add(configuration);
+            this.pidToPathMapping.put(pid, path);
         } else {
             switch ( this.configurationHandling ) {
                 case STRICT : throw new IllegalStateException("Configuration '"
