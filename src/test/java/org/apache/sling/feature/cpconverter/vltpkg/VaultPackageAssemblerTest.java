@@ -59,7 +59,7 @@ public class VaultPackageAssemblerTest {
         VaultPackage vaultPackage = new PackageManagerImpl().open(file);
 
         this.testDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
-        this.assembler = VaultPackageAssembler.create(testDirectory, vaultPackage);
+        this.assembler = VaultPackageAssembler.create(testDirectory, vaultPackage, false);
     }
 
     @After
@@ -98,7 +98,7 @@ public class VaultPackageAssemblerTest {
         File file = FileUtils.toFile(resource);
         VaultPackage vaultPackage = new PackageManagerImpl().open(file);
 
-        VaultPackageAssembler assembler = VaultPackageAssembler.create(testDirectory, vaultPackage);
+        VaultPackageAssembler assembler = VaultPackageAssembler.create(testDirectory, vaultPackage, false);
         PackageId packageId = vaultPackage.getId();
         String fileName = packageId.toString().replaceAll("/", "-").replaceAll(":", "-") + "-" + vaultPackage.getFile().getName();
         File storingDirectory = new File(assembler.getTempDir(), fileName + "-deflated");
