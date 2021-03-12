@@ -18,6 +18,8 @@ package org.apache.sling.feature.cpconverter.accesscontrol;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -32,10 +34,14 @@ public class Mapping {
 
     private final Set<String> principalNames;
 
-    /**
-     * Copied from https://github.com/apache/sling-org-apache-sling-serviceusermapper/blob/master/src/main/java/org/apache/sling/serviceusermapping/Mapping.java
-     */
     public Mapping(@NotNull final String spec) {
+        this(spec, false);
+    }
+
+        /**
+         * Copied from https://github.com/apache/sling-org-apache-sling-serviceusermapper/blob/master/src/main/java/org/apache/sling/serviceusermapping/Mapping.java
+         */
+    public Mapping(@NotNull final String spec, boolean enforceMappingByPrincipal) {
 
         final int colon = spec.indexOf(':');
         final int equals = spec.indexOf('=');
@@ -60,6 +66,9 @@ public class Mapping {
         if (s.charAt(0) == '[' && s.charAt(s.length()-1) == ']') {
             this.userName = null;
             this.principalNames = extractPrincipalNames(s);
+        } else if (enforceMappingByPrincipal) {
+            this.userName = null;
+            this.principalNames = Collections.singleton(s);
         } else {
             this.userName = s;
             this.principalNames = null;
@@ -126,5 +135,29 @@ public class Mapping {
         String name = (userName != null) ? "userName=" + userName : "principleNames" + principalNames.toString();
         return "Mapping [serviceName=" + serviceName + ", subServiceName="
                 + subServiceName + ", " + name;
+    }
+
+    @NotNull
+    public String asString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(serviceName);
+        if (subServiceName != null) {
+            sb.append(':').append(subServiceName);
+        }
+        sb.append('=');
+        if (userName != null) {
+            sb.append(userName);
+        } else {
+            sb.append('[');
+            Iterator<String> it = principalNames.iterator();
+            while (it.hasNext()) {
+                sb.append(it.next());
+                if (it.hasNext()) {
+                    sb.append(',');
+                }
+            }
+            sb.append(']');
+        }
+        return sb.toString();
     }
 }

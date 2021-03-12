@@ -17,7 +17,9 @@
 package org.apache.sling.feature.cpconverter.handlers;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Dictionary;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 
@@ -39,8 +41,14 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
 
     private static final String SERVICE_USER_MAPPING_PID = "org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl";
 
+    private boolean enforceServiceMappingByPrincipal;
+
     public AbstractConfigurationEntryHandler(@NotNull String extension) {
         super("/jcr_root/(?:apps|libs)/.+/config(\\.(?<runmode>[^/]+))?/(?<pid>.*)\\." + extension);
+    }
+
+    void setEnforceServiceMappingByPrincipal(boolean enforceServiceMappingByPrincipal) {
+        this.enforceServiceMappingByPrincipal = enforceServiceMappingByPrincipal;
     }
 
     @Override
@@ -103,8 +111,15 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
                 String[] mappings = Converters.standardConverter().convert(configurationProperties.get("user.mapping")).to(String[].class);
                 if (mappings != null) {
                     AclManager aclManager = Objects.requireNonNull(converter.getAclManager());
+                    List<String> newMappings = new ArrayList<>();
                     for (String usermapping : mappings) {
-                        aclManager.addMapping(new Mapping(usermapping));
+                        Mapping mapping = new Mapping(usermapping, enforceServiceMappingByPrincipal);
+                        aclManager.addMapping(mapping);
+                        newMappings.add(mapping.asString());
+                    }
+                    // replace 'user.mapping' property by the new mappings, which may have been refactored
+                    if (!newMappings.isEmpty()) {
+                        configurationProperties.put("user.mapping", newMappings.toArray(new String[0]));
                     }
                 }
                 featuresManager.addConfiguration(runMode, id, path, configurationProperties);
