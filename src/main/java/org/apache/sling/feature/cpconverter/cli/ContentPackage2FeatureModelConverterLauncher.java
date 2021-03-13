@@ -104,7 +104,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Option(names = { "--entry-handler-config" }, description = "Config for entry handlers that support it (classname:<config-string>", required = false)
     private List<String> entryHandlerConfigs = null;
 
-    @Option(names = { "--remove-install-hooks" }, description = "", required = false)
+    @Option(names = { "--remove-install-hooks" }, description = "Removes both internal and external hooks from processed packages", required = false)
     private boolean removeInstallHooks = false;
 
     @Override
