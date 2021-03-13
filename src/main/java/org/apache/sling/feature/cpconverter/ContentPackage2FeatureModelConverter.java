@@ -94,7 +94,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     private boolean dropContent = false;
 
-    private boolean removeInstallHook = false;
+    private boolean removeInstallHooks = false;
 
     private final File tmpDirectory;
 
@@ -169,7 +169,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     }
 
     public @NotNull ContentPackage2FeatureModelConverter setRemoveInstallHooks(boolean removeInstallHook) {
-        this.removeInstallHook = removeInstallHook;
+        this.removeInstallHooks = removeInstallHook;
         return this;
     }
 
@@ -234,7 +234,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         for (VaultPackage vaultPackage : orderedContentPackages) {
             try {
                 emitter.startPackage(vaultPackage);
-                mainPackageAssembler = VaultPackageAssembler.create(this.getTempDirectory(), vaultPackage, removeInstallHook);
+                mainPackageAssembler = VaultPackageAssembler.create(this.getTempDirectory(), vaultPackage, removeInstallHooks);
                 assemblers.add(mainPackageAssembler);
 
                 ArtifactId mvnPackageId = toArtifactId(vaultPackage);
@@ -316,7 +316,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
         PackageId originalPackageId = vaultPackage.getId();
         ArtifactId mvnPackageId = toArtifactId(vaultPackage);
-        VaultPackageAssembler clonedPackage = VaultPackageAssembler.create(this.getTempDirectory(), vaultPackage, removeInstallHook);
+        VaultPackageAssembler clonedPackage = VaultPackageAssembler.create(this.getTempDirectory(), vaultPackage, removeInstallHooks);
 
         // Please note: THIS IS A HACK to meet the new requirement without drastically change the original design
         // temporary swap the main handler to collect stuff

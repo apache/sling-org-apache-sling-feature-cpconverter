@@ -16,13 +16,10 @@
  */
 package org.apache.sling.feature.cpconverter.vltpkg;
 
-import static org.apache.jackrabbit.vault.util.Constants.CONFIG_XML;
 import static org.apache.jackrabbit.vault.util.Constants.FILTER_XML;
 import static org.apache.jackrabbit.vault.util.Constants.META_DIR;
-import static org.apache.jackrabbit.vault.util.Constants.PACKAGE_DEFINITION_XML;
 import static org.apache.jackrabbit.vault.util.Constants.PROPERTIES_XML;
 import static org.apache.jackrabbit.vault.util.Constants.ROOT_DIR;
-import static org.apache.jackrabbit.vault.util.Constants.SETTINGS_XML;
 import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER;
 import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.getDependencies;
 import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.setDependencies;
@@ -34,7 +31,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -58,13 +59,16 @@ import org.codehaus.plexus.archiver.util.DefaultFileSet;
 import org.codehaus.plexus.archiver.zip.ZipArchiver;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class VaultPackageAssembler implements EntryHandler, FileFilter {
 
     private static final Pattern OSGI_BUNDLE_PATTERN = Pattern.compile("(jcr_root)?/apps/[^/]+/install(\\.([^/]+))?/.+\\.jar");
 
+    private static final Logger log = LoggerFactory.getLogger(VaultPackageAssembler.class);
+
     private final static class RemoveInstallHooksPredicate implements Predicate<Map.Entry<Object, Object>> {
-        
         @Override
         public boolean test(java.util.Map.Entry<Object, Object> entry) {
             String key = (String)entry.getKey();
@@ -94,13 +98,14 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
             throw new IllegalStateException("Unable to create jcr root dir: " + jcrRootDirectory);
         }
 
-
         Properties properties = new Properties();
         Map<Object, Object> originalPackageProperties = vaultPackage.getMetaInf().getProperties();
         if (originalPackageProperties == null) {
             throw new IllegalArgumentException("No package properties found in " + vaultPackage.getId());
         }
         if (removeInstallHooks) {
+            // filter install hook properties
+            log.info("Removing install hooks from original package");
             originalPackageProperties = originalPackageProperties.entrySet().stream().filter(new RemoveInstallHooksPredicate()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
         properties.putAll(originalPackageProperties);
@@ -111,7 +116,7 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
 
         Set<Dependency> dependencies = getDependencies(vaultPackage);
 
-        VaultPackageAssembler assembler = new VaultPackageAssembler(tempDir, storingDirectory, properties, dependencies);
+        VaultPackageAssembler assembler = new VaultPackageAssembler(tempDir, storingDirectory, properties, dependencies, removeInstallHooks);
         assembler.mergeFilters(filter);
         return assembler;
     }
@@ -126,6 +131,8 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
 
     private final File tmpDir;
 
+    private final boolean removeInstallHooks;
+
     File getTempDir() {
         return this.tmpDir;
     }
@@ -138,19 +145,24 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
     @Override
     public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter)
             throws Exception {
-        addEntry(path, archive, entry);
+        if (removeInstallHooks && path.startsWith("/" + Constants.META_DIR + "/" + Constants.HOOKS_DIR)) {
+            log.info("Skipping install hook {} from original package", path);
+        } else {
+            addEntry(path, archive, entry);
+        }
     }
 
     /**
      * This class can not be instantiated from outside
      */
-    private VaultPackageAssembler(@NotNull File tempDir, @NotNull File storingDirectory, @NotNull Properties properties, @NotNull Set<Dependency> dependencies) {
+    private VaultPackageAssembler(@NotNull File tempDir, @NotNull File storingDirectory, @NotNull Properties properties, @NotNull Set<Dependency> dependencies, boolean removeInstallHooks) {
         this.storingDirectory = storingDirectory;
         this.properties = properties;
         this.dependencies = dependencies;
         this.tmpDir = tempDir;
+        this.removeInstallHooks = removeInstallHooks;
     }
-    
+
     public @NotNull Properties getPackageProperties() {
         return this.properties;
     }
