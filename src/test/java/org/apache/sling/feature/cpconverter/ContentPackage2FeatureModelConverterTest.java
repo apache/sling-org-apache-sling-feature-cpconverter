@@ -27,6 +27,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
@@ -36,11 +37,14 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.InvalidPropertiesFormatException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.StringTokenizer;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import javax.json.Json;
@@ -53,6 +57,7 @@ import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
+import org.apache.jackrabbit.vault.util.Constants;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Artifacts;
 import org.apache.sling.feature.Configuration;
@@ -281,23 +286,79 @@ public class ContentPackage2FeatureModelConverterTest {
                                 "META-INF/vault/properties.xml",
                                 "META-INF/vault/config.xml",
                                 "META-INF/vault/filter.xml",
-                                "jcr_root/settings.xml",
-                                "jcr_root/config.xml",
-                                "jcr_root/definition/.content.xml",
                                 "jcr_root/apps/.content.xml");
             verifyContentPackage(new File(outputDirectory, "asd/sample/asd.retail.apps/0.0.1/asd.retail.apps-0.0.1-cp2fm-converted.zip"),
                                 "META-INF/vault/settings.xml",
                                 "META-INF/vault/properties.xml",
                                 "META-INF/vault/config.xml",
                                 "META-INF/vault/filter.xml",
-                                "META-INF/vault/filter-plugin-generated.xml",
-                                "jcr_root/settings.xml",
-                                "jcr_root/config.xml",
-                                "jcr_root/definition/.content.xml");
+                                "META-INF/vault/filter-plugin-generated.xml");
             // in contrast to previous test when dropping content packages the cases below would be filtered out and files wouldn'T be in cache
             assertFalse(new File(outputDirectory, "asd/sample/Asd.Retail.ui.content/0.0.1/Asd.Retail.ui.content-0.0.1-cp2fm-converted.zip").exists());
             assertFalse(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip").exists());
 
+        } finally {
+            deleteDirTree(outputDirectory);
+        }
+    }
+
+    @Test
+    public void convertContentPackageRemoveInstallHooks() throws Exception {
+        URL packageUrl = getClass().getResource("test-with-install-hooks.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+
+        try {
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
+                    .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                    .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                    .setRemoveInstallHooks(true)
+                    .convert(packageFile);
+
+            File expectedPackage = new File(outputDirectory, "my_packages/tmp/0.0.0/tmp-0.0.0-cp2fm-converted.zip");
+            verifyContentPackageEntryNames(expectedPackage,
+                                "META-INF/vault/config.xml",
+                                "META-INF/vault/definition/.content.xml",
+                                "META-INF/vault/filter.xml",
+                                "META-INF/vault/properties.xml",
+                                "jcr_root/.content.xml",
+                                "jcr_root/testroot/.content.xml",
+                                "jcr_root/settings.xml",
+                                "jcr_root/config.xml",
+                                "jcr_root/definition/.content.xml");
+            verifyPropertiesXmlEntry(expectedPackage, "!installhook.test1.class", "!installhook.test2.class");
+        } finally {
+            deleteDirTree(outputDirectory);
+        }
+    }
+
+    @Test
+    public void convertContentPackageKeepInstallHooks() throws Exception {
+        URL packageUrl = getClass().getResource("test-with-install-hooks.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+
+        try {
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null))
+                    .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                    .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                    .convert(packageFile);
+
+            File expectedPackage = new File(outputDirectory, "my_packages/tmp/0.0.0/tmp-0.0.0-cp2fm-converted.zip");
+            verifyContentPackageEntryNames(expectedPackage,
+                    "META-INF/vault/config.xml",
+                    "META-INF/vault/definition/.content.xml",
+                    "META-INF/vault/filter.xml",
+                    "META-INF/vault/hooks/vault-hook-example-3.0.0.jar",
+                    "META-INF/vault/properties.xml",
+                    "jcr_root/.content.xml",
+                    "jcr_root/testroot/.content.xml",
+                    "jcr_root/settings.xml",
+                    "jcr_root/config.xml",
+                    "jcr_root/definition/.content.xml");
+            verifyPropertiesXmlEntry(expectedPackage, "installhook.test1.class", "installhook.test2.class");
         } finally {
             deleteDirTree(outputDirectory);
         }
@@ -419,11 +480,45 @@ public class ContentPackage2FeatureModelConverterTest {
         assertTrue("POM file " + pomFile + " does not exist", pomFile.exists());
     }
 
+    private void verifyContentPackageEntryNames(File contentPackage, String...expectedEntryNames) throws Exception {
+        try (ZipFile zipFile = new ZipFile(contentPackage)) {
+            
+            List<String> expectedEntryNamesList = Arrays.asList(expectedEntryNames);
+            for (Enumeration<? extends ZipEntry> zipEntries = zipFile.entries(); zipEntries.hasMoreElements();) {
+                ZipEntry zipEntry = zipEntries.nextElement();
+                String entryName = zipEntry.getName();
+                if (!entryName.endsWith("/")) {
+                    assertTrue("ZipEntry with name " + entryName + " not expected", expectedEntryNamesList.contains(entryName));
+                }
+            }
+            
+        }
+    }
+
     private void verifyContentPackage(File contentPackage, String...expectedEntries) throws Exception {
         try (ZipFile zipFile = new ZipFile(contentPackage)) {
             for (String expectedEntry : expectedEntries) {
                 assertNotNull("Expected entry not found: " + expectedEntry + " in file " + contentPackage,
                               zipFile.getEntry(expectedEntry));
+            }
+        }
+    }
+
+    private void verifyPropertiesXmlEntry(File contentPackage, String... expectedPropertyKeys) throws InvalidPropertiesFormatException, IOException {
+        try (ZipFile zipFile = new ZipFile(contentPackage)) {
+            ZipEntry zipEntry = zipFile.getEntry(Constants.META_DIR + "/" + Constants.PROPERTIES_XML);
+            assertNotNull("Package didn't contain properties.xml", zipEntry);
+            try (InputStream inputStream = zipFile.getInputStream(zipEntry)) {
+                Properties properties = new Properties();
+                properties.loadFromXML(inputStream);
+                for (String expectedPropertyKey : expectedPropertyKeys) {
+                    if (expectedPropertyKey.startsWith("!")) {
+                        String key = expectedPropertyKey.substring(1);
+                        assertFalse("Properties.xml was not supposed to contain key " +  key + " but it does", properties.containsKey(key));
+                    } else {
+                        assertTrue("Properties.xml was supposed to contain key " +  expectedPropertyKey + " but it does not", properties.containsKey(expectedPropertyKey));
+                    }
+                }
             }
         }
     }
