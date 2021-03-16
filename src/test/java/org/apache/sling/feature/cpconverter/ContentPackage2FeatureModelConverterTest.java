@@ -195,6 +195,9 @@ public class ContentPackage2FeatureModelConverterTest {
                                 "META-INF/vault/properties.xml",
                                 "META-INF/vault/config.xml",
                                 "META-INF/vault/filter.xml",
+                                "jcr_root/settings.xml",
+                                "jcr_root/config.xml",
+                                "jcr_root/definition/.content.xml",
                                 "jcr_root/apps/.content.xml");
             verifyContentPackage(new File(outputDirectory, "asd/sample/Asd.Retail.ui.content/0.0.1/Asd.Retail.ui.content-0.0.1-cp2fm-converted.zip"),
                                 "META-INF/vault/settings.xml",
@@ -202,21 +205,28 @@ public class ContentPackage2FeatureModelConverterTest {
                                 "META-INF/vault/config.xml",
                                 "META-INF/vault/filter.xml",
                                 "META-INF/vault/filter-plugin-generated.xml",
+                                "jcr_root/settings.xml",
                                 "jcr_root/content/asd/.content.xml",
-                                "jcr_root/content/asd/resources.xml");
+                                "jcr_root/content/asd/resources.xml",
+                                "jcr_root/config.xml",
+                                "jcr_root/definition/.content.xml");
             verifyContentPackage(new File(outputDirectory, "asd/sample/asd.retail.apps/0.0.1/asd.retail.apps-0.0.1-cp2fm-converted.zip"),
                                 "META-INF/vault/settings.xml",
                                 "META-INF/vault/properties.xml",
                                 "META-INF/vault/config.xml",
                                 "META-INF/vault/filter.xml",
                                 "META-INF/vault/filter-plugin-generated.xml",
-                                "jcr_root");
+                                "jcr_root/settings.xml",
+                                "jcr_root/config.xml",
+                                "jcr_root/definition/.content.xml");
             verifyContentPackage(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip"),
                                 "META-INF/vault/settings.xml",
                                 "META-INF/vault/properties.xml",
                                 "META-INF/vault/config.xml",
                                 "META-INF/vault/filter.xml",
-                                "jcr_root");
+                                "jcr_root/settings.xml",
+                                "jcr_root/config.xml",
+                                "jcr_root/definition/.content.xml");
         } finally {
             deleteDirTree(outputDirectory);
         }
@@ -313,7 +323,10 @@ public class ContentPackage2FeatureModelConverterTest {
                                 "META-INF/vault/filter.xml",
                                 "META-INF/vault/properties.xml",
                                 "jcr_root/.content.xml",
-                                "jcr_root/testroot/.content.xml");
+                                "jcr_root/testroot/.content.xml",
+                                "jcr_root/settings.xml",
+                                "jcr_root/config.xml",
+                                "jcr_root/definition/.content.xml");
             verifyPropertiesXmlEntry(expectedPackage, "!installhook.test1.class", "!installhook.test2.class");
         } finally {
             deleteDirTree(outputDirectory);
@@ -341,7 +354,10 @@ public class ContentPackage2FeatureModelConverterTest {
                     "META-INF/vault/hooks/vault-hook-example-3.0.0.jar",
                     "META-INF/vault/properties.xml",
                     "jcr_root/.content.xml",
-                    "jcr_root/testroot/.content.xml");
+                    "jcr_root/testroot/.content.xml",
+                    "jcr_root/settings.xml",
+                    "jcr_root/config.xml",
+                    "jcr_root/definition/.content.xml");
             verifyPropertiesXmlEntry(expectedPackage, "installhook.test1.class", "installhook.test2.class");
         } finally {
             deleteDirTree(outputDirectory);
