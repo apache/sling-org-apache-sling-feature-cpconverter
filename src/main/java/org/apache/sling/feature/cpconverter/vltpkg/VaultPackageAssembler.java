@@ -67,8 +67,6 @@ import org.slf4j.LoggerFactory;
 
 public class VaultPackageAssembler implements EntryHandler, FileFilter {
 
-    private static final String[] INCLUDE_RESOURCES = { PACKAGE_DEFINITION_XML, CONFIG_XML, SETTINGS_XML };
-
     private static final Pattern OSGI_BUNDLE_PATTERN = Pattern.compile("(jcr_root)?/apps/[^/]+/install(\\.([^/]+))?/.+\\.jar");
 
     private static final Logger log = LoggerFactory.getLogger(VaultPackageAssembler.class);
@@ -260,14 +258,6 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
         try (InputStream input = filter.getSource();
                 FileOutputStream output = new FileOutputStream(xmlFilter)) {
             IOUtils.copy(input, output);
-        }
-
-        // copy the required resources
-
-        for (String resource : INCLUDE_RESOURCES) {
-            try (InputStream input = getClass().getResourceAsStream(resource)) {
-                addEntry(ROOT_DIR + '/' + resource, input);
-            }
         }
 
         // create the target archiver
