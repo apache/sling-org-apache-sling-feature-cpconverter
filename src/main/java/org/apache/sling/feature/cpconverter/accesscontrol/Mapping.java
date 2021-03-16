@@ -17,6 +17,8 @@
 package org.apache.sling.feature.cpconverter.accesscontrol;
 
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -25,6 +27,8 @@ import java.util.Objects;
 import java.util.Set;
 
 public class Mapping {
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final String serviceName;
 
@@ -69,6 +73,7 @@ public class Mapping {
         } else if (enforceMappingByPrincipal) {
             this.userName = null;
             this.principalNames = Collections.singleton(s);
+            logger.info("Enforcing service mapping by principal name for '{}'", spec);
         } else {
             this.userName = s;
             this.principalNames = null;
