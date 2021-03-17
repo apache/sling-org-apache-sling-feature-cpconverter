@@ -30,7 +30,7 @@ import org.jetbrains.annotations.NotNull;
 public class NodeTypesEntryHandler extends AbstractRegexEntryHandler {
 
     public NodeTypesEntryHandler() {
-        super("/META-INF/vault/nodetypes\\.cnd");
+        super("/META-INF/vault/.*\\.cnd");
     }
 
     public static NodeTypesEntryHandler forCndPattern(@NotNull Pattern pattern) {

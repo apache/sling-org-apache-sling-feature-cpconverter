@@ -16,6 +16,8 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import java.util.regex.Pattern;
+
 import org.apache.jackrabbit.vault.fs.io.ImportOptions;
 import org.junit.Assert;
 import org.junit.Test;
@@ -23,7 +25,7 @@ import org.junit.Test;
 public class NodeTypesEntryHandlerTest {
 
     @Test
-    public void testForCndPattern() {
+    public void testForCndPatternWithDefaultPattern() {
         // test with default pattern
         NodeTypesEntryHandler handler = NodeTypesEntryHandler.forCndPattern(new ImportOptions().getCndPattern());
         Assert.assertTrue(handler.matches("/jcr_root/apps/myapp/nodetypes/test.cnd"));
@@ -33,5 +35,20 @@ public class NodeTypesEntryHandlerTest {
         Assert.assertFalse(handler.matches("/jcr_root/apps/myapp/nodetypes2/test.cnd"));
         // invalid extension
         Assert.assertFalse(handler.matches("/jcr_root/apps/myapp/nodetypes/test.xml"));
+    }
+
+    @Test
+    public void testForCndPatternWithCustomPattern() {
+        // test with default pattern
+        NodeTypesEntryHandler handler = NodeTypesEntryHandler.forCndPattern(Pattern.compile(".*/mynts/.*\\.cnd"));
+        Assert.assertTrue(handler.matches("/jcr_root/some/where/deep/mynts/test.cnd"));
+    }
+
+    @Test
+    public void testDefaultHandler() {
+        NodeTypesEntryHandler handler = new NodeTypesEntryHandler();
+        Assert.assertTrue(handler.matches("/META-INF/vault/nodetypes.cnd"));
+        Assert.assertTrue(handler.matches("/META-INF/vault/custom.cnd"));
+        Assert.assertTrue(handler.matches("/META-INF/vault/my/deep/nt.cnd"));
     }
 }
