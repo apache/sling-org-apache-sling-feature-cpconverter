@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
+import org.apache.jackrabbit.vault.util.Constants;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,7 +33,20 @@ public class NodeTypesEntryHandler extends AbstractRegexEntryHandler {
         super("/META-INF/vault/nodetypes\\.cnd");
     }
 
-    public NodeTypesEntryHandler(@NotNull Pattern pattern) {
+    public static NodeTypesEntryHandler forCndPattern(@NotNull Pattern pattern) {
+        // as the pattern refers to an absolute repository path, the prefix jcr_root needs to be manually added
+        // should work for most of the patterns
+        String originalCndRegex = pattern.pattern();
+        if (originalCndRegex.startsWith("^")) {
+            originalCndRegex = originalCndRegex.substring(1);
+        }
+        if (originalCndRegex.startsWith("/")) {
+            originalCndRegex = originalCndRegex.substring(1);
+        }
+        return new NodeTypesEntryHandler(Pattern.compile("/"+Constants.ROOT_DIR+"/"+originalCndRegex));
+    }
+
+    private NodeTypesEntryHandler(@NotNull Pattern pattern) {
         super(pattern);
     }
 

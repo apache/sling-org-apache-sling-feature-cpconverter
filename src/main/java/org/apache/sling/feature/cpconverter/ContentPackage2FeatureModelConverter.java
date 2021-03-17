@@ -429,7 +429,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     @Override
     protected void addCdnPattern(@NotNull Pattern cndPattern) {
-        handlersManager.addEntryHandler(new NodeTypesEntryHandler(cndPattern));
+        handlersManager.addEntryHandler(NodeTypesEntryHandler.forCndPattern(cndPattern));
     }
 
 }
