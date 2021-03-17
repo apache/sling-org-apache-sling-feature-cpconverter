@@ -27,67 +27,93 @@ public class MappingTest {
 
     @Test
     public void testMapUserId() {
-        Mapping m = new Mapping("org.apache.sling.testbundle:sub-service-1=service1");
+        String spec = "org.apache.sling.testbundle:sub-service-1=service1";
+        Mapping m = new Mapping(spec);
         assertTrue(m.mapsUser("service1"));
         assertFalse(m.mapsUser("another"));
         assertFalse(m.mapsPrincipal("service1"));
         assertFalse(m.mapsPrincipal("another"));
+        assertEquals(spec, m.asString());
+    }
+
+    @Test
+    public void testMapUserIdEnforcePrincipal() {
+        Mapping m = new Mapping("org.apache.sling.testbundle:sub-service-1=service1", true);
+        assertFalse(m.mapsUser("service1"));
+        assertFalse(m.mapsUser("another"));
+        assertTrue(m.mapsPrincipal("service1"));
+        assertFalse(m.mapsPrincipal("another"));
+        assertEquals("org.apache.sling.testbundle:sub-service-1=[service1]", m.asString());
     }
 
     @Test
     public void testMapPrincipalNames() {
-        Mapping m = new Mapping("org.apache.sling.testbundle:sub-service-1=[service1,service2]");
+        String spec = "org.apache.sling.testbundle:sub-service-1=[service1,service2]";
+        Mapping m = new Mapping(spec);
         assertFalse(m.mapsUser("service1"));
         assertFalse(m.mapsUser("another"));
         assertTrue(m.mapsPrincipal("service1"));
         assertTrue(m.mapsPrincipal("service2"));
         assertFalse(m.mapsPrincipal("another"));
+        assertEquals(spec, m.asString());
     }
 
     @Test
     public void testMapSinglePrincipalName() {
-        Mapping m = new Mapping("org.apache.sling.testbundle:sub-service-1=[service1]");
+        String spec = "org.apache.sling.testbundle:sub-service-1=[service1]";
+        Mapping m = new Mapping(spec);
         assertFalse(m.mapsUser("service1"));
         assertFalse(m.mapsUser("another"));
         assertTrue(m.mapsPrincipal("service1"));
         assertFalse(m.mapsPrincipal("service2"));
         assertFalse(m.mapsPrincipal("another"));
+        assertEquals(spec, m.asString());
     }
 
     @Test
     public void testMapEmptyPrincipalNames() {
-        Mapping m = new Mapping("org.apache.sling.testbundle:sub-service-1=[]");
+        String spec = "org.apache.sling.testbundle:sub-service-1=[]";
+        Mapping m = new Mapping(spec);
         assertFalse(m.mapsUser("service1"));
         assertFalse(m.mapsUser("another"));
         assertFalse(m.mapsPrincipal("service1"));
         assertFalse(m.mapsPrincipal("service2"));
         assertFalse(m.mapsPrincipal("another"));
+        assertEquals(spec, m.asString());
     }
 
     @Test
     public void testMapMissingSubservice() {
-        Mapping m = new Mapping("org.apache.sling.testbundle=[service1]");
+        String spec = "org.apache.sling.testbundle=[service1]";
+        Mapping m = new Mapping(spec);
         assertFalse(m.mapsUser("service1"));
         assertFalse(m.mapsUser("another"));
         assertTrue(m.mapsPrincipal("service1"));
         assertFalse(m.mapsPrincipal("another"));
+        assertEquals(spec, m.asString());
     }
 
     @Test
     public void testMapIncompleteArray() {
-        Mapping m = new Mapping("org.apache.sling.testbundle:sub-service=[service1");
+        String spec = "org.apache.sling.testbundle:sub-service=[service1";
+        Mapping m = new Mapping(spec);
         assertTrue(m.mapsUser("[service1"));
         assertFalse(m.mapsPrincipal("service1"));
+        assertEquals(spec, m.asString());
 
-        m = new Mapping("org.apache.sling.testbundle:sub-service=service1]");
+        spec = "org.apache.sling.testbundle:sub-service=service1]";
+        m = new Mapping(spec);
         assertTrue(m.mapsUser("service1]"));
         assertFalse(m.mapsPrincipal("service1"));
+        assertEquals(spec, m.asString());
     }
 
     @Test
     public void testColonInUserName() {
-        Mapping m = new Mapping("org.apache.sling.testbundle=sling:service1");
+        String spec = "org.apache.sling.testbundle=sling:service1";
+        Mapping m = new Mapping(spec);
         assertTrue(m.mapsUser("sling:service1"));
+        assertEquals(spec, m.asString());
     }
 
     @Test(expected = IllegalArgumentException.class)

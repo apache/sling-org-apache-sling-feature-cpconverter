@@ -101,6 +101,9 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Option(names = { "--enforce-principal-based-supported-path" }, description = "Converts service user access control entries to principal-based setup using the given supported path.", required = false)
     private String enforcePrincipalBasedSupportedPath = null;
 
+    @Option(names = { "--enforce-servicemapping-by-principal" }, description = "Converts service user mappings with the form 'service:sub=userID' to 'service:sub=[principalname]'. Note, this may result in group membership no longer being resolved upon service login.", required = false)
+    private boolean enforceServiceMappingByPrincipal = false;
+
     @Option(names = { "--entry-handler-config" }, description = "Config for entry handlers that support it (classname:<config-string>", required = false)
     private List<String> entryHandlerConfigs = null;
 
@@ -164,7 +167,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                 ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation)
                                                                 .setFeaturesManager(featuresManager)
                                                                 .setBundlesDeployer(new DefaultArtifactsDeployer(artifactsOutputDirectory))
-                                                                .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap))
+                                                                .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap, enforceServiceMappingByPrincipal))
                                                                 .setAclManager(new DefaultAclManager(enforcePrincipalBasedSupportedPath))
                                                                 .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
                                                                 .setFailOnMixedPackages(failOnMixedPackages)

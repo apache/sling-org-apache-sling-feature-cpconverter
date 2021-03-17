@@ -30,14 +30,17 @@ public class DefaultEntryHandlersManager implements EntryHandlersManager {
     private final List<EntryHandler> entryHandlers = new LinkedList<>();
 
     public DefaultEntryHandlersManager() {
-        this(Collections.emptyMap());
+        this(Collections.emptyMap(), false);
     }
 
-    public DefaultEntryHandlersManager(Map<String, String> configs) {
+    public DefaultEntryHandlersManager(@NotNull Map<String, String> configs, boolean enforceServiceMappingByPrincipal) {
         ServiceLoader<EntryHandler> entryHandlersLoader = ServiceLoader.load(EntryHandler.class);
         for (EntryHandler entryHandler : entryHandlersLoader) {
             if (configs.containsKey(entryHandler.getClass().getName())) {
                 entryHandler = entryHandler.withConfig(configs.get(entryHandler.getClass().getName()));
+                if (entryHandler instanceof AbstractConfigurationEntryHandler) {
+                    ((AbstractConfigurationEntryHandler) entryHandler).setEnforceServiceMappingByPrincipal(enforceServiceMappingByPrincipal);
+                }
             }
             addEntryHandler(entryHandler);
         }
