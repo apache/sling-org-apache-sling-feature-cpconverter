@@ -341,7 +341,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     @NotNull
     public String calculateEnforcedIntermediatePath(@Nullable String intermediatePath) {
         if (enforcePrincipalBasedSupportedPath == null) {
-            return intermediatePath;
+            throw new IllegalStateException("No supported path configured");
         }
         String supportedPath = enforcePrincipalBasedSupportedPath.toString();
         if (intermediatePath == null || intermediatePath.isEmpty()) {
