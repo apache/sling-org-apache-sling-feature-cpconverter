@@ -77,7 +77,7 @@ public class VaultPackageAssemblerTest {
         if (resourceLocation != null) {
             assembler.addEntry(resourceLocation, getClass().getResourceAsStream("../handlers" + resourceLocation));
         }
-        File contentPackage = assembler.createPackage(testDirectory);
+        File contentPackage = assembler.createPackage();
 
         ZipFile zipFile = new ZipFile(contentPackage);
         ZipEntry resourceEntry;
