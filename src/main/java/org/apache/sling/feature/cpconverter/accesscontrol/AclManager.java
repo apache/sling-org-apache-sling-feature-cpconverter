@@ -22,6 +22,7 @@ import org.apache.jackrabbit.vault.fs.spi.PrivilegeDefinitions;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * The Manager able to collect and build System Users and related ACL policies.
@@ -39,6 +40,8 @@ public interface AclManager {
     boolean addAcl(@NotNull String systemUser, @NotNull AccessControlEntry acl);
 
     void addRepoinitExtension(@NotNull List<VaultPackageAssembler> packageAssemblers, @NotNull FeaturesManager featureManager);
+
+    void addRepoinitExtention(@Nullable String repoInitText, @Nullable String runMode, @NotNull FeaturesManager featuresManager);
 
     void addNodetypeRegistrationSentence(@NotNull String nodetypeRegistrationSentence);
 

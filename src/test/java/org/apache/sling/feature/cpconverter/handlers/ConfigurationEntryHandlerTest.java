@@ -43,6 +43,7 @@ import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
+import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.Mapping;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
@@ -157,7 +158,7 @@ public class ConfigurationEntryHandlerTest {
         when(featuresManager.getRunMode(anyString())).thenReturn(feature);
         ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
         when(converter.getFeaturesManager()).thenReturn(featuresManager);
-        AclManager aclManager = mock(AclManager.class);
+        AclManager aclManager = spy(new DefaultAclManager());
         when(converter.getAclManager()).thenReturn(aclManager);
 
         configurationEntryHandler.handle(resourceConfiguration, archive, entry, converter);

@@ -29,6 +29,7 @@ import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.Mapping;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
+import org.apache.sling.feature.cpconverter.repoinit.OperationProcessor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.util.converter.Converters;
@@ -98,10 +99,9 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
             if (REPOINIT_FACTORY_PID.equals(factoryPid)) {
                 final String[] scripts = Converters.standardConverter().convert(configurationProperties.get("scripts")).to(String[].class);
                 if (scripts != null && scripts.length > 0 ) {
-                    for(final String text : scripts) {
-                        if ( text != null && !text.trim().isEmpty() ) {
-                            featuresManager.addOrAppendRepoInitExtension(text, runMode);
-                        }
+                    AclManager aclManager = Objects.requireNonNull(converter.getAclManager());
+                    for (final String text : scripts) {
+                        aclManager.addRepoinitExtention(text, runMode, featuresManager);
                     }
                 }
                 checkReferences(configurationProperties, pid);
