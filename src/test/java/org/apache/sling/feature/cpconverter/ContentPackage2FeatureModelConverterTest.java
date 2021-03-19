@@ -786,7 +786,7 @@ public class ContentPackage2FeatureModelConverterTest {
     // see SLING-8649
     @Test
     public void filteredOutContentPackagesAreExcludedDependencies() throws Exception {
-        File[] contentPackages = load("test_dep_a-1.0.zip", "test_dep_b-1.0.zip", "test_dep_b-1.0.zip");
+        File[] contentPackages = load("test_dep_a-1.0.zip", "test_dep_b-1.0.zip");
 
         // input: c <- a <- b
         // expected output: c <- a
