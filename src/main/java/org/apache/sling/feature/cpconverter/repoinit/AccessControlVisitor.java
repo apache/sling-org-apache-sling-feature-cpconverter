@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.repoinit;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.sling.feature.cpconverter.accesscontrol.EnforceInfo;
 import org.apache.sling.repoinit.parser.operations.AclLine;
 import org.apache.sling.repoinit.parser.operations.RestrictionClause;
@@ -28,7 +29,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Formatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -49,26 +52,58 @@ class AccessControlVisitor extends NoOpVisitor {
 
     @Override
     public void visitSetAclPrincipal(SetAclPrincipals setAclPrincipals) {
-        List<String> principalNames = new ArrayList<>(setAclPrincipals.getPrincipals());
         String optionString = getAclOptionsString(setAclPrincipals.getOptions());
-        for (String principalName : setAclPrincipals.getPrincipals()) {
-            if (enforcePrincipalBased(principalName)) {
-                toConvert.putAll(principalName, optionString, setAclPrincipals.getLines());
-                principalNames.remove(principalName);
+        Map<List<AclLine>, List<String>> notConverted = convertLines(setAclPrincipals, optionString);
+
+        // re-create original repo-init statements for all principals/lines that don't get converted
+        if (!notConverted.isEmpty()) {
+            for (Map.Entry<List<AclLine>, List<String>> entry : notConverted.entrySet()) {
+                List<AclLine> lines = entry.getKey();
+                List<String> principalNames = entry.getValue();
+                if (lines.stream().anyMatch(line -> {
+                    List<String> paths = line.getProperty(AclLine.PROP_PATHS);
+                    return paths == null || paths.isEmpty();
+                })) {
+                    generateRepoInit(formatter, "set repository ACL for %s%s%n", true, listToString(principalNames), optionString, lines);
+                } else {
+                    generateRepoInit(formatter, "set ACL for %s%s%n", true, listToString(principalNames), optionString, lines);
+                }
             }
         }
-        // re-create original repo-init statements for all principals that don't get converted
-        Collection<AclLine> lines = setAclPrincipals.getLines();
-        if (!principalNames.isEmpty() && !lines.isEmpty()) {
-            if (lines.stream().anyMatch(aclLine -> {
-                List<String> paths = aclLine.getProperty(AclLine.PROP_PATHS);
-                return paths == null || paths.isEmpty();
-            })) {
-                generateRepoInit(formatter, "set repository ACL for %s%s%n", true, listToString(setAclPrincipals.getPrincipals()), optionString, lines);
-            } else {
-                generateRepoInit(formatter, "set ACL for %s%s%n", true, listToString(setAclPrincipals.getPrincipals()), optionString, lines);
+    }
+
+    /**
+     * Return a list of AclLine that don't get converted.
+     */
+    @NotNull
+    private Map<List<AclLine>, List<String>> convertLines(@NotNull SetAclPrincipals setAclPrincipals, @NotNull String optionString) {
+        Map<List<AclLine>, List<String>> notConverted = new HashMap<>();
+
+        List<AclLine> allLines = new ArrayList<>(setAclPrincipals.getLines());
+
+        List<AclLine> removeLines = new ArrayList<>(allLines);
+        removeLines.removeIf(line -> !isRemoveAction(line));
+
+        List<AclLine> lines = new ArrayList<>(allLines);
+        lines.removeAll(removeLines);
+
+        if (!lines.isEmpty()) {
+            for (String principalName : setAclPrincipals.getPrincipals()) {
+                if (enforcePrincipalBased(principalName)) {
+                    toConvert.putAll(principalName, optionString, lines);
+                    if (!removeLines.isEmpty()) {
+                        List<String> principalNames = notConverted.computeIfAbsent(removeLines, k -> new ArrayList<>());
+                        principalNames.add(principalName);
+                    }
+                } else {
+                    List<String> principalNames = notConverted.computeIfAbsent(allLines, k -> new ArrayList<>());
+                    principalNames.add(principalName);
+                }
             }
+        } else {
+            notConverted.put(allLines, setAclPrincipals.getPrincipals());
         }
+        return notConverted;
     }
 
     @Override
@@ -77,11 +112,13 @@ class AccessControlVisitor extends NoOpVisitor {
         List<AclLine> lines = new ArrayList<>();
         for (AclLine line : setAclPaths.getLines()) {
             List<String> principalNames = new ArrayList<>(line.getProperty(AclLine.PROP_PRINCIPALS));
-            for (String principalName : line.getProperty(AclLine.PROP_PRINCIPALS)) {
-                if (enforcePrincipalBased(principalName)) {
-                    AclLine newLine = createAclLine(line, null, setAclPaths.getPaths());
-                    toConvert.put(principalName, optionString, newLine);
-                    principalNames.remove(principalName);
+            if (!isRemoveAction(line)) {
+                for (String principalName : line.getProperty(AclLine.PROP_PRINCIPALS)) {
+                    if (enforcePrincipalBased(principalName)) {
+                        AclLine newLine = createAclLine(line, null, setAclPaths.getPaths());
+                        toConvert.put(principalName, optionString, newLine);
+                        principalNames.remove(principalName);
+                    }
                 }
             }
 
@@ -147,6 +184,11 @@ class AccessControlVisitor extends NoOpVisitor {
     @NotNull
     private static String getAclOptionsString(@NotNull List<String> options) {
         return (options.isEmpty()) ? "" : " (ACLOptions="+ listToString(options)+")";
+    }
+
+    private static boolean isRemoveAction(@NotNull AclLine line) {
+        AclLine.Action action = line.getAction();
+        return action == AclLine.Action.REMOVE_ALL || action == AclLine.Action.REMOVE;
     }
 
     @NotNull

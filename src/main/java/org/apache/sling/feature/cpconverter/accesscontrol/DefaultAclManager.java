@@ -349,6 +349,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
         } else if (Text.isDescendantOrEqual(supportedPath, intermediatePath)) {
             return intermediatePath;
         } else if (!intermediatePath.startsWith("/")) {
+            // FIXME: compute relative path
             String p = "/"+intermediatePath;
             while (!p.isEmpty()) {
                 if (supportedPath.contains(p)) {
