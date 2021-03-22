@@ -16,7 +16,6 @@
  */
 package org.apache.sling.feature.cpconverter.repoinit;
 
-import com.google.common.collect.ImmutableList;
 import org.apache.sling.feature.cpconverter.accesscontrol.EnforceInfo;
 import org.apache.sling.repoinit.parser.operations.AclLine;
 import org.apache.sling.repoinit.parser.operations.RestrictionClause;

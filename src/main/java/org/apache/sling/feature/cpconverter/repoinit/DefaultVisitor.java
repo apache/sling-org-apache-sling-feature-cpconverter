@@ -41,10 +41,8 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.Calendar;
 import java.util.Formatter;
-import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 class DefaultVisitor extends NoOpVisitor {
