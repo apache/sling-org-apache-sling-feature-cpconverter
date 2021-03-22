@@ -84,12 +84,12 @@ public final class RepPolicyEntryHandlerTest {
 
         // commented ACLs are due SLING-8561
         String expected =
-                "create service user acs-commons-ensure-oak-index-service with path /home/users/system\n" +
-                "create service user acs-commons-dispatcher-flush-service with path /home/users/system\n" +
-                "create service user acs-commons-package-replication-status-event-service with path /home/users/system\n" +
-                "create service user acs-commons-ensure-service-user-service with path /home/users/system\n" +
-                "create service user acs-commons-automatic-package-replicator-service with path /home/users/system\n" +
-                "create service user acs-commons-on-deploy-scripts-service with path /home/users/system\n" +
+                "create service user acs-commons-ensure-oak-index-service with path system\n" +
+                "create service user acs-commons-dispatcher-flush-service with path system\n" +
+                "create service user acs-commons-package-replication-status-event-service with path system\n" +
+                "create service user acs-commons-ensure-service-user-service with path system\n" +
+                "create service user acs-commons-automatic-package-replicator-service with path system\n" +
+                "create service user acs-commons-on-deploy-scripts-service with path system\n" +
                 "set ACL for acs-commons-automatic-package-replicator-service\n" +
                 "allow jcr:read on home(acs-commons-automatic-package-replicator-service)\n" +
                 "end\n" +
@@ -128,10 +128,10 @@ public final class RepPolicyEntryHandlerTest {
         Extension repoinitExtension = result.getRepoinitExtension();
 
         String expected =
-                "create service user acs-commons-package-replication-status-event-service with path /home/users/system\n" +
-                "create service user acs-commons-ensure-service-user-service with path /home/users/system\n" +
-                "create service user acs-commons-automatic-package-replicator-service with path /home/users/system\n" +
-                "create service user acs-commons-on-deploy-scripts-service with path /home/users/system\n" +
+                "create service user acs-commons-package-replication-status-event-service with path system\n" +
+                "create service user acs-commons-ensure-service-user-service with path system\n" +
+                "create service user acs-commons-automatic-package-replicator-service with path system\n" +
+                "create service user acs-commons-on-deploy-scripts-service with path system\n" +
                 "set ACL for acs-commons-automatic-package-replicator-service\n" +
                 "allow jcr:read on home(acs-commons-automatic-package-replicator-service)\n" +
                 "end\n" +
@@ -168,10 +168,10 @@ public final class RepPolicyEntryHandlerTest {
     @Test
     public void systemUserAclSetNotForUserPath() throws Exception {
         ParseResult result = parseAndSetRepoinit(new SystemUser("acs-commons-package-replication-status-event-service",
-                new RepoPath("/this/is/a/completely/different/path/foo"), new RepoPath("/this/is/a/completely/different/path")));
+                new RepoPath("/home/users/system/some/other/node"), new RepoPath("/home/users/system/some/other")));
         Extension repoinitExtension = result.getRepoinitExtension();
         String expected =
-                "create service user acs-commons-package-replication-status-event-service with path /this/is/a/completely/different/path\n" +
+                "create service user acs-commons-package-replication-status-event-service with path system/some/other\n" +
                 "set ACL for acs-commons-package-replication-status-event-service\n" +
                 "allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /home/users/system/asd\n" +
                 "deny jcr:write on /home/users/system/asd\n" +
@@ -214,7 +214,7 @@ public final class RepPolicyEntryHandlerTest {
         Extension repoinitExtension = result.getRepoinitExtension();
 
         String expected =
-                "create service user service1 with path /home/users/system/services\n" +
+                "create service user service1 with path system/services\n" +
                 "set ACL for service1\n" +
                 "allow jcr:read,rep:userManagement on /home/groups/g\n" +
                 "end\n";
@@ -263,7 +263,7 @@ public final class RepPolicyEntryHandlerTest {
         String path = "/jcr_root/asd/jr2restrictions/_rep_policy.xml";
         Extension repoinitExtension = parseAndSetRepoinit(path, aclManager).getRepoinitExtension();
         String expected =
-                "create service user service1 with path /home/users/system/services\n" +
+                "create service user service1 with path system/services\n" +
                 "set ACL for service1\n" +
                 "allow jcr:read on /asd/jr2restrictions restriction(rep:glob,*/subtree/*) restriction(sling:customRestriction,sling:value1,sling:value2)\n" +
                 "end\n";

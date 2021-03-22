@@ -101,6 +101,9 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Option(names = { "--enforce-principal-based-supported-path" }, description = "Converts service user access control entries to principal-based setup using the given supported path.", required = false)
     private String enforcePrincipalBasedSupportedPath = null;
 
+    @Option(names= {"--system-user-rel-path"}, description = "Relative path for system user as configured with Apache Jackrabbit Oak", required = false)
+    private String systemUserRelPath = "system";
+
     @Option(names = { "--enforce-servicemapping-by-principal" }, description = "Converts service user mappings with the form 'service:sub=userID' to 'service:sub=[principalname]'. Note, this may result in group membership no longer being resolved upon service login.", required = false)
     private boolean enforceServiceMappingByPrincipal = false;
 
@@ -168,7 +171,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                                                                 .setFeaturesManager(featuresManager)
                                                                 .setBundlesDeployer(new DefaultArtifactsDeployer(artifactsOutputDirectory))
                                                                 .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap, enforceServiceMappingByPrincipal))
-                                                                .setAclManager(new DefaultAclManager(enforcePrincipalBasedSupportedPath))
+                                                                .setAclManager(new DefaultAclManager(enforcePrincipalBasedSupportedPath, systemUserRelPath))
                                                                 .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
                                                                 .setFailOnMixedPackages(failOnMixedPackages)
                                                                 .setDropContent(true);

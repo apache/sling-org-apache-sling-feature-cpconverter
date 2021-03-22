@@ -21,7 +21,6 @@ import org.apache.jackrabbit.spi.PrivilegeDefinition;
 import org.apache.jackrabbit.spi.commons.conversion.DefaultNamePathResolver;
 import org.apache.jackrabbit.spi.commons.conversion.NameResolver;
 import org.apache.jackrabbit.vault.fs.spi.PrivilegeDefinitions;
-import org.apache.jackrabbit.vault.util.PathUtil;
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.jackrabbit.vault.util.Text;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
@@ -64,6 +63,8 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     private static final String CONTENT_XML_FILE_NAME = ".content.xml";
 
     private final RepoPath enforcePrincipalBasedSupportedPath;
+    private final String systemRelPath;
+
     private final OperationProcessor processor = new OperationProcessor();
 
     private final Set<SystemUser> systemUsers = new LinkedHashSet<>();
@@ -79,10 +80,14 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     private volatile PrivilegeDefinitions privilegeDefinitions;
 
     public DefaultAclManager() {
-        this(null);
+        this(null, "system");
     }
-    public DefaultAclManager(@Nullable String enforcePrincipalBasedSupportedPath) {
+    public DefaultAclManager(@Nullable String enforcePrincipalBasedSupportedPath, @NotNull String systemRelPath) {
+        if (enforcePrincipalBasedSupportedPath != null && !enforcePrincipalBasedSupportedPath.contains(systemRelPath)) {
+            throw new IllegalArgumentException("Relative path for system users "+ systemRelPath + " not included in " + enforcePrincipalBasedSupportedPath);
+        }
         this.enforcePrincipalBasedSupportedPath = (enforcePrincipalBasedSupportedPath == null) ? null : new RepoPath(enforcePrincipalBasedSupportedPath);
+        this.systemRelPath = systemRelPath;
     }
 
     @Override
@@ -206,7 +211,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
         if (enforcePrincipalBased(systemUser)) {
             return calculateEnforcedIntermediatePath(intermediatePath.toString());
         } else {
-            return intermediatePath.toString();
+            return getRelativeIntermediatePath(intermediatePath.toString());
         }
     }
 
@@ -343,32 +348,39 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
         if (enforcePrincipalBasedSupportedPath == null) {
             throw new IllegalStateException("No supported path configured");
         }
-        String supportedPath = enforcePrincipalBasedSupportedPath.toString();
+        String supportedPath = getRelativeIntermediatePath(enforcePrincipalBasedSupportedPath.toString());
         if (intermediatePath == null || intermediatePath.isEmpty()) {
-            return enforcePrincipalBasedSupportedPath.toString();
-        } else if (Text.isDescendantOrEqual(supportedPath, intermediatePath)) {
-            return intermediatePath;
-        } else if (!intermediatePath.startsWith("/")) {
-            // FIXME: compute relative path
-            String p = "/"+intermediatePath;
-            while (!p.isEmpty()) {
-                if (supportedPath.contains(p)) {
-                    String relpath = intermediatePath.substring(p.length());
-                    return supportedPath + "/" +relpath;
-                }
-                p = Text.getRelativeParent(p, 1);
-            }
-            return supportedPath + intermediatePath;
+            return supportedPath;
+        }
+
+        String relIntermediate = getRelativeIntermediatePath(intermediatePath);
+        if (Text.isDescendantOrEqual(supportedPath, relIntermediate)) {
+            return relIntermediate;
         } else {
-            String parent = Text.getRelativeParent(intermediatePath, 1);
+            String parent = Text.getRelativeParent(relIntermediate, 1);
             while (!parent.isEmpty() && !"/".equals(parent)) {
                 if (Text.isDescendantOrEqual(parent, supportedPath)) {
-                    String relpath = intermediatePath.substring(parent.length());
+                    String relpath = relIntermediate.substring(parent.length());
                     return supportedPath + relpath;
                 }
                 parent = Text.getRelativeParent(parent, 1);
             }
             throw new IllegalStateException("Cannot calculate intermediate path for service user. Configured Supported path " +enforcePrincipalBasedSupportedPath+" has no common ancestor with "+intermediatePath);
+        }
+    }
+
+    @NotNull
+    private String getRelativeIntermediatePath(@NotNull String intermediatePath) {
+        if (intermediatePath.equals(systemRelPath) || intermediatePath.startsWith(systemRelPath+"/")) {
+            return intermediatePath;
+        } else {
+            String p = intermediatePath + "/";
+            String rel = "/" + systemRelPath + "/";
+            int i = p.indexOf(rel);
+            if (i == -1) {
+                throw new IllegalStateException("Invalid intermediate path for system user " + intermediatePath + ". Must include "+ systemRelPath);
+            }
+            return intermediatePath.substring(i + 1);
         }
     }
 

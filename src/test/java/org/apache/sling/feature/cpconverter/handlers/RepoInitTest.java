@@ -125,10 +125,10 @@ public class RepoInitTest {
 
     @Test
     public void parseNoConversionRepoInit() throws Exception {
-        String path = PATH_PREFIX + "-no-conversion-test.config";
+        String expectedPath = (enforcePrincipalBasedAcSetup) ? PATH_PREFIX + "-no-conversion-result.config" : PATH_PREFIX + "-no-conversion-test.config";
 
-        Extension expectedExtension = extractExtentions(path, false, false);
-        Extension extension = extractExtentions(path, enforcePrincipalBasedAcSetup, false);
+        Extension expectedExtension = extractExtentions(expectedPath, false, false);
+        Extension extension = extractExtentions(PATH_PREFIX + "-no-conversion-test.config", enforcePrincipalBasedAcSetup, false);
         assertNotNull(expectedExtension);
         assertNotNull(extension);
         String txt = extension.getText();
@@ -182,7 +182,7 @@ public class RepoInitTest {
         doCallRealMethod().when(featuresManager).addConfiguration(anyString(), anyString(), anyString(), any());
         when(featuresManager.getRunMode(anyString())).thenReturn(feature);
 
-        AclManager aclManager = spy(new DefaultAclManager((enforcePrincipalBasedAcSetup) ? enforcedPath : null));
+        AclManager aclManager = spy(new DefaultAclManager((enforcePrincipalBasedAcSetup) ? enforcedPath : null, "system"));
         if (addMappingById) {
             aclManager.addMapping(new Mapping("org.apache.sling.testbundle:sub1=su1"));
             aclManager.addMapping(new Mapping("org.apache.sling.testbundle:sub2=su2"));

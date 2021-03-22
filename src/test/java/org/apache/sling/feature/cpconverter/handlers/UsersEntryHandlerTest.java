@@ -77,8 +77,7 @@ public class UsersEntryHandlerTest {
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
         assertTrue(repoinitExtension.isRequired());
 
-        String expected =
-                "create service user asd-share-commons-asd-index-definition-reader-service with path /home/users/system/asd-share-commons\n";
+        String expected = "create service user asd-share-commons-asd-index-definition-reader-service with path system/asd-share-commons\n";
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
 
@@ -106,7 +105,8 @@ public class UsersEntryHandlerTest {
         String actual = repoinitExtension.getText();
         assertFalse(actual.contains("/jcr_root/home/users/system/_my_feature"));
         assertFalse(actual.contains("/home/users/system/_my_feature"));
-        assertTrue(actual.contains("/home/users/system/my:feature"));
+        assertFalse(actual.contains("/home/users/system/my:feature"));
+        assertTrue(actual.contains("system/my:feature"));
     }
 
     @Test

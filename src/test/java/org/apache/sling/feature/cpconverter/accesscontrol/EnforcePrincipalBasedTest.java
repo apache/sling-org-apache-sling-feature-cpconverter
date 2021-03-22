@@ -53,7 +53,8 @@ import static org.mockito.Mockito.when;
 public class EnforcePrincipalBasedTest {
 
     private final SystemUser systemUser = new SystemUser("user1", new RepoPath("/home/users/system/intermediate/usernode"), new RepoPath("/home/users/system/intermediate"));
-    private final String remappedIntermediatePath = "/home/users/system/some/subtree/intermediate";
+    private final String relativeIntermediatePath = "system/intermediate";
+    private final String remappedIntermediatePath = "system/some/subtree/intermediate";
 
     private AclManager aclManager;
     private Path tempDir;
@@ -64,7 +65,7 @@ public class EnforcePrincipalBasedTest {
 
     @Before
     public void setUp() throws Exception {
-        aclManager = new DefaultAclManager("/home/users/system/some/subtree");
+        aclManager = new DefaultAclManager("/home/users/system/some/subtree", "system");
         tempDir = Files.createTempDirectory(getClass().getSimpleName());
 
         assembler = mock(VaultPackageAssembler.class);
@@ -88,14 +89,19 @@ public class EnforcePrincipalBasedTest {
 
     @Test(expected = IllegalStateException.class)
     public void testInvalidSupportedPath() {
-        AclManager acMgr = new DefaultAclManager("/an/invalid/supported/path");
+        AclManager acMgr = new DefaultAclManager("/an/invalid/supported/path", "invalid");
         RepoPath accessControlledPath = new RepoPath("/content/feature");
         getRepoInitExtension(acMgr, accessControlledPath, systemUser, false);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testPathMismatch() {
+        new DefaultAclManager("/an/invalid/supported/path", "system");
+    }
+
     @Test
     public void testResourceBasedConversionWithoutForce() throws RepoInitParsingException {
-        AclManager acMgr = new DefaultAclManager(null) {
+        AclManager acMgr = new DefaultAclManager(null, "system") {
             @Override
             protected @Nullable String computePathWithTypes(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
                 return "/content/feature(sling:Folder)";
@@ -106,7 +112,7 @@ public class EnforcePrincipalBasedTest {
         Extension repoinitExtension = getRepoInitExtension(acMgr, accessControlledPath, systemUser, false);
 
         String expected =
-                "create service user user1 with path " + systemUser.getIntermediatePath() + "\n" +
+                "create service user user1 with path " + relativeIntermediatePath + "\n" +
                         "create path /content/feature(sling:Folder)\n" +
                         "set ACL for user1\n" +
                         "allow jcr:read on /content/feature\n" +
@@ -185,7 +191,7 @@ public class EnforcePrincipalBasedTest {
         Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, false);
 
         String expected =
-                "create service user user1 with path " +systemUser.getIntermediatePath()+ "\n" +
+                "create service user user1 with path " +relativeIntermediatePath+ "\n" +
                 "set ACL for user1\n" +
                 "allow jcr:read on /content/feature\n" +
                 "end\n";
