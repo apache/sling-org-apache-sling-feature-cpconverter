@@ -18,10 +18,7 @@ package org.apache.sling.feature.cpconverter.vltpkg;
 
 import static org.apache.jackrabbit.vault.util.Constants.FILTER_XML;
 import static org.apache.jackrabbit.vault.util.Constants.META_DIR;
-import static org.apache.jackrabbit.vault.util.Constants.PACKAGE_DEFINITION_XML;
-import static org.apache.jackrabbit.vault.util.Constants.CONFIG_XML;
 import static org.apache.jackrabbit.vault.util.Constants.PROPERTIES_XML;
-import static org.apache.jackrabbit.vault.util.Constants.SETTINGS_XML;
 import static org.apache.jackrabbit.vault.util.Constants.ROOT_DIR;
 import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER;
 import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.getDependencies;
@@ -39,12 +36,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
 import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
 import org.apache.jackrabbit.vault.fs.config.DefaultWorkspaceFilter;
@@ -53,6 +53,7 @@ import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.Dependency;
 import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
+import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.util.Constants;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
@@ -65,7 +66,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class VaultPackageAssembler implements EntryHandler, FileFilter {
+public class VaultPackageAssembler implements EntryHandler {
 
     private static final Pattern OSGI_BUNDLE_PATTERN = Pattern.compile("(jcr_root)?/apps/[^/]+/install(\\.([^/]+))?/.+\\.jar");
 
@@ -233,15 +234,23 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
     }
 
     public @NotNull File createPackage() throws IOException {
-        return createPackage(this.tmpDir);
-    }
-
-    public @NotNull File createPackage(@NotNull File outputDirectory) throws IOException {
         // generate the Vault properties XML file
 
         File metaDir = new File(storingDirectory, META_DIR);
         if (!metaDir.exists() && !metaDir.mkdirs()) {
             throw new IOException("Could not create meta Dir: " + metaDir);
+        }
+
+        final PackageType sourcePackageType;
+        final String sourcePackageTypeValue = (String)properties.get(PackageProperties.NAME_PACKAGE_TYPE);
+        if (sourcePackageTypeValue != null) {
+            sourcePackageType = PackageType.valueOf(sourcePackageTypeValue.toUpperCase());
+        } else {
+            sourcePackageType = null;
+        }
+        PackageType newPackageType = recalculatePackageType(sourcePackageType, storingDirectory);
+        if (newPackageType != null) {
+            properties.setProperty(PackageProperties.NAME_PACKAGE_TYPE, newPackageType.name().toLowerCase());
         }
 
         setDependencies(dependencies, properties);
@@ -252,8 +261,8 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
             properties.storeToXML(fos, null);
         }
 
-        // generate the Vault filter XML file
-        computeFilters(outputDirectory);
+        // generate the Vault filter XML file based on new contents of the package
+        computeFilters(storingDirectory);
         File xmlFilter = new File(metaDir, FILTER_XML);
         try (InputStream input = filter.getSource();
                 FileOutputStream output = new FileOutputStream(xmlFilter)) {
@@ -275,11 +284,31 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
         return destFile;
     }
 
-    private void computeFilters(@NotNull File outputDirectory) {
-        File jcrRootDir = new File(outputDirectory, ROOT_DIR);
+    static @Nullable PackageType recalculatePackageType(PackageType sourcePackageType, @NotNull File outputDirectory) {
+        if (sourcePackageType != null && sourcePackageType != PackageType.MIXED) {
+            return null;
+        }
+        AtomicBoolean foundMutableFiles = new AtomicBoolean();
+        AtomicBoolean foundImmutableFiles  = new AtomicBoolean();
+        forEachDirectoryBelowJcrRoot(outputDirectory, child -> {
+            if (child.getName().equals("apps") || child.getName().equals("libs")) {
+                foundImmutableFiles.weakCompareAndSet(false, true);
+            } else {
+                foundMutableFiles.weakCompareAndSet(false, true);
+            }
+        });
+        if (foundImmutableFiles.get() && !foundMutableFiles.get()) {
+            return PackageType.APPLICATION;
+        } else if (!foundImmutableFiles.get() && foundMutableFiles.get()) {
+            return PackageType.CONTENT;
+        } else {
+            return PackageType.MIXED;
+        }
+       
+    }
 
-        if (jcrRootDir.exists() && jcrRootDir.isDirectory()) {
-            for (File child : jcrRootDir.listFiles(this)) {
+    private void computeFilters(@NotNull File outputDirectory) {
+        forEachDirectoryBelowJcrRoot(outputDirectory, child -> {
                 TreeNode node = lowestCommonAncestor(new TreeNode(child));
                 File lowestCommonAncestor = node != null ? node.val : null;
                 if (lowestCommonAncestor != null) {
@@ -287,13 +316,16 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
 
                     filter.add(new PathFilterSet(root));
                 }
+            });
+    }
+    
+    private static void forEachDirectoryBelowJcrRoot(File outputDirectory, Consumer<File> consumer) {
+        File jcrRootDir = new File(outputDirectory, ROOT_DIR);
+        if (jcrRootDir.exists() && jcrRootDir.isDirectory()) {
+            for (File child : jcrRootDir.listFiles((FileFilter)DirectoryFileFilter.INSTANCE)) {
+                consumer.accept(child);
             }
         }
-    }
-
-    @Override
-    public boolean accept(@NotNull File pathname) {
-        return pathname.isDirectory();
     }
 
     private @Nullable TreeNode lowestCommonAncestor(@NotNull TreeNode root) {
@@ -301,7 +333,7 @@ public class VaultPackageAssembler implements EntryHandler, FileFilter {
         int countMaxDepth = 0;//num of deepest leaves
         TreeNode node = null;
 
-        for (File child : root.val.listFiles(this)) {
+        for (File child : root.val.listFiles((FileFilter)DirectoryFileFilter.INSTANCE)) {
             TreeNode temp = lowestCommonAncestor(new TreeNode(child));
 
             if (temp == null) {
