@@ -143,14 +143,7 @@ class DefaultVisitor extends NoOpVisitor {
 
     @Override
     public void visitDisableServiceUser(DisableServiceUser disableServiceUser) {
-        // FIXME : see SLING-10235
-        String reason = disableServiceUser.getParametersDescription();
-        String id = disableServiceUser.getUsername();
-        if (reason.startsWith(id + " : ")) {
-            reason = reason.substring((id + " : ").length());
-        }
-        formatter.format("disable service user %s : \"%s\"%n", disableServiceUser.getUsername(), reason);
-
+        formatter.format("disable service user %s : \"%s\"%n", disableServiceUser.getUsername(), disableServiceUser.getReason());
     }
 
     @Override
