@@ -40,6 +40,13 @@ import java.util.List;
 
 abstract class NoOpVisitor implements OperationVisitor {
 
+    static String escape(@NotNull String s) {
+        // TODO: verify
+        String esc = s.replace("\\", "\\\\");
+        String escapequotes = esc.replace("\"", "\\\"");
+        return "\"" + escapequotes + "\"";
+    }
+
     static String listToString(@NotNull List<String> list) {
         if (list.isEmpty()) {
             return "";

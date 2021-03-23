@@ -141,7 +141,7 @@ class DefaultVisitor extends NoOpVisitor {
 
     @Override
     public void visitDisableServiceUser(DisableServiceUser disableServiceUser) {
-        formatter.format("disable service user %s : \"%s\"%n", disableServiceUser.getUsername(), disableServiceUser.getReason());
+        formatter.format("disable service user %s : %s%n", disableServiceUser.getUsername(), escape(disableServiceUser.getReason()));
     }
 
     @Override
@@ -175,8 +175,7 @@ class DefaultVisitor extends NoOpVisitor {
         List<String> strings = values.stream()
                 .map(o -> {
                     if (type == null || type == PropertyLine.PropertyType.String) {
-                        String escapequotes = Objects.toString(o, "").replace("\"", "\\\"");
-                        return "\"" + escapequotes + "\"";
+                        return escape(Objects.toString(o, ""));
                     } else if (type == PropertyLine.PropertyType.Date) {
                         return "\"" + ISO8601.format((Calendar) o) + "\"";
                     } else {

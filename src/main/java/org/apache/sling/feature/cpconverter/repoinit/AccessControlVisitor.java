@@ -196,12 +196,14 @@ class AccessControlVisitor extends NoOpVisitor {
     }
 
     @NotNull
-    private static String pathsToString(@NotNull List<String> paths) {
+    static String pathsToString(@NotNull List<String> paths) {
         return listToString(paths.stream()
                 .map(s -> {
-                    String homestr = ":home:";
-                    if (s.startsWith(homestr)) {
-                        return "home(" + s.substring(homestr.length(), s.lastIndexOf('#')) +")";
+                    if (s.startsWith(":") && s.contains("#")) {
+                        String func = s.substring(1, s.indexOf(":",1));
+                        String s2 = s.substring(func.length()+2, s.lastIndexOf('#'));
+                        String trailingPath = (s.endsWith("#")) ?  "" : s.substring(s.indexOf("#")+1);
+                        return func + "(" + s2 +")" + trailingPath;
                     } else {
                         return s;
                     }
