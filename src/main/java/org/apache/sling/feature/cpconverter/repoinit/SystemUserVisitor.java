@@ -21,24 +21,21 @@ import org.apache.sling.repoinit.parser.operations.CreateServiceUser;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Formatter;
-import java.util.Set;
 
 class SystemUserVisitor extends NoOpVisitor {
 
     private final Formatter formatter;
     private final EnforceInfo enforceInfo;
-    private final Set<String> systemUserIds;
 
-    SystemUserVisitor(@NotNull Formatter formatter, @NotNull EnforceInfo enforceInfo, @NotNull Set<String> systemUserIds) {
+    SystemUserVisitor(@NotNull Formatter formatter, @NotNull EnforceInfo enforceInfo) {
         this.formatter = formatter;
         this.enforceInfo = enforceInfo;
-        this.systemUserIds = systemUserIds;
     }
     @Override
     public void visitCreateServiceUser(CreateServiceUser createServiceUser) {
         String id = createServiceUser.getUsername();
         String path = createServiceUser.getPath();
-        systemUserIds.add(id);
+        enforceInfo.recordSystemUserIds(id);
 
         if (enforceInfo.enforcePrincipalBased(id)) {
             formatter.format("create service user %s with forced path %s%n", id, enforceInfo.calculateEnforcedIntermediatePath(path));

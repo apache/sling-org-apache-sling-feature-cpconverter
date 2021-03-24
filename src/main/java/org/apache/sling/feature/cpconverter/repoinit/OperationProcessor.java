@@ -22,22 +22,17 @@ import org.apache.sling.repoinit.parser.operations.OperationVisitor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Formatter;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 public class OperationProcessor {
-
-    // keep track of system users across different 'scripts'
-    private final Set<String> systemUserIds = new LinkedHashSet<>();
 
     public void apply(@NotNull List<Operation> ops, @NotNull Formatter formatter, @NotNull EnforceInfo enforceInfo) {
         ConversionMap toConvert = new ConversionMap();
 
         OperationVisitor[] visitors = {
                 new DefaultVisitor(formatter),
-                new SystemUserVisitor(formatter, enforceInfo, systemUserIds),
-                new AccessControlVisitor(formatter, enforceInfo, toConvert, systemUserIds)
+                new SystemUserVisitor(formatter, enforceInfo),
+                new AccessControlVisitor(formatter, enforceInfo, toConvert)
         };
 
         for (Operation op : ops) {

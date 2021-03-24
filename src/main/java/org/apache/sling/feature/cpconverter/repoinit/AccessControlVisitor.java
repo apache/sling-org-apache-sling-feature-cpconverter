@@ -39,14 +39,12 @@ class AccessControlVisitor extends NoOpVisitor {
     private final Formatter formatter;
     private final EnforceInfo enforceInfo;
     private final ConversionMap toConvert;
-    private final Set<String> systemUserIds;
 
     AccessControlVisitor(@NotNull Formatter formatter, @NotNull EnforceInfo enforceInfo,
-                         @NotNull ConversionMap toConvert, @NotNull Set<String> systemUserIds) {
+                         @NotNull ConversionMap toConvert) {
         this.formatter = formatter;
         this.enforceInfo = enforceInfo;
         this.toConvert = toConvert;
-        this.systemUserIds = systemUserIds;
     }
 
     @Override
@@ -142,7 +140,7 @@ class AccessControlVisitor extends NoOpVisitor {
     }
 
     private boolean enforcePrincipalBased(@NotNull String principalName) {
-        return systemUserIds.contains(principalName) && enforceInfo.enforcePrincipalBased(principalName);
+        return enforceInfo.enforcePrincipalBased(principalName);
     }
 
     static void generateRepoInit(@NotNull Formatter formatter, @NotNull String start, boolean hasPathLines, @NotNull String principalsOrPaths,

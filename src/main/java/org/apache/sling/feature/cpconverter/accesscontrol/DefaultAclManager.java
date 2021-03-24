@@ -68,6 +68,8 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     private final OperationProcessor processor = new OperationProcessor();
 
     private final Set<SystemUser> systemUsers = new LinkedHashSet<>();
+    private final Set<String> systemUserIds = new LinkedHashSet<>();
+
     private final Set<Group> groups = new LinkedHashSet<>();
     private final Set<User> users = new LinkedHashSet<>();
     private final Set<Mapping> mappings = new HashSet<>();
@@ -103,9 +105,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     @Override
     public boolean addSystemUser(@NotNull SystemUser systemUser) {
         if (systemUsers.add(systemUser)) {
-            if (mappings.stream().anyMatch(mapping -> mapping.mapsUser(systemUser.getId()))) {
-                mappedById.add(systemUser.getId());
-            }
+            recordSystemUserIds(systemUser.getId());
             return true;
         } else {
             return false;
@@ -281,15 +281,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     }
 
     private boolean enforcePrincipalBased(@NotNull SystemUser systemUser) {
-        if (enforcePrincipalBased()) {
-            if (mappedById.contains(systemUser.getId())) {
-                log.warn("Skip enforcing principal-based access control setup for system user '{}' due to existing mapping by id.", systemUser.getId());
-                return false;
-            } else {
-                return true;
-            }
-        }
-        return false;
+        return enforcePrincipalBased(systemUser.getId());
     }
 
     private void writeEntry(@NotNull AccessControlEntry entry, @NotNull String path, @NotNull Formatter formatter) {
@@ -328,12 +320,19 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     }
 
     @Override
-    public boolean enforcePrincipalBased(@NotNull String serviceUserId) {
-        // FIXME get rid of duplication with enforePrincipalBased(SystemUser)
-        // FIXME get rid of streming mappings multiple times
-        if (enforcePrincipalBased()) {
-            if (mappings.stream().anyMatch(mapping -> mapping.mapsUser(serviceUserId))) {
-                log.warn("Skip enforcing principal-based access control setup for system user '{}' due to existing mapping by id.", serviceUserId);
+    public void recordSystemUserIds(@NotNull String... systemUserIds) {
+        for (String id : systemUserIds) {
+            if (this.systemUserIds.add(id) && mappings.stream().anyMatch(mapping -> mapping.mapsUser(id))) {
+                mappedById.add(id);
+            }
+        }
+    }
+
+    @Override
+    public boolean enforcePrincipalBased(@NotNull String systemUserId) {
+        if (enforcePrincipalBased() && systemUserIds.contains(systemUserId)) {
+            if (mappedById.contains(systemUserId)) {
+                log.warn("Skip enforcing principal-based access control setup for system user '{}' due to existing mapping by id.", systemUserId);
                 return false;
             } else {
                 return true;

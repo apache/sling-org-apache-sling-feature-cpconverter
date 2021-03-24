@@ -21,7 +21,9 @@ import org.jetbrains.annotations.Nullable;
 
 public interface EnforceInfo {
 
-    boolean enforcePrincipalBased(@NotNull String serviceUserId);
+    void recordSystemUserIds(@NotNull String... systemUserIds);
+
+    boolean enforcePrincipalBased(@NotNull String systemUserId);
 
     @NotNull
     String calculateEnforcedIntermediatePath(@Nullable String intermediatePath);
