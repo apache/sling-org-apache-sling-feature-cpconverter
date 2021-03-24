@@ -33,17 +33,7 @@ import java.io.StringReader;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.InvalidPropertiesFormatException;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
-import java.util.StringTokenizer;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -796,14 +786,13 @@ public class ContentPackage2FeatureModelConverterTest {
     // see SLING-8649
     @Test
     public void filteredOutContentPackagesAreExcludedDependencies() throws Exception {
-        File[] contentPackages = load("test_dep_a-1.0.zip", "test_dep_b-1.0.zip", "test_dep_b-1.0.zip");
+        File[] contentPackages = load("test_dep_a-1.0.zip", "test_dep_b-1.0.zip");
 
         // input: c <- a <- b
         // expected output: c <- a
 
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
         try {
-
             converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
                     .setDropContent(true)
                     .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
@@ -814,6 +803,7 @@ public class ContentPackage2FeatureModelConverterTest {
             assertNull(a.getExtensions().getByName("content-packages"));
 
             Feature b = getFeature(outputDirectory, "test_b.json");
+            assertNotNull(b.getExtensions().getByName("content-packages"));
             Artifacts artifacts = b.getExtensions().getByName("content-packages").getArtifacts();
             assertFalse(artifacts.isEmpty());
             assertEquals("my_packages:test_b:zip:cp2fm-converted:1.0", artifacts.iterator().next().getId().toString());
@@ -822,7 +812,8 @@ public class ContentPackage2FeatureModelConverterTest {
             VaultPackage vaultPackage = new PackageManagerImpl().open(contentPackage);
             String dependencies = vaultPackage.getProperties().getProperty(PackageProperties.NAME_DEPENDENCIES);
             assertEquals("my_packages:test_c", dependencies);
-        } finally {
+        }
+        finally {
             deleteDirTree(outputDirectory);
         }
     }
