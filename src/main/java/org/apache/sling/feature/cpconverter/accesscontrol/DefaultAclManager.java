@@ -24,11 +24,13 @@ import org.apache.jackrabbit.vault.fs.spi.PrivilegeDefinitions;
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.jackrabbit.vault.util.Text;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
+import org.apache.sling.feature.cpconverter.repoinit.NoOpVisitor;
 import org.apache.sling.feature.cpconverter.repoinit.OperationProcessor;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.repoinit.parser.RepoInitParsingException;
 import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
+import org.apache.sling.repoinit.parser.operations.CreateServiceUser;
 import org.apache.sling.repoinit.parser.operations.Operation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -168,6 +170,22 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
             return;
         }
 
+        if ("seed".equalsIgnoreCase(runMode)) {
+            try {
+                List<Operation> ops = new RepoInitParserService().parse(new StringReader(repoInitText));
+                for (Operation op : ops) {
+                    op.accept(new NoOpVisitor() {
+                        @Override
+                        public void visitCreateServiceUser(CreateServiceUser createServiceUser) {
+                            recordSystemUserIds(createServiceUser.getUsername());
+                        }
+                    });
+                }
+            } catch (RepoInitParsingException e) {
+                throw new IllegalArgumentException(e);
+            }
+            return;
+        }
         try (Formatter formatter = new Formatter()) {
             if (enforcePrincipalBased()) {
                 List<Operation> ops = new RepoInitParserService().parse(new StringReader(repoInitText));

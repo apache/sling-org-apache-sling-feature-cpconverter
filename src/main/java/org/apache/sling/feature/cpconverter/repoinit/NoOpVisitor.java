@@ -38,7 +38,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-abstract class NoOpVisitor implements OperationVisitor {
+public abstract class NoOpVisitor implements OperationVisitor {
 
     static String escape(@NotNull String s) {
         // TODO: verify

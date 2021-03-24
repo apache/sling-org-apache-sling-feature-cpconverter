@@ -71,6 +71,7 @@ public class JsonConfigurationEntryHandlerTest {
         ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
         when(converter.getAclManager()).thenReturn(aclManager);
         when(converter.getFeaturesManager()).thenReturn(featuresManager);
+        ((DefaultFeaturesManager) featuresManager).setAclManager(aclManager);
 
         new JsonConfigurationEntryHandler().handle(resourceConfiguration, archive, entry, converter);
 

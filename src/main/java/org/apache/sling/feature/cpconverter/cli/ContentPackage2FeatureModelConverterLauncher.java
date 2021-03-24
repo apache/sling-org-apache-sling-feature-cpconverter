@@ -17,6 +17,9 @@
 package org.apache.sling.feature.cpconverter.cli;
 
 import java.io.File;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.URL;
 import java.util.Date;
 import java.util.Formatter;
 import java.util.HashMap;
@@ -24,13 +27,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
+import org.apache.sling.feature.Extension;
+import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
 import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
+import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,6 +120,9 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Option(names = { "--remove-install-hooks" }, description = "Removes both internal and external hooks from processed packages", required = false)
     private boolean removeInstallHooks = false;
 
+    @Option(names = { "--seed-feature" }, description = "A url pointing to a feature that can be assumed to be around when the conversion result will be used", required = false)
+    private String seedFeature = null;
+
     @Override
     public void run() {
         if (quiet) {
@@ -145,12 +155,26 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
 
         try {
             try {
+                AclManager aclManager = new DefaultAclManager(enforcePrincipalBasedSupportedPath, systemUserRelPath);
+
                 DefaultFeaturesManager featuresManager = new DefaultFeaturesManager(mergeConfigurations,
                                                                 bundlesStartOrder,
                                                                 featureModelsOutputDirectory,
                                                                 artifactIdOverride,
                                                                 fmPrefix,
-                                                                properties);
+                                                                properties,
+                                                                aclManager);
+
+                featuresManager.setEnforceServiceMappingByPrincipal(enforceServiceMappingByPrincipal);
+
+                if (seedFeature != null) {
+                    try(Reader reader = new InputStreamReader(new URL(seedFeature).openStream(), "UTF-8")) {
+                        Feature seed = FeatureJSONReader.read(reader, seedFeature);
+                        System.out.println(seed);
+                        featuresManager.addSeed(seed);
+                    }
+                }
+
                 if (apiRegions != null)
                     featuresManager.setAPIRegions(apiRegions);
 
@@ -170,8 +194,8 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                 ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation)
                                                                 .setFeaturesManager(featuresManager)
                                                                 .setBundlesDeployer(new DefaultArtifactsDeployer(artifactsOutputDirectory))
-                                                                .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap, enforceServiceMappingByPrincipal))
-                                                                .setAclManager(new DefaultAclManager(enforcePrincipalBasedSupportedPath, systemUserRelPath))
+                                                                .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap))
+                                                                .setAclManager(aclManager)
                                                                 .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
                                                                 .setFailOnMixedPackages(failOnMixedPackages)
                                                                 .setDropContent(true);

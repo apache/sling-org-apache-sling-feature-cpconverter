@@ -35,21 +35,9 @@ import org.jetbrains.annotations.Nullable;
 import org.osgi.util.converter.Converters;
 
 abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandler {
-    
-    private static final String REPOINIT_FACTORY_PID = "org.apache.sling.jcr.repoinit.RepositoryInitializer";
-
-    private static final String REPOINIT_PID = "org.apache.sling.jcr.repoinit.impl.RepositoryInitializer";
-
-    private static final String SERVICE_USER_MAPPING_PID = "org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl";
-
-    private boolean enforceServiceMappingByPrincipal;
 
     public AbstractConfigurationEntryHandler(@NotNull String extension) {
         super("/jcr_root/(?:apps|libs)/.+/config(\\.(?<runmode>[^/]+))?/(?<pid>.*)\\." + extension);
-    }
-
-    void setEnforceServiceMappingByPrincipal(boolean enforceServiceMappingByPrincipal) {
-        this.enforceServiceMappingByPrincipal = enforceServiceMappingByPrincipal;
     }
 
     @Override
@@ -96,53 +84,13 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
             runMode = matcher.group("runmode");
 
             FeaturesManager featuresManager = Objects.requireNonNull(converter.getFeaturesManager());
-            if (REPOINIT_FACTORY_PID.equals(factoryPid)) {
-                final String[] scripts = Converters.standardConverter().convert(configurationProperties.get("scripts")).to(String[].class);
-                if (scripts != null && scripts.length > 0 ) {
-                    AclManager aclManager = Objects.requireNonNull(converter.getAclManager());
-                    for (final String text : scripts) {
-                        aclManager.addRepoinitExtention(text, runMode, featuresManager);
-                    }
-                }
-                checkReferences(configurationProperties, pid);
-            } else if ( REPOINIT_PID.equals(pid) ) {
-                checkReferences(configurationProperties, pid);
-            } else if (pid.startsWith(SERVICE_USER_MAPPING_PID)) {
-                String[] mappings = Converters.standardConverter().convert(configurationProperties.get("user.mapping")).to(String[].class);
-                if (mappings != null) {
-                    AclManager aclManager = Objects.requireNonNull(converter.getAclManager());
-                    List<String> newMappings = new ArrayList<>();
-                    for (String usermapping : mappings) {
-                        Mapping mapping = new Mapping(usermapping, enforceServiceMappingByPrincipal);
-                        aclManager.addMapping(mapping);
-                        newMappings.add(mapping.asString());
-                    }
-                    // replace 'user.mapping' property by the new mappings, which may have been refactored
-                    if (!newMappings.isEmpty()) {
-                        configurationProperties.put("user.mapping", newMappings.toArray(new String[0]));
-                    }
-                }
-                featuresManager.addConfiguration(runMode, id, path, configurationProperties);
-            } else {
-                featuresManager.addConfiguration(runMode, id, path, configurationProperties);
-            }
+            featuresManager.addConfiguration(runMode, id, path, configurationProperties);
         } else {
             throw new IllegalStateException("Something went terribly wrong: pattern '"
                                             + getPattern().pattern()
                                             + "' should have matched already with path '"
                                             + path
                                             + "' but it does not, currently");
-        }
-    }
-
-    private void checkReferences(@NotNull final Dictionary<String, Object> configurationProperties, @NotNull final String pid) {
-        final String[] references = Converters.standardConverter().convert(configurationProperties.get("references")).to(String[].class);
-        if ( references != null && references.length > 0 ) {
-            for(final String r  : references ) {
-                if ( r != null && !r.trim().isEmpty() ) {
-                    throw new IllegalArgumentException("References are not supported for repoinit (configuration " + pid + ")");
-                }
-            }
         }
     }
 

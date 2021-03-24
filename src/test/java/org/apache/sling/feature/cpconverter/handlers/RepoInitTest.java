@@ -190,6 +190,8 @@ public class RepoInitTest {
             aclManager.addMapping(new Mapping("org.apache.sling.testbundle=su-second-script"));
         }
 
+        ((DefaultFeaturesManager) featuresManager).setAclManager(aclManager);
+
         ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
         when(converter.getFeaturesManager()).thenReturn(featuresManager);
         when(converter.getAclManager()).thenReturn(aclManager);
