@@ -17,10 +17,12 @@
 package org.apache.sling.feature.cpconverter.repoinit;
 
 import org.apache.sling.repoinit.parser.operations.AclLine;
+import org.apache.sling.repoinit.parser.operations.SetAclPrincipalBased;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Formatter;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,12 +33,12 @@ class ConversionMap {
 
     private final Map<Key, List<AclLine>> map = new LinkedHashMap<>();
 
-    void put(@NotNull String principalName, @NotNull String options, @NotNull AclLine line) {
+    void put(@NotNull String principalName, @NotNull List<String> options, @NotNull AclLine line) {
         List<AclLine> lineList = map.computeIfAbsent(new Key(principalName, options), k -> new ArrayList<>());
         lineList.add(line);
     }
 
-    void putAll(@NotNull String principalName, @NotNull String options, @NotNull Collection<AclLine> lines) {
+    void putAll(@NotNull String principalName, @NotNull List<String> options, @NotNull Collection<AclLine> lines) {
         List<AclLine> lineList = map.computeIfAbsent(new Key(principalName, options), k -> new ArrayList<>());
         lineList.addAll(lines);
     }
@@ -44,17 +46,17 @@ class ConversionMap {
     void generateRepoInit(@NotNull Formatter formatter) {
         for (Map.Entry<Key, List<AclLine>> entry : map.entrySet()) {
             String principalName = entry.getKey().principalName;
-            String options = entry.getKey().options;
-            AccessControlVisitor.generateRepoInit(formatter, "set principal ACL for %s%s%n", true, principalName, options, entry.getValue());
+            SetAclPrincipalBased operation = new SetAclPrincipalBased(Collections.singletonList(principalName), entry.getValue(), entry.getKey().options);
+            formatter.format("%s", operation.asRepoInitString());
         }
         map.clear();
     }
 
     private static final class Key {
         private final String principalName;
-        private final String options;
+        private final List<String> options;
 
-        private Key(@NotNull String principalName, @NotNull String options) {
+        private Key(@NotNull String principalName, @NotNull List<String> options) {
             this.principalName = principalName;
             this.options = options;
         }

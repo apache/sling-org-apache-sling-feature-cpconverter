@@ -17,6 +17,7 @@
 package org.apache.sling.feature.cpconverter.repoinit;
 
 import org.apache.sling.feature.cpconverter.accesscontrol.EnforceInfo;
+import org.apache.sling.repoinit.parser.impl.WithPathOptions;
 import org.apache.sling.repoinit.parser.operations.CreateServiceUser;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,12 +39,10 @@ class SystemUserVisitor extends NoOpVisitor {
         enforceInfo.recordSystemUserIds(id);
 
         if (enforceInfo.enforcePrincipalBased(id)) {
-            formatter.format("create service user %s with forced path %s%n", id, enforceInfo.calculateEnforcedIntermediatePath(path));
-        } else if (path == null || path.isEmpty()) {
-            formatter.format("create service user %s%n", id);
+            CreateServiceUser operation = new CreateServiceUser(id, new WithPathOptions(enforceInfo.calculateEnforcedIntermediatePath(path), true));
+            formatter.format("%s", operation.asRepoInitString());
         } else {
-            String forced = (createServiceUser.isForcedPath()) ? "forced " : "";
-            formatter.format("create service user %s with %spath %s%n", id, forced, path);
+            formatter.format("%s", createServiceUser.asRepoInitString());
         }
     }
 }

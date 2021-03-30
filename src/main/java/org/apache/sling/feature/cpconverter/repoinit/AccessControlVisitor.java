@@ -18,21 +18,16 @@ package org.apache.sling.feature.cpconverter.repoinit;
 
 import org.apache.sling.feature.cpconverter.accesscontrol.EnforceInfo;
 import org.apache.sling.repoinit.parser.operations.AclLine;
-import org.apache.sling.repoinit.parser.operations.RestrictionClause;
 import org.apache.sling.repoinit.parser.operations.SetAclPaths;
-import org.apache.sling.repoinit.parser.operations.SetAclPrincipalBased;
 import org.apache.sling.repoinit.parser.operations.SetAclPrincipals;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 class AccessControlVisitor extends NoOpVisitor {
 
@@ -49,22 +44,15 @@ class AccessControlVisitor extends NoOpVisitor {
 
     @Override
     public void visitSetAclPrincipal(SetAclPrincipals setAclPrincipals) {
-        String optionString = getAclOptionsString(setAclPrincipals.getOptions());
-        Map<List<AclLine>, List<String>> notConverted = convertLines(setAclPrincipals, optionString);
+        Map<List<AclLine>, List<String>> notConverted = convertLines(setAclPrincipals);
 
         // re-create original repo-init statements for all principals/lines that don't get converted
         if (!notConverted.isEmpty()) {
             for (Map.Entry<List<AclLine>, List<String>> entry : notConverted.entrySet()) {
                 List<AclLine> lines = entry.getKey();
                 List<String> principalNames = entry.getValue();
-                if (lines.stream().anyMatch(line -> {
-                    List<String> paths = line.getProperty(AclLine.PROP_PATHS);
-                    return paths == null || paths.isEmpty();
-                })) {
-                    generateRepoInit(formatter, "set repository ACL for %s%s%n", true, listToString(principalNames), optionString, lines);
-                } else {
-                    generateRepoInit(formatter, "set ACL for %s%s%n", true, listToString(principalNames), optionString, lines);
-                }
+                SetAclPrincipals operation = new SetAclPrincipals(principalNames, lines, setAclPrincipals.getOptions());
+                formatter.format("%s", operation.asRepoInitString());
             }
         }
     }
@@ -73,7 +61,7 @@ class AccessControlVisitor extends NoOpVisitor {
      * Return a list of AclLine that don't get converted.
      */
     @NotNull
-    private Map<List<AclLine>, List<String>> convertLines(@NotNull SetAclPrincipals setAclPrincipals, @NotNull String optionString) {
+    private Map<List<AclLine>, List<String>> convertLines(@NotNull SetAclPrincipals setAclPrincipals) {
         Map<List<AclLine>, List<String>> notConverted = new HashMap<>();
 
         List<AclLine> allLines = new ArrayList<>(setAclPrincipals.getLines());
@@ -87,7 +75,7 @@ class AccessControlVisitor extends NoOpVisitor {
         if (!lines.isEmpty()) {
             for (String principalName : setAclPrincipals.getPrincipals()) {
                 if (enforcePrincipalBased(principalName)) {
-                    toConvert.putAll(principalName, optionString, lines);
+                    toConvert.putAll(principalName, setAclPrincipals.getOptions(), lines);
                     if (!removeLines.isEmpty()) {
                         List<String> principalNames = notConverted.computeIfAbsent(removeLines, k -> new ArrayList<>());
                         principalNames.add(principalName);
@@ -105,7 +93,6 @@ class AccessControlVisitor extends NoOpVisitor {
 
     @Override
     public void visitSetAclPaths(SetAclPaths setAclPaths) {
-        String optionString = getAclOptionsString(setAclPaths.getOptions());
         List<AclLine> lines = new ArrayList<>();
         for (AclLine line : setAclPaths.getLines()) {
             List<String> principalNames = new ArrayList<>(line.getProperty(AclLine.PROP_PRINCIPALS));
@@ -113,7 +100,7 @@ class AccessControlVisitor extends NoOpVisitor {
                 for (String principalName : line.getProperty(AclLine.PROP_PRINCIPALS)) {
                     if (enforcePrincipalBased(principalName)) {
                         AclLine newLine = createAclLine(line, null, setAclPaths.getPaths());
-                        toConvert.put(principalName, optionString, newLine);
+                        toConvert.put(principalName, setAclPaths.getOptions(), newLine);
                         principalNames.remove(principalName);
                     }
                 }
@@ -130,37 +117,13 @@ class AccessControlVisitor extends NoOpVisitor {
         }
 
         if (!lines.isEmpty()) {
-            generateRepoInit(formatter, "set ACL on %s%s%n", false, pathsToString(setAclPaths.getPaths()), optionString, lines);
+            SetAclPaths operation = new SetAclPaths(setAclPaths.getPaths(), lines, setAclPaths.getOptions());
+            formatter.format("%s", operation.asRepoInitString());
         }
-    }
-
-    @Override
-    public void visitSetAclPrincipalBased(SetAclPrincipalBased setAclPrincipalBased) {
-        generateRepoInit(formatter, "set principal ACL for %s%s%n", true, listToString(setAclPrincipalBased.getPrincipals()), getAclOptionsString(setAclPrincipalBased.getOptions()), setAclPrincipalBased.getLines());
     }
 
     private boolean enforcePrincipalBased(@NotNull String principalName) {
         return enforceInfo.enforcePrincipalBased(principalName);
-    }
-
-    static void generateRepoInit(@NotNull Formatter formatter, @NotNull String start, boolean hasPathLines, @NotNull String principalsOrPaths,
-                                 @NotNull String optionString, @NotNull Collection<AclLine> lines) {
-        formatter.format(start, principalsOrPaths, optionString);
-        for (AclLine line : lines) {
-            String action = actionToString(line.getAction());
-            String privileges = privilegesToString(line.getAction(), line.getProperty(AclLine.PROP_PRIVILEGES));
-            String onOrFor;
-            if (hasPathLines) {
-                String pathStr = pathsToString(line.getProperty(AclLine.PROP_PATHS));
-                onOrFor = (pathStr.isEmpty()) ? "" : " on " + pathStr;
-            } else {
-                onOrFor = " for " + listToString(line.getProperty(AclLine.PROP_PRINCIPALS));
-            }
-            formatter.format("    %s %s%s%s%s%n", action, privileges, onOrFor,
-                    nodetypesToString(line.getProperty(AclLine.PROP_NODETYPES)),
-                    restrictionsToString(line.getRestrictions()));
-        }
-        formatter.format("end%n");
     }
 
     @NotNull
@@ -178,62 +141,8 @@ class AccessControlVisitor extends NoOpVisitor {
         return al;
     }
 
-    @NotNull
-    private static String getAclOptionsString(@NotNull List<String> options) {
-        return (options.isEmpty()) ? "" : " (ACLOptions="+ listToString(options)+")";
-    }
-
     private static boolean isRemoveAction(@NotNull AclLine line) {
         AclLine.Action action = line.getAction();
         return action == AclLine.Action.REMOVE_ALL || action == AclLine.Action.REMOVE;
-    }
-
-    @NotNull
-    private static String privilegesToString(@NotNull AclLine.Action action, @NotNull List<String> privileges) {
-        return (action == AclLine.Action.REMOVE_ALL) ? "*" : listToString(privileges);
-    }
-
-    @NotNull
-    static String pathsToString(@NotNull List<String> paths) {
-        return listToString(paths.stream()
-                .map(s -> {
-                    if (s.startsWith(":") && s.contains("#")) {
-                        String func = s.substring(1, s.indexOf(":",1));
-                        String s2 = s.substring(func.length()+2, s.lastIndexOf('#'));
-                        String trailingPath = (s.endsWith("#")) ?  "" : s.substring(s.indexOf("#")+1);
-                        return func + "(" + s2 +")" + trailingPath;
-                    } else {
-                        return s;
-                    }
-                })
-                .collect(Collectors.toList()));
-    }
-
-    @NotNull
-    private static String nodetypesToString(@NotNull List<String> nodetypes) {
-        return (nodetypes.isEmpty()) ? "" : " nodetypes " + listToString(nodetypes);
-    }
-
-    @NotNull
-    private static String restrictionsToString(@NotNull List<RestrictionClause> restrictionClauses) {
-        StringBuilder sb = new StringBuilder();
-        for (RestrictionClause rc : restrictionClauses) {
-            sb.append(" restriction(").append(rc.getName());
-            for (String v : rc.getValues()) {
-                sb.append(",").append(v);
-            }
-            sb.append(')');
-        }
-        return sb.toString();
-    }
-
-    @NotNull
-    private static String actionToString(@NotNull AclLine.Action action) {
-        switch (action) {
-            case DENY: return "deny";
-            case REMOVE: return "remove";
-            case REMOVE_ALL: return "remove";
-            default: return "allow";
-        }
     }
 }

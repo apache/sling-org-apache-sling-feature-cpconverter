@@ -19,8 +19,6 @@ package org.apache.sling.feature.cpconverter.handlers;
 import com.google.common.collect.Lists;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.sling.feature.ArtifactId;
-import org.apache.sling.feature.Configuration;
-import org.apache.sling.feature.Configurations;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
@@ -29,34 +27,23 @@ import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.Mapping;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
-import org.apache.sling.feature.cpconverter.repoinit.OperationProcessor;
-import org.apache.sling.feature.io.json.ConfigurationJSONWriter;
 import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.util.Collection;
-import java.util.Dictionary;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(Parameterized.class)
@@ -144,9 +131,7 @@ public class RepoInitTest {
         // See SLING-10231, SLING-10238 and FIXMEs in DefaultVisitor
         String path = PATH_PREFIX + "-no-conv-with-diff.config";
 
-        String resultTxt = "create path /test(sling:Folder)/a(nt:folder mixin mix:referenceable,mix:shareable)/b(nt:unstructured)/c(sling:Folder mixin mix:created)\n"+
-        "create path /test(sling:Folder)/a(nt:folder mixin mix:referenceable,mix:shareable)/b(nt:unstructured)/c(sling:Folder mixin mix:created)\n"+
-        " set properties on /test\n"+
+        String resultTxt = "set properties on /test\n"+
         "set testprop{String} to \"one=two\"\n"+
         "set testprop{String} to \"\\\"one=two\\\"\"\n"+
         "set sling:ResourceType{String} to \"/x/y/z\"\n"+

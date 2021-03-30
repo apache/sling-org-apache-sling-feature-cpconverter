@@ -34,26 +34,8 @@ import org.apache.sling.repoinit.parser.operations.SetAclPaths;
 import org.apache.sling.repoinit.parser.operations.SetAclPrincipalBased;
 import org.apache.sling.repoinit.parser.operations.SetAclPrincipals;
 import org.apache.sling.repoinit.parser.operations.SetProperties;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.List;
 
 public abstract class NoOpVisitor implements OperationVisitor {
-
-    static String escape(@NotNull String s) {
-        // TODO: verify
-        String esc = s.replace("\\", "\\\\");
-        String escapequotes = esc.replace("\"", "\\\"");
-        return "\"" + escapequotes + "\"";
-    }
-
-    static String listToString(@NotNull List<String> list) {
-        if (list.isEmpty()) {
-            return "";
-        } else {
-            return String.join(",", list);
-        }
-    }
 
     @Override
     public void visitCreateGroup(CreateGroup createGroup) {

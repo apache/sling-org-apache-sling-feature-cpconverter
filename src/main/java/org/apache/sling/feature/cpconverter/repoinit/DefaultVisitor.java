@@ -16,8 +16,6 @@
  */
 package org.apache.sling.feature.cpconverter.repoinit;
 
-import org.apache.jackrabbit.util.ISO8601;
-import org.apache.sling.feature.cpconverter.shared.NodeTypeUtil;
 import org.apache.sling.repoinit.parser.operations.AddGroupMembers;
 import org.apache.sling.repoinit.parser.operations.CreateGroup;
 import org.apache.sling.repoinit.parser.operations.CreatePath;
@@ -26,24 +24,15 @@ import org.apache.sling.repoinit.parser.operations.DeleteGroup;
 import org.apache.sling.repoinit.parser.operations.DeleteServiceUser;
 import org.apache.sling.repoinit.parser.operations.DeleteUser;
 import org.apache.sling.repoinit.parser.operations.DisableServiceUser;
-import org.apache.sling.repoinit.parser.operations.PathSegmentDefinition;
-import org.apache.sling.repoinit.parser.operations.PropertyLine;
 import org.apache.sling.repoinit.parser.operations.RegisterNamespace;
 import org.apache.sling.repoinit.parser.operations.RegisterNodetypes;
 import org.apache.sling.repoinit.parser.operations.RegisterPrivilege;
 import org.apache.sling.repoinit.parser.operations.RemoveGroupMembers;
+import org.apache.sling.repoinit.parser.operations.SetAclPrincipalBased;
 import org.apache.sling.repoinit.parser.operations.SetProperties;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.Calendar;
 import java.util.Formatter;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 class DefaultVisitor extends NoOpVisitor {
 
@@ -55,134 +44,71 @@ class DefaultVisitor extends NoOpVisitor {
 
     @Override
     public void visitCreateGroup(@NotNull CreateGroup createGroup) {
-        String path = createGroup.getPath();
-        if (path == null || path.isEmpty()) {
-            formatter.format("create group %s%n", createGroup.getGroupname());
-        } else {
-            String forced = (createGroup.isForcedPath()) ? "forced " : "";
-            formatter.format("create group %s with %spath %s%n", createGroup.getGroupname(), forced, path);
-        }
+        formatter.format("%s", createGroup.asRepoInitString());
     }
 
     @Override
     public void visitDeleteGroup(@NotNull DeleteGroup deleteGroup) {
-        formatter.format("delete group %s%n", deleteGroup.getGroupname());
+        formatter.format("%s", deleteGroup.asRepoInitString());
     }
 
     @Override
     public void visitCreateUser(@NotNull CreateUser createUser) {
-        String path = createUser.getPath();
-        if (path == null || path.isEmpty()) {
-            formatter.format("create user %s%s%n", createUser.getUsername(), getPwString(createUser));
-        } else {
-            String forced = (createUser.isForcedPath()) ? "forced " : "";
-            formatter.format("create user %s with %spath %s%s%n", createUser.getUsername(), forced, path, getPwString(createUser));
-        }
-    }
-
-    @NotNull
-    private static String getPwString(@NotNull CreateUser createUser) {
-        String pw = createUser.getPassword();
-        if (pw == null || pw.isEmpty()) {
-            return "";
-        } else {
-            String enc = (createUser.getPasswordEncoding() != null) ? "{"+createUser.getPasswordEncoding()+"} " :  "";
-            return " with password "+ enc + createUser.getPassword();
-        }
+        formatter.format("%s", createUser.asRepoInitString());
     }
 
     @Override
     public void visitDeleteUser(DeleteUser deleteUser) {
-        formatter.format("delete user %s%n", deleteUser.getUsername());
+        formatter.format("%s", deleteUser.asRepoInitString());
     }
 
     @Override
     public void visitDeleteServiceUser(DeleteServiceUser deleteServiceUser) {
-        formatter.format("delete service user %s%n", deleteServiceUser.getUsername());
+        formatter.format("%s", deleteServiceUser.asRepoInitString());
+    }
+
+    @Override
+    public void visitSetAclPrincipalBased(SetAclPrincipalBased setAclPrincipalBased) {
+        formatter.format("%s", setAclPrincipalBased.asRepoInitString());
     }
 
     @Override
     public void visitCreatePath(CreatePath createPath) {
-        // FIXME: see SLING-10231
-        //        the CreatePath operation doesn't allow to retrieve the default primary type
-        //        therefore the generated statement may not be identical to the original one.
-        StringBuilder sb = new StringBuilder();
-        for (PathSegmentDefinition psd : createPath.getDefinitions()) {
-            sb.append("/").append(psd.getSegment()).append("(").append(psd.getPrimaryType());
-            List<String> mixins = psd.getMixins();
-            if (mixins != null && !mixins.isEmpty()) {
-                sb.append(" mixin ").append(listToString(mixins));
-            }
-            sb.append(")");
-        }
-        formatter.format("create path %s%n", sb.toString());
+        formatter.format("%s", createPath.asRepoInitString());
     }
 
     @Override
     public void visitRegisterNamespace(RegisterNamespace registerNamespace) {
-        formatter.format("register namespace ( %s ) %s%n", registerNamespace.getPrefix(), registerNamespace.getURI());
+        formatter.format("%s", registerNamespace.asRepoInitString());
     }
 
     @Override
     public void visitRegisterNodetypes(RegisterNodetypes registerNodetypes) {
-        try {
-            for (String nodetypeRegistrationSentence : NodeTypeUtil.generateRepoInitLines(new BufferedReader(new StringReader(registerNodetypes.getCndStatements())))) {
-                formatter.format("%s%n", nodetypeRegistrationSentence);
-            }
-        } catch (IOException e) {
-            throw new IllegalStateException(e.getMessage());
-        }
+        formatter.format("%s", registerNodetypes.asRepoInitString());
     }
 
     @Override
     public void visitRegisterPrivilege(RegisterPrivilege registerPrivilege) {
-        formatter.format("%s%n", registerPrivilege.toString());
+        formatter.format("%s", registerPrivilege.asRepoInitString());
     }
 
     @Override
     public void visitDisableServiceUser(DisableServiceUser disableServiceUser) {
-        formatter.format("disable service user %s : %s%n", disableServiceUser.getUsername(), escape(disableServiceUser.getReason()));
+        formatter.format("%s", disableServiceUser.asRepoInitString());
     }
 
     @Override
     public void visitAddGroupMembers(AddGroupMembers addGroupMembers) {
-        formatter.format("add %s to group %s%n", listToString(addGroupMembers.getMembers()), addGroupMembers.getGroupname());
+        formatter.format("%s", addGroupMembers.asRepoInitString());
     }
 
     @Override
     public void visitRemoveGroupMembers(RemoveGroupMembers removeGroupMembers) {
-        formatter.format("remove %s from group %s%n", listToString(removeGroupMembers.getMembers()), removeGroupMembers.getGroupname());
+        formatter.format("%s", removeGroupMembers.asRepoInitString());
     }
 
     @Override
     public void visitSetProperties(SetProperties setProperties) {
-        // FIXME: see SLING-10238 for type and quoted values that cannot be generated
-        //        exactly as they were originally defined in repo-init
-        formatter.format("set properties on %s%n", listToString(setProperties.getPaths()));
-        for (PropertyLine line : setProperties.getPropertyLines()) {
-            String type = (line.getPropertyType()==null) ? "" : "{"+line.getPropertyType().name()+"}";
-            String values = valuesToString(line.getPropertyValues(), line.getPropertyType());
-            if (line.isDefault()) {
-                formatter.format("default %s%s to %s%n", line.getPropertyName(), type, values);
-            } else {
-                formatter.format("set %s%s to %s%n", line.getPropertyName(), type, values);
-            }
-        }
-        formatter.format("end%n");
-    }
-
-    private static String valuesToString(@NotNull List<Object> values, @Nullable PropertyLine.PropertyType type) {
-        List<String> strings = values.stream()
-                .map(o -> {
-                    if (type == null || type == PropertyLine.PropertyType.String) {
-                        return escape(Objects.toString(o, ""));
-                    } else if (type == PropertyLine.PropertyType.Date) {
-                        return "\"" + ISO8601.format((Calendar) o) + "\"";
-                    } else {
-                        return Objects.toString(o, null);
-                    }
-                })
-                .collect(Collectors.toList());
-        return listToString(strings);
+        formatter.format("%s", setProperties.asRepoInitString());
     }
 }
