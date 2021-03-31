@@ -32,6 +32,13 @@ import org.apache.sling.repoinit.parser.RepoInitParsingException;
 import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
 import org.apache.sling.repoinit.parser.operations.CreateServiceUser;
 import org.apache.sling.repoinit.parser.operations.Operation;
+import org.apache.sling.repoinit.parser.impl.WithPathOptions;
+import org.apache.sling.repoinit.parser.operations.AclLine;
+import org.apache.sling.repoinit.parser.operations.CreatePath;
+import org.apache.sling.repoinit.parser.operations.RegisterNodetypes;
+import org.apache.sling.repoinit.parser.operations.RegisterPrivilege;
+import org.apache.sling.repoinit.parser.operations.SetAclPrincipalBased;
+import org.apache.sling.repoinit.parser.operations.SetAclPrincipals;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -41,10 +48,13 @@ import javax.jcr.NamespaceException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Optional;
 import java.util.Formatter;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -52,7 +62,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -79,7 +88,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
 
     private final Map<String, List<AccessControlEntry>> acls = new HashMap<>();
 
-    private final List<String> nodetypeRegistrationSentences = new LinkedList<>();
+    private final List<RegisterNodetypes> nodetypeOperations = new LinkedList<>();
 
     private volatile PrivilegeDefinitions privilegeDefinitions;
 
@@ -143,8 +152,8 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
                 registerPrivileges(privilegeDefinitions, formatter);
             }
 
-            for (String nodetypeRegistrationSentence : nodetypeRegistrationSentences) {
-                formatter.format("%s\n", nodetypeRegistrationSentence);
+            for (RegisterNodetypes op : nodetypeOperations) {
+                formatter.format("%s", op.asRepoInitString());
             }
 
             addUsersAndGroups(formatter);
@@ -206,8 +215,8 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     private void addUsersAndGroups(@NotNull Formatter formatter) {
         for (SystemUser systemUser : systemUsers) {
             // make sure all system users are created first
-            String forced = (enforcePrincipalBased(systemUser) ? "forced " : "");
-            formatter.format("create service user %s with %spath %s\n", systemUser.getId(), forced, calculateIntermediatePath(systemUser));
+            CreateServiceUser operation = new CreateServiceUser(systemUser.getId(), new WithPathOptions(calculateIntermediatePath(systemUser), enforcePrincipalBased(systemUser)));
+            formatter.format("%s", operation.asRepoInitString());
 
             if (aclIsBelow(systemUser.getPath())) {
                 throw new IllegalStateException("Detected policy on subpath of system-user: " + systemUser);
@@ -252,10 +261,10 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
                 .filter(((Predicate<RepoPath>)RepoPath::isRepositoryPath).negate())
                 .filter(path -> Stream.of(systemUsers, users, groups).flatMap(Collection::stream)
                         .noneMatch(user -> user.getPath().startsWith(path)))
-                .map(path -> computePathWithTypes(path, packageAssemblers))
+                .map(path -> getCreatePath(path, packageAssemblers))
                 .filter(Objects::nonNull)
                 .forEach(
-                        path -> formatter.format("create path %s\n", path)
+                        path -> formatter.format("%s", path.asRepoInitString())
                 );
     }
 
@@ -283,15 +292,19 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
         });
 
         if (!principalEntries.isEmpty()) {
-            formatter.format("set principal ACL for %s\n", systemUser.getId());
-            principalEntries.forEach((entry, path) -> writeEntry(entry, path, formatter));
-            formatter.format("end\n");
+            SetAclPrincipalBased operation = new SetAclPrincipalBased(Collections.singletonList(systemUser.getId()), asAcLines(principalEntries));
+            formatter.format("%s", operation.asRepoInitString());
         }
         if (!resourceEntries.isEmpty()) {
-            formatter.format("set ACL for %s\n", systemUser.getId());
-            resourceEntries.forEach((entry, path) -> writeEntry(entry, path, formatter));
-            formatter.format("end\n");
+            SetAclPrincipals operation = new SetAclPrincipals(Collections.singletonList(systemUser.getId()), asAcLines(resourceEntries));
+            formatter.format("%s", operation.asRepoInitString());
         }
+    }
+
+    private List<AclLine> asAcLines(@NotNull Map<AccessControlEntry, String> entries) {
+        List<AclLine> lines = new ArrayList<>();
+        entries.forEach((entry, path) -> lines.add(entry.asAclLine(path)));
+        return lines;
     }
 
     private boolean enforcePrincipalBased() {
@@ -302,26 +315,13 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
         return enforcePrincipalBased(systemUser.getId());
     }
 
-    private void writeEntry(@NotNull AccessControlEntry entry, @NotNull String path, @NotNull Formatter formatter) {
-        formatter.format("%s %s on %s",
-                entry.getOperation(),
-                entry.getPrivileges(),
-                path);
-
-        for (String restriction : entry.getRestrictions()) {
-            formatter.format(" restriction(%s)", restriction);
-        }
-
-        formatter.format("\n");
-    }
-
     private @NotNull Optional<SystemUser> getSystemUser(@NotNull String id) {
         return systemUsers.stream().filter(systemUser ->  systemUser.getId().equals(id)).findFirst();
     }
 
     @Override
-    public void addNodetypeRegistrationSentence(@NotNull String nodetypeRegistrationSentence) {
-        nodetypeRegistrationSentences.add(nodetypeRegistrationSentence);
+    public void addNodetypeRegistration(@NotNull String cndStatements) {
+        nodetypeOperations.add(new RegisterNodetypes(cndStatements));
     }
 
     @Override
@@ -333,7 +333,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     public void reset() {
         systemUsers.clear();
         acls.clear();
-        nodetypeRegistrationSentences.clear();
+        nodetypeOperations.clear();
         privilegeDefinitions = null;
     }
 
@@ -401,46 +401,53 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
         }
     }
 
-    protected @Nullable String computePathWithTypes(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
-        boolean foundType = false;
-        String repoinitPath = "/";
+    protected @Nullable CreatePath getCreatePath(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
         String platformPath = "";
+        boolean foundType = false;
+
+        CreatePath cp = new CreatePath(null);
         for (String part : path.toString().substring(1).split("/")) {
-            repoinitPath += "/".equals(repoinitPath) ? part : "/" + part;
             String platformname = PlatformNameFormat.getPlatformName(part);
             platformPath += platformPath.isEmpty() ? platformname : "/" + platformname;
+            boolean segmentAdded = false;
             for (VaultPackageAssembler packageAssembler : packageAssemblers) {
                 File currentContent = packageAssembler.getEntry(platformPath + "/" + CONTENT_XML_FILE_NAME);
                 if (currentContent.isFile()) {
-                    String typeNames = extractTypeNames(currentContent);
-                    if (typeNames != null) {
-                        repoinitPath += typeNames;
+                    segmentAdded =  addSegment(cp, part, currentContent);
+                    if (segmentAdded) {
                         foundType = true;
                         break;
                     }
                 }
             }
+            if (!segmentAdded) {
+                cp.addSegment(part, null);
+            }
         }
-        return foundType ? repoinitPath : null;
+        return (foundType) ? cp : null;
     }
 
-    @Nullable
-    private String extractTypeNames(@NotNull File currentContent) {
-        String typeNames = null;
+    private boolean addSegment(@NotNull CreatePath cp, @NotNull String part, @NotNull File currentContent) {
         try (FileInputStream input = new FileInputStream(currentContent);
              FileInputStream input2 = new FileInputStream(currentContent)) {
             String primary = new PrimaryTypeParser().parse(input);
             if (primary != null) {
-                typeNames = "(" + primary;
+                List<String> mixins = new ArrayList<>();
                 String mixin = new MixinParser().parse(input2);
                 if (mixin != null) {
                     mixin = mixin.trim();
                     if (mixin.startsWith("[")) {
                         mixin = mixin.substring(1, mixin.length() - 1);
                     }
-                    typeNames += " mixin " + mixin;
+                    for (String m : mixin.split(",")) {
+                        String mixinName = m.trim();
+                        if (!mixinName.isEmpty()) {
+                            mixins.add(mixinName);
+                        }
+                    }
                 }
-                typeNames += ")";
+                cp.addSegment(part, primary, mixins);
+                return true;
             }
         } catch (Exception e) {
             throw new RuntimeException("A fatal error occurred while parsing the '"
@@ -448,7 +455,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
                     + "' file, see nested exceptions: "
                     + e);
         }
-        return typeNames;
+        return false;
     }
 
     @NotNull
@@ -488,13 +495,8 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
         NameResolver nameResolver = new DefaultNamePathResolver(definitions.getNamespaceMapping());
         for (PrivilegeDefinition privilege : definitions.getDefinitions()) {
             try {
-                String name = nameResolver.getJCRName(privilege.getName());
-                String aggregates = getAggregatedNames(privilege, nameResolver);
-                if (privilege.isAbstract()) {
-                    formatter.format("register abstract privilege %s%s\n", name, aggregates);
-                } else {
-                    formatter.format("register privilege %s%s\n", name, aggregates);
-                }
+                RegisterPrivilege operation = new RegisterPrivilege(nameResolver.getJCRName(privilege.getName()), privilege.isAbstract(), getAggregatedNames(privilege, nameResolver));
+                formatter.format("%s", operation.asRepoInitString());
             } catch (NamespaceException e) {
                 throw new IllegalStateException(e);
             }
@@ -502,19 +504,18 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     }
 
     @NotNull
-    private static String getAggregatedNames(@NotNull PrivilegeDefinition definition, @NotNull NameResolver nameResolver) {
+    private static List<String> getAggregatedNames(@NotNull PrivilegeDefinition definition, @NotNull NameResolver nameResolver) {
         Set<Name> aggregatedNames = definition.getDeclaredAggregateNames();
         if (aggregatedNames.isEmpty()) {
-            return "";
+            return Collections.emptyList();
         } else {
-            Set<String> names = aggregatedNames.stream().map(name -> {
+            return aggregatedNames.stream().map(name -> {
                 try {
                     return nameResolver.getJCRName(name);
                 } catch (NamespaceException e) {
                     throw new IllegalStateException(e);
                 }
-            }).collect(Collectors.toSet());
-            return " with "+String.join(",", names);
+            }).collect(Collectors.toList());
         }
     }
 }

@@ -24,6 +24,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import javax.xml.transform.sax.TransformerHandler;
+import java.util.List;
 import java.util.Stack;
 
 import static org.apache.jackrabbit.JcrConstants.JCR_PRIMARYTYPE;
@@ -76,7 +77,7 @@ public final class RepPrincipalPolicyEntryHandler extends AbstractPolicyEntryHan
                     if (principalName == null) {
                         throw new IllegalStateException("isolated principal-based access control entry. no principal found.");
                     }
-                    String privileges = extractValue(attributes.getValue(REP_PRIVILEGES));
+                    List<String> privileges = extractValues(attributes.getValue(REP_PRIVILEGES));
                     RepoPath effectivePath = new RepoPath(attributes.getValue(REP_EFFECTIVE_PATH));
 
                     AccessControlEntry ace = new AccessControlEntry(true, privileges, effectivePath, true);

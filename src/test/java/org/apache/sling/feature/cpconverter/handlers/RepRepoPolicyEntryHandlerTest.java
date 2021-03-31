@@ -71,7 +71,7 @@ public class RepRepoPolicyEntryHandlerTest {
 
         String expectedEnd =
                 "set ACL for repolevel-service\n" +
-                "allow jcr:namespaceManagement on :repository\n" +
+                "    allow jcr:namespaceManagement on :repository\n" +
                 "end\n";
         String actual = repoinitExtension.getText();
         assertTrue(actual.endsWith(expectedEnd));

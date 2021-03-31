@@ -773,7 +773,6 @@ public class ContentPackage2FeatureModelConverterTest {
                         "<< [rep:RepoAccessControllable]\n" +
                         "<<   mixin\n"  +
                         "<<   + rep:repoPolicy (rep:Policy) protected ignore\n" +
-                        "\n" +
                         "===>>\n";
                 String actual = repoinitExtension.getText();
                 assertEquals(expected, actual);

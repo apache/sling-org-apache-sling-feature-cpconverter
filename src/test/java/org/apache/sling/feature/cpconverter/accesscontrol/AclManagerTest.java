@@ -37,6 +37,7 @@ import java.io.File;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -99,8 +100,8 @@ public class AclManagerTest {
                 "create service user acs-commons-package-replication-status-event-service with path system\n" +
                         "create path /sling:tests/not(nt:unstructured mixin rep:AccessControllable,mix:created)/system/user/path\n" +
                         "set ACL for acs-commons-package-replication-status-event-service\n" + 
-                        "allow jcr:read,rep:write,rep:indexDefinitionManagement on /sling:tests/not/system/user/path\n" +
-                        "allow jcr:read,crx:replicate,jcr:removeNode on /home/users/system\n" +
+                        "    allow jcr:read,rep:write,rep:indexDefinitionManagement on /sling:tests/not/system/user/path\n" +
+                        "    allow jcr:read,crx:replicate,jcr:removeNode on /home/users/system\n" +
                         "end\n";
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -141,7 +142,7 @@ public class AclManagerTest {
                 "create service user acs-commons-package-replication-status-event-service with path system\n" +
                 "create path /sling:tests/not(nt:unstructured mixin rep:AccessControllable,mix:created)/system/user/path\n" +
                 "set ACL for acs-commons-package-replication-status-event-service\n" +
-                "allow jcr:read,rep:write,rep:indexDefinitionManagement on /sling:tests/not/system/user/path\n" +
+                "    allow jcr:read,rep:write,rep:indexDefinitionManagement on /sling:tests/not/system/user/path\n" +
                 "end\n";
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -190,8 +191,8 @@ public class AclManagerTest {
         String expected =
                 "create service user sys-usr with path system\n" +
                 "set ACL for sys-usr\n" +
-                "allow jcr:read on /content/cq:tags\n" +
-                "allow jcr:write on /content/cq:tags\n" +
+                "    allow jcr:read on /content/cq:tags\n" +
+                "    allow jcr:write on /content/cq:tags\n" +
                 "end\n";
 
         String actual = repoinitExtension.getText();
@@ -241,7 +242,7 @@ public class AclManagerTest {
         String expected =
                 "create service user sys-usr with path system\n" +
                         "set ACL for sys-usr\n" +
-                        "allow jcr:read on /content/test\n" +
+                        "    allow jcr:read on /content/test\n" +
                         "end\n";
 
         String actual = repoinitExtension.getText();
@@ -300,7 +301,7 @@ public class AclManagerTest {
         String expected =
                 "create service user sys-usr with path system\n" +
                         "set ACL for sys-usr\n" +
-                        "allow jcr:read on /content/test\n" +
+                        "    allow jcr:read on /content/test\n" +
                         "end\n";
 
         String actual = repoinitExtension.getText();
@@ -328,7 +329,7 @@ public class AclManagerTest {
         String expected =
                 "create service user sys-usr with path system\n" +
                         "set ACL for sys-usr\n" +
-                        "allow jcr:read on /home/users/test2\n" +
+                        "    allow jcr:read on /home/users/test2\n" +
                         "end\n";
 
         String actual = repoinitExtension.getText();
@@ -366,7 +367,7 @@ public class AclManagerTest {
     }
 
     private static AccessControlEntry newAcl(boolean isAllow, String privileges, String path) {
-        return new AccessControlEntry(isAllow, privileges, new RepoPath(PlatformNameFormat.getRepositoryPath(path)));
+        return new AccessControlEntry(isAllow, Arrays.asList(privileges.split(",")), new RepoPath(PlatformNameFormat.getRepositoryPath(path)));
     }
 
 }

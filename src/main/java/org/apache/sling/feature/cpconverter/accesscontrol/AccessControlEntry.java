@@ -17,8 +17,11 @@
 package org.apache.sling.feature.cpconverter.accesscontrol;
 
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
+import org.apache.sling.repoinit.parser.operations.AclLine;
+import org.apache.sling.repoinit.parser.operations.RestrictionClause;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -29,49 +32,46 @@ public final class AccessControlEntry {
 
     private final boolean isAllow;
 
-    private final String privileges;
+    private final List<String> privileges;
 
     private final RepoPath repositoryPath;
 
-    private final List<String> restrictions = new LinkedList<>();
+    private final List<RestrictionClause> restrictions = new LinkedList<>();
 
     private final boolean isPrincipalBased;
 
-    public AccessControlEntry(boolean isAllow, @NotNull String privileges, @NotNull RepoPath repositoryPath) {
+    public AccessControlEntry(boolean isAllow, @NotNull List<String> privileges, @NotNull RepoPath repositoryPath) {
         this(isAllow, privileges, repositoryPath, false);
     }
 
-    public AccessControlEntry(boolean isAllow, @NotNull String privileges, @NotNull RepoPath repositoryPath, boolean isPrincipalBased) {
+    public AccessControlEntry(boolean isAllow, @NotNull List<String> privileges, @NotNull RepoPath repositoryPath, boolean isPrincipalBased) {
         this.isAllow = isAllow;
         this.privileges = privileges;
         this.repositoryPath = repositoryPath;
         this.isPrincipalBased = isPrincipalBased;
     }
 
-    public void addRestriction(@NotNull String restriction) {
-        if (!restriction.isEmpty()) {
-            restrictions.add(restriction);
+    public void addRestriction(@NotNull String restrictionName, List<String> values) {
+        if (!restrictionName.isEmpty()) {
+            restrictions.add(new RestrictionClause(restrictionName, values));
         }
-    }
-
-    public @NotNull String getOperation() {
-        return isAllow ? "allow" : "deny";
-    }
-
-    public @NotNull String getPrivileges() {
-        return privileges;
     }
 
     public @NotNull RepoPath getRepositoryPath() {
         return repositoryPath;
     }
 
-    public @NotNull List<String> getRestrictions() {
-        return restrictions;
-    }
-
     public boolean isPrincipalBased() {
         return isPrincipalBased;
+    }
+
+    @NotNull
+    public AclLine asAclLine(@NotNull String path) {
+        AclLine line = new AclLine(isAllow ? AclLine.Action.ALLOW : AclLine.Action.DENY);
+        line.setProperty(AclLine.PROP_PATHS, Collections.singletonList(path));
+        line.setProperty(AclLine.PROP_PRIVILEGES, privileges);
+        line.setRestrictions(restrictions);
+        return line;
     }
 
     @Override
