@@ -22,14 +22,8 @@ import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelCo
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Dictionary;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.security.acl.Acl;
+import java.util.*;
 import java.util.Map.Entry;
 
 import org.apache.sling.feature.Artifact;
@@ -41,6 +35,8 @@ import org.apache.sling.feature.ExtensionState;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Extensions;
 import org.apache.sling.feature.Feature;
+import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
+import org.apache.sling.feature.cpconverter.accesscontrol.Mapping;
 import org.apache.sling.feature.cpconverter.interpolator.SimpleVariablesInterpolator;
 import org.apache.sling.feature.cpconverter.interpolator.VariablesInterpolator;
 import org.apache.sling.feature.extension.apiregions.api.ApiExport;
@@ -50,6 +46,7 @@ import org.apache.sling.feature.io.json.FeatureJSONWriter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Constants;
+import org.osgi.util.converter.Converters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,6 +90,8 @@ public class DefaultFeaturesManager implements FeaturesManager {
 
     private Feature targetFeature;
 
+    private AclManager aclManager;
+
     private final Map<String, String> pidToPathMapping = new HashMap<>();
 
     DefaultFeaturesManager() {
@@ -100,7 +99,7 @@ public class DefaultFeaturesManager implements FeaturesManager {
     }
 
     public DefaultFeaturesManager(@NotNull File tempDir) {
-        this(true, 20, tempDir, null, null, new HashMap<>());
+        this(true, 20, tempDir, null, null, new HashMap<>(), null);
     }
 
     public DefaultFeaturesManager(boolean mergeConfigurations,
@@ -108,9 +107,10 @@ public class DefaultFeaturesManager implements FeaturesManager {
                                   @NotNull File featureModelsOutputDirectory,
                                   @Nullable String artifactIdOverride,
                                   @Nullable String prefix,
-                                  @NotNull Map<String, String> properties) {
+                                  @NotNull Map<String, String> properties,
+                                  @Nullable AclManager aclManager) {
         this(mergeConfigurations ? ConfigurationHandling.MERGE : ConfigurationHandling.ORDERED, bundlesStartOrder, featureModelsOutputDirectory,
-                artifactIdOverride, prefix, properties);
+                artifactIdOverride, prefix, properties, aclManager);
     }
 
     public DefaultFeaturesManager(@NotNull ConfigurationHandling configurationHandling,
@@ -118,13 +118,15 @@ public class DefaultFeaturesManager implements FeaturesManager {
                                     @NotNull File featureModelsOutputDirectory,
                                     @Nullable String artifactIdOverride,
                                     @Nullable String prefix,
-                                    @NotNull Map<String, String> properties) {
+                                    @NotNull Map<String, String> properties,
+                                    @Nullable AclManager aclManager) {
         this.configurationHandling = configurationHandling;
         this.bundlesStartOrder = bundlesStartOrder;
         this.featureModelsOutputDirectory = featureModelsOutputDirectory;
         this.artifactIdOverride = artifactIdOverride;
         this.prefix = prefix;
         this.properties = properties;
+        this.aclManager = aclManager;
     }
 
     @Override
@@ -219,11 +221,83 @@ public class DefaultFeaturesManager implements FeaturesManager {
         l.add(exportedPackage);
     }
 
+
+    private static final String REPOINIT_FACTORY_PID = "org.apache.sling.jcr.repoinit.RepositoryInitializer";
+
+    private static final String REPOINIT_PID = "org.apache.sling.jcr.repoinit.impl.RepositoryInitializer";
+
+    private static final String SERVICE_USER_MAPPING_PID = "org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl";
+
+    private boolean enforceServiceMappingByPrincipal;
+
+
+    public void setEnforceServiceMappingByPrincipal(boolean enforceServiceMappingByPrincipal) {
+        this.enforceServiceMappingByPrincipal = enforceServiceMappingByPrincipal;
+    }
+
+    public void addSeed(Feature seed) {
+        for (Configuration conf : seed.getConfigurations()) {
+            handleRepoinitAndMappings("seed", conf.isFactoryConfiguration() ? conf.getFactoryPid() : conf.getPid(), conf.getConfigurationProperties(), false);
+        }
+        if (seed.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT) != null) {
+            getAclManager().addRepoinitExtention(seed.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT).getText(), "seed", this);
+        }
+    }
+
+    @NotNull AclManager getAclManager() {
+        return Objects.requireNonNull(this.aclManager);
+    }
+
+    public void setAclManager(AclManager aclManager) {
+        this.aclManager = aclManager;
+    }
+
+    private boolean handleRepoinitAndMappings(String runMode, String pid, Dictionary<String, Object> configurationProperties, boolean enforceServiceMappingByPrincipal) {
+        if (REPOINIT_FACTORY_PID.equals(pid)) {
+            final String[] scripts = Converters.standardConverter().convert(configurationProperties.get("scripts")).to(String[].class);
+            if (scripts != null && scripts.length > 0 ) {
+                for (final String text : scripts) {
+                    getAclManager().addRepoinitExtention(text, runMode, this);
+                }
+            }
+            checkReferences(configurationProperties, pid);
+            return true;
+        } else if ( REPOINIT_PID.equals(pid) ) {
+            checkReferences(configurationProperties, pid);
+            return true;
+        } else if (pid.startsWith(SERVICE_USER_MAPPING_PID)) {
+            String[] mappings = Converters.standardConverter().convert(configurationProperties.get("user.mapping")).to(String[].class);
+            if (mappings != null) {
+                List<String> newMappings = new ArrayList<>();
+                for (String usermapping : mappings) {
+                    Mapping mapping = new Mapping(usermapping, enforceServiceMappingByPrincipal);
+                    getAclManager().addMapping(mapping);
+                    newMappings.add(mapping.asString());
+                }
+                // replace 'user.mapping' property by the new mappings, which may have been refactored
+                if (!newMappings.isEmpty()) {
+                    configurationProperties.put("user.mapping", newMappings.toArray(new String[0]));
+                }
+            }
+        }
+        return false;
+    }
+
     @Override
     public void addConfiguration(@Nullable String runMode, 
         @NotNull String pid, 
         @NotNull String path,
         @Nullable Dictionary<String, Object> configurationProperties) {
+        String factoryPid = null;
+        String id;
+        int n = pid.indexOf('~');
+        if (n > 0) {
+            factoryPid = pid.substring(0, n);
+        }
+        if (handleRepoinitAndMappings(runMode, factoryPid != null ? factoryPid : pid, configurationProperties, enforceServiceMappingByPrincipal)) {
+            return;
+        }
+
         Feature feature = getRunMode(runMode);
         Configuration configuration = feature.getConfigurations().getConfiguration(pid);
 
@@ -374,6 +448,19 @@ public class DefaultFeaturesManager implements FeaturesManager {
             repoInitExtension.setText(text);
         } else {
             repoInitExtension.setText(repoInitExtension.getText() + "\n ".concat(text));
+        }
+    }
+
+
+
+    private void checkReferences(@NotNull final Dictionary<String, Object> configurationProperties, @NotNull final String pid) {
+        final String[] references = Converters.standardConverter().convert(configurationProperties.get("references")).to(String[].class);
+        if ( references != null && references.length > 0 ) {
+            for(final String r  : references ) {
+                if ( r != null && !r.trim().isEmpty() ) {
+                    throw new IllegalArgumentException("References are not supported for repoinit (configuration " + pid + ")");
+                }
+            }
         }
     }
 }

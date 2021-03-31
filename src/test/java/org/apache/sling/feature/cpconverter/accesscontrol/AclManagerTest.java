@@ -47,6 +47,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 public class AclManagerTest {
@@ -69,6 +70,7 @@ public class AclManagerTest {
             .map(Path::toFile)
             .forEach(File::delete);
     }
+
     @Test
     public void makeSureAclsAreCreatedOnlyoutsideSytemUsersPaths() throws Exception {
         aclManager.addSystemUser(new SystemUser("acs-commons-package-replication-status-event-service", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
@@ -94,7 +96,7 @@ public class AclManagerTest {
 
         // acs-commons-on-deploy-scripts-service will be missed
         String expected =
-                "create service user acs-commons-package-replication-status-event-service with path /home/users/system\n" +
+                "create service user acs-commons-package-replication-status-event-service with path system\n" +
                         "create path /sling:tests/not(nt:unstructured mixin rep:AccessControllable,mix:created)/system/user/path\n" +
                         "set ACL for acs-commons-package-replication-status-event-service\n" + 
                         "allow jcr:read,rep:write,rep:indexDefinitionManagement on /sling:tests/not/system/user/path\n" +
@@ -136,7 +138,7 @@ public class AclManagerTest {
 
         // aacs-commons-ensure-oak-index-service will be missed
         String expected =
-                "create service user acs-commons-package-replication-status-event-service with path /home/users/system\n" +
+                "create service user acs-commons-package-replication-status-event-service with path system\n" +
                 "create path /sling:tests/not(nt:unstructured mixin rep:AccessControllable,mix:created)/system/user/path\n" +
                 "set ACL for acs-commons-package-replication-status-event-service\n" +
                 "allow jcr:read,rep:write,rep:indexDefinitionManagement on /sling:tests/not/system/user/path\n" +
@@ -186,7 +188,7 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         String expected =
-                "create service user sys-usr with path /home/users/system\n" +
+                "create service user sys-usr with path system\n" +
                 "set ACL for sys-usr\n" +
                 "allow jcr:read on /content/cq:tags\n" +
                 "allow jcr:write on /content/cq:tags\n" +
@@ -237,7 +239,7 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         String expected =
-                "create service user sys-usr with path /home/users/system\n" +
+                "create service user sys-usr with path system\n" +
                         "set ACL for sys-usr\n" +
                         "allow jcr:read on /content/test\n" +
                         "end\n";
@@ -296,7 +298,7 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         String expected =
-                "create service user sys-usr with path /home/users/system\n" +
+                "create service user sys-usr with path system\n" +
                         "set ACL for sys-usr\n" +
                         "allow jcr:read on /content/test\n" +
                         "end\n";
@@ -324,13 +326,43 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         String expected =
-                "create service user sys-usr with path /home/users/system\n" +
+                "create service user sys-usr with path system\n" +
                         "set ACL for sys-usr\n" +
                         "allow jcr:read on /home/users/test2\n" +
                         "end\n";
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testCalculateEnforcedIntermediatePath() {
+        DefaultAclManager aclManager = new DefaultAclManager(null, "system");
+        aclManager.calculateEnforcedIntermediatePath("/home/users/system/some/path");
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testAddRepoinitExtentionInvalidTxt() {
+        DefaultAclManager aclManager = new DefaultAclManager("/home/users/system/cq:services", "system");
+        aclManager.addRepoinitExtention("some invalid txt", null, mock(FeaturesManager.class));
+    }
+
+    @Test
+    public void testAddRepoinitExtentionEmptyTxt() {
+        FeaturesManager fm = mock(FeaturesManager.class);
+        DefaultAclManager aclManager = new DefaultAclManager("/home/users/system/cq:services", "system");
+        aclManager.addRepoinitExtention("", null, fm);
+
+        verifyNoInteractions(fm);
+    }
+
+    @Test
+    public void testAddRepoinitExtentionNullTxt() {
+        FeaturesManager fm = mock(FeaturesManager.class);
+        DefaultAclManager aclManager = new DefaultAclManager("/home/users/system/cq:services", "system");
+        aclManager.addRepoinitExtention(null, null, fm);
+
+        verifyNoInteractions(fm);
     }
 
     private static AccessControlEntry newAcl(boolean isAllow, String privileges, String path) {

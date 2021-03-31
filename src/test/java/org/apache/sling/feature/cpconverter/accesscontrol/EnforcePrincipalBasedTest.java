@@ -16,9 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.accesscontrol;
 
-import org.apache.sling.feature.ArtifactId;
-import org.apache.sling.feature.Extension;
-import org.apache.sling.feature.Feature;
+import org.apache.sling.feature.*;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
@@ -35,11 +33,13 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -53,7 +53,8 @@ import static org.mockito.Mockito.when;
 public class EnforcePrincipalBasedTest {
 
     private final SystemUser systemUser = new SystemUser("user1", new RepoPath("/home/users/system/intermediate/usernode"), new RepoPath("/home/users/system/intermediate"));
-    private final String remappedIntermediatePath = "/home/users/system/some/subtree/intermediate";
+    private final String relativeIntermediatePath = "system/intermediate";
+    private final String remappedIntermediatePath = "system/some/subtree/intermediate";
 
     private AclManager aclManager;
     private Path tempDir;
@@ -64,7 +65,7 @@ public class EnforcePrincipalBasedTest {
 
     @Before
     public void setUp() throws Exception {
-        aclManager = new DefaultAclManager("/home/users/system/some/subtree");
+        aclManager = new DefaultAclManager("/home/users/system/some/subtree", "system");
         tempDir = Files.createTempDirectory(getClass().getSimpleName());
 
         assembler = mock(VaultPackageAssembler.class);
@@ -88,14 +89,19 @@ public class EnforcePrincipalBasedTest {
 
     @Test(expected = IllegalStateException.class)
     public void testInvalidSupportedPath() {
-        AclManager acMgr = new DefaultAclManager("/an/invalid/supported/path");
+        AclManager acMgr = new DefaultAclManager("/an/invalid/supported/path", "invalid");
         RepoPath accessControlledPath = new RepoPath("/content/feature");
         getRepoInitExtension(acMgr, accessControlledPath, systemUser, false);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testPathMismatch() {
+        new DefaultAclManager("/an/invalid/supported/path", "system");
+    }
+
     @Test
     public void testResourceBasedConversionWithoutForce() throws RepoInitParsingException {
-        AclManager acMgr = new DefaultAclManager(null) {
+        AclManager acMgr = new DefaultAclManager(null, "system") {
             @Override
             protected @Nullable String computePathWithTypes(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
                 return "/content/feature(sling:Folder)";
@@ -106,7 +112,7 @@ public class EnforcePrincipalBasedTest {
         Extension repoinitExtension = getRepoInitExtension(acMgr, accessControlledPath, systemUser, false);
 
         String expected =
-                "create service user user1 with path " + systemUser.getIntermediatePath() + "\n" +
+                "create service user user1 with path " + relativeIntermediatePath + "\n" +
                         "create path /content/feature(sling:Folder)\n" +
                         "set ACL for user1\n" +
                         "allow jcr:read on /content/feature\n" +
@@ -185,7 +191,7 @@ public class EnforcePrincipalBasedTest {
         Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, false);
 
         String expected =
-                "create service user user1 with path " +systemUser.getIntermediatePath()+ "\n" +
+                "create service user user1 with path " +relativeIntermediatePath+ "\n" +
                 "set ACL for user1\n" +
                 "allow jcr:read on /content/feature\n" +
                 "end\n";
@@ -206,6 +212,56 @@ public class EnforcePrincipalBasedTest {
                 "set principal ACL for user1\n" +
                 "allow jcr:read on /content/feature\n" +
                 "end\n";
+
+        String actual = repoinitExtension.getText();
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testSingleUserMappingInSeed() throws IOException {
+        DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 1, File.createTempFile("foo", "bar"), "*", "*", new HashMap<>(), aclManager);
+        Feature seed = new Feature(ArtifactId.fromMvnId("org:foo:2"));
+        Configuration foo = new Configuration("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl~foo");
+        foo.getProperties().put("user.mapping", new String[]{"org.apache.sling.testbundle:subservice=user1"});
+        seed.getConfigurations().add(foo);
+        Extension extension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, ExtensionState.REQUIRED);
+        extension.setText("create service user user1");
+        seed.getExtensions().add(extension);
+        fm.addSeed(seed);
+
+        RepoPath accessControlledPath = new RepoPath("/content/feature");
+        Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, false);
+
+        String expected =
+                "create service user user1 with path " + relativeIntermediatePath + "\n" +
+                        "set ACL for user1\n" +
+                        "allow jcr:read on /content/feature\n" +
+                        "end\n";
+
+        String actual = repoinitExtension.getText();
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testPrincipalMappingInSeed() throws IOException {
+        DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 1, File.createTempFile("foo", "bar"), "*", "*", new HashMap<>(), aclManager);
+        Feature seed = new Feature(ArtifactId.fromMvnId("org:foo:2"));
+        Configuration foo = new Configuration("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl~foo");
+        foo.getProperties().put("user.mapping", new String[]{"org.apache.sling.testbundle:subservice=[user1]"});
+        seed.getConfigurations().add(foo);
+        Extension extension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, ExtensionState.REQUIRED);
+        extension.setText("create service user user1");
+        seed.getExtensions().add(extension);
+        fm.addSeed(seed);
+
+        RepoPath accessControlledPath = new RepoPath("/content/feature");
+        Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, false);
+
+        String expected =
+                "create service user user1 with forced path " + remappedIntermediatePath + "\n" +
+                        "set principal ACL for user1\n" +
+                        "allow jcr:read on /content/feature\n" +
+                        "end\n";
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);

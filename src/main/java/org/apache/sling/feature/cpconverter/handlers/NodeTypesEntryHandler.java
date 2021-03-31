@@ -25,6 +25,8 @@ import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.util.Constants;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
+import org.apache.sling.feature.cpconverter.shared.NodeTypeUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class NodeTypesEntryHandler extends AbstractRegexEntryHandler {
@@ -54,19 +56,10 @@ public class NodeTypesEntryHandler extends AbstractRegexEntryHandler {
     public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter)
             throws Exception {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(archive.openInputStream(entry))))) {
-            Objects.requireNonNull(converter.getAclManager()).addNodetypeRegistrationSentence("register nodetypes");
-            Objects.requireNonNull(converter.getAclManager()).addNodetypeRegistrationSentence("<<===");
-
-            String nodetypeRegistrationSentence;
-            while ((nodetypeRegistrationSentence = reader.readLine()) != null) {
-                if (nodetypeRegistrationSentence.isEmpty()) {
-                    converter.getAclManager().addNodetypeRegistrationSentence("");
-                } else {
-                    converter.getAclManager().addNodetypeRegistrationSentence("<< " + nodetypeRegistrationSentence);
-                }
+            AclManager aclManager = Objects.requireNonNull(converter.getAclManager());
+            for (String line : NodeTypeUtil.generateRepoInitLines(reader)) {
+                aclManager.addNodetypeRegistrationSentence(line);
             }
-
-            converter.getAclManager().addNodetypeRegistrationSentence("===>>");
         }
     }
 

@@ -43,6 +43,7 @@ import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
+import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.Mapping;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
@@ -126,7 +127,6 @@ public class ConfigurationEntryHandlerTest {
         this.expectedMappings = expectedMappings;
 
         this.configurationEntryHandler = configurationEntryHandler;
-        this.configurationEntryHandler.setEnforceServiceMappingByPrincipal(enforceServiceMappingByPrincipal);
 
         this.expectedRunMode = expectedRunMode;
         this.enforceServiceMappingByPrincipal = enforceServiceMappingByPrincipal;
@@ -152,13 +152,15 @@ public class ConfigurationEntryHandlerTest {
 
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
         FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);
+        ((DefaultFeaturesManager) featuresManager).setEnforceServiceMappingByPrincipal(enforceServiceMappingByPrincipal);
         when(featuresManager.getTargetFeature()).thenReturn(feature);
         doCallRealMethod().when(featuresManager).addConfiguration(anyString(), anyString(), anyString(), any());
         when(featuresManager.getRunMode(anyString())).thenReturn(feature);
         ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
         when(converter.getFeaturesManager()).thenReturn(featuresManager);
-        AclManager aclManager = mock(AclManager.class);
+        AclManager aclManager = spy(new DefaultAclManager());
         when(converter.getAclManager()).thenReturn(aclManager);
+        ((DefaultFeaturesManager) featuresManager).setAclManager(aclManager);
 
         configurationEntryHandler.handle(resourceConfiguration, archive, entry, converter);
 

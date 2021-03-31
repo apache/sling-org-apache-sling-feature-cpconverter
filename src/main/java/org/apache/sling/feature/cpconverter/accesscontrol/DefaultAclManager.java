@@ -22,9 +22,16 @@ import org.apache.jackrabbit.spi.commons.conversion.DefaultNamePathResolver;
 import org.apache.jackrabbit.spi.commons.conversion.NameResolver;
 import org.apache.jackrabbit.vault.fs.spi.PrivilegeDefinitions;
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
+import org.apache.jackrabbit.vault.util.Text;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
+import org.apache.sling.feature.cpconverter.repoinit.NoOpVisitor;
+import org.apache.sling.feature.cpconverter.repoinit.OperationProcessor;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
+import org.apache.sling.repoinit.parser.RepoInitParsingException;
+import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
+import org.apache.sling.repoinit.parser.operations.CreateServiceUser;
+import org.apache.sling.repoinit.parser.operations.Operation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -33,11 +40,11 @@ import org.slf4j.LoggerFactory;
 import javax.jcr.NamespaceException;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.StringReader;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Optional;
 import java.util.Formatter;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -45,20 +52,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class DefaultAclManager implements AclManager {
+public class DefaultAclManager implements AclManager, EnforceInfo {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultAclManager.class);
 
     private static final String CONTENT_XML_FILE_NAME = ".content.xml";
 
     private final RepoPath enforcePrincipalBasedSupportedPath;
+    private final String systemRelPath;
+
+    private final OperationProcessor processor = new OperationProcessor();
 
     private final Set<SystemUser> systemUsers = new LinkedHashSet<>();
+    private final Set<String> systemUserIds = new LinkedHashSet<>();
+
     private final Set<Group> groups = new LinkedHashSet<>();
     private final Set<User> users = new LinkedHashSet<>();
     private final Set<Mapping> mappings = new HashSet<>();
@@ -71,10 +84,14 @@ public class DefaultAclManager implements AclManager {
     private volatile PrivilegeDefinitions privilegeDefinitions;
 
     public DefaultAclManager() {
-        this(null);
+        this(null, "system");
     }
-    public DefaultAclManager(@Nullable String enforcePrincipalBasedSupportedPath) {
+    public DefaultAclManager(@Nullable String enforcePrincipalBasedSupportedPath, @NotNull String systemRelPath) {
+        if (enforcePrincipalBasedSupportedPath != null && !enforcePrincipalBasedSupportedPath.contains(systemRelPath)) {
+            throw new IllegalArgumentException("Relative path for system users "+ systemRelPath + " not included in " + enforcePrincipalBasedSupportedPath);
+        }
         this.enforcePrincipalBasedSupportedPath = (enforcePrincipalBasedSupportedPath == null) ? null : new RepoPath(enforcePrincipalBasedSupportedPath);
+        this.systemRelPath = systemRelPath;
     }
 
     @Override
@@ -90,9 +107,7 @@ public class DefaultAclManager implements AclManager {
     @Override
     public boolean addSystemUser(@NotNull SystemUser systemUser) {
         if (systemUsers.add(systemUser)) {
-            if (mappings.stream().anyMatch(mapping -> mapping.mapsUser(systemUser.getId()))) {
-                mappedById.add(systemUser.getId());
-            }
+            recordSystemUserIds(systemUser.getId());
             return true;
         } else {
             return false;
@@ -149,6 +164,45 @@ public class DefaultAclManager implements AclManager {
         }
     }
 
+    @Override
+    public void addRepoinitExtention(@Nullable String repoInitText, @Nullable String runMode, @NotNull FeaturesManager featuresManager) {
+        if (repoInitText == null || repoInitText.trim().isEmpty()) {
+            return;
+        }
+
+        if ("seed".equalsIgnoreCase(runMode)) {
+            try {
+                List<Operation> ops = new RepoInitParserService().parse(new StringReader(repoInitText));
+                for (Operation op : ops) {
+                    op.accept(new NoOpVisitor() {
+                        @Override
+                        public void visitCreateServiceUser(CreateServiceUser createServiceUser) {
+                            recordSystemUserIds(createServiceUser.getUsername());
+                        }
+                    });
+                }
+            } catch (RepoInitParsingException e) {
+                throw new IllegalArgumentException(e);
+            }
+            return;
+        }
+        try (Formatter formatter = new Formatter()) {
+            if (enforcePrincipalBased()) {
+                List<Operation> ops = new RepoInitParserService().parse(new StringReader(repoInitText));
+                processor.apply(ops, formatter,this);
+            } else {
+                formatter.format("%s", repoInitText);
+            }
+
+            String text = formatter.toString().trim();
+            if (!text.isEmpty()) {
+                featuresManager.addOrAppendRepoInitExtension(text, runMode);
+            }
+        } catch (RepoInitParsingException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     private void addUsersAndGroups(@NotNull Formatter formatter) {
         for (SystemUser systemUser : systemUsers) {
             // make sure all system users are created first
@@ -172,18 +226,10 @@ public class DefaultAclManager implements AclManager {
     @NotNull
     private String calculateIntermediatePath(@NotNull SystemUser systemUser) {
         RepoPath intermediatePath = systemUser.getIntermediatePath();
-        if (enforcePrincipalBased(systemUser) && !intermediatePath.startsWith(enforcePrincipalBasedSupportedPath)) {
-            RepoPath parent = intermediatePath.getParent();
-            while (parent != null) {
-                if (enforcePrincipalBasedSupportedPath.startsWith(parent)) {
-                    String relpath = intermediatePath.toString().substring(parent.toString().length());
-                    return enforcePrincipalBasedSupportedPath.toString() + relpath;
-                }
-                parent = parent.getParent();
-            }
-            throw new IllegalStateException("Cannot calculate intermediate path for service user. Configured Supported path " +enforcePrincipalBasedSupportedPath+" has no common ancestor with "+intermediatePath);
+        if (enforcePrincipalBased(systemUser)) {
+            return calculateEnforcedIntermediatePath(intermediatePath.toString());
         } else {
-            return intermediatePath.toString();
+            return getRelativeIntermediatePath(intermediatePath.toString());
         }
     }
 
@@ -248,17 +294,12 @@ public class DefaultAclManager implements AclManager {
         }
     }
 
+    private boolean enforcePrincipalBased() {
+        return enforcePrincipalBasedSupportedPath != null;
+    }
+
     private boolean enforcePrincipalBased(@NotNull SystemUser systemUser) {
-        if (enforcePrincipalBasedSupportedPath == null) {
-            return false;
-        } else {
-            if (mappedById.contains(systemUser.getId())) {
-                log.warn("Skip enforcing principalbased access control setup for system user {} due to existing mapping", systemUser.getId());
-                return false;
-            } else {
-                return true;
-            }
-        }
+        return enforcePrincipalBased(systemUser.getId());
     }
 
     private void writeEntry(@NotNull AccessControlEntry entry, @NotNull String path, @NotNull Formatter formatter) {
@@ -294,6 +335,70 @@ public class DefaultAclManager implements AclManager {
         acls.clear();
         nodetypeRegistrationSentences.clear();
         privilegeDefinitions = null;
+    }
+
+    @Override
+    public void recordSystemUserIds(@NotNull String... systemUserIds) {
+        for (String id : systemUserIds) {
+            if (this.systemUserIds.add(id) && mappings.stream().anyMatch(mapping -> mapping.mapsUser(id))) {
+                mappedById.add(id);
+            }
+        }
+    }
+
+    @Override
+    public boolean enforcePrincipalBased(@NotNull String systemUserId) {
+        if (enforcePrincipalBased() && systemUserIds.contains(systemUserId)) {
+            if (mappedById.contains(systemUserId)) {
+                log.warn("Skip enforcing principal-based access control setup for system user '{}' due to existing mapping by id.", systemUserId);
+                return false;
+            } else {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    @NotNull
+    public String calculateEnforcedIntermediatePath(@Nullable String intermediatePath) {
+        if (enforcePrincipalBasedSupportedPath == null) {
+            throw new IllegalStateException("No supported path configured");
+        }
+        String supportedPath = getRelativeIntermediatePath(enforcePrincipalBasedSupportedPath.toString());
+        if (intermediatePath == null || intermediatePath.isEmpty()) {
+            return supportedPath;
+        }
+
+        String relIntermediate = getRelativeIntermediatePath(intermediatePath);
+        if (Text.isDescendantOrEqual(supportedPath, relIntermediate)) {
+            return relIntermediate;
+        } else {
+            String parent = Text.getRelativeParent(relIntermediate, 1);
+            while (!parent.isEmpty() && !"/".equals(parent)) {
+                if (Text.isDescendantOrEqual(parent, supportedPath)) {
+                    String relpath = relIntermediate.substring(parent.length());
+                    return supportedPath + relpath;
+                }
+                parent = Text.getRelativeParent(parent, 1);
+            }
+            throw new IllegalStateException("Cannot calculate intermediate path for service user. Configured Supported path " +enforcePrincipalBasedSupportedPath+" has no common ancestor with "+intermediatePath);
+        }
+    }
+
+    @NotNull
+    private String getRelativeIntermediatePath(@NotNull String intermediatePath) {
+        if (intermediatePath.equals(systemRelPath) || intermediatePath.startsWith(systemRelPath+"/")) {
+            return intermediatePath;
+        } else {
+            String p = intermediatePath + "/";
+            String rel = "/" + systemRelPath + "/";
+            int i = p.indexOf(rel);
+            if (i == -1) {
+                throw new IllegalStateException("Invalid intermediate path for system user " + intermediatePath + ". Must include "+ systemRelPath);
+            }
+            return intermediatePath.substring(i + 1);
+        }
     }
 
     protected @Nullable String computePathWithTypes(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
