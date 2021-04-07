@@ -24,6 +24,7 @@ import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.repoinit.parser.RepoInitParser;
 import org.apache.sling.repoinit.parser.RepoInitParsingException;
 import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
+import org.apache.sling.repoinit.parser.operations.CreatePath;
 import org.apache.sling.repoinit.parser.operations.Operation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -103,8 +104,11 @@ public class EnforcePrincipalBasedTest {
     public void testResourceBasedConversionWithoutForce() throws RepoInitParsingException {
         AclManager acMgr = new DefaultAclManager(null, "system") {
             @Override
-            protected @Nullable String computePathWithTypes(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
-                return "/content/feature(sling:Folder)";
+            protected @Nullable CreatePath getCreatePath(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
+                CreatePath cp = new CreatePath(null);
+                cp.addSegment("content", null);
+                cp.addSegment("feature", "sling:Folder");
+                return cp;
             }
         };
 
@@ -115,7 +119,7 @@ public class EnforcePrincipalBasedTest {
                 "create service user user1 with path " + relativeIntermediatePath + "\n" +
                         "create path /content/feature(sling:Folder)\n" +
                         "set ACL for user1\n" +
-                        "allow jcr:read on /content/feature\n" +
+                        "    allow jcr:read on /content/feature\n" +
                         "end\n";
 
         String actual = repoinitExtension.getText();
@@ -134,7 +138,7 @@ public class EnforcePrincipalBasedTest {
         String expected =
                 "create service user user1 with forced path " + remappedIntermediatePath + "\n" +
                 "set principal ACL for user1\n" +
-                "allow jcr:read on /content/feature\n" +
+                "    allow jcr:read on /content/feature\n" +
                 "end\n";
 
         String actual = repoinitExtension.getText();
@@ -153,7 +157,7 @@ public class EnforcePrincipalBasedTest {
         String expected =
                 "create service user user1 with forced path " + remappedIntermediatePath + "\n" +
                         "set principal ACL for user1\n" +
-                        "allow jcr:read on /content/feature\n" +
+                        "    allow jcr:read on /content/feature\n" +
                         "end\n";
 
         String actual = repoinitExtension.getText();
@@ -172,7 +176,7 @@ public class EnforcePrincipalBasedTest {
         String expected =
                 "create service user user1 with forced path " + remappedIntermediatePath + "\n" +
                 "set principal ACL for user1\n" +
-                "allow jcr:read on home(user1)\n" +
+                "    allow jcr:read on home(user1)\n" +
                 "end\n";
 
         String actual = repoinitExtension.getText();
@@ -193,7 +197,7 @@ public class EnforcePrincipalBasedTest {
         String expected =
                 "create service user user1 with path " +relativeIntermediatePath+ "\n" +
                 "set ACL for user1\n" +
-                "allow jcr:read on /content/feature\n" +
+                "    allow jcr:read on /content/feature\n" +
                 "end\n";
 
         String actual = repoinitExtension.getText();
@@ -210,7 +214,7 @@ public class EnforcePrincipalBasedTest {
         String expected =
                 "create service user user1 with forced path " + remappedIntermediatePath + "\n" +
                 "set principal ACL for user1\n" +
-                "allow jcr:read on /content/feature\n" +
+                "    allow jcr:read on /content/feature\n" +
                 "end\n";
 
         String actual = repoinitExtension.getText();
@@ -235,7 +239,7 @@ public class EnforcePrincipalBasedTest {
         String expected =
                 "create service user user1 with path " + relativeIntermediatePath + "\n" +
                         "set ACL for user1\n" +
-                        "allow jcr:read on /content/feature\n" +
+                        "    allow jcr:read on /content/feature\n" +
                         "end\n";
 
         String actual = repoinitExtension.getText();
@@ -260,7 +264,7 @@ public class EnforcePrincipalBasedTest {
         String expected =
                 "create service user user1 with forced path " + remappedIntermediatePath + "\n" +
                         "set principal ACL for user1\n" +
-                        "allow jcr:read on /content/feature\n" +
+                        "    allow jcr:read on /content/feature\n" +
                         "end\n";
 
         String actual = repoinitExtension.getText();
@@ -271,7 +275,7 @@ public class EnforcePrincipalBasedTest {
     private Extension getRepoInitExtension(@NotNull AclManager aclManager, @NotNull RepoPath accessControlledPath, @NotNull SystemUser systemUser, boolean isPrincipalBased) {
         aclManager.addSystemUser(systemUser);
 
-        AccessControlEntry acl = new AccessControlEntry(true, "jcr:read", accessControlledPath, isPrincipalBased);
+        AccessControlEntry acl = new AccessControlEntry(true, Collections.singletonList("jcr:read"), accessControlledPath, isPrincipalBased);
         aclManager.addAcl(systemUser.getId(), acl);
 
         aclManager.addRepoinitExtension(Collections.singletonList(assembler), fm);

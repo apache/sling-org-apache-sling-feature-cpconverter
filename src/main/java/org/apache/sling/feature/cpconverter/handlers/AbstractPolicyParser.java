@@ -26,6 +26,9 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import javax.xml.transform.sax.TransformerHandler;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -54,26 +57,31 @@ abstract class AbstractPolicyParser extends AbstractJcrNodeParser<Boolean> {
         this.aclManager = aclManager;
     }
 
-    static @Nullable String extractValue(@Nullable String expression) {
+    static @NotNull List<String> extractValues(@Nullable String expression) {
         if (expression == null || expression.isEmpty()) {
-            return expression;
+            return Collections.emptyList();
         }
 
+        String valuesString = expression;
         Matcher matcher = typeIndicatorPattern.matcher(expression);
         if (matcher.matches()) {
-            return matcher.group(1);
+            valuesString = matcher.group(1);
         }
 
-        return expression;
+        List<String> vs = new ArrayList<>();
+        for (String v : valuesString.split(",")) {
+            vs.add(v.trim());
+        }
+        return vs;
     }
 
     void addRestrictions(@NotNull AccessControlEntry ace, @NotNull Attributes attributes) {
         for (int i = 0; i < attributes.getLength(); i++) {
             String name = attributes.getQName(i);
             if (isRestriction(name)) {
-                String v = extractValue(attributes.getValue(name));
-                if (v != null && !v.isEmpty()) {
-                    ace.addRestriction(name + ',' + v);
+                List<String> vs = extractValues(attributes.getValue(name));
+                if (!vs.isEmpty()) {
+                    ace.addRestriction(name, vs);
                 }
             }
         }
@@ -84,7 +92,7 @@ abstract class AbstractPolicyParser extends AbstractJcrNodeParser<Boolean> {
     }
 
     AccessControlEntry createEntry(boolean isAllow, @NotNull Attributes attributes) {
-        return new AccessControlEntry(isAllow, Objects.requireNonNull(extractValue(attributes.getValue(REP_PRIVILEGES))), repositoryPath);
+        return new AccessControlEntry(isAllow, Objects.requireNonNull(extractValues(attributes.getValue(REP_PRIVILEGES))), repositoryPath);
     }
 
     @Override

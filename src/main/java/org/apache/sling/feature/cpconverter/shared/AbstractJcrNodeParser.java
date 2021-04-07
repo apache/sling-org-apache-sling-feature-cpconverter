@@ -21,7 +21,6 @@ import static org.apache.jackrabbit.JcrConstants.JCR_PRIMARYTYPE;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;

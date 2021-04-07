@@ -70,7 +70,7 @@ public final class RepPrincipalPolicyEntryHandlerTest {
         String expected =
                 "create service user service1 with path system/services\n" +
                 "set principal ACL for service1\n" +
-                "allow jcr:read,jcr:readAccessControl on /asd/public\n" +
+                "    allow jcr:read,jcr:readAccessControl on /asd/public\n" +
                 "end\n";
 
         String actual = repoinitExtension.getText();
@@ -87,7 +87,7 @@ public final class RepPrincipalPolicyEntryHandlerTest {
         String expected =
                 "create service user service2 with path system/services\n" +
                         "set principal ACL for service2\n" +
-                        "allow jcr:read on /asd/public restriction(rep:ntNames,nt:folder,sling:Folder) restriction(sling:customRestriction,customRestrictionValue)\n" +
+                        "    allow jcr:read on /asd/public restriction(rep:ntNames,nt:folder,sling:Folder) restriction(sling:customRestriction,customRestrictionValue)\n" +
                         "end\n";
 
         String actual = repoinitExtension.getText();
@@ -112,7 +112,7 @@ public final class RepPrincipalPolicyEntryHandlerTest {
                 "create service user service4 with path system/services\n" +
                 "set principal ACL for service4\n" +
                 // since service3 is not known to the AclManager it treats the effective path as a regular node.
-                "allow jcr:read,rep:userManagement on /home/users/system/services/random3\n" +
+                "    allow jcr:read,rep:userManagement on /home/users/system/services/random3\n" +
                 "end\n";
 
         String actual = repoinitExtension.getText();
@@ -133,7 +133,7 @@ public final class RepPrincipalPolicyEntryHandlerTest {
                 "create service user service4 with path system/services\n" +
                 "create service user service3 with path system/services\n" +
                 "set principal ACL for service4\n" +
-                "allow jcr:read,rep:userManagement on home(service3)\n" +
+                "    allow jcr:read,rep:userManagement on home(service3)\n" +
                 "end\n";
 
         String actual = repoinitExtension.getText();

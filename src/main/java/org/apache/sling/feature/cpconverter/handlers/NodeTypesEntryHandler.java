@@ -16,18 +16,17 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.util.Objects;
-import java.util.regex.Pattern;
-
+import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.util.Constants;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
-import org.apache.sling.feature.cpconverter.shared.NodeTypeUtil;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.util.Objects;
+import java.util.regex.Pattern;
 
 public class NodeTypesEntryHandler extends AbstractRegexEntryHandler {
 
@@ -55,11 +54,8 @@ public class NodeTypesEntryHandler extends AbstractRegexEntryHandler {
     @Override
     public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter)
             throws Exception {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(archive.openInputStream(entry))))) {
-            AclManager aclManager = Objects.requireNonNull(converter.getAclManager());
-            for (String line : NodeTypeUtil.generateRepoInitLines(reader)) {
-                aclManager.addNodetypeRegistrationSentence(line);
-            }
+        try (Reader cndStatements = new InputStreamReader(Objects.requireNonNull(archive.openInputStream(entry)))) {
+            Objects.requireNonNull(converter.getAclManager()).addNodetypeRegistration(IOUtils.toString(cndStatements));
         }
     }
 

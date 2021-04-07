@@ -43,7 +43,7 @@ public interface AclManager {
 
     void addRepoinitExtention(@Nullable String repoInitText, @Nullable String runMode, @NotNull FeaturesManager featuresManager);
 
-    void addNodetypeRegistrationSentence(@NotNull String nodetypeRegistrationSentence);
+    void addNodetypeRegistration(@NotNull String cndStatements);
 
     void addPrivilegeDefinitions(@NotNull PrivilegeDefinitions privilegeDefinitions);
 
