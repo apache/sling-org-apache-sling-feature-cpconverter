@@ -35,6 +35,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
 import java.util.List;
 
+import static org.apache.sling.feature.cpconverter.Util.normalize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -83,7 +84,7 @@ public final class RepPolicyEntryHandlerTest {
                                                           "acs-commons-on-deploy-scripts-service").getRepoinitExtension();
 
         // commented ACLs are due SLING-8561
-        String expected =
+        String expected = normalize(
                 "create service user acs-commons-ensure-oak-index-service with path system\n" +
                 "create service user acs-commons-dispatcher-flush-service with path system\n" +
                 "create service user acs-commons-package-replication-status-event-service with path system\n" +
@@ -109,7 +110,7 @@ public final class RepPolicyEntryHandlerTest {
                 "end\n" +
                 "set ACL for acs-commons-ensure-service-user-service\n" +
                 "    allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on home(acs-commons-ensure-service-user-service)\n" +
-                "end\n";
+                "end\n");
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -127,7 +128,7 @@ public final class RepPolicyEntryHandlerTest {
                                                  "acs-commons-on-deploy-scripts-service");
         Extension repoinitExtension = result.getRepoinitExtension();
 
-        String expected =
+        String expected = normalize(
                 "create service user acs-commons-package-replication-status-event-service with path system\n" +
                 "create service user acs-commons-ensure-service-user-service with path system\n" +
                 "create service user acs-commons-automatic-package-replicator-service with path system\n" +
@@ -144,7 +145,7 @@ public final class RepPolicyEntryHandlerTest {
                 "end\n" +
                 "set ACL for acs-commons-ensure-service-user-service\n" +
                 "    allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on home(acs-commons-ensure-service-user-service)\n" +
-                "end\n";
+                "end\n");
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
 
@@ -170,12 +171,12 @@ public final class RepPolicyEntryHandlerTest {
         ParseResult result = parseAndSetRepoinit(new SystemUser("acs-commons-package-replication-status-event-service",
                 new RepoPath("/home/users/system/some/other/node"), new RepoPath("/home/users/system/some/other")));
         Extension repoinitExtension = result.getRepoinitExtension();
-        String expected =
+        String expected = normalize(
                 "create service user acs-commons-package-replication-status-event-service with path system/some/other\n" +
                 "set ACL for acs-commons-package-replication-status-event-service\n" +
                 "    allow jcr:read,rep:write,jcr:readAccessControl,jcr:modifyAccessControl on /home/users/system/asd\n" +
                 "    deny jcr:write on /home/users/system/asd\n" +
-                "end\n";
+                "end\n");
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
 
@@ -213,11 +214,11 @@ public final class RepPolicyEntryHandlerTest {
         ParseResult result = parseAndSetRepoinit("/jcr_root/home/groups/g/_rep_policy.xml", aclManager);
         Extension repoinitExtension = result.getRepoinitExtension();
 
-        String expected =
+        String expected = normalize(
                 "create service user service1 with path system/services\n" +
                 "set ACL for service1\n" +
                 "    allow jcr:read,rep:userManagement on /home/groups/g\n" +
-                "end\n";
+                "end\n");
         assertEquals(expected, repoinitExtension.getText());
         assertTrue(result.getExcludedAcls().isEmpty());
     }
@@ -262,11 +263,11 @@ public final class RepPolicyEntryHandlerTest {
 
         String path = "/jcr_root/asd/jr2restrictions/_rep_policy.xml";
         Extension repoinitExtension = parseAndSetRepoinit(path, aclManager).getRepoinitExtension();
-        String expected =
+        String expected = normalize(
                 "create service user service1 with path system/services\n" +
                 "set ACL for service1\n" +
                 "    allow jcr:read on /asd/jr2restrictions restriction(rep:glob,*/subtree/*) restriction(sling:customRestriction,sling:value1,sling:value2)\n" +
-                "end\n";
+                "end\n");
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);

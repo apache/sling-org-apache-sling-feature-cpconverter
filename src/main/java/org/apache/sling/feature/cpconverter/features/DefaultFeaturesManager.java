@@ -22,7 +22,6 @@ import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelCo
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.security.acl.Acl;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -447,7 +446,7 @@ public class DefaultFeaturesManager implements FeaturesManager {
             getRunMode(runMode).getExtensions().add(repoInitExtension);
             repoInitExtension.setText(text);
         } else {
-            repoInitExtension.setText(repoInitExtension.getText() + "\n ".concat(text));
+            repoInitExtension.setText(repoInitExtension.getText().concat(System.lineSeparator()).concat(text));
         }
     }
 

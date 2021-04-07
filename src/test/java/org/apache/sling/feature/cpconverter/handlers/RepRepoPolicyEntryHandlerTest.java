@@ -33,6 +33,7 @@ import java.io.OutputStream;
 import java.io.StringReader;
 import java.util.List;
 
+import static org.apache.sling.feature.cpconverter.Util.normalize;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -69,10 +70,10 @@ public class RepRepoPolicyEntryHandlerTest {
         OutputStream out = new ByteArrayOutputStream();
         Extension repoinitExtension = new ParseResult(TestUtils.createRepoInitExtension(handler, aclManager, path, getClass().getResourceAsStream(path.substring(1)), out), out.toString()).getRepoinitExtension();
 
-        String expectedEnd =
+        String expectedEnd = normalize(
                 "set ACL for repolevel-service\n" +
                 "    allow jcr:namespaceManagement on :repository\n" +
-                "end\n";
+                "end\n");
         String actual = repoinitExtension.getText();
         assertTrue(actual.endsWith(expectedEnd));
         // no path must be create for repository level entries
