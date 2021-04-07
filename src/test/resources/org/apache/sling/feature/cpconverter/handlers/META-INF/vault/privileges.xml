@@ -17,5 +17,5 @@
 -->
 <privileges xmlns:sling="http://sling.apache.org/jcr/sling/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
    <privilege name="sling:replicate"/>
-   <privilege name="sling:test" abstract="true"><contains name="sling:replicate"/><contains name="jcr:read"/></privilege>
+   <privilege name="sling:test" abstract="true"><contains name="sling.replicate"/><contains name="jcr.read"/></privilege>
 </privileges>

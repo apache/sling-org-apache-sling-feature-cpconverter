@@ -36,6 +36,7 @@ import org.junit.runners.Parameterized;
 import java.io.StringReader;
 import java.util.Collection;
 
+import static org.apache.sling.feature.cpconverter.Util.normalize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -81,11 +82,11 @@ public class RepoInitTest {
 
         Extension expectedExtension;
         if (enforcePrincipalBasedAcSetup) {
-            expectedExtension = extractExtentions(result, false, false);
+            expectedExtension = extractExtensions(result, false, false);
         } else {
-            expectedExtension = extractExtentions(path, false, false);
+            expectedExtension = extractExtensions(path, false, false);
         }
-        Extension extension = extractExtentions(path, enforcePrincipalBasedAcSetup, false);
+        Extension extension = extractExtensions(path, enforcePrincipalBasedAcSetup, false);
         assertNotNull(expectedExtension);
         assertNotNull(extension);
         String txt = extension.getText();
@@ -99,8 +100,8 @@ public class RepoInitTest {
     public void parseConversionOmittedForServiceUserRepoInit() throws Exception {
         String path = PATH_PREFIX + "-conversion-test.config";
 
-        Extension expectedExtension = extractExtentions(path, false, true);
-        Extension extension = extractExtentions(path, enforcePrincipalBasedAcSetup, true);
+        Extension expectedExtension = extractExtensions(path, false, true);
+        Extension extension = extractExtensions(path, enforcePrincipalBasedAcSetup, true);
         assertNotNull(expectedExtension);
         assertNotNull(extension);
         String txt = extension.getText();
@@ -114,8 +115,8 @@ public class RepoInitTest {
     public void parseNoConversionRepoInit() throws Exception {
         String expectedPath = (enforcePrincipalBasedAcSetup) ? PATH_PREFIX + "-no-conversion-result.config" : PATH_PREFIX + "-no-conversion-test.config";
 
-        Extension expectedExtension = extractExtentions(expectedPath, false, false);
-        Extension extension = extractExtentions(PATH_PREFIX + "-no-conversion-test.config", enforcePrincipalBasedAcSetup, false);
+        Extension expectedExtension = extractExtensions(expectedPath, false, false);
+        Extension extension = extractExtensions(PATH_PREFIX + "-no-conversion-test.config", enforcePrincipalBasedAcSetup, false);
         assertNotNull(expectedExtension);
         assertNotNull(extension);
         String txt = extension.getText();
@@ -131,7 +132,7 @@ public class RepoInitTest {
         // See SLING-10231, SLING-10238 and FIXMEs in DefaultVisitor
         String path = PATH_PREFIX + "-no-conv-with-diff.config";
 
-        String resultTxt = "set properties on /test\n"+
+        String resultTxt = normalize("set properties on /test\n"+
         "set testprop{String} to \"one=two\"\n"+
         "set testprop{String} to \"\\\"one=two\\\"\"\n"+
         "set sling:ResourceType{String} to \"/x/y/z\"\n"+
@@ -143,18 +144,18 @@ public class RepoInitTest {
         "set aLongMultiValue{Long} to 1,2,3\n"+
         "set curlyBracketsAndDoubleQuotes{String} to \"{\\\"one, two\\\":\\\"three, four\\\"}\"\n"+
         "set curlyBracketsAndSingleQuotes{String} to \"{'five, six':'seven,eight'}\"\n"+
-        "end";
-        Extension extension = extractExtentions(path, enforcePrincipalBasedAcSetup, false);
+        "end");
+        Extension extension = extractExtensions(path, enforcePrincipalBasedAcSetup, false);
         assertNotNull(extension);
-        String expectedTxt = (enforcePrincipalBasedAcSetup) ? resultTxt : extractExtentions(path, false, false).getText();
+        String expectedTxt = (enforcePrincipalBasedAcSetup) ? resultTxt : extractExtensions(path, false, false).getText();
         String txt = extension.getText();
-        assertEquals(name, expectedTxt, txt.trim());
+        assertEquals(name, expectedTxt, txt);
 
         // verify that the generated repo-init is valid
         assertFalse(name, new RepoInitParserService().parse(new StringReader(txt)).isEmpty());
     }
 
-    private Extension extractExtentions(@NotNull String path, boolean enforcePrincipalBasedAcSetup, boolean addMappingById) throws Exception {
+    private Extension extractExtensions(@NotNull String path, boolean enforcePrincipalBasedAcSetup, boolean addMappingById) throws Exception {
         Archive archive = mock(Archive.class);
         Archive.Entry entry = mock(Archive.Entry.class);
 

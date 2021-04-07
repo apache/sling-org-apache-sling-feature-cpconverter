@@ -145,7 +145,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     }
 
     @Override
-    public void addRepoinitExtension(@NotNull List<VaultPackageAssembler> packageAssemblers, @NotNull FeaturesManager featureManager) {
+    public void addRepoinitExtension(@NotNull List<VaultPackageAssembler> packageAssemblers, @NotNull FeaturesManager featureManager) throws RepoInitParsingException {
         try (Formatter formatter = new Formatter()) {
 
             if (privilegeDefinitions != null) {

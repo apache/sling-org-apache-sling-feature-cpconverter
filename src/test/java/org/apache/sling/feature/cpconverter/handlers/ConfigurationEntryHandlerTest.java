@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import static org.apache.sling.feature.cpconverter.Util.normalizeUnchecked;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -60,7 +61,7 @@ public class ConfigurationEntryHandlerTest {
     private static final String REPOINIT_PID = "org.apache.sling.jcr.repoinit.RepositoryInitializer";
     private static final String REPOINIT_TESTCONFIG_PATH = "/jcr_root/apps/asd/config.author/" + REPOINIT_PID + "-test.config";
     private static final String TYPED_TESTCONFIG_PATH = "/jcr_root/apps/asd/config/" + EXPECTED_PID + ".typed.xml";
-    private static final String EXPECTED_REPOINIT = "create service user test-user\n" + 
+    private static final String EXPECTED_REPOINIT = normalizeUnchecked("create service user test-user\n" +
         "    set ACL for test-user\n" + 
         "        allow    jcr:read    on /conf\n" + 
         "    end\n" +
@@ -71,7 +72,7 @@ public class ConfigurationEntryHandlerTest {
         " create path /test\n" +
         "    set properties on /test\n" +
         "        set testprop to \"one=two\"\n" +
-        "    end"
+        "    end")
         ;
 
     private static final String EXPECTED_TYPED_CONFIG = "{\n" + 

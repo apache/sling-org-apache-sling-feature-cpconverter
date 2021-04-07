@@ -22,6 +22,7 @@ import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelCo
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringReader;
 import java.security.acl.Acl;
 import java.util.*;
 import java.util.Map.Entry;
@@ -43,6 +44,10 @@ import org.apache.sling.feature.extension.apiregions.api.ApiExport;
 import org.apache.sling.feature.extension.apiregions.api.ApiRegion;
 import org.apache.sling.feature.extension.apiregions.api.ApiRegions;
 import org.apache.sling.feature.io.json.FeatureJSONWriter;
+import org.apache.sling.repoinit.parser.RepoInitParser;
+import org.apache.sling.repoinit.parser.RepoInitParsingException;
+import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
+import org.apache.sling.repoinit.parser.operations.Operation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Constants;
@@ -437,17 +442,25 @@ public class DefaultFeaturesManager implements FeaturesManager {
     }
 
     @Override
-    public void addOrAppendRepoInitExtension(@NotNull String text, @Nullable String runMode) {
+    public void addOrAppendRepoInitExtension(@NotNull String text, @Nullable String runMode) throws RepoInitParsingException {
 
         logger.info("Adding/Appending RepoInitExtension for runMode: {}", runMode );
         Extension repoInitExtension = getRunMode(runMode).getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
 
+        try (Formatter formatter = new Formatter()) {
+            RepoInitParser parser = new RepoInitParserService();
+            List<Operation> operations = parser.parse(new StringReader(text));
+            for (Operation op : operations) {
+                formatter.format("%s", op.asRepoInitString());
+            }
+            text = formatter.out().toString();
+        }
         if (repoInitExtension == null) {
             repoInitExtension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, ExtensionState.REQUIRED);
             getRunMode(runMode).getExtensions().add(repoInitExtension);
             repoInitExtension.setText(text);
         } else {
-            repoInitExtension.setText(repoInitExtension.getText() + "\n ".concat(text));
+            repoInitExtension.setText(repoInitExtension.getText().concat(text));
         }
     }
 

@@ -32,6 +32,7 @@ import org.junit.Test;
 import java.io.StringReader;
 import java.util.List;
 
+import static org.apache.sling.feature.cpconverter.Util.normalize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -77,7 +78,7 @@ public class UsersEntryHandlerTest {
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
         assertTrue(repoinitExtension.isRequired());
 
-        String expected = "create service user asd-share-commons-asd-index-definition-reader-service with path system/asd-share-commons\n";
+        String expected = normalize("create service user asd-share-commons-asd-index-definition-reader-service with path system/asd-share-commons\n");
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
 

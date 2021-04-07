@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter;
 
+import static org.apache.sling.feature.cpconverter.Util.normalize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -759,7 +760,7 @@ public class ContentPackage2FeatureModelConverterTest {
                 Extension repoinitExtension = feature.getExtensions().getByName("repoinit");
                 assertNotNull(repoinitExtension);
 
-                String expected = "register nodetypes\n" +
+                String expected = normalize("register nodetypes\n" +
                         "<<===\n" +
                         "<< <'sling'='http://sling.apache.org/jcr/sling/1.0'>\n" +
                         "<< <'nt'='http://www.jcp.org/jcr/nt/1.0'>\n" + 
@@ -773,7 +774,7 @@ public class ContentPackage2FeatureModelConverterTest {
                         "<< [rep:RepoAccessControllable]\n" +
                         "<<   mixin\n"  +
                         "<<   + rep:repoPolicy (rep:Policy) protected ignore\n" +
-                        "===>>\n";
+                        "===>>\n");
                 String actual = repoinitExtension.getText();
                 assertEquals(expected, actual);
             }

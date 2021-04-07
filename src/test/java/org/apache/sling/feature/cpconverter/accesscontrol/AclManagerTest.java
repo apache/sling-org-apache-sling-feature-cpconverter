@@ -20,6 +20,7 @@ import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.Feature;
+import org.apache.sling.feature.cpconverter.Util;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
@@ -96,13 +97,13 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         // acs-commons-on-deploy-scripts-service will be missed
-        String expected =
+        String expected = Util.normalize(
                 "create service user acs-commons-package-replication-status-event-service with path system\n" +
                         "create path /sling:tests/not(nt:unstructured mixin rep:AccessControllable,mix:created)/system/user/path\n" +
                         "set ACL for acs-commons-package-replication-status-event-service\n" + 
                         "    allow jcr:read,rep:write,rep:indexDefinitionManagement on /sling:tests/not/system/user/path\n" +
                         "    allow jcr:read,crx:replicate,jcr:removeNode on /home/users/system\n" +
-                        "end\n";
+                        "end\n");
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
 
@@ -138,12 +139,12 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         // aacs-commons-ensure-oak-index-service will be missed
-        String expected =
+        String expected = Util.normalize(
                 "create service user acs-commons-package-replication-status-event-service with path system\n" +
                 "create path /sling:tests/not(nt:unstructured mixin rep:AccessControllable,mix:created)/system/user/path\n" +
                 "set ACL for acs-commons-package-replication-status-event-service\n" +
                 "    allow jcr:read,rep:write,rep:indexDefinitionManagement on /sling:tests/not/system/user/path\n" +
-                "end\n";
+                "end\n");
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
 
@@ -153,7 +154,7 @@ public class AclManagerTest {
     }
 
     @Test
-    public void testAddACLforUnknownUser() {
+    public void testAddACLforUnknownUser() throws RepoInitParsingException {
         // we expect this acl to not show up because the user is unknown
         aclManager.addAcl("acs-commons-on-deploy-scripts-service", newAcl(true, "jcr:read,crx:replicate,jcr:removeNode", "/home/users/system"));
 
@@ -188,12 +189,12 @@ public class AclManagerTest {
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
 
-        String expected =
+        String expected = Util.normalize(
                 "create service user sys-usr with path system\n" +
                 "set ACL for sys-usr\n" +
                 "    allow jcr:read on /content/cq:tags\n" +
                 "    allow jcr:write on /content/cq:tags\n" +
-                "end\n";
+                "end\n");
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -204,7 +205,7 @@ public class AclManagerTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testGroupHandlingWithGroupUsed() {
+    public void testGroupHandlingWithGroupUsed() throws RepoInitParsingException {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addGroup(new Group("test", new RepoPath("/home/groups/test"),  new RepoPath("/home/groups/test")));
@@ -222,7 +223,7 @@ public class AclManagerTest {
     }
 
     @Test
-    public void testGroupHandlingWithGroupNotUsed() {
+    public void testGroupHandlingWithGroupNotUsed() throws RepoInitParsingException {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addGroup(new Group("test", new RepoPath("/home/groups/test"),  new RepoPath("/home/groups/test")));
@@ -239,11 +240,11 @@ public class AclManagerTest {
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
 
-        String expected =
+        String expected = Util.normalize(
                 "create service user sys-usr with path system\n" +
                         "set ACL for sys-usr\n" +
                         "    allow jcr:read on /content/test\n" +
-                        "end\n";
+                        "end\n");
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
@@ -251,7 +252,7 @@ public class AclManagerTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testGroupHandlingWithGroupMatchingSubPath() {
+    public void testGroupHandlingWithGroupMatchingSubPath() throws RepoInitParsingException {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addGroup(new Group("test", new RepoPath("/home/groups/test"),  new RepoPath("/home/groups/test")));
@@ -266,7 +267,7 @@ public class AclManagerTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testUserHandlingWithMatchingUser() {
+    public void testUserHandlingWithMatchingUser() throws RepoInitParsingException {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addUser(new User("test", new RepoPath("/home/users/test"),  new RepoPath("/home/users/test")));
@@ -281,7 +282,7 @@ public class AclManagerTest {
     }
 
     @Test
-    public void testUserHandlingWithNonMatchingUser() {
+    public void testUserHandlingWithNonMatchingUser() throws RepoInitParsingException {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addUser(new User("test", new RepoPath("/home/users/test"),  new RepoPath("/home/users/test")));
@@ -298,18 +299,18 @@ public class AclManagerTest {
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
 
-        String expected =
+        String expected = Util.normalize(
                 "create service user sys-usr with path system\n" +
                         "set ACL for sys-usr\n" +
                         "    allow jcr:read on /content/test\n" +
-                        "end\n";
+                        "end\n");
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
     }
 
     @Test
-    public void testPathHandlingWithUser() {
+    public void testPathHandlingWithUser() throws RepoInitParsingException {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addUser(new User("test", new RepoPath("/home/users/test"),  new RepoPath("/home/users/test")));
@@ -326,11 +327,11 @@ public class AclManagerTest {
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
 
-        String expected =
+        String expected = Util.normalize(
                 "create service user sys-usr with path system\n" +
                         "set ACL for sys-usr\n" +
                         "    allow jcr:read on /home/users/test2\n" +
-                        "end\n";
+                        "end\n");
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);

@@ -20,6 +20,7 @@ import java.util.Dictionary;
 
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Feature;
+import org.apache.sling.repoinit.parser.RepoInitParsingException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -44,6 +45,6 @@ public interface FeaturesManager {
 
     void serialize() throws Exception;
 
-    void addOrAppendRepoInitExtension(@NotNull String text, @Nullable String runMode);
+    void addOrAppendRepoInitExtension(@NotNull String text, @Nullable String runMode) throws RepoInitParsingException;
 
 }
