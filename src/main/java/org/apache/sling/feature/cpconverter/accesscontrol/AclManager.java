@@ -40,7 +40,7 @@ public interface AclManager {
 
     boolean addAcl(@NotNull String systemUser, @NotNull AccessControlEntry acl);
 
-    void addRepoinitExtension(@NotNull List<VaultPackageAssembler> packageAssemblers, @NotNull FeaturesManager featureManager) throws RepoInitParsingException;
+    void addRepoinitExtension(@NotNull List<VaultPackageAssembler> packageAssemblers, @NotNull FeaturesManager featureManager);
 
     void addRepoinitExtention(@Nullable String repoInitText, @Nullable String runMode, @NotNull FeaturesManager featuresManager);
 

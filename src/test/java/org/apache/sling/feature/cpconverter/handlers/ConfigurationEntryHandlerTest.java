@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import static org.apache.sling.feature.cpconverter.Util.normalize;
 import static org.apache.sling.feature.cpconverter.Util.normalizeUnchecked;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -170,7 +171,7 @@ public class ConfigurationEntryHandlerTest {
         assertEquals(expectedConfigurationsSize, configurations.size());
 
         if (this.resourceConfiguration.equals(REPOINIT_TESTCONFIG_PATH)) {
-            assertEquals(EXPECTED_REPOINIT, featuresManager.getRunMode(expectedRunMode).getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT).getText());
+            assertEquals(EXPECTED_REPOINIT, normalize(featuresManager.getRunMode(expectedRunMode).getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT).getText()));
         }
 
         if (expectedConfigurationsSize != 0) {

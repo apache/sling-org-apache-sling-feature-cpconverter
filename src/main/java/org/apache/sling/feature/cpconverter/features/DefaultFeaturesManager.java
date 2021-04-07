@@ -442,25 +442,17 @@ public class DefaultFeaturesManager implements FeaturesManager {
     }
 
     @Override
-    public void addOrAppendRepoInitExtension(@NotNull String text, @Nullable String runMode) throws RepoInitParsingException {
+    public void addOrAppendRepoInitExtension(@NotNull String text, @Nullable String runMode) {
 
         logger.info("Adding/Appending RepoInitExtension for runMode: {}", runMode );
         Extension repoInitExtension = getRunMode(runMode).getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
 
-        try (Formatter formatter = new Formatter()) {
-            RepoInitParser parser = new RepoInitParserService();
-            List<Operation> operations = parser.parse(new StringReader(text));
-            for (Operation op : operations) {
-                formatter.format("%s", op.asRepoInitString());
-            }
-            text = formatter.out().toString();
-        }
         if (repoInitExtension == null) {
             repoInitExtension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, ExtensionState.REQUIRED);
             getRunMode(runMode).getExtensions().add(repoInitExtension);
             repoInitExtension.setText(text);
         } else {
-            repoInitExtension.setText(repoInitExtension.getText().concat(text));
+            repoInitExtension.setText(repoInitExtension.getText().concat(System.lineSeparator()).concat(text));
         }
     }
 

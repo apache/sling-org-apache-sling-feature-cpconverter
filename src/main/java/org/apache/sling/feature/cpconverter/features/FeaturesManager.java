@@ -45,6 +45,6 @@ public interface FeaturesManager {
 
     void serialize() throws Exception;
 
-    void addOrAppendRepoInitExtension(@NotNull String text, @Nullable String runMode) throws RepoInitParsingException;
+    void addOrAppendRepoInitExtension(@NotNull String text, @Nullable String runMode);
 
 }

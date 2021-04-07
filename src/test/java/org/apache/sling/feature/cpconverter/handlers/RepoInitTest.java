@@ -89,8 +89,8 @@ public class RepoInitTest {
         Extension extension = extractExtensions(path, enforcePrincipalBasedAcSetup, false);
         assertNotNull(expectedExtension);
         assertNotNull(extension);
-        String txt = extension.getText();
-        assertEquals(name, expectedExtension.getText().trim(), txt.trim());
+        String txt = normalize(extension.getText());
+        assertEquals(name, normalize(expectedExtension.getText()), txt);
 
         // verify that the generated repo-init is valid
         assertFalse(name, new RepoInitParserService().parse(new StringReader(txt)).isEmpty());
@@ -104,8 +104,8 @@ public class RepoInitTest {
         Extension extension = extractExtensions(path, enforcePrincipalBasedAcSetup, true);
         assertNotNull(expectedExtension);
         assertNotNull(extension);
-        String txt = extension.getText();
-        assertEquals(name, expectedExtension.getText().trim(), txt.trim());
+        String txt = normalize(extension.getText());
+        assertEquals(name, normalize(expectedExtension.getText()), txt);
 
         // verify that the generated repo-init is valid
         assertFalse(name, new RepoInitParserService().parse(new StringReader(txt)).isEmpty());
@@ -119,8 +119,8 @@ public class RepoInitTest {
         Extension extension = extractExtensions(PATH_PREFIX + "-no-conversion-test.config", enforcePrincipalBasedAcSetup, false);
         assertNotNull(expectedExtension);
         assertNotNull(extension);
-        String txt = extension.getText();
-        assertEquals(name, expectedExtension.getText().trim(), txt.trim());
+        String txt = normalize(extension.getText());
+        assertEquals(name, normalize(expectedExtension.getText()), txt);
 
         // verify that the generated repo-init is valid
         assertFalse(name, new RepoInitParserService().parse(new StringReader(txt)).isEmpty());
@@ -147,8 +147,8 @@ public class RepoInitTest {
         "end");
         Extension extension = extractExtensions(path, enforcePrincipalBasedAcSetup, false);
         assertNotNull(extension);
-        String expectedTxt = (enforcePrincipalBasedAcSetup) ? resultTxt : extractExtensions(path, false, false).getText();
-        String txt = extension.getText();
+        String expectedTxt = (enforcePrincipalBasedAcSetup) ? resultTxt : normalize(extractExtensions(path, false, false).getText());
+        String txt = normalize(extension.getText());
         assertEquals(name, expectedTxt, txt);
 
         // verify that the generated repo-init is valid
