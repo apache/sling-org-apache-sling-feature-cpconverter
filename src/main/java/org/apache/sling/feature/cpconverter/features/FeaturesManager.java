@@ -20,7 +20,6 @@ import java.util.Dictionary;
 
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Feature;
-import org.apache.sling.repoinit.parser.RepoInitParsingException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

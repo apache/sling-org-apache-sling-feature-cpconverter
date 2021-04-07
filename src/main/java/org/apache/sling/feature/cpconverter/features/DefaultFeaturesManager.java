@@ -22,8 +22,6 @@ import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelCo
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.StringReader;
-import java.security.acl.Acl;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -44,10 +42,6 @@ import org.apache.sling.feature.extension.apiregions.api.ApiExport;
 import org.apache.sling.feature.extension.apiregions.api.ApiRegion;
 import org.apache.sling.feature.extension.apiregions.api.ApiRegions;
 import org.apache.sling.feature.io.json.FeatureJSONWriter;
-import org.apache.sling.repoinit.parser.RepoInitParser;
-import org.apache.sling.repoinit.parser.RepoInitParsingException;
-import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
-import org.apache.sling.repoinit.parser.operations.Operation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Constants;

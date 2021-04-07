@@ -21,7 +21,6 @@ import java.util.List;
 import org.apache.jackrabbit.vault.fs.spi.PrivilegeDefinitions;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
-import org.apache.sling.repoinit.parser.RepoInitParsingException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
