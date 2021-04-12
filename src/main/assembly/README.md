@@ -95,10 +95,10 @@ The subdirectory `${project.build.finalName}` will be created from the archive.
 
 ## Execution
 
-  Open the shell and type `cp2sf -h` to see the available commands:
+  Open the shell and type `cp2fm -h` to see the available commands:
 
 ```
-$ ./cp2sf -h
+$ ./cp2fm -h
 Usage: cp2fm [-hmqsvX] [-b=<bundlesStartOrder>] -c=<contentPackage>
              -o=<outputDirectory> [-f=<filteringPatterns>]...
 Apache Sling Content Package to Sling Feature converter
@@ -127,7 +127,7 @@ Copyright(c) 2019 The Apache Software Foundation.
 a sample execution could look like:
 
 ```
-$ ./bin/cp2sf -v -b 20 -c /content-package-2-feature-model/src/test/resources/org/apache/sling/cp2fm/test-content-package.zip -o /tmp
+$ ./bin/cp2fm -v -b 20 -c /content-package-2-feature-model/src/test/resources/org/apache/sling/cp2fm/test-content-package.zip -o /tmp
 ```
 
 ### Argument Files for Long Command Lines
@@ -145,5 +145,5 @@ $ ./bin/cp2sf -v -b 20 -c /content-package-2-feature-model/src/test/resources/or
 then execute the command
 
 ```
-$ ./bin/cp2sf @arfile
+$ ./bin/cp2fm @arfile
 ````
