@@ -308,7 +308,7 @@
           <programs>
             <program>
               <mainClass>org.apache.sling.feature.cpconverter.cli.ContentPackage2FeatureModelConverterLauncher</mainClass>
-              <id>cp2sf</id>
+              <id>cp2fm</id>
             </program>
           </programs>
         </configuration>

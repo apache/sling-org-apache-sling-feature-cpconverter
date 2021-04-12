@@ -446,7 +446,7 @@ Archive:  org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT.zip
       178  02-27-2019 15:56   org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT/NOTICE
    745712  02-28-2019 10:02   org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT/lib/org.apache.jackrabbit.vault-3.2.6.jar
   2374421  02-27-2019 15:28   org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT/lib/biz.aQute.bndlib-3.2.0.jar
-     3263  03-13-2019 15:58   org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT/bin/cp2sf.bat
+     3263  03-13-2019 15:58   org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT/bin/cp2fm.bat
     69246  02-11-2019 12:49   org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT/lib/jcr-2.0.jar
    113508  02-11-2019 12:36   org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT/lib/org.apache.felix.converter-1.0.0.jar
     12548  02-11-2019 12:36   org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT/lib/org.osgi.util.function-1.0.0.jar
@@ -455,7 +455,7 @@ Archive:  org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT.zip
     75443  03-05-2019 14:58   org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT/lib/plexus-io-3.1.1.jar
     57954  02-11-2019 12:39   org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT/lib/snappy-0.4.jar
    148098  02-11-2019 12:39   org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT/lib/xbean-reflect-3.7.jar
-     3808  03-13-2019 15:58   org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT/bin/cp2sf
+     3808  03-13-2019 15:58   org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT/bin/cp2fm
    214788  02-11-2019 15:44   org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT/lib/commons-io-2.6.jar
     26081  02-11-2019 12:36   org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT/lib/geronimo-json_1.0_spec-1.0-alpha-1.jar
     90358  02-11-2019 12:35   org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT/lib/johnzon-core-1.0.0.jar
@@ -483,7 +483,7 @@ Archive:  org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT.zip
 once the package is decompressed, open the shell and type:
 
 ```bash
-$ ./bin/cp2sf -h
+$ ./bin/cp2fm -h
 Usage: cp2fm [-hmqsvX] -a=<artifactsOutputDirectory> [-b=<bundlesStartOrder>]
              [-i=<artifactIdOverride>] -o=<featureModelsOutputDirectory>
              [-p=<fmPrefix>] [-D=<String=String>]...
@@ -532,7 +532,7 @@ Copyright(c) 2019 The Apache Software Foundation.
 to see all the available options; a sample execution could look like:
 
 ``` bash
-> ./bin/cp2sf -v -b 20 -c /content-package-2-feature-model/src/test/resources/org/apache/sling/cp2fm/test-content-package.zip -a /cache -o /tmp
+> ./bin/cp2fm -v -b 20 -c /content-package-2-feature-model/src/test/resources/org/apache/sling/cp2fm/test-content-package.zip -a /cache -o /tmp
 ```
 
 Argument Files for Long Command Lines:
@@ -550,7 +550,7 @@ Argument Files for Long Command Lines:
 then execute the command
 
 ```bash
-> ./bin/cp2sf @argfile
+> ./bin/cp2fm @argfile
 ````
 
 ## Failures and Restrictions
