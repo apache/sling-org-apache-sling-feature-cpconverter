@@ -366,14 +366,14 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                                     + " is of MIXED type");
             }
 
-            // don't deploy & add content-packages of type content to featuremodel if dropContent is set
+            // deploy the new content-package to the local mvn bundles dir
+            artifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), mvnPackageId);
+            // don't add content-packages of type content to featuremodel if dropContent is set
             if (PackageType.CONTENT != packageType || !dropContent) {
-                // deploy the new content-package to the local mvn bundles dir and attach it to the feature
-                artifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), mvnPackageId);
                 featuresManager.addArtifact(runMode, mvnPackageId);
             } else {
                 mutableContentsIds.put(originalPackageId, getDependencies(vaultPackage));
-                logger.info("Dropping package of PackageType.CONTENT {} (content-package id: {})",
+                logger.info("Don't reference package of PackageType.CONTENT {} (content-package id: {}) in feature model",
                             mvnPackageId.getArtifactId(), originalPackageId);
             }
         }

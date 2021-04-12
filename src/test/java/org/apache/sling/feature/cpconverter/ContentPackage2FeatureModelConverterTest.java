@@ -272,9 +272,18 @@ public class ContentPackage2FeatureModelConverterTest {
                                 "META-INF/vault/config.xml",
                                 "META-INF/vault/filter.xml",
                                 "META-INF/vault/filter-plugin-generated.xml");
-            // in contrast to previous test when dropping content packages the cases below would be filtered out and files wouldn'T be in cache
-            assertFalse(new File(outputDirectory, "asd/sample/Asd.Retail.ui.content/0.0.1/Asd.Retail.ui.content-0.0.1-cp2fm-converted.zip").exists());
-            assertFalse(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip").exists());
+            // converted packages still there, but no longer referenced
+            verifyContentPackage(new File(outputDirectory, "asd/sample/asd.retail.apps/0.0.1/asd.retail.apps-0.0.1-cp2fm-converted.zip"),
+                    "META-INF/vault/settings.xml",
+                    "META-INF/vault/properties.xml",
+                    "META-INF/vault/config.xml",
+                    "META-INF/vault/filter.xml",
+                    "META-INF/vault/filter-plugin-generated.xml");
+            verifyContentPackage(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip"),
+                    "META-INF/vault/settings.xml",
+                    "META-INF/vault/properties.xml",
+                    "META-INF/vault/config.xml",
+                    "META-INF/vault/filter.xml");
 
         } finally {
             deleteDirTree(outputDirectory);

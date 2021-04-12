@@ -118,6 +118,9 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
 
     @Option(names = { "--remove-install-hooks" }, description = "Removes both internal and external hooks from processed packages", required = false)
     private boolean removeInstallHooks = false;
+    
+    @Option(names = { "--include-content-type-packages" }, description = "Includes content packages of package type 'content' in the resulting feature model", required = false)
+    private boolean includeContentTypePackages = false;
 
     @Option(names = { "--seed-feature" }, description = "A url pointing to a feature that can be assumed to be around when the conversion result will be used", required = false)
     private String seedFeature = null;
@@ -200,7 +203,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                                                                 .setAclManager(aclManager)
                                                                 .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
                                                                 .setFailOnMixedPackages(failOnMixedPackages)
-                                                                .setDropContent(true);
+                                                                .setDropContent(!includeContentTypePackages);
 
                 try {
                     if (filteringPatterns != null && filteringPatterns.length > 0) {

@@ -6,11 +6,11 @@ This tool aims to provide to Apache Sling users an easy-to-use conversion tool w
 
 ## Introduction
 
-`content-package`s are zipped archives containing OSGi bundles, OSGi configurations and resources (and nested `content-package`s as well), aside metadata, that can be used to install content into a _JCR_ repository using the [Apache Jackrabbit FileVault](http://jackrabbit.apache.org/filevault/) packaging runtime.
+`content-package`s are zipped archives containing OSGi bundles, OSGi configurations, JCR nodes/properties and nested `content-package`s as well, aside [metadata](http://jackrabbit.apache.org/filevault/metadata.html), that can be used to install content into a _JCR_ repository using the [Apache Jackrabbit FileVault](http://jackrabbit.apache.org/filevault/) packaging runtime.
 
 OTOH, [Apache Sling Feature](https://github.com/apache/sling-org-apache-sling-feature) allows users to describe an entire OSGi-based application based on reusable components and includes everything related to this application, including bundles, configuration, framework properties, capabilities, requirements and custom artifacts.
 
-The _Apache Sling Content Package to Feature Model converter_ (referred as _cp2fm_) is a tool able to extract OSGI bundles, OSGi configurations, resources and iteratively scan nested `content-package`s from an input `content-package` and create one (or more) _Apache Sling Feature_ model files and deploy the extracted OSGi bundles in a directory which structure is compliant the _Apache Maven_ repository conventions.
+The _Apache Sling Content Package to Feature Model converter_ (referred as _cp2fm_) is a tool able to extract OSGI bundles, OSGi configurations and iteratively scan nested `content-package`s from an input `content-package` and create one (or more) _Apache Sling Feature_ model files and deploy the extracted OSGi bundles in a directory which structure is compliant the _Apache Maven_ repository conventions. The remaining JCR nodes/properties are kept in content packages which are either referenced in the [Sling Feature Model Content Deployment Extension](https://github.com/apache/sling-org-apache-sling-feature-extension-content) section or completely separate from the generated feature model.
 
 ## Understanding the Input
 
@@ -147,9 +147,14 @@ Archive:  test-content.zip
     39481                     22 files
 ```
 
+### Package Types
+
+`content-package`s have one of the 4 types defined at [Package Types](http://jackrabbit.apache.org/filevault/packagetypes.html).
+By default type `content` is never referenced inside the feature model (to work with Oak Composite Node Stores), while `application` and `mixed` type's are referenced in the generated feature models. `container` packages are dissolved and all sub packages are flattened (i.e. extracted as individual packages).
+
 ## Mapping and the Output
 
-All metadata are mainly collected inside one or more, depending by declared run modes in the installation and configuration paths, _Feature_ model files:
+All metadata are mainly collected inside one or more _Feature_ model files, depending on declared run modes in the installation and configuration paths:
 
 ```json
 $ cat asd.retail.all.json 
@@ -201,7 +206,9 @@ $ cat asd.retail.all-publish.json
 }
 ```
 
-### Binaries
+### OSGi Bundles and Content Packages
+
+All nodes and properties which are not OSGi configurations or bundles are kept in (stripped) content packages. Depending on the location of the nodes they are either referenced inside the Feature Model (evaluated by [Content Handler](https://github.com/apache/sling-org-apache-sling-feature-extension-content/blob/master/src/main/java/org/apache/sling/feature/extension/content/ContentHandler.java)) or left completely separate from the generated Feature models. This depends on the package type of the transformed package.
 
 All detected bundles are collected in an _Apache Maven repository_ compliant directory, all other resources are collected in a new `content-package`, usually classified as `cp2fm-converted-feature`, created while scanning the packages, which contains _content only_.
 
@@ -232,7 +239,7 @@ artifacts/
 12 directories, 8 files
 ```
 
-### Supported configurations
+### OSGi Configurations
 
 All OSGi configuration formats are supported:
 
