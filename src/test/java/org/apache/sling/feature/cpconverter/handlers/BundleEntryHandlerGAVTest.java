@@ -24,7 +24,7 @@ import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import static org.mockito.Mockito.spy;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.when;
 
 public class BundleEntryHandlerGAVTest {
@@ -76,5 +76,13 @@ public class BundleEntryHandlerGAVTest {
         when(converter.getFeaturesManager()).thenReturn(manager);
         handler.handle(path, archive, entry, converter);
         Mockito.verify(manager).addArtifact(null, ArtifactId.fromMvnId("org.osgi.service:jdbc:1.0.0-201505202023"),null);
+    }
+
+    @Test
+    public void testBundleBelowConfigFolderWithEnforcement() throws Exception {
+        handler.setEnforceBundlesBelowInstallFolder(true);
+        Archive.Entry entry = Mockito.mock(Archive.Entry.class);
+        when(entry.getName()).thenReturn("mybundle.jar");
+        assertThrows(IllegalStateException.class, () -> { handler.handle("/jcr_root/apps/myapp/config/mybundle.jar", null, entry, null); });
     }
 }

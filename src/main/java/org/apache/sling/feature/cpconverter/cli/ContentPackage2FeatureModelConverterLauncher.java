@@ -123,6 +123,9 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Option(names = { "--seed-feature" }, description = "A url pointing to a feature that can be assumed to be around when the conversion result will be used", required = false)
     private String seedFeature = null;
 
+    @Option(names = { "--enforce-configs-and-bundles-below-proper-folder" }, description = "Enforces that OSGi configurations are only allowed below a folder called 'config' and OSGi bundles are only allowed below a folder called 'install'", required = false)
+    private boolean enforceConfigurationsAndBundlesBelowProperFolder = false;
+
     @Override
     public void run() {
         if (quiet) {
@@ -194,7 +197,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                 ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation)
                                                                 .setFeaturesManager(featuresManager)
                                                                 .setBundlesDeployer(new DefaultArtifactsDeployer(artifactsOutputDirectory))
-                                                                .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap))
+                                                                .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap, enforceConfigurationsAndBundlesBelowProperFolder))
                                                                 .setAclManager(aclManager)
                                                                 .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
                                                                 .setFailOnMixedPackages(failOnMixedPackages)

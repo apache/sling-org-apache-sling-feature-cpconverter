@@ -230,6 +230,8 @@ public class ConfigurationEntryHandlerTest {
 
             //test typed config
             { TYPED_TESTCONFIG_PATH, 1, 6, 3, new XmlConfigurationEntryHandler(), null, true },
+            // configuration in "install" folder
+            { "/jcr_root/apps/asd/install.publish/" + EXPECTED_PID + ".config", 1, 2, 3, new ConfigurationEntryHandler(), "publish", false },
         });
     }
 

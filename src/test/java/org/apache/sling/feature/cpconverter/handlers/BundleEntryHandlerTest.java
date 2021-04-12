@@ -142,7 +142,8 @@ public final class BundleEntryHandlerTest {
                 { "/jcr_root/apps/asd/install/9/test-framework.jar", bundleEntryHandler, 9 },
                 { "/jcr_root/apps/asd/install.author/test-framework.jar", bundleEntryHandler, 20 },
                 { "/jcr_root/apps/asd/install.author/9/test-framework.jar", bundleEntryHandler, 9 },
-                { "/jcr_root/apps/asd/install.publish/test-framework.jar", bundleEntryHandler, 20 }
+                { "/jcr_root/apps/asd/install.publish/test-framework.jar", bundleEntryHandler, 20 },
+                { "/jcr_root/apps/asd/config.publish/test-framework.jar", bundleEntryHandler, 20 }
         });
     }
 

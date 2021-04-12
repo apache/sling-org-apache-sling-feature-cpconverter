@@ -20,6 +20,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -120,4 +121,10 @@ public class ConfigEntryHandlerTest {
         Mockito.verify(manager).addConfiguration(Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.any());
     }
 
+    @Test
+    public void testConfigPathBelowInstallFolder() {
+        ConfigurationEntryHandler handler = new ConfigurationEntryHandler();
+        handler.setEnforceConfgurationBelowConfigFolder(true);
+        assertThrows(IllegalStateException.class, () -> { handler.handle("/jcr_root/apps/myapp/install/myconfig.config", null, null, null); });
+    }
 }

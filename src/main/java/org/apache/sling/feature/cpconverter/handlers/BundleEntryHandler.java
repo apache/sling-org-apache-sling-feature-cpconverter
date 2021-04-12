@@ -52,8 +52,6 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
 
     private static final String BUNDLE_SYMBOLIC_NAME = "Bundle-SymbolicName";
 
-    private static final String BUNDLE_NAME = "Bundle-Name";
-
     private static final String BUNDLE_VERSION = "Bundle-Version";
 
     private static final String JAR_TYPE = "jar";
@@ -62,8 +60,14 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
 
     private final Pattern pomXmlPropertiesPattern = Pattern.compile("META-INF/maven/[^/]+/[^/]+/pom.xml");
 
+    private boolean enforceBundlesBelowInstallFolder;
+
     public BundleEntryHandler() {
-        super("/jcr_root/(?:apps|libs)/.+/install(?:\\.([^/]+))?/(?:([0-9]+)/)?.+\\.jar");
+        super("/jcr_root/(?:apps|libs)/.+/(?<foldername>install|config)(?:\\.(?<runmode>[^/]+))?/(?:(?<startlevel>[0-9]+)/)?.+\\.jar");
+    }
+
+    void setEnforceBundlesBelowInstallFolder(boolean enforceBundlesBelowInstallFolder) {
+        this.enforceBundlesBelowInstallFolder = enforceBundlesBelowInstallFolder;
     }
 
     @Override
@@ -75,6 +79,34 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         String version;
         String classifier = null;
         Manifest manifest;
+
+        Matcher matcher = getPattern().matcher(path);
+        String runMode = null;
+        Integer startLevel = null;
+        // we are pretty sure it matches, here
+        if (!matcher.matches()) {
+            throw new IllegalStateException("Something went terribly wrong: pattern '"
+                                            + getPattern().pattern()
+                                            + "' should have matched already with path '"
+                                            + path
+                                            + "' but it does not, currently");
+        }
+
+        if (enforceBundlesBelowInstallFolder && !"install".equals(matcher.group("foldername"))) {
+            throw new IllegalStateException("OSGi bundles are only considered if placed below a folder called 'install', but the bundle at '"+ path + "' is placed outside!");
+        }
+
+        if (StringUtils.isNotBlank(matcher.group("runmode"))) {
+            // there is a specified RunMode
+            runMode = matcher.group("runmode");
+            logger.debug("Runmode {} was extracted from path {}", runMode, path);
+        }
+
+        if (StringUtils.isNotBlank(matcher.group("startlevel"))) {
+            // there is a specified Start Level
+            startLevel = Integer.parseInt(matcher.group("startlevel")); // NumberFormatException impossible due to RegEx
+            logger.debug("Start level {} was extracted from path {}", startLevel, path);
+        }
 
         try (JarInputStream jarInput = new JarInputStream(Objects.requireNonNull(archive.openInputStream(entry)))) {
             Properties properties = readGav(entry.getName(), jarInput);
@@ -99,30 +131,6 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
                 Version osgiVersion = Version.parseVersion(getCheckedProperty(manifest, BUNDLE_VERSION));
                 version = osgiVersion.getMajor() + "." + osgiVersion.getMinor() + "." + osgiVersion.getMicro() + (osgiVersion.getQualifier().isEmpty() ? "" : "-" + osgiVersion.getQualifier());
             }
-        }
-
-        Matcher matcher = getPattern().matcher(path);
-        String runMode = null;
-        Integer startLevel = null;
-        // we are pretty sure it matches, here
-        if (!matcher.matches()) {
-            throw new IllegalStateException("Something went terribly wrong: pattern '"
-                                            + getPattern().pattern()
-                                            + "' should have matched already with path '"
-                                            + path
-                                            + "' but it does not, currently");
-        }
-
-        if (StringUtils.isNotBlank(matcher.group(1))) {
-            // there is a specified RunMode
-            runMode = matcher.group(1);
-            logger.debug("Runmode {} was extracted from path {}", runMode, path);
-        }
-
-        if (StringUtils.isNotBlank(matcher.group(2))) {
-            // there is a specified Start Level
-            startLevel = Integer.parseInt(matcher.group(2)); // NumberFormatException impossible due to RegEx
-            logger.debug("Start level {} was extracted from path {}", startLevel, path);
         }
 
         try (InputStream input = archive.openInputStream(entry)) {
