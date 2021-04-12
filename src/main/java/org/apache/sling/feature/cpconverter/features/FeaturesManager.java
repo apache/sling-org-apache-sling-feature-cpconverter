@@ -40,7 +40,7 @@ public interface FeaturesManager {
     void addConfiguration(@Nullable String runMode, 
         @NotNull String pid,
         @NotNull String path,
-        @Nullable Dictionary<String, Object> configurationProperties);
+        @NotNull Dictionary<String, Object> configurationProperties);
 
     void serialize() throws Exception;
 

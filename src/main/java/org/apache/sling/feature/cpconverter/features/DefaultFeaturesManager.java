@@ -286,7 +286,7 @@ public class DefaultFeaturesManager implements FeaturesManager {
     public void addConfiguration(@Nullable String runMode, 
         @NotNull String pid, 
         @NotNull String path,
-        @Nullable Dictionary<String, Object> configurationProperties) {
+        @NotNull Dictionary<String, Object> configurationProperties) {
         String factoryPid = null;
         String id;
         int n = pid.indexOf('~');
