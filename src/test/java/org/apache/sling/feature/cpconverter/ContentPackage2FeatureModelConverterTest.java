@@ -55,8 +55,10 @@ import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Feature;
+import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.ContentTypePackagePolicy;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
-import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
+import org.apache.sling.feature.cpconverter.artifacts.LocalMavenRepositoryArtifactsDeployer;
+import org.apache.sling.feature.cpconverter.artifacts.SimpleFolderArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
@@ -141,7 +143,7 @@ public class ContentPackage2FeatureModelConverterTest {
         try {
 
             converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
-                    .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                    .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .convert(packageFile);
 
@@ -212,7 +214,7 @@ public class ContentPackage2FeatureModelConverterTest {
     }
 
     @Test
-    public void convertContentPackageDropContent() throws Exception {
+    public void convertContentPackageDropContentTypePackagePolicy() throws Exception {
         URL packageUrl = getClass().getResource("test-content-package.zip");
         File packageFile = FileUtils.toFile(packageUrl);
 
@@ -221,9 +223,9 @@ public class ContentPackage2FeatureModelConverterTest {
         try {
 
             converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
-                    .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                    .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
-                    .setDropContent(true)
+                    .setContentTypePackagePolicy(ContentTypePackagePolicy.DROP)
                     .convert(packageFile);
 
             verifyFeatureFile(outputDirectory,
@@ -272,14 +274,87 @@ public class ContentPackage2FeatureModelConverterTest {
                                 "META-INF/vault/config.xml",
                                 "META-INF/vault/filter.xml",
                                 "META-INF/vault/filter-plugin-generated.xml");
-            // converted packages still there, but no longer referenced
+            // in contrast to previous test when dropping content packages the cases below would be filtered out and files wouldn'T be in cache
+            assertFalse(new File(outputDirectory, "asd/sample/Asd.Retail.ui.content/0.0.1/Asd.Retail.ui.content-0.0.1-cp2fm-converted.zip").exists());
+            assertFalse(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip").exists());
+
+        } finally {
+            deleteDirTree(outputDirectory);
+        }
+    }
+
+    @Test
+    public void convertContentPackagePutInDedicatedFolderContentTypePackagePolicy() throws Exception {
+        URL packageUrl = getClass().getResource("test-content-package.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+        File outputDirectoryUnreferencedArtifacts = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + "_unreferenced_" + System.currentTimeMillis());
+
+        try {
+
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
+                    .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
+                    .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                    .setContentTypePackagePolicy(ContentTypePackagePolicy.PUT_IN_DEDICATED_FOLDER)
+                    .setUnreferencedArtifactsDeployer(new SimpleFolderArtifactsDeployer(outputDirectoryUnreferencedArtifacts))
+                    .convert(packageFile);
+
+            verifyFeatureFile(outputDirectory,
+                            "asd.retail.all.json",
+                            "asd.sample:asd.retail.all:slingosgifeature:0.0.1",
+                            Arrays.asList("org.apache.felix:org.apache.felix.framework:6.0.1"),
+                            Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
+                            Arrays.asList("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1",
+                                    "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1"));
+            verifyFeatureFile(outputDirectory,
+                            "asd.retail.all-author.json",
+                            "asd.sample:asd.retail.all:slingosgifeature:author:0.0.1",
+                            Arrays.asList("org.apache.sling:org.apache.sling.api:2.20.0"),
+                            Collections.emptyList(),
+                            Collections.emptyList());
+            verifyFeatureFile(outputDirectory,
+                            "asd.retail.all-publish.json",
+                            "asd.sample:asd.retail.all:slingosgifeature:publish:0.0.1",
+                            Arrays.asList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
+                            Arrays.asList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
+                            Collections.emptyList());
+
+            // verify the runmode.mapper integrity
+            File runmodeMapperFile = new File(outputDirectory, "runmode.mapping");
+            assertTrue(runmodeMapperFile.exists());
+            assertTrue(runmodeMapperFile.isFile());
+            Properties runModes = new Properties();
+            try (FileInputStream input = new FileInputStream(runmodeMapperFile)) {
+                runModes.load(input);
+            }
+            assertFalse(runModes.isEmpty());
+            assertTrue(runModes.containsKey("(default)"));
+            assertEquals("asd.retail.all.json", runModes.getProperty("(default)"));
+            assertEquals("asd.retail.all-author.json", runModes.getProperty("author"));
+            assertEquals("asd.retail.all-publish.json", runModes.getProperty("publish"));
+
+            verifyContentPackage(new File(outputDirectory, "asd/Asd.Retail.config/0.0.1/Asd.Retail.config-0.0.1-cp2fm-converted.zip"),
+                    "META-INF/vault/settings.xml",
+                    "META-INF/vault/properties.xml",
+                    "META-INF/vault/config.xml",
+                    "META-INF/vault/filter.xml",
+                    "jcr_root/apps/.content.xml");
+            verifyContentPackage(new File(outputDirectoryUnreferencedArtifacts, "Asd.Retail.ui.content-0.0.1-cp2fm-converted.zip"),
+                    "META-INF/vault/settings.xml",
+                    "META-INF/vault/properties.xml",
+                    "META-INF/vault/config.xml",
+                    "META-INF/vault/filter.xml",
+                    "META-INF/vault/filter-plugin-generated.xml",
+                    "jcr_root/content/asd/.content.xml",
+                    "jcr_root/content/asd/resources.xml");
             verifyContentPackage(new File(outputDirectory, "asd/sample/asd.retail.apps/0.0.1/asd.retail.apps-0.0.1-cp2fm-converted.zip"),
                     "META-INF/vault/settings.xml",
                     "META-INF/vault/properties.xml",
                     "META-INF/vault/config.xml",
                     "META-INF/vault/filter.xml",
                     "META-INF/vault/filter-plugin-generated.xml");
-            verifyContentPackage(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip"),
+            verifyContentPackage(new File(outputDirectoryUnreferencedArtifacts, "asd.retail.all-0.0.1-cp2fm-converted.zip"),
                     "META-INF/vault/settings.xml",
                     "META-INF/vault/properties.xml",
                     "META-INF/vault/config.xml",
@@ -287,6 +362,7 @@ public class ContentPackage2FeatureModelConverterTest {
 
         } finally {
             deleteDirTree(outputDirectory);
+            deleteDirTree(outputDirectoryUnreferencedArtifacts);
         }
     }
 
@@ -299,7 +375,7 @@ public class ContentPackage2FeatureModelConverterTest {
 
         try {
             converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
-                    .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                    .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .setRemoveInstallHooks(true)
                     .convert(packageFile);
@@ -327,7 +403,7 @@ public class ContentPackage2FeatureModelConverterTest {
 
         try {
             converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
-                    .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                    .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .convert(packageFile);
 
@@ -356,7 +432,7 @@ public class ContentPackage2FeatureModelConverterTest {
             DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 5, outDir, null, null, null, new DefaultAclManager());
             fm.setAPIRegions(Arrays.asList("global", "foo.bar"));
             converter.setFeaturesManager(fm)
-                     .setBundlesDeployer(new DefaultArtifactsDeployer(outDir))
+                     .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outDir))
                      .setEmitter(DefaultPackagesEventsEmitter.open(outDir))
                      .convert(cpFile);
 
@@ -519,7 +595,7 @@ public class ContentPackage2FeatureModelConverterTest {
         try {
 
             converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
-                    .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                    .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .convert(packageFile);
         } finally {
@@ -541,7 +617,7 @@ public class ContentPackage2FeatureModelConverterTest {
         try {
 
             converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
-                    .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                    .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .convert(packageFile);
             
@@ -572,7 +648,7 @@ public class ContentPackage2FeatureModelConverterTest {
             URL packageUrl = getClass().getResource("test-content-package.zip");
             File packageFile = FileUtils.toFile(packageUrl);
     
-            converter.setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+            converter.setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                      .setFeaturesManager(new DefaultFeaturesManager(DefaultFeaturesManager.ConfigurationHandling.STRICT, 5, outputDirectory, null, null, null, new DefaultAclManager()))
                      .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                      .convert(packageFile);
@@ -593,7 +669,7 @@ public class ContentPackage2FeatureModelConverterTest {
             URL packageUrl = getClass().getResource("test-content-package.zip");
             File packageFile = FileUtils.toFile(packageUrl);
     
-            converter.setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+            converter.setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                      .setFeaturesManager(new DefaultFeaturesManager(false, 5, outputDirectory, null, null, null, new DefaultAclManager()))
                      .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                      .convert(packageFile);
@@ -617,7 +693,7 @@ public class ContentPackage2FeatureModelConverterTest {
             URL packageUrl = getClass().getResource("test-content-package.zip");
             File packageFile = FileUtils.toFile(packageUrl);
     
-            converter.setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+            converter.setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                      .setFeaturesManager(new DefaultFeaturesManager(false, 5, outputDirectory, null, null, null, new DefaultAclManager()))
                      .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                      .convert(packageFile);
@@ -642,7 +718,7 @@ public class ContentPackage2FeatureModelConverterTest {
         File outDir = Files.createTempDirectory(getClass().getSimpleName()).toFile();
 
         try {
-            converter.setBundlesDeployer(new DefaultArtifactsDeployer(outDir))
+            converter.setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outDir))
             .setFeaturesManager(new DefaultFeaturesManager(false, 5, outDir, null, null, null, new DefaultAclManager())
                     .setAPIRegions(Arrays.asList("a.b.c")))
             .setEmitter(DefaultPackagesEventsEmitter.open(outDir))
@@ -685,7 +761,7 @@ public class ContentPackage2FeatureModelConverterTest {
 
             String overrideId = "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0:${project.version}";
             converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, overrideId, null, null, new DefaultAclManager()))
-                    .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                    .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .convert(packageFile);
 
@@ -758,7 +834,7 @@ public class ContentPackage2FeatureModelConverterTest {
         try {
 
             converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
-                    .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                    .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .convert(contentPackages[0]);
 
@@ -803,8 +879,8 @@ public class ContentPackage2FeatureModelConverterTest {
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
         try {
             converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
-                    .setDropContent(true)
-                    .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                    .setContentTypePackagePolicy(ContentTypePackagePolicy.DROP)
+                    .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .convert(contentPackages);
 
