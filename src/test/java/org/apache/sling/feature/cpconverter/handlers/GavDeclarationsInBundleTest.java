@@ -17,11 +17,11 @@
 package org.apache.sling.feature.cpconverter.handlers;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
-import java.util.Properties;
-import java.util.jar.JarInputStream;
+import java.io.File;
+import java.util.jar.JarFile;
 
+import org.apache.sling.feature.ArtifactId;
 import org.junit.Test;
 
 public class GavDeclarationsInBundleTest {
@@ -29,6 +29,7 @@ public class GavDeclarationsInBundleTest {
     @Test
     public void guessRightGavsWhenMultiplePomPropertiesDeclarationsAreIncluded() throws Exception {
         verifyBundle("core-1.0.0-SNAPSHOT.jar",
+                     "core-1.0.0-SNAPSHOT",
                      "com.madplanet.sling.cp2sf",
                      "core",
                      "1.0.0-SNAPSHOT",
@@ -39,27 +40,24 @@ public class GavDeclarationsInBundleTest {
     @Test
     public void guessTheClassifierFromBundleName() throws Exception {
         verifyBundle("core-1.0.0-SNAPSHOT-classified.jar",
+                     "core-1.0.0-SNAPSHOT-classified",
                      "com.madplanet.sling.cp2sf",
                      "core",
                      "1.0.0-SNAPSHOT",
-                    "classified");
+                     "classified");
     }
 
-    private void verifyBundle(String bundleName,
+    private void verifyBundle(String resourceName,
+                              String bundleName,
                               String expectedGroupId,
                               String expectedArtifactId,
                               String expectedVersion,
                               String expectedClassifier) throws Exception {
         BundleEntryHandler bundleEntryHandler = new BundleEntryHandler();
 
-        try (JarInputStream jarInput = new JarInputStream(getClass().getResourceAsStream(bundleName))) {
-            Properties actual = bundleEntryHandler.readGav(bundleName, jarInput);
-
-            assertFalse(actual.isEmpty());
-            assertEquals(expectedGroupId, actual.getProperty("groupId"));
-            assertEquals(expectedArtifactId, actual.getProperty("artifactId"));
-            assertEquals(expectedVersion, actual.getProperty("version"));
-            assertEquals(expectedClassifier, actual.getProperty("classifier"));
+        try (JarFile jarFile = new JarFile(new File(getClass().getResource(resourceName).toURI()))) {
+            ArtifactId artifactId = bundleEntryHandler.extractArtifactId(bundleName, jarFile);
+            assertEquals(new ArtifactId(expectedGroupId, expectedArtifactId, expectedVersion, expectedClassifier, "jar"), artifactId);
         }
     }
 

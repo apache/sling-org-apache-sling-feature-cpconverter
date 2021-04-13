@@ -47,31 +47,33 @@ public class VaultPackageUtils {
 
         // borrowed from org.apache.jackrabbit.vault.fs.io.AbstractExporter
         WorkspaceFilter filter = vaultPackage.getMetaInf().getFilter();
-
-        boolean hasApps = false;
-        boolean hasOther = false;
         if (filter != null) {
             for (PathFilterSet p : filter.getFilterSets()) {
                 if ("cleanup".equals(p.getType())) {
                     continue;
                 }
                 String root = p.getRoot();
-                if ("/apps".equals(root)
-                        || root.startsWith("/apps/")
-                        || "/libs".equals(root)
-                        || root.startsWith("/libs/")) {
-                    hasApps = true;
+                PackageType newPackageType = detectPackageType(root);
+                if (packageType != null && packageType != newPackageType) {
+                    return PackageType.MIXED;
                 } else {
-                    hasOther = true;
+                    packageType = newPackageType;
                 }
-            }
-            if (hasApps && !hasOther) {
-                return PackageType.APPLICATION;
-            } else if (hasOther && !hasApps) {
-                return PackageType.CONTENT;
+                // bail out once we ended up with mixed
             }
         }
-        return PackageType.MIXED;
+        return packageType;
+    }
+
+    public static @NotNull PackageType detectPackageType(String path) {
+        if ("/apps".equals(path)
+                || path.startsWith("/apps/")
+                || "/libs".equals(path)
+                || path.startsWith("/libs/")) {
+            return PackageType.APPLICATION;
+        } else {
+            return PackageType.CONTENT;
+        }
     }
 
     public static @NotNull Set<Dependency> getDependencies(@NotNull VaultPackage vaultPackage) {

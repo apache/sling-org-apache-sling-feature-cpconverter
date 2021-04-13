@@ -82,11 +82,12 @@ public final class BundleEntryHandlerTest {
 
     private void deleteDirTree(File dir) throws IOException {
         Path tempDir = dir.toPath();
-
-        Files.walk(tempDir)
-            .sorted(Comparator.reverseOrder())
-            .map(Path::toFile)
-            .forEach(File::delete);
+        if (Files.exists(tempDir)) {
+            Files.walk(tempDir)
+                .sorted(Comparator.reverseOrder())
+                .map(Path::toFile)
+                .forEach(File::delete);
+        }
     }
 
     @Test
@@ -112,12 +113,14 @@ public final class BundleEntryHandlerTest {
 
         ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
 
-        File testDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+        File testDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + "_tst_" + System.currentTimeMillis());
+        File tmpDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + "_tmp_" + System.currentTimeMillis());
+        tmpDirectory.mkdirs();
         try {
 
             when(converter.getArtifactsDeployer()).thenReturn(new LocalMavenRepositoryArtifactsDeployer(testDirectory));
             when(converter.getFeaturesManager()).thenReturn(featuresManager);
-
+            when(converter.getTempDirectory()).thenReturn(tmpDirectory);
             bundleEntryHandler.handle(bundleLocation, archive, entry, converter);
 
             assertTrue(new File(testDirectory, "org/apache/felix/org.apache.felix.framework/6.0.1/org.apache.felix.framework-6.0.1.pom").exists());
@@ -129,6 +132,7 @@ public final class BundleEntryHandlerTest {
             assertEquals(startOrder, feature.getBundles().get(0).getStartOrder());
         } finally {
             deleteDirTree(testDirectory);
+            deleteDirTree(tmpDirectory);
         }
     }
 

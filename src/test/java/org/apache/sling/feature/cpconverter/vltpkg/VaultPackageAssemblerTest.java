@@ -100,7 +100,7 @@ public class VaultPackageAssemblerTest {
 
         VaultPackageAssembler assembler = VaultPackageAssembler.create(testDirectory, vaultPackage, false);
         PackageId packageId = vaultPackage.getId();
-        String fileName = packageId.toString().replaceAll("/", "-").replaceAll(":", "-") + "-" + vaultPackage.getFile().getName();
+        String fileName = packageId.toString().replaceAll("/", "-").replaceAll(":", "-");
         File storingDirectory = new File(assembler.getTempDir(), fileName + "-deflated");
         assertTrue("Storing Directory for Vault Package does not exist", storingDirectory.exists());
     }
