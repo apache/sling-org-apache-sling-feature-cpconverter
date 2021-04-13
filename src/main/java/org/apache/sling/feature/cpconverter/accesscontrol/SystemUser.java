@@ -18,6 +18,7 @@ package org.apache.sling.feature.cpconverter.accesscontrol;
 
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class SystemUser extends AbstractUser {
 
@@ -28,5 +29,15 @@ public class SystemUser extends AbstractUser {
      */
     public SystemUser(@NotNull String id, @NotNull RepoPath path, @NotNull RepoPath intermediatePath) {
         super(id, path, intermediatePath);
+    }
+
+    /**
+     * @param id - the authorizableId to use.
+     * @param path - the original repository path of the user in the content-package.
+     * @param intermediatePath - the intermediate path the user should have - most likely the (direct) parent of the path.
+     * @param disabledReason - the reason why this user has been disabled or {@code null}.
+     */
+    public SystemUser(@NotNull String id, @NotNull RepoPath path, @NotNull RepoPath intermediatePath, @Nullable String disabledReason) {
+        super(id, path, intermediatePath, disabledReason);
     }
 }

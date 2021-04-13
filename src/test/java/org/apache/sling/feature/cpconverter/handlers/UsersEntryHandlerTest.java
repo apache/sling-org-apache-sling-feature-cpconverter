@@ -30,7 +30,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.StringReader;
+import java.lang.reflect.Field;
 import java.util.List;
+import java.util.Set;
 
 import static org.apache.sling.feature.cpconverter.Util.normalize;
 import static org.junit.Assert.assertEquals;
@@ -43,6 +45,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class UsersEntryHandlerTest {
 
@@ -88,6 +91,24 @@ public class UsersEntryHandlerTest {
     }
 
     @Test
+    public void parseDisabledSystemUser() throws Exception {
+        String path = "/jcr_root/home/users/system/services/random1/.content.xml";
+        Extension repoinitExtension = parseAndSetRepoinit(path);
+
+        assertNotNull(repoinitExtension);
+        assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
+        assertTrue(repoinitExtension.isRequired());
+
+        String expected = normalize("create service user service1 with path system/services\ndisable service user service1 : \"a reason\"\n");
+        String actual = repoinitExtension.getText();
+        assertEquals(expected, actual);
+
+        RepoInitParser repoInitParser = new RepoInitParserService();
+        List<Operation> operations = repoInitParser.parse(new StringReader(actual));
+        assertFalse(operations.isEmpty());
+    }
+
+    @Test
     public void unrecognisedSystemUserJcrNode() throws Exception {
         String path = "/jcr_root/home/users/system/asd-share-commons/asd-index-definition-invalid/.content.xml";
         Extension repoinitExtension = parseAndSetRepoinit(path);
@@ -117,6 +138,22 @@ public class UsersEntryHandlerTest {
         TestUtils.createRepoInitExtension(usersEntryHandler, aclManager, path, getClass().getResourceAsStream(path.substring(1)));
         verify(aclManager, times(1)).addUser(any(User.class));
         verify(aclManager, never()).addSystemUser(any(SystemUser.class));
+    }
+
+    @Test
+    public void testDisabledUser() throws Exception {
+        String path = "/jcr_root/home/users/a/disableduser/.content.xml";
+        DefaultAclManager aclManager = new DefaultAclManager();
+        TestUtils.createRepoInitExtension(usersEntryHandler, aclManager, path, getClass().getResourceAsStream(path.substring(1)));
+        
+        Field f = DefaultAclManager.class.getDeclaredField("users");
+        f.setAccessible(true);
+        
+        Set<User> users = (Set<User>) f.get(aclManager);
+        assertNotNull(users);
+        assertEquals(1, users.size());
+        String disabledReason = users.iterator().next().getDisabledReason();
+        assertEquals("a reason", disabledReason);
     }
 
     @Test

@@ -49,7 +49,7 @@ abstract class AbstractUserParser extends AbstractJcrNodeParser<Void> {
     protected void onJcrRootElement(String uri, String localName, String qName, Attributes attributes) {
         String authorizableId = attributes.getValue(REP_AUTHORIZABLE_ID);
         if (authorizableId != null && !authorizableId.isEmpty()) {
-            handleUser(authorizableId);
+            handleUser(authorizableId, attributes);
         }
     }
 
@@ -58,6 +58,6 @@ abstract class AbstractUserParser extends AbstractJcrNodeParser<Void> {
         return null;
     }
 
-    abstract void handleUser(@NotNull String id);
+    abstract void handleUser(@NotNull String id, @NotNull Attributes attributes);
 
 }

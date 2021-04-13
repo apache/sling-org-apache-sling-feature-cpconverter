@@ -31,6 +31,7 @@ import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.repoinit.parser.RepoInitParsingException;
 import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
 import org.apache.sling.repoinit.parser.operations.CreateServiceUser;
+import org.apache.sling.repoinit.parser.operations.DisableServiceUser;
 import org.apache.sling.repoinit.parser.operations.Operation;
 import org.apache.sling.repoinit.parser.impl.WithPathOptions;
 import org.apache.sling.repoinit.parser.operations.AclLine;
@@ -217,6 +218,10 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
             // make sure all system users are created first
             CreateServiceUser operation = new CreateServiceUser(systemUser.getId(), new WithPathOptions(calculateIntermediatePath(systemUser), enforcePrincipalBased(systemUser)));
             formatter.format("%s", operation.asRepoInitString());
+            if (systemUser.getDisabledReason() != null) {
+                DisableServiceUser disable = new DisableServiceUser(systemUser.getId(), systemUser.getDisabledReason());
+                formatter.format("%s", disable.asRepoInitString());
+            }
 
             if (aclIsBelow(systemUser.getPath())) {
                 throw new IllegalStateException("Detected policy on subpath of system-user: " + systemUser);
