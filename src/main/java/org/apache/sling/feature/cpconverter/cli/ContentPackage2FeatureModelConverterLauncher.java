@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 
-import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
@@ -123,6 +122,9 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Option(names = { "--seed-feature" }, description = "A url pointing to a feature that can be assumed to be around when the conversion result will be used", required = false)
     private String seedFeature = null;
 
+    @Option(names = { "--disable-installer-policy" }, description = "Disables enforcing that OSGi configurations are only allowed below a folder called 'config' and OSGi bundles are only allowed below a folder called 'install'. Instead both are detected below either 'install' or 'config'.", required = false)
+    private boolean disableInstallerPolicy = false;
+
     @Override
     public void run() {
         if (quiet) {
@@ -194,7 +196,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                 ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation)
                                                                 .setFeaturesManager(featuresManager)
                                                                 .setBundlesDeployer(new DefaultArtifactsDeployer(artifactsOutputDirectory))
-                                                                .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap))
+                                                                .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap, !disableInstallerPolicy))
                                                                 .setAclManager(aclManager)
                                                                 .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
                                                                 .setFailOnMixedPackages(failOnMixedPackages)

@@ -36,8 +36,14 @@ import org.osgi.util.converter.Converters;
 
 abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandler {
 
+    private boolean enforceConfigurationBelowConfigFolder;
+
     public AbstractConfigurationEntryHandler(@NotNull String extension) {
-        super("/jcr_root/(?:apps|libs)/.+/config(\\.(?<runmode>[^/]+))?/(?<pid>.*)\\." + extension);
+        super("/jcr_root/(?:apps|libs)/.+/(?<foldername>config|install)(\\.(?<runmode>[^/]+))?/(?<pid>.*)\\." + extension);
+    }
+
+    void setEnforceConfgurationBelowConfigFolder(boolean enforceConfigurationBelowConfigFolder) {
+        this.enforceConfigurationBelowConfigFolder = enforceConfigurationBelowConfigFolder;
     }
 
     @Override
@@ -48,6 +54,9 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
         String runMode;
         // we are pretty sure it matches, here
         if (matcher.matches()) {
+            if (enforceConfigurationBelowConfigFolder && !"config".equals(matcher.group("foldername"))) {
+                throw new IllegalStateException("OSGi configuration are only considered if placed below a folder called 'config', but the configuration at '"+ path + "' is placed outside!");
+            }
             
             String pid = matcher.group("pid");
 
