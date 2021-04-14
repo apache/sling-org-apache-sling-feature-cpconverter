@@ -428,7 +428,7 @@ The `!` character is used to separate nested sub-content-packages path.
 
 ## The CLI Tool
 
-The tool is distributed with a commodity package containing all is needed in order to launch the `ContentPackage2FeatureModelConverter` form the shell:
+The tool is distributed with a commodity package containing all is needed in order to launch the `ContentPackage2FeatureModelConverter` from the shell:
 
 ```bash
 $ unzip -l org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT.zip 
@@ -491,13 +491,52 @@ once the package is decompressed, open the shell and type:
 
 ```bash
 $ ./bin/cp2fm -h
-Usage: cp2fm [-hmqsvX] -a=<artifactsOutputDirectory> [-b=<bundlesStartOrder>]
-             [-i=<artifactIdOverride>] -o=<featureModelsOutputDirectory>
-             [-p=<fmPrefix>] [-D=<String=String>]...
-             [-f=<filteringPatterns>]... [-r=<apiRegions>]...
-             content-packages...
+Usage: cp2fm [-hmqsvXZ] [--disable-installer-policy]
+             [--enforce-servicemapping-by-principal] [--remove-install-hooks]
+             [--content-type-package-policy=<contentTypePackagePolicy>]
+             [--enforce-principal-based-supported-path=<enforcePrincipalBasedSup
+             portedPath>] [--seed-feature=<seedFeature>]
+             [--system-user-rel-path=<systemUserRelPath>]
+             -a=<artifactsOutputDirectory> [-b=<bundlesStartOrder>]
+             [-e=<exportsToRegion>] [-i=<artifactIdOverride>]
+             -o=<featureModelsOutputDirectory> [-p=<fmPrefix>]
+             -u=<unreferencedArtifactsOutputDirectory>
+             [--entry-handler-config=<entryHandlerConfigs>]...
+             [-D=<String=String>]... [-f=<filteringPatterns>]...
+             [-r=<apiRegions>]... content-packages...
 Apache Sling Content Package to Sling Feature converter
       content-packages...   The content-package input file(s).
+      --content-type-package-policy=<contentTypePackagePolicy>
+                            Determines what to do with converted packages of type
+                              'content'. Valid values: REFERENCE, DROP,
+                              PUT_IN_DEDICATED_FOLDER.
+                              Default: DROP
+      --disable-installer-policy
+                            Disables enforcing that OSGi configurations are only
+                              allowed below a folder called 'config' and OSGi
+                              bundles are only allowed below a folder called
+                              'install'. Instead both are detected below either
+                              'install' or 'config'.
+      --enforce-principal-based-supported-path=<enforcePrincipalBasedSupportedPath>
+                            Converts service user access control entries to
+                              principal-based setup using the given supported path.
+      --enforce-servicemapping-by-principal
+                            Converts service user mappings with the form 'service:
+                              sub=userID' to 'service:sub=[principalname]'. Note,
+                              this may result in group membership no longer being
+                              resolved upon service login.
+      --entry-handler-config=<entryHandlerConfigs>
+                            Config for entry handlers that support it (classname:
+                              <config-string>
+      --remove-install-hooks
+                            Removes both internal and external hooks from processed
+                              packages
+      --seed-feature=<seedFeature>
+                            A url pointing to a feature that can be assumed to be
+                              around when the conversion result will be used
+      --system-user-rel-path=<systemUserRelPath>
+                            Relative path for system user as configured with Apache
+                              Jackrabbit Oak
   -a, --artifacts-output-directory=<artifactsOutputDirectory>
                             The output directory where the artifacts will be
                               deployed.
@@ -505,6 +544,9 @@ Apache Sling Content Package to Sling Feature converter
                             The order to start detected bundles.
   -D, --define=<String=String>
                             Define a system property
+  -e, --exports-to-region=<exportsToRegion>
+                            Packages exported by bundles in the content packages are
+                              exported in the named region
   -f, --filtering-patterns=<filteringPatterns>
                             Regex based pattern(s) to reject content-package archive
                               entries.
@@ -525,15 +567,16 @@ Apache Sling Content Package to Sling Feature converter
                             The API Regions assigned to the generated features
   -s, --strict-validation   Flag to mark the content-package input file being strict
                               validated.
+  -u, --unreferenced-artifacts-output-directory=<unreferencedArtifactsOutputDirectory
+        >
+                            The output directory where unreferenced artifacts will
+                              be deployed.
   -v, --version             Display version information.
   -X, --verbose             Produce execution debug output.
   -Z, --fail-on-mixed-packages
                             Fail the conversion if the resulting attached
-                              content-package is MIXED type.
-  --enforce-principal-based-supported-path=<path>
-                            Converts service user access control entries to principal-based 
-                              setup using the given supported path.
-Copyright(c) 2019 The Apache Software Foundation.
+                              content-package is MIXED type
+Copyright(c) 2019-2021 The Apache Software Foundation.
 ```
 
 to see all the available options; a sample execution could look like:
