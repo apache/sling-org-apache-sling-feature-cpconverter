@@ -130,7 +130,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Option(names = { "--content-type-package-policy" }, description = "Determines what to do with converted packages of type 'content'. Valid values: ${COMPLETION-CANDIDATES}.", required = false, showDefaultValue = Visibility.ALWAYS)
     private ContentPackage2FeatureModelConverter.PackagePolicy contentTypePackagePolicy = ContentPackage2FeatureModelConverter.PackagePolicy.DROP;
 
-    @Option(names = { "-u", "--unreferenced-artifacts-output-directory" }, description = "The output directory where unreferenced artifacts will be deployed.", required = true)
+    @Option(names = { "-u", "--unreferenced-artifacts-output-directory" }, description = "The output directory where unreferenced artifacts will be deployed.", required = false)
     private File unreferencedArtifactsOutputDirectory;
 
     @Override
