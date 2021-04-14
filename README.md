@@ -323,7 +323,7 @@ production=org.apache.test.mytest-sample-site.ui.apps-production.json,org.apache
 
 The [org.apache.sling.feature.cpconverter.artifacts.ArtifactsDeployer](./src/main/java/org/apache/sling/feature/cpconverter/artifacts/ArtifactsDeployer.java) service is designed to let the conversion tool be integrated in external services, i.e. _Apache Maven_.
 
-The [default implementation](./src/main/java/org/apache/sling/feature/cpconverter/artifacts/DefaultArtifactsDeployer.java) just copies bundles in the target output directory, according to the _Apache Maven_ repository layout.
+The [default implementation](./src/main/java/org/apache/sling/feature/cpconverter/artifacts/LocalMavenRepositoryArtifactsDeployer.java) just copies bundles in the target output directory, according to the _Apache Maven_ repository layout.
 
 Bundles are collected in an _Apache Maven repository_ compliant directory, all other resources are collected in a new `content-package` created while scanning the packages:
 
@@ -601,7 +601,7 @@ then execute the command
 
 ```bash
 > ./bin/cp2fm @argfile
-````
+```
 
 ## Failures and Restrictions
 
