@@ -55,7 +55,7 @@ import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Feature;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.ContentTypePackagePolicy;
+import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.PackagePolicy;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.LocalMavenRepositoryArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.artifacts.SimpleFolderArtifactsDeployer;
@@ -225,7 +225,7 @@ public class ContentPackage2FeatureModelConverterTest {
             converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
                     .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
-                    .setContentTypePackagePolicy(ContentTypePackagePolicy.DROP)
+                    .setContentTypePackagePolicy(PackagePolicy.DROP)
                     .convert(packageFile);
 
             verifyFeatureFile(outputDirectory,
@@ -296,7 +296,7 @@ public class ContentPackage2FeatureModelConverterTest {
             converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
                     .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
-                    .setContentTypePackagePolicy(ContentTypePackagePolicy.PUT_IN_DEDICATED_FOLDER)
+                    .setContentTypePackagePolicy(PackagePolicy.PUT_IN_DEDICATED_FOLDER)
                     .setUnreferencedArtifactsDeployer(new SimpleFolderArtifactsDeployer(outputDirectoryUnreferencedArtifacts))
                     .convert(packageFile);
 
@@ -879,7 +879,7 @@ public class ContentPackage2FeatureModelConverterTest {
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
         try {
             converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
-                    .setContentTypePackagePolicy(ContentTypePackagePolicy.DROP)
+                    .setContentTypePackagePolicy(PackagePolicy.DROP)
                     .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .convert(contentPackages);

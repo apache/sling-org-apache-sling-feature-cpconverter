@@ -69,7 +69,7 @@ public final class LocalMavenRepositoryArtifactsDeployer implements ArtifactsDep
         // deploy the main artifact
 
 
-        File targetFile = new File(targetDir, getNameFromArtifactId(id));
+        File targetFile = new File(targetDir, id.toMvnName());
 
         logger.info("Writing data to {}...", targetFile);
 
@@ -92,17 +92,4 @@ public final class LocalMavenRepositoryArtifactsDeployer implements ArtifactsDep
         }
     }
 
-    public static String getNameFromArtifactId(ArtifactId id) {
-        StringBuilder nameBuilder = new StringBuilder()
-                                    .append(id.getArtifactId())
-                                    .append('-')
-                                    .append(id.getVersion());
-
-        if (id.getClassifier() != null) {
-            nameBuilder.append('-').append(id.getClassifier());
-        }
-
-        nameBuilder.append('.').append(id.getType());
-        return nameBuilder.toString();
-    }
 }

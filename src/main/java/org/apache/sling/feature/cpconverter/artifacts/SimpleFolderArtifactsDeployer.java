@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Stores the deployed artifacts as siblings in a flat folder
+ * Stores the deployed artifacts as files in a flat folder structure.
  * All deployed artifact ids must be unique among all group ids to prevent overwriting files.
  */
 public class SimpleFolderArtifactsDeployer implements ArtifactsDeployer {
@@ -48,7 +48,7 @@ public class SimpleFolderArtifactsDeployer implements ArtifactsDeployer {
 
     @Override
     public void deploy(@NotNull ArtifactWriter artifactWriter, @NotNull ArtifactId id) throws IOException {
-        File targetFile = new File(artifactsDirectory, LocalMavenRepositoryArtifactsDeployer.getNameFromArtifactId(id));
+        File targetFile = new File(artifactsDirectory, id.toMvnName());
         logger.info("Writing data to {}...", targetFile);
 
         try (FileOutputStream targetStream = new FileOutputStream(targetFile)) {

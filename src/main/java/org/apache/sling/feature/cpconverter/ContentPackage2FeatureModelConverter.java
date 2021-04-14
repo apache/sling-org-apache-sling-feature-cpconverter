@@ -94,18 +94,18 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     private boolean failOnMixedPackages = false;
 
-    public enum ContentTypePackagePolicy {
-        /** References the content package in the feature model and deploys via the artifactDeployer */
+    public enum PackagePolicy {
+        /** References the content package in the feature model and deploys via the {@link ContentPackage2FeatureModelConverter#artifactsDeployer} */
         REFERENCE, 
-        /** Drops the content package fully (i.e. neither reference it in the feature model nor deploy anywhere)
+        /** Drops the content package completely (i.e. neither reference it in the feature model nor deploy anywhere)
           * @deprecated
           */
         DROP,
-        /** Deploys the content package via the unreferencedArtifactsDeployer */
+        /** Deploys the content package via the {@link ContentPackage2FeatureModelConverter#unreferencedArtifactsDeployer} */
         PUT_IN_DEDICATED_FOLDER;
     }
 
-    private ContentTypePackagePolicy contentTypePackagePolicy = ContentTypePackagePolicy.REFERENCE;
+    private PackagePolicy contentTypePackagePolicy = PackagePolicy.REFERENCE;
 
     private boolean removeInstallHooks = false;
 
@@ -176,7 +176,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return this;
     }
     
-    public @NotNull ContentPackage2FeatureModelConverter setContentTypePackagePolicy(ContentTypePackagePolicy contentTypePackagePolicy) {
+    public @NotNull ContentPackage2FeatureModelConverter setContentTypePackagePolicy(PackagePolicy contentTypePackagePolicy) {
         this.contentTypePackagePolicy = contentTypePackagePolicy;
         return this;
     }

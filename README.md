@@ -149,7 +149,7 @@ Archive:  test-content.zip
 
 ### Package Types
 
-`content-package`s have one of the 4 types defined at [Package Types](http://jackrabbit.apache.org/filevault/packagetypes.html).
+`content-package`s have one of [four package types](http://jackrabbit.apache.org/filevault/packagetypes.html).
 By default type `content` is never referenced inside the feature model (to work with Oak Composite Node Stores), while `application` and `mixed` type's are referenced in the generated feature models. `container` packages are dissolved and all sub packages are flattened (i.e. extracted as individual packages).
 
 ## Mapping and the Output
@@ -208,7 +208,7 @@ $ cat asd.retail.all-publish.json
 
 ### OSGi Bundles and Content Packages
 
-All nodes and properties which are not OSGi configurations or bundles are kept in (stripped) content packages. Depending on the location of the nodes they are either referenced inside the Feature Model (evaluated by [Content Handler](https://github.com/apache/sling-org-apache-sling-feature-extension-content/blob/master/src/main/java/org/apache/sling/feature/extension/content/ContentHandler.java)) or left completely separate from the generated Feature models. This depends on the package type of the transformed package.
+All nodes and properties which are not OSGi configurations or bundles are kept in (stripped) content packages. Usually those content packages are referenced inside the Feature Model (evaluated by [Content Handler](https://github.com/apache/sling-org-apache-sling-feature-extension-content/blob/master/src/main/java/org/apache/sling/feature/extension/content/ContentHandler.java)). For packages of type `content` the user can define what to do with those packages (reference in feature model, store in dedicated folder or completely drop). This is useful in more complex deployment scenarios where parts of the repository are swapped via Oak Composite Node Store.
 
 All detected bundles are collected in an _Apache Maven repository_ compliant directory, all other resources are collected in a new `content-package`, usually classified as `cp2fm-converted-feature`, created while scanning the packages, which contains _content only_.
 

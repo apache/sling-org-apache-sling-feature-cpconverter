@@ -127,7 +127,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     private boolean disableInstallerPolicy = false;
 
     @Option(names = { "--content-type-package-policy" }, description = "Determines what to do converted packages of type 'content'. Valid values: ${COMPLETION-CANDIDATES}", required = false)
-    private ContentPackage2FeatureModelConverter.ContentTypePackagePolicy contentTypePackagePolicy = ContentPackage2FeatureModelConverter.ContentTypePackagePolicy.DROP;
+    private ContentPackage2FeatureModelConverter.PackagePolicy contentTypePackagePolicy = ContentPackage2FeatureModelConverter.PackagePolicy.DROP;
 
     @Option(names = { "-u", "--unreferenced-artifacts-output-directory" }, description = "The output directory where unreferenced artifacts will be deployed.", required = true)
     private File unreferencedArtifactsOutputDirectory;
@@ -211,7 +211,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                                                                 
                 if (unreferencedArtifactsOutputDirectory != null) {
                     converter.setUnreferencedArtifactsDeployer(new SimpleFolderArtifactsDeployer(unreferencedArtifactsOutputDirectory));
-                } else if (contentTypePackagePolicy == ContentPackage2FeatureModelConverter.ContentTypePackagePolicy.PUT_IN_DEDICATED_FOLDER) {
+                } else if (contentTypePackagePolicy == ContentPackage2FeatureModelConverter.PackagePolicy.PUT_IN_DEDICATED_FOLDER) {
                     throw new IllegalStateException("Argument '--content-type-package-policy PUT_IN_DEDICATED_FOLDER' requires argument '--unreferenced-artifacts-output-directory' as well!");
                 }
                 try {
