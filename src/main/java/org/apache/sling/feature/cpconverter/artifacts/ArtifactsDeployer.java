@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
 
 public interface ArtifactsDeployer {
 
-    @NotNull File getBundlesDirectory();
+    @NotNull File getBaseDirectory();
 
     void deploy(@NotNull ArtifactWriter artifactWriter, @NotNull ArtifactId id) throws IOException;
 

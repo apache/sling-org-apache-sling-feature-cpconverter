@@ -6,11 +6,11 @@ This tool aims to provide to Apache Sling users an easy-to-use conversion tool w
 
 ## Introduction
 
-`content-package`s are zipped archives containing OSGi bundles, OSGi configurations and resources (and nested `content-package`s as well), aside metadata, that can be used to install content into a _JCR_ repository using the [Apache Jackrabbit FileVault](http://jackrabbit.apache.org/filevault/) packaging runtime.
+`content-package`s are zipped archives containing OSGi bundles, OSGi configurations, JCR nodes/properties and nested `content-package`s as well, aside [metadata](http://jackrabbit.apache.org/filevault/metadata.html), that can be used to install content into a _JCR_ repository using the [Apache Jackrabbit FileVault](http://jackrabbit.apache.org/filevault/) packaging runtime.
 
 OTOH, [Apache Sling Feature](https://github.com/apache/sling-org-apache-sling-feature) allows users to describe an entire OSGi-based application based on reusable components and includes everything related to this application, including bundles, configuration, framework properties, capabilities, requirements and custom artifacts.
 
-The _Apache Sling Content Package to Feature Model converter_ (referred as _cp2fm_) is a tool able to extract OSGI bundles, OSGi configurations, resources and iteratively scan nested `content-package`s from an input `content-package` and create one (or more) _Apache Sling Feature_ model files and deploy the extracted OSGi bundles in a directory which structure is compliant the _Apache Maven_ repository conventions.
+The _Apache Sling Content Package to Feature Model converter_ (referred as _cp2fm_) is a tool able to extract OSGI bundles, OSGi configurations and iteratively scan nested `content-package`s from an input `content-package` and create one (or more) _Apache Sling Feature_ model files and deploy the extracted OSGi bundles in a directory which structure is compliant the _Apache Maven_ repository conventions. The remaining JCR nodes/properties are kept in content packages which are either referenced in the [Sling Feature Model Content Deployment Extension](https://github.com/apache/sling-org-apache-sling-feature-extension-content) section or completely separate from the generated feature model.
 
 ## Understanding the Input
 
@@ -147,9 +147,14 @@ Archive:  test-content.zip
     39481                     22 files
 ```
 
+### Package Types
+
+`content-package`s have one of [four package types](http://jackrabbit.apache.org/filevault/packagetypes.html).
+By default type `content` is never referenced inside the feature model (to work with Oak Composite Node Stores), while `application` and `mixed` type's are referenced in the generated feature models. `container` packages are dissolved and all sub packages are flattened (i.e. extracted as individual packages).
+
 ## Mapping and the Output
 
-All metadata are mainly collected inside one or more, depending by declared run modes in the installation and configuration paths, _Feature_ model files:
+All metadata are mainly collected inside one or more _Feature_ model files, depending on declared run modes in the installation and configuration paths:
 
 ```json
 $ cat asd.retail.all.json 
@@ -201,7 +206,9 @@ $ cat asd.retail.all-publish.json
 }
 ```
 
-### Binaries
+### OSGi Bundles and Content Packages
+
+All nodes and properties which are not OSGi configurations or bundles are kept in (stripped) content packages. Usually those content packages are referenced inside the Feature Model (evaluated by [Content Handler](https://github.com/apache/sling-org-apache-sling-feature-extension-content/blob/master/src/main/java/org/apache/sling/feature/extension/content/ContentHandler.java)). For packages of type `content` the user can define what to do with those packages (reference in feature model, store in dedicated folder or completely drop). This is useful in more complex deployment scenarios where parts of the repository are swapped via Oak Composite Node Store.
 
 All detected bundles are collected in an _Apache Maven repository_ compliant directory, all other resources are collected in a new `content-package`, usually classified as `cp2fm-converted-feature`, created while scanning the packages, which contains _content only_.
 
@@ -232,7 +239,7 @@ artifacts/
 12 directories, 8 files
 ```
 
-### Supported configurations
+### OSGi Configurations
 
 All OSGi configuration formats are supported:
 
@@ -316,7 +323,7 @@ production=org.apache.test.mytest-sample-site.ui.apps-production.json,org.apache
 
 The [org.apache.sling.feature.cpconverter.artifacts.ArtifactsDeployer](./src/main/java/org/apache/sling/feature/cpconverter/artifacts/ArtifactsDeployer.java) service is designed to let the conversion tool be integrated in external services, i.e. _Apache Maven_.
 
-The [default implementation](./src/main/java/org/apache/sling/feature/cpconverter/artifacts/DefaultArtifactsDeployer.java) just copies bundles in the target output directory, according to the _Apache Maven_ repository layout.
+The [default implementation](./src/main/java/org/apache/sling/feature/cpconverter/artifacts/LocalMavenRepositoryArtifactsDeployer.java) just copies bundles in the target output directory, according to the _Apache Maven_ repository layout.
 
 Bundles are collected in an _Apache Maven repository_ compliant directory, all other resources are collected in a new `content-package` created while scanning the packages:
 
@@ -421,7 +428,7 @@ The `!` character is used to separate nested sub-content-packages path.
 
 ## The CLI Tool
 
-The tool is distributed with a commodity package containing all is needed in order to launch the `ContentPackage2FeatureModelConverter` form the shell:
+The tool is distributed with a commodity package containing all is needed in order to launch the `ContentPackage2FeatureModelConverter` from the shell:
 
 ```bash
 $ unzip -l org.apache.sling.feature.cpconverter-0.0.1-SNAPSHOT.zip 
@@ -484,13 +491,52 @@ once the package is decompressed, open the shell and type:
 
 ```bash
 $ ./bin/cp2fm -h
-Usage: cp2fm [-hmqsvX] -a=<artifactsOutputDirectory> [-b=<bundlesStartOrder>]
-             [-i=<artifactIdOverride>] -o=<featureModelsOutputDirectory>
-             [-p=<fmPrefix>] [-D=<String=String>]...
-             [-f=<filteringPatterns>]... [-r=<apiRegions>]...
-             content-packages...
+Usage: cp2fm [-hmqsvXZ] [--disable-installer-policy]
+             [--enforce-servicemapping-by-principal] [--remove-install-hooks]
+             [--content-type-package-policy=<contentTypePackagePolicy>]
+             [--enforce-principal-based-supported-path=<enforcePrincipalBasedSup
+             portedPath>] [--seed-feature=<seedFeature>]
+             [--system-user-rel-path=<systemUserRelPath>]
+             -a=<artifactsOutputDirectory> [-b=<bundlesStartOrder>]
+             [-e=<exportsToRegion>] [-i=<artifactIdOverride>]
+             -o=<featureModelsOutputDirectory> [-p=<fmPrefix>]
+             -u=<unreferencedArtifactsOutputDirectory>
+             [--entry-handler-config=<entryHandlerConfigs>]...
+             [-D=<String=String>]... [-f=<filteringPatterns>]...
+             [-r=<apiRegions>]... content-packages...
 Apache Sling Content Package to Sling Feature converter
       content-packages...   The content-package input file(s).
+      --content-type-package-policy=<contentTypePackagePolicy>
+                            Determines what to do with converted packages of type
+                              'content'. Valid values: REFERENCE, DROP,
+                              PUT_IN_DEDICATED_FOLDER.
+                              Default: DROP
+      --disable-installer-policy
+                            Disables enforcing that OSGi configurations are only
+                              allowed below a folder called 'config' and OSGi
+                              bundles are only allowed below a folder called
+                              'install'. Instead both are detected below either
+                              'install' or 'config'.
+      --enforce-principal-based-supported-path=<enforcePrincipalBasedSupportedPath>
+                            Converts service user access control entries to
+                              principal-based setup using the given supported path.
+      --enforce-servicemapping-by-principal
+                            Converts service user mappings with the form 'service:
+                              sub=userID' to 'service:sub=[principalname]'. Note,
+                              this may result in group membership no longer being
+                              resolved upon service login.
+      --entry-handler-config=<entryHandlerConfigs>
+                            Config for entry handlers that support it (classname:
+                              <config-string>
+      --remove-install-hooks
+                            Removes both internal and external hooks from processed
+                              packages
+      --seed-feature=<seedFeature>
+                            A url pointing to a feature that can be assumed to be
+                              around when the conversion result will be used
+      --system-user-rel-path=<systemUserRelPath>
+                            Relative path for system user as configured with Apache
+                              Jackrabbit Oak
   -a, --artifacts-output-directory=<artifactsOutputDirectory>
                             The output directory where the artifacts will be
                               deployed.
@@ -498,6 +544,9 @@ Apache Sling Content Package to Sling Feature converter
                             The order to start detected bundles.
   -D, --define=<String=String>
                             Define a system property
+  -e, --exports-to-region=<exportsToRegion>
+                            Packages exported by bundles in the content packages are
+                              exported in the named region
   -f, --filtering-patterns=<filteringPatterns>
                             Regex based pattern(s) to reject content-package archive
                               entries.
@@ -518,15 +567,16 @@ Apache Sling Content Package to Sling Feature converter
                             The API Regions assigned to the generated features
   -s, --strict-validation   Flag to mark the content-package input file being strict
                               validated.
+  -u, --unreferenced-artifacts-output-directory=<unreferencedArtifactsOutputDirectory
+        >
+                            The output directory where unreferenced artifacts will
+                              be deployed.
   -v, --version             Display version information.
   -X, --verbose             Produce execution debug output.
   -Z, --fail-on-mixed-packages
                             Fail the conversion if the resulting attached
-                              content-package is MIXED type.
-  --enforce-principal-based-supported-path=<path>
-                            Converts service user access control entries to principal-based 
-                              setup using the given supported path.
-Copyright(c) 2019 The Apache Software Foundation.
+                              content-package is MIXED type
+Copyright(c) 2019-2021 The Apache Software Foundation.
 ```
 
 to see all the available options; a sample execution could look like:
@@ -551,7 +601,7 @@ then execute the command
 
 ```bash
 > ./bin/cp2fm @argfile
-````
+```
 
 ## Failures and Restrictions
 

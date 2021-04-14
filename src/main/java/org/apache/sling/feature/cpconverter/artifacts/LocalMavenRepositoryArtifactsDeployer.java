@@ -28,13 +28,16 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class DefaultArtifactsDeployer implements ArtifactsDeployer {
+/**
+ * Stores the deployed artifacts in a <a href="https://cwiki.apache.org/confluence/display/MAVENOLD/Repository+Layout+-+Final">local Maven repository layout</a>.
+ */
+public final class LocalMavenRepositoryArtifactsDeployer implements ArtifactsDeployer {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final File artifactsDirectory;
 
-    public DefaultArtifactsDeployer(@NotNull File outputDirectory) {
+    public LocalMavenRepositoryArtifactsDeployer(@NotNull File outputDirectory) {
         artifactsDirectory = outputDirectory;
         if (!artifactsDirectory.exists()) {
             artifactsDirectory.mkdirs();
@@ -42,7 +45,7 @@ public final class DefaultArtifactsDeployer implements ArtifactsDeployer {
     }
 
     @Override
-    public @NotNull File getBundlesDirectory() {
+    public @NotNull File getBaseDirectory() {
         return artifactsDirectory;
     }
 
@@ -65,18 +68,8 @@ public final class DefaultArtifactsDeployer implements ArtifactsDeployer {
 
         // deploy the main artifact
 
-        StringBuilder nameBuilder = new StringBuilder()
-                                    .append(id.getArtifactId())
-                                    .append('-')
-                                    .append(id.getVersion());
 
-        if (id.getClassifier() != null) {
-            nameBuilder.append('-').append(id.getClassifier());
-        }
-
-        nameBuilder.append('.').append(id.getType());
-
-        File targetFile = new File(targetDir, nameBuilder.toString());
+        File targetFile = new File(targetDir, id.toMvnName());
 
         logger.info("Writing data to {}...", targetFile);
 

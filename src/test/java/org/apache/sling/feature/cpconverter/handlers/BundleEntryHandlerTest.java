@@ -40,7 +40,7 @@ import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
+import org.apache.sling.feature.cpconverter.artifacts.LocalMavenRepositoryArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.junit.Test;
@@ -115,7 +115,7 @@ public final class BundleEntryHandlerTest {
         File testDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
         try {
 
-            when(converter.getArtifactsDeployer()).thenReturn(new DefaultArtifactsDeployer(testDirectory));
+            when(converter.getArtifactsDeployer()).thenReturn(new LocalMavenRepositoryArtifactsDeployer(testDirectory));
             when(converter.getFeaturesManager()).thenReturn(featuresManager);
 
             bundleEntryHandler.handle(bundleLocation, archive, entry, converter);
