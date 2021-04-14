@@ -20,6 +20,7 @@ import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter
 import org.apache.sling.feature.cpconverter.accesscontrol.Group;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.jetbrains.annotations.NotNull;
+import org.xml.sax.Attributes;
 
 public final class GroupEntryHandler extends AbstractUserEntryHandler {
 
@@ -55,7 +56,7 @@ public final class GroupEntryHandler extends AbstractUserEntryHandler {
         }
 
         @Override
-        void handleUser(@NotNull String id) {
+        void handleUser(@NotNull String id, @NotNull Attributes attributes) {
             converter.getAclManager().addGroup(new Group(id, path, intermediatePath));
         }
     }

@@ -21,6 +21,7 @@ import org.apache.sling.feature.cpconverter.accesscontrol.SystemUser;
 import org.apache.sling.feature.cpconverter.accesscontrol.User;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.jetbrains.annotations.NotNull;
+import org.xml.sax.Attributes;
 
 public final class UsersEntryHandler extends AbstractUserEntryHandler {
 
@@ -39,10 +40,10 @@ public final class UsersEntryHandler extends AbstractUserEntryHandler {
 
     @Override
     AbstractUserParser createParser(@NotNull ContentPackage2FeatureModelConverter converter, @NotNull RepoPath originalPath, @NotNull RepoPath intermediatePath) {
-        return new SystemUserParser(converter, originalPath, intermediatePath);
+        return new UserParser(converter, originalPath, intermediatePath);
     }
 
-    private static final class SystemUserParser extends AbstractUserParser {
+    private static final class UserParser extends AbstractUserParser {
 
         private static final String REP_SYSTEM_USER = "rep:SystemUser";
         private static final String REP_USER = "rep:User";
@@ -52,16 +53,17 @@ public final class UsersEntryHandler extends AbstractUserEntryHandler {
          * @param path - the original repository path of the user in the content-package.
          * @param intermediatePath - the intermediate path the user should have - most likely the (direct) parent of the path.
          */
-        public SystemUserParser(@NotNull ContentPackage2FeatureModelConverter converter, @NotNull RepoPath path, @NotNull RepoPath intermediatePath) {
+        public UserParser(@NotNull ContentPackage2FeatureModelConverter converter, @NotNull RepoPath path, @NotNull RepoPath intermediatePath) {
             super(converter, path, intermediatePath, REP_SYSTEM_USER, REP_USER);
         }
 
         @Override
-        void handleUser(@NotNull String id) {
+        void handleUser(@NotNull String id, @NotNull Attributes attributes) {
+            String disabledReason = attributes.getValue("rep:disabled");
             if (REP_USER.equals(detectedPrimaryType)) {
-                converter.getAclManager().addUser(new User(id, path, intermediatePath));
-            } else{
-                converter.getAclManager().addSystemUser(new SystemUser(id, path, intermediatePath));
+                converter.getAclManager().addUser(new User(id, path, intermediatePath, disabledReason));
+            } else {
+                converter.getAclManager().addSystemUser(new SystemUser(id, path, intermediatePath, disabledReason));
             }
         }
     }

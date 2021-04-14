@@ -16,8 +16,9 @@
  the License.
 -->
 <jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:rep="internal"
-          jcr:primaryType="rep:SystemUser"
-          jcr:uuid="0a39b2bb-8594-3d80-a4fe-3464cfb7038b"
-          rep:authorizableId="service1"
-          rep:principalName="service1"
+          jcr:mixinTypes="[rep:AccessControllable]"
+          jcr:primaryType="rep:User"
+          jcr:uuid="098f6bcd-4621-3373-8ade-4e832627b4f6"
+          rep:authorizableId="test"
+          rep:principalName="test" 
           rep:disabled="a reason"/>

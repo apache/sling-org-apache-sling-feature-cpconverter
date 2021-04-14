@@ -18,6 +18,7 @@ package org.apache.sling.feature.cpconverter.accesscontrol;
 
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -27,6 +28,8 @@ abstract class AbstractUser {
 
     private final RepoPath path;
     private final RepoPath intermediatePath;
+    
+    private final String disabledReason;
 
     /**
      * @param id - the authorizableId to use.
@@ -34,9 +37,14 @@ abstract class AbstractUser {
      * @param intermediatePath - the intermediate path the user should have - most likely the (direct) parent of the path.
      */
     protected AbstractUser(@NotNull String id, @NotNull RepoPath path, @NotNull RepoPath intermediatePath) {
+        this(id, path, intermediatePath, null);
+    }
+
+    protected AbstractUser(@NotNull String id, @NotNull RepoPath path, @NotNull RepoPath intermediatePath, @Nullable String disabledReason) {
         this.id = id;
         this.path = path;
         this.intermediatePath = intermediatePath;
+        this.disabledReason = disabledReason;
     }
 
     public @NotNull String getId() {
@@ -49,6 +57,10 @@ abstract class AbstractUser {
 
     public @NotNull RepoPath getIntermediatePath() {
         return intermediatePath;
+    }
+    
+    public @Nullable String getDisabledReason() {
+        return disabledReason;
     }
 
     @Override
