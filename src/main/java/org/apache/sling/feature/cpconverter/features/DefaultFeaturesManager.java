@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.Map.Entry;
 
+import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.Artifact;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Artifacts;
@@ -38,6 +39,7 @@ import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.Mapping;
 import org.apache.sling.feature.cpconverter.interpolator.SimpleVariablesInterpolator;
 import org.apache.sling.feature.cpconverter.interpolator.VariablesInterpolator;
+import org.apache.sling.feature.cpconverter.vltpkg.PackagesEventsEmitter;
 import org.apache.sling.feature.extension.apiregions.api.ApiExport;
 import org.apache.sling.feature.extension.apiregions.api.ApiRegion;
 import org.apache.sling.feature.extension.apiregions.api.ApiRegions;
@@ -49,7 +51,7 @@ import org.osgi.util.converter.Converters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DefaultFeaturesManager implements FeaturesManager {
+public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEmitter {
 
     public enum ConfigurationHandling {
         ORDERED,
@@ -62,6 +64,9 @@ public class DefaultFeaturesManager implements FeaturesManager {
     private static final String SLING_OSGI_FEATURE_TILE_TYPE = "slingosgifeature";
 
     private static final String JSON_FILE_EXTENSION = ".json";
+
+    private static final String BUNDLE_ORIGINS = "content-package-origins";
+    private static final String CONFIGURATION_ORIGINS = Configuration.CONFIGURATOR_PREFIX.concat(BUNDLE_ORIGINS);
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -93,6 +98,8 @@ public class DefaultFeaturesManager implements FeaturesManager {
 
     private final Map<String, String> pidToPathMapping = new HashMap<>();
 
+    private final Stack<String> packageIds = new Stack<>();
+    
     DefaultFeaturesManager() {
         this(new File(""));
     }
@@ -183,9 +190,15 @@ public class DefaultFeaturesManager implements FeaturesManager {
 
             artifacts = extension.getArtifacts();
         } else {
-            int startOrderForBundle = startOrder != null ? startOrder.intValue() : bundlesStartOrder;
+            // set start order
+            final int startOrderForBundle = startOrder != null ? startOrder.intValue() : bundlesStartOrder;
             artifact.setStartOrder(startOrderForBundle);
-            artifacts = targetFeature.getBundles();
+            // set origins
+            if ( !this.packageIds.isEmpty() ) {
+                artifact.getMetadata().put(BUNDLE_ORIGINS, String.join("|", this.packageIds));
+            }
+
+            artifacts = targetFeature.getBundles();        
         }
 
         artifacts.add(artifact);
@@ -288,7 +301,6 @@ public class DefaultFeaturesManager implements FeaturesManager {
         @NotNull String path,
         @NotNull Dictionary<String, Object> configurationProperties) {
         String factoryPid = null;
-        String id;
         int n = pid.indexOf('~');
         if (n > 0) {
             factoryPid = pid.substring(0, n);
@@ -339,6 +351,17 @@ public class DefaultFeaturesManager implements FeaturesManager {
         configuration.getProperties().remove(Constants.SERVICE_PID);
         configuration.getProperties().remove("service.bundleLocation");
         configuration.getProperties().remove("service.factoryPid");
+
+        // set origins
+        if ( !this.packageIds.isEmpty() ) {
+            final List<String> origins = new ArrayList<>();
+            final Object val = configuration.getProperties().get(CONFIGURATION_ORIGINS);
+            if ( val != null ) {
+                origins.addAll(Arrays.asList(val.toString().split(",")));
+            }    
+            origins.add(String.join("|", this.packageIds));
+            configuration.getProperties().put(CONFIGURATION_ORIGINS, String.join(",", origins));
+        }
     }
 
     private void addAPIRegions(@NotNull Feature feature, @Nullable List<String> exportedPackages) throws IOException {
@@ -461,5 +484,50 @@ public class DefaultFeaturesManager implements FeaturesManager {
                 }
             }
         }
+    }
+
+    /**
+     * Package converter starts
+     */
+    public void start() {
+        // nothing to do
+    }
+
+    /** 
+     * Package converter ends
+     */
+    public void end() {
+        // nothing to do
+    }
+
+    /**
+     * Package starts
+     * @param vaultPackage the package
+     */
+    public void startPackage(final @NotNull VaultPackage vaultPackage) {
+        packageIds.push(vaultPackage.getId().toString());
+    }
+
+    /**
+     * Package ends
+     */
+    public void endPackage() {
+        packageIds.pop();
+    }
+
+    /**
+     * Sub package starts
+     * @param path The path
+     * @param vaultPackage the package
+     */
+    public void startSubPackage(final @NotNull String path, final @NotNull VaultPackage vaultPackage) {
+        packageIds.push(vaultPackage.getId().toString());
+    }
+
+    /**
+     * Sub package ends
+     */
+    public void endSubPackage() {
+        packageIds.pop();
     }
 }
