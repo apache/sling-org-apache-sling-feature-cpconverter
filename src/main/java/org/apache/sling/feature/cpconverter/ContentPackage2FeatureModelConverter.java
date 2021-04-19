@@ -17,12 +17,12 @@
 package org.apache.sling.feature.cpconverter;
 
 import static java.util.Objects.requireNonNull;
-import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER;
 import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.detectPackageType;
 import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.getDependencies;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -113,6 +113,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     private final File tmpDirectory;
 
+    private Collection<URI> cndUris;
+
     public ContentPackage2FeatureModelConverter() {
         this(false);
     }
@@ -201,6 +203,15 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     public @NotNull ContentPackage2FeatureModelConverter setRemoveInstallHooks(boolean removeInstallHook) {
         this.removeInstallHooks = removeInstallHook;
+        return this;
+    }
+
+    public Collection<URI> getCndUris() {
+        return cndUris;
+    }
+
+    public ContentPackage2FeatureModelConverter setCndUris(@NotNull Collection<URI> cndUris) {
+        this.cndUris = cndUris;
         return this;
     }
 

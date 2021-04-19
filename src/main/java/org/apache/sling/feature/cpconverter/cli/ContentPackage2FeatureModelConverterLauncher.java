@@ -19,7 +19,9 @@ package org.apache.sling.feature.cpconverter.cli;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.URI;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Formatter;
 import java.util.HashMap;
@@ -133,6 +135,9 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Option(names = { "-u", "--unreferenced-artifacts-output-directory" }, description = "The output directory where unreferenced artifacts will be deployed.", required = false)
     private File unreferencedArtifactsOutputDirectory;
 
+    @Option(names = { "-c", "--cndUri" }, description = "A URI returning a CND file. Used for resolving namespace prefixes in Sling-Initial-Content in addition to the namespaces given in the bundle headers", required = false)
+    private List<URI> cndUris = new ArrayList<>();
+
     @Override
     public void run() {
         if (quiet) {
@@ -208,7 +213,8 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                                                                 .setAclManager(aclManager)
                                                                 .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
                                                                 .setFailOnMixedPackages(failOnMixedPackages)
-                                                                .setContentTypePackagePolicy(contentTypePackagePolicy);
+                                                                .setContentTypePackagePolicy(contentTypePackagePolicy)
+                                                                .setCndUris(cndUris);
                                                                 
                 if (unreferencedArtifactsOutputDirectory != null) {
                     converter.setUnreferencedArtifactsDeployer(new SimpleFolderArtifactsDeployer(unreferencedArtifactsOutputDirectory));

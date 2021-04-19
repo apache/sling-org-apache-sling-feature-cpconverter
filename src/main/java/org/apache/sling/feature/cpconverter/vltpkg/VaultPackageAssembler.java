@@ -58,6 +58,7 @@ import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.util.Constants;
+import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
 import org.codehaus.plexus.archiver.Archiver;
@@ -225,6 +226,10 @@ public class VaultPackageAssembler implements EntryHandler {
         }
     }
 
+    public DefaultWorkspaceFilter getFilter() {
+        return filter;
+    }
+
     public void addEntry(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry) throws IOException {
         try (InputStream input = Objects.requireNonNull(archive.openInputStream(entry))) {
             addEntry(path, input);
@@ -280,6 +285,10 @@ public class VaultPackageAssembler implements EntryHandler {
     }
 
     public @NotNull File createPackage() throws IOException {
+        return createPackage(false);
+    }
+
+    public @NotNull File createPackage(boolean generateFilters) throws IOException {
         // generate the Vault properties XML file
 
         File metaDir = new File(storingDirectory, META_DIR);
@@ -307,8 +316,11 @@ public class VaultPackageAssembler implements EntryHandler {
             properties.storeToXML(fos, null);
         }
 
-        // generate the Vault filter XML file based on new contents of the package
-        computeFilters(storingDirectory);
+        if (generateFilters) {
+            // generate the Vault filter XML file based on new contents of the package
+            computeFilters(storingDirectory);
+        }
+
         File xmlFilter = new File(metaDir, FILTER_XML);
         try (InputStream input = filter.getSource();
                 FileOutputStream output = new FileOutputStream(xmlFilter)) {
@@ -316,7 +328,6 @@ public class VaultPackageAssembler implements EntryHandler {
         }
 
         // create the target archiver
-
         Archiver archiver = new ZipArchiver();
         archiver.setIncludeEmptyDirs(true);
 
@@ -358,8 +369,7 @@ public class VaultPackageAssembler implements EntryHandler {
                 TreeNode node = lowestCommonAncestor(new TreeNode(child));
                 File lowestCommonAncestor = node != null ? node.val : null;
                 if (lowestCommonAncestor != null) {
-                    String root = base.toURI().relativize(lowestCommonAncestor.toURI()).getPath();
-
+                    String root = "/" + PlatformNameFormat.getRepositoryPath(base.toURI().relativize(lowestCommonAncestor.toURI()).getPath(), true);
                     filter.add(new PathFilterSet(root));
                 }
             });
