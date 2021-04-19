@@ -17,6 +17,7 @@
 package org.apache.sling.feature.cpconverter.features;
 
 import java.util.Dictionary;
+import java.util.Map;
 
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Feature;
@@ -45,5 +46,8 @@ public interface FeaturesManager {
     void serialize() throws Exception;
 
     void addOrAppendRepoInitExtension(@NotNull String text, @Nullable String runMode);
+
+    @NotNull
+    Map<String, String> getNamespaceUriByPrefix();
 
 }

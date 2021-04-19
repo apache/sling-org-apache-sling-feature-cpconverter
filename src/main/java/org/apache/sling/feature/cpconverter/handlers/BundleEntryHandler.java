@@ -26,7 +26,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
-import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -34,7 +33,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -106,18 +104,12 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
 
     private boolean enforceBundlesBelowInstallFolder;
 
-    private Collection<URI> cndUris = Collections.emptyList();
-
     public BundleEntryHandler() {
         super("/jcr_root/(?:apps|libs)/.+/(?<foldername>install|config)(?:\\.(?<runmode>[^/]+))?/(?:(?<startlevel>[0-9]+)/)?.+\\.jar");
     }
 
     void setEnforceBundlesBelowInstallFolder(boolean enforceBundlesBelowInstallFolder) {
         this.enforceBundlesBelowInstallFolder = enforceBundlesBelowInstallFolder;
-    }
-
-    void setCndUris(@NotNull Collection<URI> cndUris) {
-        this.cndUris = cndUris;
     }
 
     @Override
@@ -207,7 +199,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         Path newBundleFile = Files.createTempFile(converter.getTempDirectory().toPath(), "newBundle", ".jar");
         
         // create JAR file to prevent extracting it twice and for random access
-        JcrNamespaceRegistry namespaceRegistry = createNamespaceRegistry(manifest, jarFile);
+        JcrNamespaceRegistry namespaceRegistry = createNamespaceRegistry(manifest, jarFile, converter.getFeaturesManager().getNamespaceUriByPrefix());
         
         Map<PackageType, VaultPackageAssembler> packageAssemblers = new EnumMap<>(PackageType.class);
         try (OutputStream fileOutput = Files.newOutputStream(newBundleFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
@@ -304,14 +296,10 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         return true;
     }
 
-    JcrNamespaceRegistry createNamespaceRegistry(@NotNull Manifest manifest, @NotNull JarFile jarFile) throws RepositoryException, IOException, ParseException {
+    JcrNamespaceRegistry createNamespaceRegistry(@NotNull Manifest manifest, @NotNull JarFile jarFile, @NotNull Map<String, String> predefinedNamespaceUriByPrefix) throws RepositoryException, IOException, ParseException {
         JcrNamespaceRegistry registry = new JcrNamespaceRegistry();
-        // configured CND
-        for (URI cndUri : cndUris) {
-            try (InputStream input = cndUri.toURL().openStream();
-                 Reader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
-                registry.registerCnd(reader,  cndUri.toString());
-            }
+        for (Map.Entry<String, String> entry : predefinedNamespaceUriByPrefix.entrySet()) {
+            registry.registerNamespace(entry.getKey(), entry.getValue());
         }
         
         // parse Sling-Namespaces header (https://github.com/apache/sling-org-apache-sling-jcr-base/blob/66be360910c265473799635fcac0e23895898913/src/main/java/org/apache/sling/jcr/base/internal/loader/Loader.java#L192)

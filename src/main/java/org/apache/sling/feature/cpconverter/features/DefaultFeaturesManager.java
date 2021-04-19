@@ -22,8 +22,19 @@ import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelCo
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.*;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Dictionary;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Stack;
 
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.Artifact;
@@ -39,11 +50,16 @@ import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.Mapping;
 import org.apache.sling.feature.cpconverter.interpolator.SimpleVariablesInterpolator;
 import org.apache.sling.feature.cpconverter.interpolator.VariablesInterpolator;
+import org.apache.sling.feature.cpconverter.repoinit.NoOpVisitor;
 import org.apache.sling.feature.cpconverter.vltpkg.PackagesEventsEmitter;
 import org.apache.sling.feature.extension.apiregions.api.ApiExport;
 import org.apache.sling.feature.extension.apiregions.api.ApiRegion;
 import org.apache.sling.feature.extension.apiregions.api.ApiRegions;
 import org.apache.sling.feature.io.json.FeatureJSONWriter;
+import org.apache.sling.repoinit.parser.RepoInitParsingException;
+import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
+import org.apache.sling.repoinit.parser.operations.Operation;
+import org.apache.sling.repoinit.parser.operations.RegisterNamespace;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Constants;
@@ -89,6 +105,8 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
     private final Map<String, String> properties;
 
     private final List<String> targetAPIRegions = new ArrayList<>();
+    
+    private final Map<String, String> namespaceUriByPrefix;
 
     private String exportsToAPIRegion;
 
@@ -133,6 +151,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         this.prefix = prefix;
         this.properties = properties;
         this.aclManager = aclManager;
+        this.namespaceUriByPrefix = new HashMap<>();
     }
 
     @Override
@@ -252,8 +271,32 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
             handleRepoinitAndMappings("seed", conf.isFactoryConfiguration() ? conf.getFactoryPid() : conf.getPid(), conf.getConfigurationProperties(), false);
         }
         if (seed.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT) != null) {
-            getAclManager().addRepoinitExtention(seed.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT).getText(), "seed", this);
+            String repoInitText = seed.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT).getText();
+            getAclManager().addRepoinitExtention(repoInitText, "seed", this);
+            extractNamespaces(repoInitText, namespaceUriByPrefix);
         }
+        
+    }
+
+    static void extractNamespaces(String repoInitText, Map<String, String> namespaceUriByPrefix) {
+        try {
+            List<Operation> ops = new RepoInitParserService().parse(new StringReader(repoInitText));
+            for (Operation op : ops) {
+                op.accept(new NoOpVisitor() {
+                    @Override
+                    public void visitRegisterNamespace(RegisterNamespace registerNamespace) {
+                        namespaceUriByPrefix.put(registerNamespace.getPrefix(), registerNamespace.getURI());
+                    }
+                });
+            }
+        } catch (RepoInitParsingException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    @Override
+    public@ NotNull Map<String, String> getNamespaceUriByPrefix() {
+        return namespaceUriByPrefix;
     }
 
     @NotNull AclManager getAclManager() {
