@@ -401,7 +401,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
 
     Map.Entry<ContentParser, ParserOptions> getContentParserForEntry(JarEntry entry, PathEntry pathEntry) {
         if (entry.getName().endsWith(".json") && !pathEntry.isIgnoredImportProvider("json")) {
-            return new AbstractMap.SimpleEntry<ContentParser, ParserOptions>(new JSONContentParser(), new JSONParserOptions().withFeatures(JSONParserOptions.DEFAULT_JSON_PARSER_FEATURES));
+            return new AbstractMap.SimpleEntry<>(new JSONContentParser(), new JSONParserOptions().withFeatures(JSONParserOptions.DEFAULT_JSON_PARSER_FEATURES));
         } else {
             return null;
         }

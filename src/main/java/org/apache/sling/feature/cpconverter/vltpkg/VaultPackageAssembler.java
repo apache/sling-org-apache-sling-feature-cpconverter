@@ -39,7 +39,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -96,7 +95,7 @@ public class VaultPackageAssembler implements EntryHandler {
     public static @NotNull VaultPackageAssembler create(@NotNull File tempDir, @NotNull VaultPackage vaultPackage, boolean removeInstallHooks) {
         return create(tempDir, vaultPackage, Objects.requireNonNull(vaultPackage.getMetaInf().getFilter()), removeInstallHooks);
     }
-    
+
     /**
      * Creates a new package assembler based on an existing package.
      * Takes over properties from existing package.
@@ -144,8 +143,7 @@ public class VaultPackageAssembler implements EntryHandler {
         final File tempDir = new File(baseTempDir, "synthetic-content-packages_" + System.currentTimeMillis());
         File storingDirectory = initStoringDirectory(packageId, tempDir);
         Properties props = new Properties();
-        
-        // generate minimum properties (http://jackrabbit.apache.org/filevault/properties.html)
+        // generate minimal properties (http://jackrabbit.apache.org/filevault/properties.html)
         props.put(PackageProperties.NAME_GROUP, packageId.getGroup());
         props.put(PackageProperties.NAME_NAME, packageId.getName());
         props.put(PackageProperties.NAME_VERSION, packageId.getVersionString() + VERSION_SUFFIX);
@@ -154,14 +152,14 @@ public class VaultPackageAssembler implements EntryHandler {
         return new VaultPackageAssembler(tempDir, storingDirectory, props, new HashSet<>(), false);
     }
 
-    public static @NotNull File initStoringDirectory(PackageId packageId, @NotNull File tempDir) {
-        String fileName = packageId.toString().replaceAll("/", "-").replaceAll(":", "-");
+    static @NotNull File initStoringDirectory(PackageId packageId, @NotNull File tempDir) {
+        String fileName = packageId.toString().replace('/', '-').replace(':', '-');
         File storingDirectory = new File(tempDir, fileName + "-deflated");
         if(storingDirectory.exists()) {
             try {
                 FileUtils.deleteDirectory(storingDirectory);
             } catch(IOException e) {
-                throw new FolderDeletionException("Unable to delete existing deflated folder: '" + storingDirectory + "'", e);
+                throw new IllegalStateException("Unable to delete existing deflated folder: '" + storingDirectory + "'", e);
             }
         }
         // avoid any possible Stream is not a content package. Missing 'jcr_root' error
@@ -385,7 +383,6 @@ public class VaultPackageAssembler implements EntryHandler {
         }
     }
 
-    // FIXME: this one has a bug, that it returns a tree node which is one level too deep!
     private @Nullable TreeNode lowestCommonAncestor(@NotNull TreeNode root) {
         int currMaxDepth = 0;//curr tree's deepest leaf depth
         int countMaxDepth = 0;//num of deepest leaves
@@ -434,15 +431,5 @@ public class VaultPackageAssembler implements EntryHandler {
             maxDepth = 0;
         }
 
-    }
-
-    public static class FolderDeletionException extends RuntimeException {
-        public FolderDeletionException(@NotNull String message) {
-            super(message);
-        }
-
-        public FolderDeletionException(@NotNull String message, @NotNull Throwable cause) {
-            super(message, cause);
-        }
     }
 }

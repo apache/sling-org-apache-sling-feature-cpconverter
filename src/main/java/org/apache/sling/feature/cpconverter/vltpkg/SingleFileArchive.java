@@ -21,6 +21,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.Collections;
 
 import org.apache.jackrabbit.vault.fs.api.VaultInputSource;
 import org.apache.jackrabbit.vault.fs.config.DefaultMetaInf;
@@ -94,6 +95,7 @@ public class SingleFileArchive implements Archive {
 
     @Override
     public void close() {
+        // no resources to release here
     }
 
     public static class SingleFileEntry implements Entry {
@@ -117,7 +119,7 @@ public class SingleFileArchive implements Archive {
 
         @Override
         public Collection<? extends Entry> getChildren() {
-            return null;
+            return Collections.emptyList();
         }
 
         @Override
