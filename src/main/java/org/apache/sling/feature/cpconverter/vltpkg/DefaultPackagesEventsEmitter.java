@@ -27,6 +27,7 @@ import java.io.Writer;
 import java.net.URI;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -299,7 +300,7 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
 
             @Override
             public @NotNull Map<PackageId, URI> getDependenciesLocations() {
-                return null;
+                return Collections.emptyMap();
             }
 
             @Override

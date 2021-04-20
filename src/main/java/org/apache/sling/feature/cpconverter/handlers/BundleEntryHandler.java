@@ -274,7 +274,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
             }
         }
 
-        // does entry in initial content need to be extracted into feature model (e.g. for OSGi configurations)
+        // does entry in initial content need to be extracted into feature model (e.g. for OSGi configurations)?
         EntryHandler entryHandler = converter.getHandlersManager().getEntryHandlerByEntryPath(contentPackagePath);
         if (entryHandler != null) {
             if (tmpInputFile == null) {
@@ -283,9 +283,10 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
                     IOUtils.copy(bundleFileInputStream, tmpBundleOutput);
                 }
             }
-            // TODO: map path to imitate content-package structure
-            SingleFileArchive archive = new SingleFileArchive(tmpInputFile.toFile(), contentPackagePath);
-            entryHandler.handle(repositoryPath, archive, archive.getRoot(), converter);
+            // TODO: map path to imitate content-package structure (e.g. for CNDs)
+            try (SingleFileArchive archive = new SingleFileArchive(tmpInputFile.toFile(), contentPackagePath)) {
+                entryHandler.handle(repositoryPath, archive, archive.getRoot(), converter);
+            }
             Files.delete(tmpInputFile);
         } else {
             // ... otherwise add it to the content package
@@ -394,7 +395,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         for (java.util.Map.Entry<PackageType, VaultPackageAssembler> entry : packageAssemblers.entrySet()) {
             File packageFile = entry.getValue().createPackage(false);
             converter.processContentPackageArchive(packageFile, runMode);
-            packageFile.delete();
+            Files.delete(packageFile.toPath());
         }
     }
 

@@ -53,16 +53,16 @@ public class VaultPackageUtils {
                     continue;
                 }
                 String root = p.getRoot();
-                PackageType newPackageType = detectPackageType(root);
+                @NotNull PackageType newPackageType = detectPackageType(root);
                 if (packageType != null && packageType != newPackageType) {
+                    // bail out once we ended up with mixed
                     return PackageType.MIXED;
                 } else {
                     packageType = newPackageType;
                 }
-                // bail out once we ended up with mixed
             }
         }
-        return packageType;
+        return packageType != null ? packageType : PackageType.MIXED;
     }
 
     public static @NotNull PackageType detectPackageType(String path) {
