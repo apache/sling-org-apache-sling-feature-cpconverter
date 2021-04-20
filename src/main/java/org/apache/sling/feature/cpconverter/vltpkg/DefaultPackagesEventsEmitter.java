@@ -24,6 +24,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.net.URI;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -284,6 +285,26 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
             @Override
             public void close() {
                 //no invocation for dependency calculation
+            }
+
+            @Override
+            public boolean requiresRestart() {
+                return false;
+            }
+
+            @Override
+            public Map<String, String> getExternalHooks() {
+                return null;
+            }
+
+            @Override
+            public @NotNull Map<PackageId, URI> getDependenciesLocations() {
+                return null;
+            }
+
+            @Override
+            public long getBuildCount() {
+                return 0;
             }
         };
     }

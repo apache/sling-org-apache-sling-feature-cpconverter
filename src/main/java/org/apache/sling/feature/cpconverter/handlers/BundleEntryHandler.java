@@ -31,6 +31,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;
@@ -40,6 +41,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.StringTokenizer;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -56,6 +58,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.felix.utils.manifest.Clause;
 import org.apache.felix.utils.manifest.Parser;
 import org.apache.jackrabbit.commons.cnd.ParseException;
+import org.apache.jackrabbit.util.Text;
 import org.apache.jackrabbit.vault.fs.api.ImportMode;
 import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
 import org.apache.jackrabbit.vault.fs.config.DefaultWorkspaceFilter;
@@ -65,10 +68,10 @@ import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
-import org.apache.jackrabbit.vault.util.Text;
 import org.apache.sling.commons.osgi.ManifestHeader;
 import org.apache.sling.contentparser.api.ContentParser;
 import org.apache.sling.contentparser.api.ParserOptions;
+import org.apache.sling.contentparser.json.JSONParserOptions;
 import org.apache.sling.contentparser.json.internal.JSONContentParser;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
@@ -248,7 +251,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         if (!pathEntry.isPresent()) {
             return false;
         }
-        ContentParser contentParser = getContentParserForEntry(jarEntry, pathEntry.get());
+        Map.Entry<ContentParser, ParserOptions> contentParserAndOptions = getContentParserForEntry(jarEntry, pathEntry.get());
 
         // https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html#file-name-escaping
         String repositoryPath = (pathEntry.get().getTarget() != null ? pathEntry.get().getTarget() : "/") + URLDecoder.decode(entryName.substring(pathEntry.get().getPath().length()), "UTF-8");
@@ -257,12 +260,12 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         // in which content package should this end up?
         VaultPackageAssembler packageAssembler = initPackageAssemblerForPath(bundleArtifactId, repositoryPath, pathEntry.get(), packageAssemblers, converter);
         Path tmpInputFile = null;
-        if (contentParser != null) {
+        if (contentParserAndOptions != null) {
             // convert to docview xml
             tmpInputFile = Files.createTempFile(converter.getTempDirectory().toPath(), "docview", ".xml");
             try (OutputStream docViewOutput = Files.newOutputStream(tmpInputFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
                  DocViewSerializerContentHandler contentHandler = new DocViewSerializerContentHandler(docViewOutput, nsRegistry)) {
-                contentParser.parse(contentHandler, bundleFileInputStream, new ParserOptions());
+                contentParserAndOptions.getKey().parse(contentHandler, bundleFileInputStream, contentParserAndOptions.getValue());
                 contentPackagePath = FilenameUtils.removeExtension(contentPackagePath) + ".xml";
             } catch (IOException e) {
                 throw new IOException("Can not parse " + jarEntry, e);
@@ -304,9 +307,11 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         
         // parse Sling-Namespaces header (https://github.com/apache/sling-org-apache-sling-jcr-base/blob/66be360910c265473799635fcac0e23895898913/src/main/java/org/apache/sling/jcr/base/internal/loader/Loader.java#L192)
         final String namespacesDefinitionHeader = manifest.getMainAttributes().getValue(NAMESPACES_BUNDLE_HEADER);
-        if (StringUtils.isNotBlank(namespacesDefinitionHeader)) {
-            for (ManifestHeader.Entry entry : ManifestHeader.parse(namespacesDefinitionHeader).getEntries()) {
-                final String token = entry.getValue();
+        if (namespacesDefinitionHeader != null) {
+            final StringTokenizer st = new StringTokenizer(namespacesDefinitionHeader, ",");
+
+            while ( st.hasMoreTokens() ) {
+                final String token = st.nextToken().trim();
                 int pos = token.indexOf('=');
                 if ( pos == -1 ) {
                     logger.warn("createNamespaceRegistry: Bundle {} has an invalid namespace manifest header entry: {}",
@@ -365,6 +370,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
             final PackageId packageId = new PackageId(bundleArtifactId.getGroupId(), bundleArtifactId.getArtifactId()+packageNameSuffix, bundleArtifactId.getVersion());
             assembler = VaultPackageAssembler.create(converter.getTempDirectory(), packageId, "Generated out of Sling Initial Content from bundle " + bundleArtifactId + " by cp2fm");
             cache.put(packageType, assembler);
+            logger.info("Created package {} out of Sling-Initial-Content from '{}'", packageId, bundleArtifactId);
         }
         
         DefaultWorkspaceFilter filter = assembler.getFilter();
@@ -392,9 +398,9 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         }
     }
 
-    ContentParser getContentParserForEntry(JarEntry entry, PathEntry pathEntry) {
+    Map.Entry<ContentParser, ParserOptions> getContentParserForEntry(JarEntry entry, PathEntry pathEntry) {
         if (entry.getName().endsWith(".json") && !pathEntry.isIgnoredImportProvider("json")) {
-            return new JSONContentParser();
+            return new AbstractMap.SimpleEntry<ContentParser, ParserOptions>(new JSONContentParser(), new JSONParserOptions().withFeatures(JSONParserOptions.DEFAULT_JSON_PARSER_FEATURES));
         } else {
             return null;
         }
