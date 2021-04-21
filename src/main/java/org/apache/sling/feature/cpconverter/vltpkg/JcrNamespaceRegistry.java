@@ -18,6 +18,8 @@ package org.apache.sling.feature.cpconverter.vltpkg;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,11 +32,14 @@ import javax.jcr.nodetype.NodeTypeManager;
 import org.apache.jackrabbit.commons.cnd.CndImporter;
 import org.apache.jackrabbit.commons.cnd.ParseException;
 import org.apache.jackrabbit.spi.commons.namespace.NamespaceResolver;
+import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 
 /** Simple namespace registry backed by a map */
 public class JcrNamespaceRegistry implements NamespaceRegistry, NamespaceResolver {
 
     private final Map<String, String> prefixUriMapping;
+    private final Collection<String> registeredCndSystemIds;
     
     public JcrNamespaceRegistry() {
         prefixUriMapping = new HashMap<>();
@@ -44,12 +49,14 @@ public class JcrNamespaceRegistry implements NamespaceRegistry, NamespaceResolve
         prefixUriMapping.put(PREFIX_XML, NAMESPACE_XML);
         // referencing from org.apache.sling.api.SlingConstants would require an additional dependency
         prefixUriMapping.put("sling", "http://sling.apache.org/");
+        registeredCndSystemIds = new ArrayList<>();
     }
 
     public void registerCnd(Reader reader, String systemId) throws ParseException, RepositoryException, IOException {
         NodeTypeManager ntManager = null;
         ValueFactory valueFactory = null;
         CndImporter.registerNodeTypes(reader, systemId, ntManager, this, valueFactory, false);
+        registeredCndSystemIds.add(systemId);
     }
 
     @Override
@@ -91,4 +98,7 @@ public class JcrNamespaceRegistry implements NamespaceRegistry, NamespaceResolve
         throw new UnsupportedOperationException("This lookup direction is unsupported");
     }
 
+    public @NotNull Collection<String> getRegisteredCndSystemIds() {
+        return registeredCndSystemIds;
+    }
 }

@@ -283,7 +283,10 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
                     IOUtils.copy(bundleFileInputStream, tmpBundleOutput);
                 }
             }
-            // TODO: map path to imitate content-package structure (e.g. for CNDs)
+            // remap CND files to make sure they are picked up by NodeTypesEntryHandler
+            if (nsRegistry.getRegisteredCndSystemIds().contains(jarEntry.getName())) {
+                contentPackagePath = "/META-INF/vault/" + Text.getName(jarEntry.getName()) + ".cnd";
+            }
             try (SingleFileArchive archive = new SingleFileArchive(tmpInputFile.toFile(), contentPackagePath)) {
                 entryHandler.handle(repositoryPath, archive, archive.getRoot(), converter);
             }
@@ -377,14 +380,13 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         DefaultWorkspaceFilter filter = assembler.getFilter();
         if (!filter.covers(repositoryPath)) {
             PathFilterSet pathFilterSet = new PathFilterSet(pathEntry.getTarget() != null ? pathEntry.getTarget() : "/");
-            
             ImportMode importMode;
             if (pathEntry.isOverwrite()) {
-                importMode = ImportMode.UPDATE;
+                importMode = ImportMode.REPLACE;
             } else {
                 importMode = ImportMode.MERGE;
             }
-            // TODO: add handling for merge (https://issues.apache.org/jira/browse/SLING-10318)
+            // TODO: add handling for merge, mergeProperties and overwriteProperties (https://issues.apache.org/jira/browse/SLING-10318)
             pathFilterSet.setImportMode(importMode);
             filter.add(pathFilterSet);
         }
