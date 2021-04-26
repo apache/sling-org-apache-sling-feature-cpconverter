@@ -120,7 +120,7 @@ public class BundleEntryHandlerGAVTest {
             FileUtils.copyFile(sourcePackage, newPackageFile);
             return null;
         }).when(converter).processContentPackageArchive(Mockito.any(), Mockito.isNull());
-        
+        handler.setExtractSlingInitialContent(true);
         handler.handle("/jcr_root/apps/gav/install/io.wcm.handler.media-1.11.6.jar", archive, entry, converter);
         // verify package contents
         try (VaultPackage vaultPackage = new PackageManagerImpl().open(newPackageFile);

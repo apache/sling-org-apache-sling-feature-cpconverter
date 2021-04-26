@@ -133,6 +133,9 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Option(names = { "-u", "--unreferenced-artifacts-output-directory" }, description = "The output directory where unreferenced artifacts will be deployed.", required = false)
     private File unreferencedArtifactsOutputDirectory;
 
+    @Option(names = { "--extract-sling-initial-content" }, description = "Extracts Sling-Initial-Content into content packages and feature model", required = false)
+    private boolean extractSlingInitialContent = false;
+    
     @Override
     public void run() {
         if (quiet) {
@@ -204,7 +207,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                 ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation)
                                                                 .setFeaturesManager(featuresManager)
                                                                 .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(artifactsOutputDirectory))
-                                                                .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap, !disableInstallerPolicy))
+                                                                .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap, !disableInstallerPolicy, extractSlingInitialContent))
                                                                 .setAclManager(aclManager)
                                                                 .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
                                                                 .setFailOnMixedPackages(failOnMixedPackages)

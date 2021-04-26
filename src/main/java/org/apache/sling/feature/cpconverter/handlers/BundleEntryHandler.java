@@ -107,12 +107,18 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
 
     private boolean enforceBundlesBelowInstallFolder;
 
+    private boolean extractSlingInitialContent;
+
     public BundleEntryHandler() {
         super("/jcr_root/(?:apps|libs)/.+/(?<foldername>install|config)(?:\\.(?<runmode>[^/]+))?/(?:(?<startlevel>[0-9]+)/)?.+\\.jar");
     }
 
     void setEnforceBundlesBelowInstallFolder(boolean enforceBundlesBelowInstallFolder) {
         this.enforceBundlesBelowInstallFolder = enforceBundlesBelowInstallFolder;
+    }
+
+    void setExtractSlingInitialContent(boolean extractSlingInitialContent) {
+        this.extractSlingInitialContent = extractSlingInitialContent;
     }
 
     @Override
@@ -170,7 +176,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
             // first extract bundle metadata from JAR input stream
             ArtifactId id = extractArtifactId(bundleName, jarFile);
 
-            try (InputStream strippedBundleInput = extractInitialContent(id, jarFile, converter, runMode)) {
+            try (InputStream strippedBundleInput = extractSlingInitialContent(id, jarFile, converter, runMode)) {
                 Objects.requireNonNull(converter.getArtifactsDeployer()).deploy(new InputStreamArtifactWriter(strippedBundleInput), id);
                 Objects.requireNonNull(converter.getFeaturesManager()).addArtifact(runMode, id, startLevel);
 
@@ -186,7 +192,10 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         }
     }
 
-    @NotNull InputStream extractInitialContent(@NotNull ArtifactId bundleArtifactId, @NotNull JarFile jarFile, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws Exception {
+    @NotNull InputStream extractSlingInitialContent(@NotNull ArtifactId bundleArtifactId, @NotNull JarFile jarFile, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws Exception {
+        if (!extractSlingInitialContent) {
+            return new FileInputStream(jarFile.getName());
+        }
         // parse "Sling-Initial-Content" header
         Manifest manifest = Objects.requireNonNull(jarFile.getManifest());
         Iterator<PathEntry> pathEntries = PathEntry.getContentPaths(manifest, -1);
@@ -212,7 +221,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
                 JarEntry jarEntry = e.nextElement();
                 if (!jarEntry.isDirectory()) {
                     try (InputStream input = jarFile.getInputStream(jarEntry)) {
-                        if (!extractInitialContent(jarEntry, input, bundleArtifactId, pathEntryList, packageAssemblers, namespaceRegistry, converter)) {
+                        if (!extractSlingInitialContent(jarEntry, input, bundleArtifactId, pathEntryList, packageAssemblers, namespaceRegistry, converter)) {
                             // skip manifest, as already written in the constructor (as first entry)
                             if (jarEntry.getName().equals(JarFile.MANIFEST_NAME)) {
                                 continue;
@@ -244,7 +253,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
      * @return {@code true} in case the given entry was part of the initial content otherwise {@code false}
      * @throws Exception 
      */
-    boolean extractInitialContent(@NotNull JarEntry jarEntry, @NotNull InputStream bundleFileInputStream, @NotNull ArtifactId bundleArtifactId, @NotNull Collection<PathEntry> pathEntries, @NotNull Map<PackageType, VaultPackageAssembler> packageAssemblers, @NotNull JcrNamespaceRegistry nsRegistry, @NotNull ContentPackage2FeatureModelConverter converter) throws Exception {
+    boolean extractSlingInitialContent(@NotNull JarEntry jarEntry, @NotNull InputStream bundleFileInputStream, @NotNull ArtifactId bundleArtifactId, @NotNull Collection<PathEntry> pathEntries, @NotNull Map<PackageType, VaultPackageAssembler> packageAssemblers, @NotNull JcrNamespaceRegistry nsRegistry, @NotNull ContentPackage2FeatureModelConverter converter) throws Exception {
         final String entryName = jarEntry.getName();
         // check if current JAR entry is initial content
         Optional<PathEntry> pathEntry = pathEntries.stream().filter(p -> entryName.startsWith(p.getPath())).findFirst();
@@ -308,7 +317,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         for (Map.Entry<String, String> entry : predefinedNamespaceUriByPrefix.entrySet()) {
             registry.registerNamespace(entry.getKey(), entry.getValue());
         }
-        
+
         // parse Sling-Namespaces header (https://github.com/apache/sling-org-apache-sling-jcr-base/blob/66be360910c265473799635fcac0e23895898913/src/main/java/org/apache/sling/jcr/base/internal/loader/Loader.java#L192)
         final String namespacesDefinitionHeader = manifest.getMainAttributes().getValue(NAMESPACES_BUNDLE_HEADER);
         if (namespacesDefinitionHeader != null) {
@@ -327,7 +336,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
                 }
             }
         }
-        
+
         // parse Sling-Nodetypes header
         final String typesHeader = manifest.getMainAttributes().getValue(NODETYPES_BUNDLE_HEADER);
         
@@ -376,7 +385,6 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
             cache.put(packageType, assembler);
             logger.info("Created package {} out of Sling-Initial-Content from '{}'", packageId, bundleArtifactId);
         }
-        
         DefaultWorkspaceFilter filter = assembler.getFilter();
         if (!filter.covers(repositoryPath)) {
             PathFilterSet pathFilterSet = new PathFilterSet(pathEntry.getTarget() != null ? pathEntry.getTarget() : "/");

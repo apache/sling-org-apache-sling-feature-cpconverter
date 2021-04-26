@@ -32,7 +32,6 @@ import javax.jcr.nodetype.NodeTypeManager;
 import org.apache.jackrabbit.commons.cnd.CndImporter;
 import org.apache.jackrabbit.commons.cnd.ParseException;
 import org.apache.jackrabbit.spi.commons.namespace.NamespaceResolver;
-import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 
 /** Simple namespace registry backed by a map */
