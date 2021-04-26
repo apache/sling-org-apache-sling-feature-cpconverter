@@ -35,6 +35,7 @@ import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.SlingInitialContentPolicy;
 import org.apache.sling.feature.cpconverter.artifacts.ArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.codehaus.plexus.util.FileUtils;
@@ -127,7 +128,7 @@ public class BundleEntryHandlerGAVTest {
             FileUtils.copyFile(sourcePackage, newPackageFile);
             return null;
         }).when(converter).processContentPackageArchive(Mockito.any(), Mockito.isNull());
-        handler.setExtractSlingInitialContent(true);
+        handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
         handler.handle("/jcr_root/apps/gav/install/io.wcm.handler.media-1.11.6.jar", archive, entry, converter);
         // verify package contents
         try (VaultPackage vaultPackage = new PackageManagerImpl().open(newPackageFile);
@@ -138,17 +139,39 @@ public class BundleEntryHandlerGAVTest {
             Entry entry = archive.getEntry("jcr_root/apps/wcm-io/handler/media/components/global/include/responsiveImageSettings.xml");
             assertNotNull("Archive does not contain expected item", entry);
         }
+        // changed id
+        Mockito.verify(featuresManager).addArtifact(null, ArtifactId.fromMvnId("io.wcm:io.wcm.handler.media:1.11.6-cp2fm-converted"), null);
     }
 
     @Test
-    public void testSlingInitialContentContainingConfiguration() throws Exception {
+    public void testSlingInitialContentContainingConfigurationExtractAndRemove() throws Exception {
         setUpArchive("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", "composum-nodes-config-2.5.3.jar");
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
         converter.setHandlersManager(handlersManager);
-        handler.setExtractSlingInitialContent(true);
+        handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
         handler.handle("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", archive, entry, converter);
         // verify no additional content package created (as it only contains the configuration which should end up in the feature model only)
         Mockito.verify(converter, Mockito.never()).processContentPackageArchive(Mockito.any(), Mockito.isNull());
+        // modified bundle
+        Mockito.verify(featuresManager).addArtifact(null, ArtifactId.fromMvnId("com.composum.nodes:composum-nodes-config:2.5.3-cp2fm-converted"), null);
+        // need to use ArgumentCaptur to properly compare string arrays
+        Mockito.verify(featuresManager).addConfiguration(ArgumentMatchers.isNull(), ArgumentMatchers.eq("org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment~composum_core_v2"), ArgumentMatchers.eq("/jcr_root/libs/composum/nodes/install/org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment-composum_core_v2.config"), dictionaryCaptor.capture());
+        assertEquals("composum_core", dictionaryCaptor.getValue().get("whitelist.name"));
+        assertArrayEquals(new String[] {
+                "com.composum.nodes.commons",
+                "com.composum.nodes.pckgmgr",
+                "com.composum.nodes.pckginstall" }, (String[])dictionaryCaptor.getValue().get("whitelist.bundles"));
+    }
+    
+    @Test
+    public void testSlingInitialContentContainingConfigurationExtractAndKeep() throws Exception {
+        setUpArchive("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", "composum-nodes-config-2.5.3.jar");
+        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
+        converter.setHandlersManager(handlersManager);
+        handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_KEEP);
+        handler.handle("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", archive, entry, converter);
+        // original bundle
+        Mockito.verify(featuresManager).addArtifact(null, ArtifactId.fromMvnId("com.composum.nodes:composum-nodes-config:2.5.3"), null);
         // need to use ArgumentCaptur to properly compare string arrays
         Mockito.verify(featuresManager).addConfiguration(ArgumentMatchers.isNull(), ArgumentMatchers.eq("org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment~composum_core_v2"), ArgumentMatchers.eq("/jcr_root/libs/composum/nodes/install/org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment-composum_core_v2.config"), dictionaryCaptor.capture());
         assertEquals("composum_core", dictionaryCaptor.getValue().get("whitelist.name"));

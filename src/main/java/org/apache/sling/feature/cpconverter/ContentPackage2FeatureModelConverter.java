@@ -109,6 +109,15 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     private PackagePolicy contentTypePackagePolicy = PackagePolicy.REFERENCE;
 
     private boolean removeInstallHooks = false;
+    
+    public enum SlingInitialContentPolicy {
+        /** Keep in bundle and don't extract */
+        KEEP,
+        /** Extract from bundle into content-packages and feature model */
+        EXTRACT_AND_REMOVE,
+        /** Extract from bundle into content-packages and feature model but keep in bundle as well */
+        EXTRACT_AND_KEEP
+    }
 
     private final File tmpDirectory;
 

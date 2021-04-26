@@ -20,7 +20,6 @@ import static java.util.Objects.requireNonNull;
 import static org.osgi.framework.Version.parseVersion;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -76,6 +75,7 @@ import org.apache.sling.contentparser.json.JSONParserOptions;
 import org.apache.sling.contentparser.json.internal.JSONContentParser;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.SlingInitialContentPolicy;
 import org.apache.sling.feature.cpconverter.artifacts.InputStreamArtifactWriter;
 import org.apache.sling.feature.cpconverter.vltpkg.DocViewSerializerContentHandler;
 import org.apache.sling.feature.cpconverter.vltpkg.DocViewSerializerContentHandlerException;
@@ -107,7 +107,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
 
     private boolean enforceBundlesBelowInstallFolder;
 
-    private boolean extractSlingInitialContent;
+    private SlingInitialContentPolicy slingInitialContentPolicy;
 
     public BundleEntryHandler() {
         super("/jcr_root/(?:apps|libs)/.+/(?<foldername>install|config)(?:\\.(?<runmode>[^/]+))?/(?:(?<startlevel>[0-9]+)/)?.+\\.jar");
@@ -117,8 +117,8 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         this.enforceBundlesBelowInstallFolder = enforceBundlesBelowInstallFolder;
     }
 
-    void setExtractSlingInitialContent(boolean extractSlingInitialContent) {
-        this.extractSlingInitialContent = extractSlingInitialContent;
+    void setSlingInitialContentPolicy(SlingInitialContentPolicy slingInitialContentPolicy) {
+        this.slingInitialContentPolicy = slingInitialContentPolicy;
     }
 
     @Override
@@ -173,36 +173,51 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
              InputStream input = Objects.requireNonNull(archive.openInputStream(entry))) {
             IOUtils.copy(input, output);
         }
-        
-        try (JarFile jarFile = new JarFile(tmpBundleJar.toFile())) {
-            // first extract bundle metadata from JAR input stream
-            ArtifactId id = extractArtifactId(bundleName, jarFile);
-
-            try (InputStream strippedBundleInput = extractSlingInitialContent(id, jarFile, converter, runMode)) {
-                Objects.requireNonNull(converter.getArtifactsDeployer()).deploy(new InputStreamArtifactWriter(strippedBundleInput), id);
-                Objects.requireNonNull(converter.getFeaturesManager()).addArtifact(runMode, id, startLevel);
-
-                String exportHeader = Objects.requireNonNull(jarFile.getManifest()).getMainAttributes().getValue(Constants.EXPORT_PACKAGE);
-                if (exportHeader != null) {
-                    for (Clause clause : Parser.parseHeader(exportHeader)) {
-                        converter.getFeaturesManager().addAPIRegionExport(runMode, clause.getName());
-                    }
-                }
-            }
+        try {
+            processBundleInputStream(tmpBundleJar, bundleName, runMode, startLevel, converter);
         } finally {
             Files.delete(tmpBundleJar);
         }
     }
 
-    @NotNull InputStream extractSlingInitialContent(@NotNull ArtifactId bundleArtifactId, @NotNull JarFile jarFile, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws Exception {
-        if (!extractSlingInitialContent) {
-            return new FileInputStream(jarFile.getName());
+    void processBundleInputStream(@NotNull Path originalBundleFile, @NotNull String bundleName, @Nullable String runMode, @Nullable Integer startLevel, @NotNull ContentPackage2FeatureModelConverter converter) throws Exception {
+        try (JarFile jarFile = new JarFile(originalBundleFile.toFile())) {
+            // first extract bundle metadata from JAR input stream
+            ArtifactId id = extractArtifactId(bundleName, jarFile);
+
+            try (InputStream strippedBundleInput = extractSlingInitialContent(id, jarFile, converter, runMode)) {
+                if (strippedBundleInput != null && slingInitialContentPolicy == SlingInitialContentPolicy.EXTRACT_AND_REMOVE) {
+                    id = id.changeVersion(id.getVersion() + "-" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);
+                    Objects.requireNonNull(converter.getArtifactsDeployer()).deploy(new InputStreamArtifactWriter(strippedBundleInput), id);
+                } else {
+                    try (InputStream originalBundleInput = Files.newInputStream(originalBundleFile)) {
+                        Objects.requireNonNull(converter.getArtifactsDeployer()).deploy(new InputStreamArtifactWriter(originalBundleInput), id);
+                    }
+                }
+            }
+            Objects.requireNonNull(converter.getFeaturesManager()).addArtifact(runMode, id, startLevel);
+            String exportHeader = Objects.requireNonNull(jarFile.getManifest()).getMainAttributes().getValue(Constants.EXPORT_PACKAGE);
+            if (exportHeader != null) {
+                for (Clause clause : Parser.parseHeader(exportHeader)) {
+                    converter.getFeaturesManager().addAPIRegionExport(runMode, clause.getName());
+                }
+            }
+        }
+    }
+
+    static Version getModifiedOsgiVersion(Version originalVersion) {
+        return new Version(originalVersion.getMajor(), originalVersion.getMinor(), originalVersion.getMicro(), originalVersion.getQualifier() + "_" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);
+    }
+
+    @Nullable InputStream extractSlingInitialContent(@NotNull ArtifactId bundleArtifactId, @NotNull JarFile jarFile, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws Exception {
+        if (slingInitialContentPolicy == SlingInitialContentPolicy.KEEP) {
+            return null;
         }
         // parse "Sling-Initial-Content" header
         Manifest manifest = Objects.requireNonNull(jarFile.getManifest());
         Iterator<PathEntry> pathEntries = PathEntry.getContentPaths(manifest, -1);
         if (pathEntries == null) {
-            return new FileInputStream(jarFile.getName());
+            return null;
         }
         logger.info("Extracting Sling-Initial-Content from '{}'", bundleArtifactId);
         Collection<PathEntry> pathEntryList = new ArrayList<>();
@@ -210,6 +225,9 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
 
         // remove header
         manifest.getMainAttributes().remove(new Attributes.Name(PathEntry.CONTENT_HEADER));
+        // change version to have suffix
+        Version originalVersion = new Version(Objects.requireNonNull(manifest.getMainAttributes().getValue(Constants.BUNDLE_VERSION)));
+        manifest.getMainAttributes().putValue(Constants.BUNDLE_VERSION, getModifiedOsgiVersion(originalVersion).toString());
         Path newBundleFile = Files.createTempFile(converter.getTempDirectory().toPath(), "newBundle", ".jar");
         
         // create JAR file to prevent extracting it twice and for random access

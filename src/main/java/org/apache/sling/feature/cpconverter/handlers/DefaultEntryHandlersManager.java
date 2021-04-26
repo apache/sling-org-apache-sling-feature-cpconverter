@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.SlingInitialContentPolicy;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -30,10 +31,10 @@ public class DefaultEntryHandlersManager implements EntryHandlersManager {
     private final List<EntryHandler> entryHandlers = new LinkedList<>();
 
     public DefaultEntryHandlersManager() {
-        this(Collections.emptyMap(), false, false);
+        this(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP);
     }
 
-    public DefaultEntryHandlersManager(@NotNull Map<String, String> configs, boolean enforceConfigurationsAndBundlesBelowProperFolder, boolean extractSlingInitialContent) {
+    public DefaultEntryHandlersManager(@NotNull Map<String, String> configs, boolean enforceConfigurationsAndBundlesBelowProperFolder, SlingInitialContentPolicy slingInitialContentPolicy) {
         ServiceLoader<EntryHandler> entryHandlersLoader = ServiceLoader.load(EntryHandler.class);
         for (EntryHandler entryHandler : entryHandlersLoader) {
             if (configs.containsKey(entryHandler.getClass().getName())) {
@@ -42,7 +43,7 @@ public class DefaultEntryHandlersManager implements EntryHandlersManager {
                     ((AbstractConfigurationEntryHandler) entryHandler).setEnforceConfgurationBelowConfigFolder(enforceConfigurationsAndBundlesBelowProperFolder);
                 } else if (entryHandler instanceof BundleEntryHandler) {
                     ((BundleEntryHandler) entryHandler).setEnforceBundlesBelowInstallFolder(enforceConfigurationsAndBundlesBelowProperFolder);
-                    ((BundleEntryHandler) entryHandler).setExtractSlingInitialContent(extractSlingInitialContent);
+                    ((BundleEntryHandler) entryHandler).setSlingInitialContentPolicy(slingInitialContentPolicy);
                 }
             }
             addEntryHandler(entryHandler);
