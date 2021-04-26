@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
@@ -24,6 +25,7 @@ import static org.mockito.Mockito.when;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Dictionary;
 import java.util.Map;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
@@ -41,6 +43,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
@@ -59,6 +64,8 @@ public class BundleEntryHandlerGAVTest {
     private FeaturesManager featuresManager;
     @Rule
     public TemporaryFolder tmpFolder = new TemporaryFolder();
+    @Captor
+    ArgumentCaptor<Dictionary<String, Object>> dictionaryCaptor;
     
     private BundleEntryHandler handler;
 
@@ -133,4 +140,21 @@ public class BundleEntryHandlerGAVTest {
         }
     }
 
+    @Test
+    public void testSlingInitialContentContainingConfiguration() throws Exception {
+        setUpArchive("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", "composum-nodes-config-2.5.3.jar");
+        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
+        when(converter.getHandlersManager()).thenReturn(handlersManager);
+        handler.setExtractSlingInitialContent(true);
+        handler.handle("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", archive, entry, converter);
+        // verify no additional content package created (as it only contains the configuration which should end up in the feature model only)
+        Mockito.verify(converter, Mockito.never()).processContentPackageArchive(Mockito.any(), Mockito.isNull());
+        // need to use ArgumentCaptur to properly compare string arrays
+        Mockito.verify(featuresManager).addConfiguration(ArgumentMatchers.isNull(), ArgumentMatchers.eq("org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment~composum_core_v2"), ArgumentMatchers.eq("/jcr_root/libs/composum/nodes/install/org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment-composum_core_v2.config"), dictionaryCaptor.capture());
+        assertEquals("composum_core", dictionaryCaptor.getValue().get("whitelist.name"));
+        assertArrayEquals(new String[] {
+                "com.composum.nodes.commons",
+                "com.composum.nodes.pckgmgr",
+                "com.composum.nodes.pckginstall" }, (String[])dictionaryCaptor.getValue().get("whitelist.bundles"));
+    }
 }
