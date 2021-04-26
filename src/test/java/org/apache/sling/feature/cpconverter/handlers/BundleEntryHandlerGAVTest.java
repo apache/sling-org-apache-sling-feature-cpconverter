@@ -58,7 +58,7 @@ public class BundleEntryHandlerGAVTest {
     private Archive.Entry entry;
     @Mock
     private Archive archive;
-    @Mock
+    @Spy
     private ContentPackage2FeatureModelConverter converter;
     @Spy
     private FeaturesManager featuresManager;
@@ -116,7 +116,7 @@ public class BundleEntryHandlerGAVTest {
     public void testSlingInitialContent() throws Exception {
         setUpArchive("/jcr_root/apps/gav/install/io.wcm.handler.media-1.11.6.jar", "io.wcm.handler.media-1.11.6.jar");
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
-        when(converter.getHandlersManager()).thenReturn(handlersManager);
+        converter.setHandlersManager(handlersManager);
         Map<String, String> namespaceRegistry = Collections.singletonMap("granite", "http://www.adobe.com/jcr/granite/1.0");
         when(featuresManager.getNamespaceUriByPrefix()).thenReturn(namespaceRegistry);
         
@@ -144,7 +144,7 @@ public class BundleEntryHandlerGAVTest {
     public void testSlingInitialContentContainingConfiguration() throws Exception {
         setUpArchive("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", "composum-nodes-config-2.5.3.jar");
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
-        when(converter.getHandlersManager()).thenReturn(handlersManager);
+        converter.setHandlersManager(handlersManager);
         handler.setExtractSlingInitialContent(true);
         handler.handle("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", archive, entry, converter);
         // verify no additional content package created (as it only contains the configuration which should end up in the feature model only)

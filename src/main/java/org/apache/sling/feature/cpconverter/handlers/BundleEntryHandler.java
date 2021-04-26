@@ -42,6 +42,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.StringTokenizer;
+import java.util.function.Supplier;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -268,47 +269,53 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         // all entry paths used by entry handlers start with "/"
         String contentPackageEntryPath = "/" + org.apache.jackrabbit.vault.util.Constants.ROOT_DIR + PlatformNameFormat.getPlatformPath(repositoryPath);
 
-        Path tmpInputFile = null;
-        if (contentParserAndOptions != null) {
-            // convert to docview xml
-            tmpInputFile = Files.createTempFile(converter.getTempDirectory().toPath(), "docview", ".xml");
-            try (OutputStream docViewOutput = Files.newOutputStream(tmpInputFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
-                 DocViewSerializerContentHandler contentHandler = new DocViewSerializerContentHandler(docViewOutput, nsRegistry)) {
-                contentParserAndOptions.getKey().parse(contentHandler, bundleFileInputStream, contentParserAndOptions.getValue());
-                contentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath) + ".xml";
-            } catch (IOException e) {
-                throw new IOException("Can not parse " + jarEntry, e);
-            } catch (DocViewSerializerContentHandlerException e) {
-                throw new IOException("Can not convert " + jarEntry + " to enhanced DocView format", e);
-            }
-        }
-
-        // does entry in initial content need to be extracted into feature model (e.g. for OSGi configurations)?
-        EntryHandler entryHandler = converter.getHandlersManager().getEntryHandlerByEntryPath(contentPackageEntryPath);
-        if (entryHandler != null) {
-            if (tmpInputFile == null) {
-                tmpInputFile = Files.createTempFile(converter.getTempDirectory().toPath(), "initial-content", Text.getName(jarEntry.getName()));
-                try (OutputStream tmpBundleOutput = Files.newOutputStream(tmpInputFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
-                    IOUtils.copy(bundleFileInputStream, tmpBundleOutput);
+        Path tmpDocViewInputFile = null;
+        try {
+            if (contentParserAndOptions != null) {
+                // convert to docview xml
+                tmpDocViewInputFile = Files.createTempFile(converter.getTempDirectory().toPath(), "docview", ".xml");
+                try (OutputStream docViewOutput = Files.newOutputStream(tmpDocViewInputFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+                     DocViewSerializerContentHandler contentHandler = new DocViewSerializerContentHandler(docViewOutput, nsRegistry)) {
+                    contentParserAndOptions.getKey().parse(contentHandler, bundleFileInputStream, contentParserAndOptions.getValue());
+                    contentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath) + ".xml";
+                } catch (IOException e) {
+                    throw new IOException("Can not parse " + jarEntry, e);
+                } catch (DocViewSerializerContentHandlerException e) {
+                    throw new IOException("Can not convert " + jarEntry + " to enhanced DocView format", e);
                 }
             }
+    
             // remap CND files to make sure they are picked up by NodeTypesEntryHandler
             if (nsRegistry.getRegisteredCndSystemIds().contains(jarEntry.getName())) {
                 contentPackageEntryPath = "/META-INF/vault/" + Text.getName(jarEntry.getName()) + ".cnd";
             }
-            try (SingleFileArchive archive = new SingleFileArchive(tmpInputFile.toFile(), contentPackageEntryPath)) {
-                entryHandler.handle(contentPackageEntryPath, archive, archive.getRoot(), converter);
+            
+            Supplier<Path> tmpFileSupplier = new Supplier<Path>() {
+                @Override
+                public Path get() {
+                    try {
+                        return Files.createTempFile(converter.getTempDirectory().toPath(), "initial-content", Text.getName(jarEntry.getName()));
+                    } catch (IOException e) {
+                        throw new IllegalStateException("Could not create temp file for virtual archive", e);
+                    }
+                }
+            };
+            try (Archive virtualArchive = SingleFileArchive.fromPathOrInputStream(tmpDocViewInputFile, bundleFileInputStream, tmpFileSupplier, contentPackageEntryPath)) {
+                // does entry in initial content need to be extracted into feature model (e.g. for OSGi configurations)?
+                if (!converter.process(contentPackageEntryPath, virtualArchive, null, false)) {
+                    // ... otherwise add it to the content package
+                    // in which content package should this end up?
+                    VaultPackageAssembler packageAssembler = initPackageAssemblerForPath(bundleArtifactId, repositoryPath, pathEntry.get(), packageAssemblers, converter);
+                    if (tmpDocViewInputFile != null) {
+                        packageAssembler.addEntry(contentPackageEntryPath, tmpDocViewInputFile.toFile());
+                    } else {
+                        packageAssembler.addEntry(contentPackageEntryPath, bundleFileInputStream);
+                    }
+                }
             }
-            Files.delete(tmpInputFile);
-        } else {
-            // ... otherwise add it to the content package
-            // in which content package should this end up?
-            VaultPackageAssembler packageAssembler = initPackageAssemblerForPath(bundleArtifactId, repositoryPath, pathEntry.get(), packageAssemblers, converter);
-            if (tmpInputFile != null) {
-                packageAssembler.addEntry(contentPackageEntryPath, tmpInputFile.toFile());
-                Files.delete(tmpInputFile);
-            } else {
-                packageAssembler.addEntry(contentPackageEntryPath, bundleFileInputStream);
+        } finally {
+            if (tmpDocViewInputFile != null) {
+                Files.delete(tmpDocViewInputFile);
             }
         }
         return true;

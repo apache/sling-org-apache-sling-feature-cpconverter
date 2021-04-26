@@ -126,10 +126,6 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         }
     }
 
-    public EntryHandlersManager getHandlersManager() {
-        return handlersManager;
-    }
-
     public void setHandlersManager(EntryHandlersManager handlersManager) {
         this.handlersManager = handlersManager;
     }
@@ -427,22 +423,37 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return subContentPackages.containsValue(path);
     }
 
-    @Override
-    protected void onFile(@NotNull String entryPath, @NotNull Archive archive, @NotNull Entry entry) throws Exception {
+    public boolean process(@NotNull String entryPath, @NotNull Archive archive, @Nullable Entry entry, boolean useMainPackageAssembler) throws Exception {
         if (resourceFilter != null && resourceFilter.isFilteredOut(entryPath)) {
             throw new IllegalArgumentException("Path '"
                                                + entryPath
                                                + "' in archive "
-                                               + archive.getMetaInf().getProperties()
+                                               + archive.getMetaInf().getPackageProperties().getId()
                                                + " not allowed by user configuration, please check configured filtering patterns");
         }
 
         EntryHandler entryHandler = handlersManager.getEntryHandlerByEntryPath(entryPath);
         if (entryHandler == null) {
-            entryHandler = mainPackageAssembler;
+            if (useMainPackageAssembler) {
+                entryHandler = mainPackageAssembler;
+            } else {
+                return false;
+            }
         }
 
+        if (entry == null) {
+            entry = archive.getEntry(entryPath);
+            if (entry == null) {
+                throw new IllegalArgumentException("Archive '" + archive.getMetaInf().getPackageProperties().getId() + "' does not contain entry with path '" + entryPath + "'");
+            }
+        }
         entryHandler.handle(entryPath, archive, entry, this);
+        return true;
+    }
+
+    @Override
+    protected void onFile(@NotNull String entryPath, @NotNull Archive archive, @NotNull Entry entry) throws Exception {
+        process(entryPath, archive, entry, true);
     }
 
     public static @NotNull ArtifactId toArtifactId(@NotNull PackageId packageId, @NotNull File file) {
