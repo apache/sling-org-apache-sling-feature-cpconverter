@@ -23,7 +23,6 @@ import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.artifacts.InputStreamArtifactWriter;
-import org.codehaus.plexus.util.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
@@ -96,15 +95,17 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
             throw new IllegalStateException("OSGi bundles are only considered if placed below a folder called 'install', but the bundle at '"+ path + "' is placed outside!");
         }
 
-        if (StringUtils.isNotBlank(matcher.group("runmode"))) {
+        
+        runMode = matcher.group("runmode");
+        if (runMode != null) {
             // there is a specified RunMode
-            runMode = matcher.group("runmode");
             logger.debug("Runmode {} was extracted from path {}", runMode, path);
         }
 
-        if (StringUtils.isNotBlank(matcher.group("startlevel"))) {
+        final String value = matcher.group("startlevel");
+        if (value != null) {
             // there is a specified Start Level
-            startLevel = Integer.parseInt(matcher.group("startlevel")); // NumberFormatException impossible due to RegEx
+            startLevel = Integer.parseInt(value); // NumberFormatException impossible due to RegEx
             logger.debug("Start level {} was extracted from path {}", startLevel, path);
         }
 

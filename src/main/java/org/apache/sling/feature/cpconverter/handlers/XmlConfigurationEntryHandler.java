@@ -28,7 +28,6 @@ import org.apache.felix.cm.json.Configurations;
 import org.apache.jackrabbit.util.ISO8601;
 import org.apache.jackrabbit.vault.util.DocViewProperty;
 import org.apache.sling.feature.cpconverter.shared.AbstractJcrNodeParser;
-import org.codehaus.plexus.util.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.xml.sax.Attributes;
@@ -93,7 +92,7 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
                             case PropertyType.DOUBLE:
                                 value = strValues.stream().map(s -> {
                                     Double res = null;
-                                    if (StringUtils.isNotEmpty(s)) {
+                                    if (!s.isEmpty()) {
                                         res = Double.parseDouble(s);
                                     }
                                     return res;
@@ -102,7 +101,7 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
                             case PropertyType.LONG:
                                 value = strValues.stream().map(s -> {
                                     Long res = null;
-                                    if (StringUtils.isNotEmpty(s)) {
+                                    if (!s.isEmpty()) {
                                         res = Long.parseLong(s);
                                     }
                                     return res;
