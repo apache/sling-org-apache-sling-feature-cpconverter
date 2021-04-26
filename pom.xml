@@ -38,7 +38,6 @@
     <org.apache.jackrabbit.vault.version>3.2.8</org.apache.jackrabbit.vault.version>
     <jackrabbit-api.version>2.18.4</jackrabbit-api.version>
     <jackrabbit-spi-commons.version>2.18.4</jackrabbit-spi-commons.version>
-    <maven-model.version>3.6.3</maven-model.version>
     <mockito-core.version>3.2.0</mockito-core.version>
     <license-maven-plugin.version>1.16</license-maven-plugin.version>
     <appassembler-maven-plugin.version>2.0.0</appassembler-maven-plugin.version>
@@ -185,16 +184,6 @@
       <groupId>org.apache.jackrabbit</groupId>
       <artifactId>jackrabbit-api</artifactId>
       <version>${jackrabbit-api.version}</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <!--
-     | POM model
-    -->
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-model</artifactId>
-      <version>${maven-model.version}</version>
       <scope>provided</scope>
     </dependency>
 
