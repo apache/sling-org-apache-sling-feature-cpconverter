@@ -83,7 +83,6 @@ import org.apache.sling.feature.cpconverter.vltpkg.SingleFileArchive;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils;
 import org.apache.sling.jcr.contentloader.PathEntry;
-import org.codehaus.plexus.util.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Constants;
@@ -141,15 +140,17 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
             throw new IllegalStateException("OSGi bundles are only considered if placed below a folder called 'install', but the bundle at '"+ path + "' is placed outside!");
         }
 
-        if (StringUtils.isNotBlank(matcher.group("runmode"))) {
+        
+        runMode = matcher.group("runmode");
+        if (runMode != null) {
             // there is a specified RunMode
-            runMode = matcher.group("runmode");
             logger.debug("Runmode {} was extracted from path {}", runMode, path);
         }
 
-        if (StringUtils.isNotBlank(matcher.group("startlevel"))) {
+        final String value = matcher.group("startlevel");
+        if (value != null) {
             // there is a specified Start Level
-            startLevel = Integer.parseInt(matcher.group("startlevel")); // NumberFormatException impossible due to RegEx
+            startLevel = Integer.parseInt(value); // NumberFormatException impossible due to RegEx
             logger.debug("Start level {} was extracted from path {}", startLevel, path);
         }
 
@@ -339,8 +340,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
 
         // parse Sling-Nodetypes header
         final String typesHeader = manifest.getMainAttributes().getValue(NODETYPES_BUNDLE_HEADER);
-        
-        if (StringUtils.isNotBlank(typesHeader) ) {
+        if (typesHeader != null) {
             for (ManifestHeader.Entry entry : ManifestHeader.parse(typesHeader).getEntries()) {
                 JarEntry jarEntry = jarFile.getJarEntry(entry.getValue());
                 if (jarEntry == null) {

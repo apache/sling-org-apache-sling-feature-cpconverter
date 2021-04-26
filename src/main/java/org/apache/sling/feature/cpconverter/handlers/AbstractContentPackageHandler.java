@@ -28,7 +28,6 @@ import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.codehaus.plexus.util.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -83,9 +82,9 @@ public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHa
                                             + "' but it does not, currently");
         }
 
-        if (StringUtils.isNotBlank(matcher.group(1))) {
+        runMode = matcher.group(1);
+        if (runMode != null) {
             // there is a specified RunMode
-            runMode = matcher.group(1);
             logger.debug("Runmode {} was extracted from path {}", runMode, path);
         }
 
