@@ -31,7 +31,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -286,14 +285,13 @@ public class VaultPackageAssembler implements EntryHandler {
         try ( final JarOutputStream jos = manifest == null ? new JarOutputStream(new FileOutputStream(destFile)) 
                                                            : new JarOutputStream(new FileOutputStream(destFile), manifest)) {            
             jos.setLevel(Deflater.DEFAULT_COMPRESSION);
-            final byte buffer[] = new byte[1024 * 8];
-            addDirectory(jos, storingDirectory, storingDirectory.getAbsolutePath().length() + 1, buffer);
+            addDirectory(jos, storingDirectory, storingDirectory.getAbsolutePath().length() + 1);
         }
 
         return destFile;
     }
 
-    private void addDirectory(final JarOutputStream jos, final File dir, final int prefixLength, final byte buffer[]) throws IOException {
+    private void addDirectory(final JarOutputStream jos, final File dir, final int prefixLength) throws IOException {
         if ( dir.getAbsolutePath().length() > prefixLength && dir.listFiles().length == 0 ) {
             final String dirName = dir.getAbsolutePath().substring(prefixLength).replace(File.separatorChar, '/');
             final JarEntry entry = new JarEntry(dirName);
@@ -310,55 +308,13 @@ public class VaultPackageAssembler implements EntryHandler {
                 jos.putNextEntry(entry);
 
                 try ( final FileInputStream in = new FileInputStream(f)) {
-                    int l = 0;
-                    while (( l = in.read(buffer)) > 0 ) {
-                        jos.write(buffer, 0, l);
-                    }
+                    IOUtils.copy(in, jos);
                 }  
                 jos.closeEntry();   
             } else if ( f.isDirectory() ) {
-                addDirectory(jos, f, prefixLength, buffer);
+                addDirectory(jos, f, prefixLength);
             }
         }
-    }
-
-    public static int BUFFER_SIZE = 10240;
-    protected void createJarArchive(File archiveFile, File[] tobeJared) {
-      try {
-        byte buffer[] = new byte[BUFFER_SIZE];
-        // Open archive file
-        FileOutputStream stream = new FileOutputStream(archiveFile);
-        JarOutputStream out = new JarOutputStream(stream, new Manifest());
-  
-        for (int i = 0; i < tobeJared.length; i++) {
-          if (tobeJared[i] == null || !tobeJared[i].exists()
-              || tobeJared[i].isDirectory())
-            continue; // Just in case...
-          System.out.println("Adding " + tobeJared[i].getName());
-  
-          // Add archive entry
-          JarEntry jarAdd = new JarEntry(tobeJared[i].getName());
-          jarAdd.setTime(tobeJared[i].lastModified());
-          out.putNextEntry(jarAdd);
-  
-          // Write file to archive
-          FileInputStream in = new FileInputStream(tobeJared[i]);
-          while (true) {
-            int nRead = in.read(buffer, 0, buffer.length);
-            if (nRead <= 0)
-              break;
-            out.write(buffer, 0, nRead);
-          }
-          in.close();
-        }
-  
-        out.close();
-        stream.close();
-        System.out.println("Adding completed OK");
-      } catch (Exception ex) {
-        ex.printStackTrace();
-        System.out.println("Error: " + ex.getMessage());
-      }
     }
     
     static @Nullable PackageType recalculatePackageType(PackageType sourcePackageType, @NotNull File outputDirectory) {
