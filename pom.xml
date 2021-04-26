@@ -38,10 +38,6 @@
     <org.apache.jackrabbit.vault.version>3.2.8</org.apache.jackrabbit.vault.version>
     <jackrabbit-api.version>2.18.4</jackrabbit-api.version>
     <jackrabbit-spi-commons.version>2.18.4</jackrabbit-spi-commons.version>
-    <plexus-archiver.version>4.1.0</plexus-archiver.version>
-    <plexus-utils.version>3.2.1</plexus-utils.version>
-    <plexus-io.version>3.1.1</plexus-io.version>
-    <plexus-container-default.version>2.0.0</plexus-container-default.version>
     <maven-model.version>3.6.3</maven-model.version>
     <mockito-core.version>3.2.0</mockito-core.version>
     <license-maven-plugin.version>1.16</license-maven-plugin.version>
@@ -189,37 +185,6 @@
       <groupId>org.apache.jackrabbit</groupId>
       <artifactId>jackrabbit-api</artifactId>
       <version>${jackrabbit-api.version}</version>
-      <scope>provided</scope>
-    </dependency>
-
-    <!--
-     | repackage
-    -->
-    <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-archiver</artifactId>
-      <version>${plexus-archiver.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-utils</artifactId>
-      <version>${plexus-utils.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-io</artifactId>
-      <version>${plexus-io.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <!--
-     | avoid classloading issue
-    -->
-    <dependency>
-      <groupId>org.codehaus.plexus</groupId>
-      <artifactId>plexus-container-default</artifactId>
-      <version>${plexus-container-default.version}</version>
       <scope>provided</scope>
     </dependency>
 

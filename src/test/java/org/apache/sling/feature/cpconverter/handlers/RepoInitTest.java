@@ -16,7 +16,6 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
-import com.google.common.collect.Lists;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Extension;
@@ -34,6 +33,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.StringReader;
+import java.util.Arrays;
 import java.util.Collection;
 
 import static org.apache.sling.feature.cpconverter.Util.normalize;
@@ -63,7 +63,7 @@ public class RepoInitTest {
 
     @Parameterized.Parameters(name = "name={1}")
     public static Collection<Object[]> parameters() {
-        return Lists.newArrayList(
+        return Arrays.asList(
                 new Object[] { true, "Enforce principal-based ac setup" },
                 new Object[] { false, "Don't enforce principal-based ac setup" });
     };

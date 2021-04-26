@@ -31,6 +31,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -39,8 +40,13 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.zip.Deflater;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -58,9 +64,6 @@ import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.util.Constants;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
-import org.codehaus.plexus.archiver.Archiver;
-import org.codehaus.plexus.archiver.util.DefaultFileSet;
-import org.codehaus.plexus.archiver.zip.ZipArchiver;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -270,20 +273,94 @@ public class VaultPackageAssembler implements EntryHandler {
         }
 
         // create the target archiver
+        final String destFileName = storingDirectory.getName().substring(0, storingDirectory.getName().lastIndexOf('-'));
+        final File destFile = new File(this.tmpDir, destFileName);
 
-        Archiver archiver = new ZipArchiver();
-        archiver.setIncludeEmptyDirs(true);
-
-        String destFileName = storingDirectory.getName().substring(0, storingDirectory.getName().lastIndexOf('-'));
-        File destFile = new File(this.tmpDir, destFileName);
-
-        archiver.setDestFile(destFile);
-        archiver.addFileSet(new DefaultFileSet(storingDirectory));
-        archiver.createArchive();
+        final File manifestFile = new File(storingDirectory, JarFile.MANIFEST_NAME.replace('/', File.separatorChar));
+        Manifest manifest = null;
+        if ( manifestFile.exists() ) {
+            try ( final InputStream r = new FileInputStream(manifestFile)) {
+                manifest = new Manifest(r);
+            }
+        }
+        try ( final JarOutputStream jos = manifest == null ? new JarOutputStream(new FileOutputStream(destFile)) 
+                                                           : new JarOutputStream(new FileOutputStream(destFile), manifest)) {            
+            jos.setLevel(Deflater.DEFAULT_COMPRESSION);
+            final byte buffer[] = new byte[1024 * 8];
+            addDirectory(jos, storingDirectory, storingDirectory.getAbsolutePath().length() + 1, buffer);
+        }
 
         return destFile;
     }
 
+    private void addDirectory(final JarOutputStream jos, final File dir, final int prefixLength, final byte buffer[]) throws IOException {
+        if ( dir.getAbsolutePath().length() > prefixLength && dir.listFiles().length == 0 ) {
+            final String dirName = dir.getAbsolutePath().substring(prefixLength).replace(File.separatorChar, '/');
+            final JarEntry entry = new JarEntry(dirName);
+            entry.setTime(dir.lastModified());
+            entry.setSize(0);
+            jos.putNextEntry(entry);
+            jos.closeEntry();       
+        }
+        for(final File f : dir.listFiles()) {
+            final String name = f.getAbsolutePath().substring(prefixLength).replace(File.separatorChar, '/');
+            if ( f.isFile() && !JarFile.MANIFEST_NAME.equals(name) ) {                
+                final JarEntry entry = new JarEntry(name);
+                entry.setTime(f.lastModified());
+                jos.putNextEntry(entry);
+
+                try ( final FileInputStream in = new FileInputStream(f)) {
+                    int l = 0;
+                    while (( l = in.read(buffer)) > 0 ) {
+                        jos.write(buffer, 0, l);
+                    }
+                }  
+                jos.closeEntry();   
+            } else if ( f.isDirectory() ) {
+                addDirectory(jos, f, prefixLength, buffer);
+            }
+        }
+    }
+
+    public static int BUFFER_SIZE = 10240;
+    protected void createJarArchive(File archiveFile, File[] tobeJared) {
+      try {
+        byte buffer[] = new byte[BUFFER_SIZE];
+        // Open archive file
+        FileOutputStream stream = new FileOutputStream(archiveFile);
+        JarOutputStream out = new JarOutputStream(stream, new Manifest());
+  
+        for (int i = 0; i < tobeJared.length; i++) {
+          if (tobeJared[i] == null || !tobeJared[i].exists()
+              || tobeJared[i].isDirectory())
+            continue; // Just in case...
+          System.out.println("Adding " + tobeJared[i].getName());
+  
+          // Add archive entry
+          JarEntry jarAdd = new JarEntry(tobeJared[i].getName());
+          jarAdd.setTime(tobeJared[i].lastModified());
+          out.putNextEntry(jarAdd);
+  
+          // Write file to archive
+          FileInputStream in = new FileInputStream(tobeJared[i]);
+          while (true) {
+            int nRead = in.read(buffer, 0, buffer.length);
+            if (nRead <= 0)
+              break;
+            out.write(buffer, 0, nRead);
+          }
+          in.close();
+        }
+  
+        out.close();
+        stream.close();
+        System.out.println("Adding completed OK");
+      } catch (Exception ex) {
+        ex.printStackTrace();
+        System.out.println("Error: " + ex.getMessage());
+      }
+    }
+    
     static @Nullable PackageType recalculatePackageType(PackageType sourcePackageType, @NotNull File outputDirectory) {
         if (sourcePackageType != null && sourcePackageType != PackageType.MIXED) {
             return null;
