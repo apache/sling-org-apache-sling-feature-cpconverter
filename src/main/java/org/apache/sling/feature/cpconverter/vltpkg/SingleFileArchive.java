@@ -23,8 +23,8 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.function.Supplier;
 
+import org.apache.commons.io.function.IOSupplier;
 import org.apache.jackrabbit.vault.fs.api.VaultInputSource;
 import org.apache.jackrabbit.vault.fs.config.DefaultMetaInf;
 import org.apache.jackrabbit.vault.fs.config.MetaInf;
@@ -40,11 +40,11 @@ public class SingleFileArchive implements Archive {
 
     private final Path file;
     private final InputStream inputStream;
-    private final Supplier<Path> tmpFileSupplier;
+    private final IOSupplier<Path> tmpFileSupplier;
     private Path tmpFile;
     private final String relativePath;
 
-    public static SingleFileArchive fromPathOrInputStream(Path path, InputStream inputStream, Supplier<Path> tmpFileSupplier, String relativePath) {
+    public static SingleFileArchive fromPathOrInputStream(Path path, InputStream inputStream, IOSupplier<Path> tmpFileSupplier, String relativePath) {
         if (path != null) {
             return new SingleFileArchive(path, relativePath);
         } else if (inputStream != null) {
@@ -54,7 +54,7 @@ public class SingleFileArchive implements Archive {
         }
     }
 
-    private SingleFileArchive(InputStream inputStream, Supplier<Path> tmpFileSupplier, String relativePath) {
+    private SingleFileArchive(InputStream inputStream, IOSupplier<Path> tmpFileSupplier, String relativePath) {
         this.file = null;
         this.inputStream = inputStream;
         this.tmpFileSupplier = tmpFileSupplier;

@@ -41,7 +41,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.StringTokenizer;
-import java.util.function.Supplier;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -307,18 +306,8 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
             if (nsRegistry.getRegisteredCndSystemIds().contains(jarEntry.getName())) {
                 contentPackageEntryPath = "/META-INF/vault/" + Text.getName(jarEntry.getName()) + ".cnd";
             }
-            
-            Supplier<Path> tmpFileSupplier = new Supplier<Path>() {
-                @Override
-                public Path get() {
-                    try {
-                        return Files.createTempFile(converter.getTempDirectory().toPath(), "initial-content", Text.getName(jarEntry.getName()));
-                    } catch (IOException e) {
-                        throw new IllegalStateException("Could not create temp file for virtual archive", e);
-                    }
-                }
-            };
-            try (Archive virtualArchive = SingleFileArchive.fromPathOrInputStream(tmpDocViewInputFile, bundleFileInputStream, tmpFileSupplier, contentPackageEntryPath)) {
+            try (Archive virtualArchive = SingleFileArchive.fromPathOrInputStream(tmpDocViewInputFile, bundleFileInputStream, 
+                    () -> Files.createTempFile(converter.getTempDirectory().toPath(), "initial-content", Text.getName(jarEntry.getName())), contentPackageEntryPath)) {
                 // does entry in initial content need to be extracted into feature model (e.g. for OSGi configurations)?
                 if (!converter.process(contentPackageEntryPath, virtualArchive, null, false)) {
                     // ... otherwise add it to the content package
