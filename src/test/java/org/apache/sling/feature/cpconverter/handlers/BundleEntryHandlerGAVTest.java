@@ -117,7 +117,7 @@ public class BundleEntryHandlerGAVTest {
     public void testSlingInitialContent() throws Exception {
         setUpArchive("/jcr_root/apps/gav/install/io.wcm.handler.media-1.11.6.jar", "io.wcm.handler.media-1.11.6.jar");
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
-        converter.setHandlersManager(handlersManager);
+        converter.setEntryHandlersManager(handlersManager);
         Map<String, String> namespaceRegistry = Collections.singletonMap("granite", "http://www.adobe.com/jcr/granite/1.0");
         when(featuresManager.getNamespaceUriByPrefix()).thenReturn(namespaceRegistry);
         
@@ -147,7 +147,7 @@ public class BundleEntryHandlerGAVTest {
     public void testSlingInitialContentContainingConfigurationExtractAndRemove() throws Exception {
         setUpArchive("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", "composum-nodes-config-2.5.3.jar");
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
-        converter.setHandlersManager(handlersManager);
+        converter.setEntryHandlersManager(handlersManager);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
         handler.handle("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", archive, entry, converter);
         // verify no additional content package created (as it only contains the configuration which should end up in the feature model only)
@@ -167,7 +167,7 @@ public class BundleEntryHandlerGAVTest {
     public void testSlingInitialContentContainingConfigurationExtractAndKeep() throws Exception {
         setUpArchive("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", "composum-nodes-config-2.5.3.jar");
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
-        converter.setHandlersManager(handlersManager);
+        converter.setEntryHandlersManager(handlersManager);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_KEEP);
         handler.handle("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", archive, entry, converter);
         // original bundle
