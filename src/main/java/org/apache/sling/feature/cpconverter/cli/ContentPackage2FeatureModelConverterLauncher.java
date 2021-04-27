@@ -31,7 +31,8 @@ import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
-import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
+import org.apache.sling.feature.cpconverter.artifacts.LocalMavenRepositoryArtifactsDeployer;
+import org.apache.sling.feature.cpconverter.artifacts.SimpleFolderArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
@@ -43,13 +44,14 @@ import org.slf4j.LoggerFactory;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 @Command(
     name = "cp2fm",
     description = "Apache Sling Content Package to Sling Feature converter",
-    footer = "Copyright(c) 2019 The Apache Software Foundation."
+    footer = "Copyright(c) 2019-2021 The Apache Software Foundation."
 )
 public final class ContentPackage2FeatureModelConverterLauncher implements Runnable {
 
@@ -125,6 +127,12 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Option(names = { "--disable-installer-policy" }, description = "Disables enforcing that OSGi configurations are only allowed below a folder called 'config' and OSGi bundles are only allowed below a folder called 'install'. Instead both are detected below either 'install' or 'config'.", required = false)
     private boolean disableInstallerPolicy = false;
 
+    @Option(names = { "--content-type-package-policy" }, description = "Determines what to do with converted packages of type 'content'. Valid values: ${COMPLETION-CANDIDATES}.", required = false, showDefaultValue = Visibility.ALWAYS)
+    private ContentPackage2FeatureModelConverter.PackagePolicy contentTypePackagePolicy = ContentPackage2FeatureModelConverter.PackagePolicy.DROP;
+
+    @Option(names = { "-u", "--unreferenced-artifacts-output-directory" }, description = "The output directory where unreferenced artifacts will be deployed.", required = false)
+    private File unreferencedArtifactsOutputDirectory;
+
     @Override
     public void run() {
         if (quiet) {
@@ -195,13 +203,18 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
 
                 ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation)
                                                                 .setFeaturesManager(featuresManager)
-                                                                .setBundlesDeployer(new DefaultArtifactsDeployer(artifactsOutputDirectory))
+                                                                .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(artifactsOutputDirectory))
                                                                 .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap, !disableInstallerPolicy))
                                                                 .setAclManager(aclManager)
                                                                 .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
                                                                 .setFailOnMixedPackages(failOnMixedPackages)
-                                                                .setDropContent(true);
-
+                                                                .setContentTypePackagePolicy(contentTypePackagePolicy);
+                                                                
+                if (unreferencedArtifactsOutputDirectory != null) {
+                    converter.setUnreferencedArtifactsDeployer(new SimpleFolderArtifactsDeployer(unreferencedArtifactsOutputDirectory));
+                } else if (contentTypePackagePolicy == ContentPackage2FeatureModelConverter.PackagePolicy.PUT_IN_DEDICATED_FOLDER) {
+                    throw new IllegalStateException("Argument '--content-type-package-policy PUT_IN_DEDICATED_FOLDER' requires argument '--unreferenced-artifacts-output-directory' as well!");
+                }
                 try {
                     if (filteringPatterns != null && filteringPatterns.length > 0) {
                         RegexBasedResourceFilter filter = new RegexBasedResourceFilter();

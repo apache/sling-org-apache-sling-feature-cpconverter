@@ -16,15 +16,13 @@
  */
 package org.apache.sling.feature.cpconverter.artifacts;
 
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStream;
 
-import org.apache.maven.model.Model;
-import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.apache.sling.feature.ArtifactId;
 import org.jetbrains.annotations.NotNull;
 
-public final class MavenPomSupplierWriter implements ArtifactWriter {
+public final class MavenPomSupplierWriter {
 
     private final ArtifactId id;
 
@@ -32,17 +30,20 @@ public final class MavenPomSupplierWriter implements ArtifactWriter {
         this.id = id;
     }
 
-    @Override
-    public void write(@NotNull OutputStream outputStream) throws IOException {
-        Model model = new Model();
-        // Maven complains if Model Version is not set
-        model.setModelVersion("4.0.0");
-        model.setGroupId(id.getGroupId());
-        model.setArtifactId(id.getArtifactId());
-        model.setVersion(id.getVersion());
-        model.setPackaging(id.getType());
-
-        new MavenXpp3Writer().write(outputStream, model);
+    public void write(@NotNull FileWriter writer) throws IOException {
+        writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        writer.write("<project xsi:schemaLocation=\"http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd\" xmlns=\"http://maven.apache.org/POM/4.0.0\"\n");
+        writer.write("          xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n");
+        writer.write("  <modelVersion>4.0.0</modelVersion>\n");
+        writer.write("    <groupId>");
+        writer.write(id.getGroupId());
+        writer.write("</groupId>\n");
+        writer.write("    <artifactId>");
+        writer.write(id.getArtifactId());
+        writer.write("</artifactId>\n");
+        writer.write("    <version>");
+        writer.write(id.getVersion());
+        writer.write("</version>\n");
+        writer.write("</project>\n");
     }
-
 }

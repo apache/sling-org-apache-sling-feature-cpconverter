@@ -39,7 +39,7 @@ public class DefaultBundlesDeployerTest {
     @Before
     public void setUp() {
         outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
-        artifactDeployer = new DefaultArtifactsDeployer(outputDirectory);
+        artifactDeployer = new LocalMavenRepositoryArtifactsDeployer(outputDirectory);
     }
 
     @After
@@ -57,7 +57,7 @@ public class DefaultBundlesDeployerTest {
 
     @Test
     public void verifyBundlesDirectory() {
-        File bundlesDirectory = artifactDeployer.getBundlesDirectory();
+        File bundlesDirectory = artifactDeployer.getBaseDirectory();
         assertNotNull(bundlesDirectory);
         assertTrue(bundlesDirectory.exists());
         assertTrue(bundlesDirectory.isDirectory());
