@@ -135,10 +135,6 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         }
     }
 
-    public void setHandlersManager(EntryHandlersManager handlersManager) {
-        this.handlersManager = handlersManager;
-    }
-
     public @NotNull ContentPackage2FeatureModelConverter setEntryHandlersManager(@Nullable EntryHandlersManager handlersManager) {
         this.handlersManager = handlersManager;
         return this;
