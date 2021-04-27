@@ -22,6 +22,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -43,6 +47,7 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.jackrabbit.vault.fs.spi.PrivilegeDefinitions;
 import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
 import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
@@ -55,6 +60,7 @@ import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Feature;
+import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.DefaultArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
@@ -374,6 +380,30 @@ public class ContentPackage2FeatureModelConverterTest {
 
         } finally {
             deleteDirTree(outDir);
+        }
+    }
+
+    @Test
+    public void testContentPackageWithPrivileges() throws Exception {
+        URL packageUrl = getClass().getResource("test-with-privilege.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+
+        AclManager aclManager = spy(new DefaultAclManager());
+
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+        try {
+            DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
+            ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()
+                    .setEntryHandlersManager(handlersManager)
+                    .setAclManager(aclManager);
+
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, aclManager))
+                    .setBundlesDeployer(new DefaultArtifactsDeployer(outputDirectory))
+                    .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                    .convert(packageFile);
+        } finally {
+            verify(aclManager, times(1)).addPrivilegeDefinitions(any(PrivilegeDefinitions.class));
+            deleteDirTree(outputDirectory);
         }
     }
 
