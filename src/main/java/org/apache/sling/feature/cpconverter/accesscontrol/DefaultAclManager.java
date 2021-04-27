@@ -220,6 +220,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
             formatter.format("%s", operation.asRepoInitString());
             if (systemUser.getDisabledReason() != null) {
                 DisableServiceUser disable = new DisableServiceUser(systemUser.getId(), systemUser.getDisabledReason());
+                disable.setServiceUser(true);
                 formatter.format("%s", disable.asRepoInitString());
             }
 
