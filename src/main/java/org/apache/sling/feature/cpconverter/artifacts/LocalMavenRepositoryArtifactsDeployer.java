@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.StringTokenizer;
 
@@ -86,7 +87,7 @@ public final class LocalMavenRepositoryArtifactsDeployer implements ArtifactsDep
         // If a POM already exists then there is not need to overwrite it as either the entire POM is lost
         // or if its the a file previously generated here it must be the same
         if(!targetFile.exists()) {
-            try (FileOutputStream targetStream = new FileOutputStream(targetFile)) {
+            try (FileWriter targetStream = new FileWriter(targetFile)) {
                 new MavenPomSupplierWriter(id).write(targetStream);
             }
         }

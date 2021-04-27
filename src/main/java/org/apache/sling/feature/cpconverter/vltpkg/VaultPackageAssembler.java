@@ -40,8 +40,13 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.zip.Deflater;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -60,9 +65,6 @@ import org.apache.jackrabbit.vault.util.Constants;
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
-import org.codehaus.plexus.archiver.Archiver;
-import org.codehaus.plexus.archiver.util.DefaultFileSet;
-import org.codehaus.plexus.archiver.zip.ZipArchiver;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -326,19 +328,50 @@ public class VaultPackageAssembler implements EntryHandler {
         }
 
         // create the target archiver
-        Archiver archiver = new ZipArchiver();
-        archiver.setIncludeEmptyDirs(true);
-
-        String destFileName = storingDirectory.getName().substring(0, storingDirectory.getName().lastIndexOf('-'));
-        File destFile = new File(this.tmpDir, destFileName);
-
-        archiver.setDestFile(destFile);
-        archiver.addFileSet(new DefaultFileSet(storingDirectory));
-        archiver.createArchive();
+        final String destFileName = storingDirectory.getName().substring(0, storingDirectory.getName().lastIndexOf('-'));
+        final File destFile = new File(this.tmpDir, destFileName);
+        final File manifestFile = new File(storingDirectory, JarFile.MANIFEST_NAME.replace('/', File.separatorChar));
+        Manifest manifest = null;
+        if ( manifestFile.exists() ) {
+            try ( final InputStream r = new FileInputStream(manifestFile)) {
+                manifest = new Manifest(r);
+            }
+        }
+        try ( final JarOutputStream jos = manifest == null ? new JarOutputStream(new FileOutputStream(destFile)) 
+                                                           : new JarOutputStream(new FileOutputStream(destFile), manifest)) {            
+            jos.setLevel(Deflater.DEFAULT_COMPRESSION);
+            addDirectory(jos, storingDirectory, storingDirectory.getAbsolutePath().length() + 1);
+        }
 
         return destFile;
     }
 
+    private void addDirectory(final JarOutputStream jos, final File dir, final int prefixLength) throws IOException {
+        if ( dir.getAbsolutePath().length() > prefixLength && dir.listFiles().length == 0 ) {
+            final String dirName = dir.getAbsolutePath().substring(prefixLength).replace(File.separatorChar, '/');
+            final JarEntry entry = new JarEntry(dirName);
+            entry.setTime(dir.lastModified());
+            entry.setSize(0);
+            jos.putNextEntry(entry);
+            jos.closeEntry();       
+        }
+        for(final File f : dir.listFiles()) {
+            final String name = f.getAbsolutePath().substring(prefixLength).replace(File.separatorChar, '/');
+            if ( f.isFile() && !JarFile.MANIFEST_NAME.equals(name) ) {                
+                final JarEntry entry = new JarEntry(name);
+                entry.setTime(f.lastModified());
+                jos.putNextEntry(entry);
+
+                try ( final FileInputStream in = new FileInputStream(f)) {
+                    IOUtils.copy(in, jos);
+                }  
+                jos.closeEntry();   
+            } else if ( f.isDirectory() ) {
+                addDirectory(jos, f, prefixLength);
+            }
+        }
+    }
+    
     static @Nullable PackageType recalculatePackageType(PackageType sourcePackageType, @NotNull File outputDirectory) {
         if (sourcePackageType != null && sourcePackageType != PackageType.MIXED) {
             return null;
