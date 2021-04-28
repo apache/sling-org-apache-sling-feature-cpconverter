@@ -27,7 +27,7 @@ import java.util.Objects;
 public class PrivilegesHandler extends AbstractRegexEntryHandler {
 
     public PrivilegesHandler() {
-        super("META-INF/vault/privileges\\.xml");
+        super("/META-INF/vault/privileges\\.xml");
     }
 
     @Override
