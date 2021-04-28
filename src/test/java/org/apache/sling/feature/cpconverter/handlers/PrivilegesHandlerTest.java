@@ -61,7 +61,7 @@ public class PrivilegesHandlerTest {
 
     @Test
     public void matches() {
-        assertTrue(handler.matches("META-INF/vault/privileges.xml"));
+        assertTrue(handler.matches("/META-INF/vault/privileges.xml"));
     }
 
     @Test
