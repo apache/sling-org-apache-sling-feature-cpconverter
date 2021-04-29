@@ -418,8 +418,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 }
             } else {
                 // deploy the new content-package to the local mvn bundles dir
-                artifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), mvnPackageId);
-                featuresManager.addArtifact(runMode, mvnPackageId);
+                getArtifactsDeployer().deploy(new FileArtifactWriter(contentPackageArchive), mvnPackageId);
+                getFeaturesManager().addArtifact(runMode, mvnPackageId);
             }
         }
     }
