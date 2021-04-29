@@ -16,72 +16,42 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
-import org.apache.jackrabbit.vault.fs.io.Archive;
-import org.apache.sling.feature.ArtifactId;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.artifacts.ArtifactsDeployer;
-import org.apache.sling.feature.cpconverter.features.FeaturesManager;
-import org.junit.Test;
-import org.mockito.Mockito;
-
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.when;
 
-public class BundleEntryHandlerGAVTest {
-    private final BundleEntryHandler handler = new BundleEntryHandler();
+import org.apache.sling.feature.ArtifactId;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+
+@RunWith(MockitoJUnitRunner.class)
+public class BundleEntryHandlerGAVTest extends AbstractBundleEntryHandlerTest {
 
     @Test
-    public void testGAVwithProperties() throws Exception {
-        String path = "/jcr_root/apps/gav/install/core-1.0.0-SNAPSHOT.jar";
-        Archive.Entry entry = Mockito.mock(Archive.Entry.class);
-        when(entry.getName()).thenReturn(path);
-        Archive archive = Mockito.mock(Archive.class);
-        when(archive.openInputStream(entry)).thenReturn(BundleEntryHandlerGAVTest.class.getResourceAsStream("core-1.0.0-SNAPSHOT.jar"));
-        ContentPackage2FeatureModelConverter converter = Mockito.mock(ContentPackage2FeatureModelConverter.class);
-        ArtifactsDeployer deployer = Mockito.spy(ArtifactsDeployer.class);
-        when(converter.getArtifactsDeployer()).thenReturn(deployer);
-        FeaturesManager manager = Mockito.spy(FeaturesManager.class);
-        when(converter.getFeaturesManager()).thenReturn(manager);
-        handler.handle(path, archive, entry, converter);
-        Mockito.verify(manager).addArtifact(null, ArtifactId.fromMvnId("com.madplanet.sling.cp2sf:core:1.0.0-SNAPSHOT"),null);
+    public void testGAV() throws Exception {
+        setUpArchive("/jcr_root/apps/gav/install/core-1.0.0-SNAPSHOT.jar", "core-1.0.0-SNAPSHOT.jar");
+        handler.handle("/jcr_root/apps/gav/install/core-1.0.0-SNAPSHOT.jar", archive, entry, converter);
+        Mockito.verify(featuresManager).addArtifact(null, ArtifactId.fromMvnId("com.madplanet.sling.cp2sf:core:1.0.0-SNAPSHOT"), null);
     }
 
     @Test
     public void testGAVwithPom() throws Exception{
-        String path = "/jcr_root/apps/gav/install/org.osgi.service.jdbc-1.0.0.jar";
-        Archive.Entry entry = Mockito.mock(Archive.Entry.class);
-        when(entry.getName()).thenReturn(path);
-        Archive archive = Mockito.mock(Archive.class);
-        when(archive.openInputStream(entry)).thenReturn(BundleEntryHandlerGAVTest.class.getResourceAsStream("org.osgi.service.jdbc-1.0.0.jar"));
-        ContentPackage2FeatureModelConverter converter = Mockito.mock(ContentPackage2FeatureModelConverter.class);
-        ArtifactsDeployer deployer = Mockito.spy(ArtifactsDeployer.class);
-        when(converter.getArtifactsDeployer()).thenReturn(deployer);
-        FeaturesManager manager = Mockito.spy(FeaturesManager.class);
-        when(converter.getFeaturesManager()).thenReturn(manager);
-        handler.handle(path, archive, entry, converter);
-        Mockito.verify(manager).addArtifact(null, ArtifactId.fromMvnId("org.osgi:org.osgi.service.jdbc:1.0.0"),null);
+        setUpArchive("/jcr_root/apps/gav/install/org.osgi.service.jdbc-1.0.0.jar", "org.osgi.service.jdbc-1.0.0.jar");
+        handler.handle("/jcr_root/apps/gav/install/org.osgi.service.jdbc-1.0.0.jar", archive, entry, converter);
+        Mockito.verify(featuresManager).addArtifact(null, ArtifactId.fromMvnId("org.osgi:org.osgi.service.jdbc:1.0.0"), null);
     }
 
     @Test
     public void testNoGAV() throws Exception {
-        String path = "/jcr_root/apps/gav/install/org.osgi.service.jdbc-1.0.0-nogav.jar";
-        Archive.Entry entry = Mockito.mock(Archive.Entry.class);
-        when(entry.getName()).thenReturn(path);
-        Archive archive = Mockito.mock(Archive.class);
-        when(archive.openInputStream(entry)).thenReturn(BundleEntryHandlerGAVTest.class.getResourceAsStream("org.osgi.service.jdbc-1.0.0-nogav.jar"));
-        ContentPackage2FeatureModelConverter converter = Mockito.mock(ContentPackage2FeatureModelConverter.class);
-        ArtifactsDeployer deployer = Mockito.spy(ArtifactsDeployer.class);
-        when(converter.getArtifactsDeployer()).thenReturn(deployer);
-        FeaturesManager manager = Mockito.spy(FeaturesManager.class);
-        when(converter.getFeaturesManager()).thenReturn(manager);
-        handler.handle(path, archive, entry, converter);
-        Mockito.verify(manager).addArtifact(null, ArtifactId.fromMvnId("org.osgi.service:jdbc:1.0.0-201505202023"),null);
+        setUpArchive("/jcr_root/apps/gav/install/org.osgi.service.jdbc-1.0.0-nogav.jar", "org.osgi.service.jdbc-1.0.0-nogav.jar");
+        handler.handle("/jcr_root/apps/gav/install/org.osgi.service.jdbc-1.0.0-nogav.jar", archive, entry, converter);
+        Mockito.verify(featuresManager).addArtifact(null, ArtifactId.fromMvnId("org.osgi.service:jdbc:1.0.0-201505202023"), null);
     }
 
     @Test
     public void testBundleBelowConfigFolderWithEnforcement() throws Exception {
         handler.setEnforceBundlesBelowInstallFolder(true);
-        Archive.Entry entry = Mockito.mock(Archive.Entry.class);
         when(entry.getName()).thenReturn("mybundle.jar");
         assertThrows(IllegalStateException.class, () -> { handler.handle("/jcr_root/apps/myapp/config/mybundle.jar", null, entry, null); });
     }

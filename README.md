@@ -239,6 +239,11 @@ artifacts/
 12 directories, 8 files
 ```
 
+#### Sling-Initial Content
+
+Bundles containing a [`Sling-Initial-Content` manifest header](https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html) are optionally stripped as well. The contained content in those bundles is converted into content packages or extracted into the feature model. The behaviour of the extraction can be influenced with parameter `--sling-initial-content-policy`.
+
+
 ### OSGi Configurations
 
 All OSGi configuration formats are supported:
@@ -534,6 +539,11 @@ Apache Sling Content Package to Sling Feature converter
       --seed-feature=<seedFeature>
                             A url pointing to a feature that can be assumed to be
                               around when the conversion result will be used
+      --sling-initial-content-policy=<slingInitialContentPolicy>
+                            Determines what to do with Sling-Initial-Content found
+                              in embedded bundles. Valid values: KEEP,
+                              EXTRACT_AND_REMOVE, EXTRACT_AND_KEEP.
+                              Default: KEEP
       --system-user-rel-path=<systemUserRelPath>
                             Relative path for system user as configured with Apache
                               Jackrabbit Oak

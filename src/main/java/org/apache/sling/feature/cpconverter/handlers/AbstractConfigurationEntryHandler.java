@@ -17,22 +17,16 @@
 package org.apache.sling.feature.cpconverter.handlers;
 
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Dictionary;
-import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
-import org.apache.sling.feature.cpconverter.accesscontrol.Mapping;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
-import org.apache.sling.feature.cpconverter.repoinit.OperationProcessor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.osgi.util.converter.Converters;
 
 abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandler {
 

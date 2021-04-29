@@ -67,7 +67,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     public static final String PACKAGE_CLASSIFIER = "cp2fm-converted";
 
-    private static final String DEFEAULT_VERSION = "0.0.0";
+    private static final String DEFAULT_VERSION = "0.0.0";
 
     private final Map<PackageId, String> subContentPackages = new HashMap<>();
 
@@ -109,6 +109,15 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     private PackagePolicy contentTypePackagePolicy = PackagePolicy.REFERENCE;
 
     private boolean removeInstallHooks = false;
+    
+    public enum SlingInitialContentPolicy {
+        /** Keep in bundle and don't extract */
+        KEEP,
+        /** Extract from bundle into content-packages and feature model */
+        EXTRACT_AND_REMOVE,
+        /** Extract from bundle into content-packages and feature model but keep in bundle as well */
+        EXTRACT_AND_KEEP
+    }
 
     private final File tmpDirectory;
 
@@ -195,7 +204,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return this;
     }
 
-    public File getTempDirectory() {
+    public @NotNull File getTempDirectory() {
         return this.tmpDirectory;
     }
     
@@ -259,7 +268,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 mainPackageAssembler = VaultPackageAssembler.create(this.getTempDirectory(), vaultPackage, removeInstallHooks);
                 assemblers.add(mainPackageAssembler);
 
-                ArtifactId mvnPackageId = toArtifactId(vaultPackage);
+                ArtifactId mvnPackageId = toArtifactId(vaultPackage.getId(), vaultPackage.getFile());
 
                 featuresManager.init(mvnPackageId.getGroupId(), mvnPackageId.getArtifactId(), mvnPackageId.getVersion());
 
@@ -277,7 +286,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
                 // deploy the new zip content-package to the local mvn bundles dir
 
-                processContentPackageArchive(contentPackageArchive, null, mvnPackageId, vaultPackage.getId());
+                processContentPackageArchive(contentPackageArchive, null);
 
                 // finally serialize the Feature Model(s) file(s)
 
@@ -336,8 +345,6 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
         emitters.stream().forEach(e -> e.startSubPackage(path, vaultPackage));
 
-        PackageId originalPackageId = vaultPackage.getId();
-        ArtifactId mvnPackageId = toArtifactId(vaultPackage);
         VaultPackageAssembler clonedPackage = VaultPackageAssembler.create(this.getTempDirectory(), vaultPackage, removeInstallHooks);
 
         // Please note: THIS IS A HACK to meet the new requirement without drastically change the original design
@@ -364,7 +371,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         File contentPackageArchive = clonedPackage.createPackage();
 
         // deploy the new content-package to the local mvn bundles dir and attach it to the feature
-        processContentPackageArchive(contentPackageArchive, runMode, mvnPackageId, originalPackageId);
+        processContentPackageArchive(contentPackageArchive, runMode);
 
         // restore the previous assembler
         mainPackageAssembler = handler;
@@ -372,40 +379,38 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         emitters.stream().forEach(e -> e.endSubPackage());
     }
 
-    private void processContentPackageArchive(@NotNull File contentPackageArchive,
-                                              @Nullable String runMode,
-                                              @NotNull ArtifactId mvnPackageId,
-                                              @NotNull PackageId originalPackageId) throws Exception {
+    public void processContentPackageArchive(@NotNull File contentPackageArchive,
+                                             @Nullable String runMode) throws Exception {
         try (VaultPackage vaultPackage = open(contentPackageArchive)) {
             PackageType packageType = detectPackageType(vaultPackage);
 
             // SLING-8608 - Fail the conversion if the resulting attached content-package is MIXED type
             if (PackageType.MIXED == packageType && failOnMixedPackages) {
-                throw new Exception("Generated content-package '"
-                                    + originalPackageId
+                throw new IllegalStateException("Generated content-package '"
+                                    + vaultPackage.getId()
                                     + "' located in file "
                                     + contentPackageArchive
                                     + " is of MIXED type");
             }
 
-            
+            ArtifactId mvnPackageId = toArtifactId(vaultPackage.getId(), contentPackageArchive);
             // special handling for converted packages of type content
             if (PackageType.CONTENT == packageType) {
                 switch (contentTypePackagePolicy) {
                     case DROP:
-                        mutableContentsIds.put(originalPackageId, getDependencies(vaultPackage));
+                        mutableContentsIds.put(vaultPackage.getId(), getDependencies(vaultPackage));
                         logger.info("Dropping package of PackageType.CONTENT {} (content-package id: {})",
-                                    mvnPackageId.getArtifactId(), originalPackageId);
+                                    mvnPackageId.getArtifactId(), vaultPackage.getId());
                         break;
                     case PUT_IN_DEDICATED_FOLDER:
-                        mutableContentsIds.put(originalPackageId, getDependencies(vaultPackage));
+                        mutableContentsIds.put(vaultPackage.getId(), getDependencies(vaultPackage));
                         // deploy the new content-package to the unreferenced artifacts deployer
                         if (unreferencedArtifactsDeployer == null) {
                             throw new IllegalStateException("ContentTypePackagePolicy PUT_IN_DEDICATED_FOLDER requires a valid deployer ");
                         }
                         unreferencedArtifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), mvnPackageId);
                         logger.info("Put converted package of PackageType.CONTENT {} (content-package id: {}) in {} (not referenced in feature model)",
-                                    mvnPackageId.getArtifactId(), originalPackageId, unreferencedArtifactsDeployer.getBaseDirectory());
+                                    mvnPackageId.getArtifactId(), vaultPackage.getId(), unreferencedArtifactsDeployer.getBaseDirectory());
                         break;
                     case REFERENCE:
                         artifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), mvnPackageId);
@@ -413,8 +418,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 }
             } else {
                 // deploy the new content-package to the local mvn bundles dir
-                artifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), mvnPackageId);
-                featuresManager.addArtifact(runMode, mvnPackageId);
+                getArtifactsDeployer().deploy(new FileArtifactWriter(contentPackageArchive), mvnPackageId);
+                getFeaturesManager().addArtifact(runMode, mvnPackageId);
             }
         }
     }
@@ -423,30 +428,44 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return subContentPackages.containsValue(path);
     }
 
-    @Override
-    protected void onFile(@NotNull String entryPath, @NotNull Archive archive, @NotNull Entry entry) throws Exception {
+    public boolean process(@NotNull String entryPath, @NotNull Archive archive, @Nullable Entry entry, boolean useMainPackageAssembler) throws Exception {
         if (resourceFilter != null && resourceFilter.isFilteredOut(entryPath)) {
             throw new IllegalArgumentException("Path '"
                                                + entryPath
                                                + "' in archive "
-                                               + archive.getMetaInf().getProperties()
+                                               + archive.getMetaInf().getPackageProperties().getId()
                                                + " not allowed by user configuration, please check configured filtering patterns");
         }
 
         EntryHandler entryHandler = handlersManager.getEntryHandlerByEntryPath(entryPath);
         if (entryHandler == null) {
-            entryHandler = mainPackageAssembler;
+            if (useMainPackageAssembler) {
+                entryHandler = mainPackageAssembler;
+            } else {
+                return false;
+            }
         }
 
+        if (entry == null) {
+            entry = archive.getEntry(entryPath);
+            if (entry == null) {
+                throw new IllegalArgumentException("Archive '" + archive.getMetaInf().getPackageProperties().getId() + "' does not contain entry with path '" + entryPath + "'");
+            }
+        }
         entryHandler.handle(entryPath, archive, entry, this);
+        return true;
     }
 
-    private static @NotNull ArtifactId toArtifactId(@NotNull VaultPackage vaultPackage) {
-        PackageId packageId = vaultPackage.getId();
+    @Override
+    protected void onFile(@NotNull String entryPath, @NotNull Archive archive, @NotNull Entry entry) throws Exception {
+        process(entryPath, archive, entry, true);
+    }
+
+    public static @NotNull ArtifactId toArtifactId(@NotNull PackageId packageId, @NotNull File file) {
         String groupId = requireNonNull(packageId.getGroup(),
             PackageProperties.NAME_GROUP
                 + " property not found in content-package "
-                + vaultPackage
+                + file
                 + ", please check META-INF/vault/properties.xml").replace('/', '.');
         // Replace any space with an underscore to adhere to Maven Group Id specification
         groupId = groupId.replaceAll(" ", "_");
@@ -454,14 +473,18 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         String artifactid = requireNonNull(packageId.getName(),
             PackageProperties.NAME_NAME
                 + " property not found in content-package "
-                + vaultPackage
+                + file
                 + ", please check META-INF/vault/properties.xml");
         // Replace any space with an underscore to adhere to Maven Artifact Id specification
         artifactid = artifactid.replaceAll(" ", "_");
 
+        // package versions may use suffix "-cp2fm-converted" which is redundant as for artifactIds this is set as dedicated classifier
         String version = packageId.getVersionString();
+        if (version.endsWith(VaultPackageAssembler.VERSION_SUFFIX)) {
+            version = version.substring(0, version.length() - VaultPackageAssembler.VERSION_SUFFIX.length());
+        }
         if (version == null || version.isEmpty()) {
-            version = DEFEAULT_VERSION;
+            version = DEFAULT_VERSION;
         }
 
         return new ArtifactId(groupId, artifactid, version, PACKAGE_CLASSIFIER, ZIP_TYPE);

@@ -32,12 +32,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -61,6 +62,7 @@ import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.util.Constants;
+import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
 import org.jetbrains.annotations.NotNull;
@@ -71,6 +73,8 @@ import org.slf4j.LoggerFactory;
 public class VaultPackageAssembler implements EntryHandler {
 
     private static final Pattern OSGI_BUNDLE_PATTERN = Pattern.compile("(jcr_root)?/apps/[^/]+/install(\\.([^/]+))?/.+\\.jar");
+    
+    public static final String VERSION_SUFFIX = '-' + PACKAGE_CLASSIFIER;
 
     private static final Logger log = LoggerFactory.getLogger(VaultPackageAssembler.class);
 
@@ -82,27 +86,31 @@ public class VaultPackageAssembler implements EntryHandler {
         }
     }
 
+    /**
+     * Creates a new package assembler based on an existing package.
+     * Takes over properties and filter rules from existing package.
+     * @param tempDir the temp dir
+     * @param vaultPackage the package to take as blueprint
+     * @param removeInstallHooks whether to remove install hooks or not
+     * @return the package assembler
+     */
     public static @NotNull VaultPackageAssembler create(@NotNull File tempDir, @NotNull VaultPackage vaultPackage, boolean removeInstallHooks) {
         return create(tempDir, vaultPackage, Objects.requireNonNull(vaultPackage.getMetaInf().getFilter()), removeInstallHooks);
     }
-    
+
+    /**
+     * Creates a new package assembler based on an existing package.
+     * Takes over properties from existing package.
+     * @param baseTempDir the temp dir
+     * @param vaultPackage the package to take as blueprint
+     * @param filter the filter with which to initialize the new package
+     * @param removeInstallHooks whether to remove install hooks or not
+     * @return the package assembler
+     */
     private static @NotNull VaultPackageAssembler create(@NotNull File baseTempDir, @NotNull VaultPackage vaultPackage, @NotNull WorkspaceFilter filter, boolean removeInstallHooks) {
         final File tempDir = new File(baseTempDir, "synthetic-content-packages_" + System.currentTimeMillis());
         PackageId packageId = vaultPackage.getId();
-        String fileName = packageId.toString().replaceAll("/", "-").replaceAll(":", "-") + "-" + vaultPackage.getFile().getName();
-        File storingDirectory = new File(tempDir, fileName + "-deflated");
-        if(storingDirectory.exists()) {
-            try {
-                FileUtils.deleteDirectory(storingDirectory);
-            } catch(IOException e) {
-                throw new FolderDeletionException("Unable to delete existing deflated folder: '" + storingDirectory + "'", e);
-            }
-        }
-        // avoid any possible Stream is not a content package. Missing 'jcr_root' error
-        File jcrRootDirectory = new File(storingDirectory, ROOT_DIR);
-        if (!jcrRootDirectory.mkdirs() && jcrRootDirectory.isDirectory()) {
-            throw new IllegalStateException("Unable to create jcr root dir: " + jcrRootDirectory);
-        }
+        File storingDirectory = initStoringDirectory(packageId, tempDir);
 
         Properties properties = new Properties();
         Map<Object, Object> originalPackageProperties = vaultPackage.getMetaInf().getProperties();
@@ -117,14 +125,51 @@ public class VaultPackageAssembler implements EntryHandler {
         properties.putAll(originalPackageProperties);
         properties.setProperty(PackageProperties.NAME_VERSION,
                                vaultPackage.getId().getVersion().toString()
-                                                             + '-'
-                                                             + PACKAGE_CLASSIFIER);
+                                                             + VERSION_SUFFIX);
 
         Set<Dependency> dependencies = getDependencies(vaultPackage);
 
         VaultPackageAssembler assembler = new VaultPackageAssembler(tempDir, storingDirectory, properties, dependencies, removeInstallHooks);
         assembler.mergeFilters(filter);
         return assembler;
+    }
+
+    /**
+     * Creates a new package assembler.
+     * @param baseTempDir the temp dir
+     * @param packageId the package id from which to generate a minimal properties.xml
+     * @param description the description which should end up in the package properties
+     * @return the package assembler
+     */
+    public static @NotNull VaultPackageAssembler create(@NotNull File baseTempDir, @NotNull PackageId packageId, String description) {
+        final File tempDir = new File(baseTempDir, "synthetic-content-packages_" + System.currentTimeMillis());
+        File storingDirectory = initStoringDirectory(packageId, tempDir);
+        Properties props = new Properties();
+        // generate minimal properties (http://jackrabbit.apache.org/filevault/properties.html)
+        props.put(PackageProperties.NAME_GROUP, packageId.getGroup());
+        props.put(PackageProperties.NAME_NAME, packageId.getName());
+        props.put(PackageProperties.NAME_VERSION, packageId.getVersionString() + VERSION_SUFFIX);
+
+        props.put(PackageProperties.NAME_DESCRIPTION, description);
+        return new VaultPackageAssembler(tempDir, storingDirectory, props, new HashSet<>(), false);
+    }
+
+    static @NotNull File initStoringDirectory(PackageId packageId, @NotNull File tempDir) {
+        String fileName = packageId.toString().replace('/', '-').replace(':', '-');
+        File storingDirectory = new File(tempDir, fileName + "-deflated");
+        if(storingDirectory.exists()) {
+            try {
+                FileUtils.deleteDirectory(storingDirectory);
+            } catch(IOException e) {
+                throw new IllegalStateException("Unable to delete existing deflated folder: '" + storingDirectory + "'", e);
+            }
+        }
+        // avoid any possible Stream is not a content package. Missing 'jcr_root' error
+        File jcrRootDirectory = new File(storingDirectory, ROOT_DIR);
+        if (!jcrRootDirectory.mkdirs() && jcrRootDirectory.isDirectory()) {
+            throw new IllegalStateException("Unable to create jcr root dir: " + jcrRootDirectory);
+        }
+        return storingDirectory;
     }
 
     private final DefaultWorkspaceFilter filter = new DefaultWorkspaceFilter();
@@ -179,6 +224,10 @@ public class VaultPackageAssembler implements EntryHandler {
                 this.filter.add(pathFilterSet);
             }
         }
+    }
+
+    public DefaultWorkspaceFilter getFilter() {
+        return filter;
     }
 
     public void addEntry(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry) throws IOException {
@@ -236,6 +285,10 @@ public class VaultPackageAssembler implements EntryHandler {
     }
 
     public @NotNull File createPackage() throws IOException {
+        return createPackage(false);
+    }
+
+    public @NotNull File createPackage(boolean generateFilters) throws IOException {
         // generate the Vault properties XML file
 
         File metaDir = new File(storingDirectory, META_DIR);
@@ -263,8 +316,11 @@ public class VaultPackageAssembler implements EntryHandler {
             properties.storeToXML(fos, null);
         }
 
-        // generate the Vault filter XML file based on new contents of the package
-        computeFilters(storingDirectory);
+        if (generateFilters) {
+            // generate the Vault filter XML file based on new contents of the package
+            computeFilters(storingDirectory);
+        }
+
         File xmlFilter = new File(metaDir, FILTER_XML);
         try (InputStream input = filter.getSource();
                 FileOutputStream output = new FileOutputStream(xmlFilter)) {
@@ -274,7 +330,6 @@ public class VaultPackageAssembler implements EntryHandler {
         // create the target archiver
         final String destFileName = storingDirectory.getName().substring(0, storingDirectory.getName().lastIndexOf('-'));
         final File destFile = new File(this.tmpDir, destFileName);
-
         final File manifestFile = new File(storingDirectory, JarFile.MANIFEST_NAME.replace('/', File.separatorChar));
         Manifest manifest = null;
         if ( manifestFile.exists() ) {
@@ -323,7 +378,7 @@ public class VaultPackageAssembler implements EntryHandler {
         }
         AtomicBoolean foundMutableFiles = new AtomicBoolean();
         AtomicBoolean foundImmutableFiles  = new AtomicBoolean();
-        forEachDirectoryBelowJcrRoot(outputDirectory, child -> {
+        forEachDirectoryBelowJcrRoot(outputDirectory, (child, base) -> {
             if (child.getName().equals("apps") || child.getName().equals("libs")) {
                 foundImmutableFiles.weakCompareAndSet(false, true);
             } else {
@@ -341,22 +396,22 @@ public class VaultPackageAssembler implements EntryHandler {
     }
 
     private void computeFilters(@NotNull File outputDirectory) {
-        forEachDirectoryBelowJcrRoot(outputDirectory, child -> {
+        forEachDirectoryBelowJcrRoot(outputDirectory, (child, base) -> {
                 TreeNode node = lowestCommonAncestor(new TreeNode(child));
                 File lowestCommonAncestor = node != null ? node.val : null;
                 if (lowestCommonAncestor != null) {
-                    String root = outputDirectory.toURI().relativize(lowestCommonAncestor.toURI()).getPath();
-
+                    String root = "/" + PlatformNameFormat.getRepositoryPath(base.toURI().relativize(lowestCommonAncestor.toURI()).getPath(), true);
                     filter.add(new PathFilterSet(root));
                 }
             });
     }
-    
-    private static void forEachDirectoryBelowJcrRoot(File outputDirectory, Consumer<File> consumer) {
+
+    private static void forEachDirectoryBelowJcrRoot(File outputDirectory, BiConsumer<File, File> consumer) {
         File jcrRootDir = new File(outputDirectory, ROOT_DIR);
         if (jcrRootDir.exists() && jcrRootDir.isDirectory()) {
             for (File child : jcrRootDir.listFiles((FileFilter)DirectoryFileFilter.INSTANCE)) {
-                consumer.accept(child);
+                // calls consumer with absolute files
+                consumer.accept(child, jcrRootDir);
             }
         }
     }
@@ -409,15 +464,5 @@ public class VaultPackageAssembler implements EntryHandler {
             maxDepth = 0;
         }
 
-    }
-
-    public static class FolderDeletionException extends RuntimeException {
-        public FolderDeletionException(@NotNull String message) {
-            super(message);
-        }
-
-        public FolderDeletionException(@NotNull String message, @NotNull Throwable cause) {
-            super(message, cause);
-        }
     }
 }
