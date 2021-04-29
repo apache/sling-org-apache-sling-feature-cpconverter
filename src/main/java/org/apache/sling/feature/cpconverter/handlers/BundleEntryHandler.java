@@ -48,7 +48,6 @@ import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
 
 import javax.jcr.RepositoryException;
 
@@ -246,8 +245,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
                                 continue;
                             }
                             // copy entry as is to the stripped bundle
-                            ZipEntry ze = new ZipEntry(jarEntry.getName());
-                            bundleOutput.putNextEntry(ze);
+                            bundleOutput.putNextEntry(jarEntry);
                             IOUtils.copy(input, bundleOutput);
                             bundleOutput.closeEntry();
                         }
