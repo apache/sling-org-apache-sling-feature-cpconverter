@@ -17,10 +17,10 @@
 -->
 <jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:rep="internal"
           jcr:primaryType="rep:PrincipalPolicy"
-          rep:principalName="service1">
+          rep:principalName="service4">
     <entry0
             jcr:primaryType="rep:PrincipalEntry"
-            rep:privileges="{Name}[jcr:read,jcr:readAccessControl]"
-            rep:effectivePath="{Path}/asd/public">
+            rep:privileges="{Name}[jcr:read]"
+            rep:effectivePath="/effective/path/of/type/string">
     </entry0>
 </jcr:root>

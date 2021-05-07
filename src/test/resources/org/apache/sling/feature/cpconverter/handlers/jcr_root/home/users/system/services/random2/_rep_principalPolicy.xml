@@ -21,7 +21,7 @@
     <entry0
             jcr:primaryType="rep:PrincipalEntry"
             rep:privileges="{Name}[jcr:read]"
-            rep:effectivePath="/asd/public">
+            rep:effectivePath="{Path}/asd/public">
         <rep:restrictions
                 jcr:primaryType="rep:Restrictions"
                 rep:ntNames="{Name}[nt:folder,sling:Folder]"
