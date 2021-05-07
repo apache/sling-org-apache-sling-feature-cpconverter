@@ -44,6 +44,7 @@ import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
+import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.apache.sling.feature.io.json.FeatureJSONWriter;
 import org.jetbrains.annotations.NotNull;
@@ -122,9 +123,27 @@ public class ConfigEntryHandlerTest {
     }
 
     @Test
-    public void testConfigPathBelowInstallFolder() {
+    public void testConfigPathBelowInstallFolder() throws Exception {
         ConfigurationEntryHandler handler = new ConfigurationEntryHandler();
         handler.setEnforceConfgurationBelowConfigFolder(true);
-        assertThrows(IllegalStateException.class, () -> { handler.handle("/jcr_root/apps/myapp/install/myconfig.config", null, null, null); });
+        Archive archive = Mockito.mock(Archive.class);
+        Entry entry = Mockito.mock(Entry.class);
+        Mockito.when(archive.openInputStream(entry)).thenReturn(new ByteArrayInputStream(new byte[0]));
+        assertThrows(IllegalStateException.class, () -> {
+            handler.handle("/jcr_root/apps/myapp/install/myconfig.config", archive, entry, Mockito.mock(ContentPackage2FeatureModelConverter.class));
+        });
+    }
+
+    @Test
+    public void testConfigPathNoneConfigBelowInstallFolder() throws Exception {
+        XmlConfigurationEntryHandler handler = new XmlConfigurationEntryHandler();
+        handler.setEnforceConfgurationBelowConfigFolder(true);
+        Archive archive = Mockito.mock(Archive.class);
+        Entry entry = Mockito.mock(Entry.class);
+        Mockito.when(archive.openInputStream(entry)).thenReturn(new ByteArrayInputStream(new byte[0]));
+        ContentPackage2FeatureModelConverter converter = Mockito.mock(ContentPackage2FeatureModelConverter.class);
+        Mockito.when(converter.getMainPackageAssembler()).thenReturn(Mockito.mock(VaultPackageAssembler.class));
+
+        handler.handle("/jcr_root/apps/asd/config/.empty.xml", archive, entry, converter);
     }
 }
