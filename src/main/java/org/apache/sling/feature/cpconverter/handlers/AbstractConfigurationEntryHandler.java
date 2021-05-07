@@ -48,10 +48,6 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
         String runMode;
         // we are pretty sure it matches, here
         if (matcher.matches()) {
-            if (enforceConfigurationBelowConfigFolder && !"config".equals(matcher.group("foldername"))) {
-                throw new IllegalStateException("OSGi configuration are only considered if placed below a folder called 'config', but the configuration at '"+ path + "' is placed outside!");
-            }
-            
             String pid = matcher.group("pid");
 
             int idx = pid.lastIndexOf('/');
@@ -83,6 +79,11 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
                 Objects.requireNonNull(converter.getMainPackageAssembler()).addEntry(path, archive, entry);
                 return;
             }
+
+            if (enforceConfigurationBelowConfigFolder && !"config".equals(matcher.group("foldername"))) {
+                throw new IllegalStateException("OSGi configuration are only considered if placed below a folder called 'config', but the configuration at '"+ path + "' is placed outside!");
+            }
+
             // there is a specified RunMode
             runMode = matcher.group("runmode");
 
