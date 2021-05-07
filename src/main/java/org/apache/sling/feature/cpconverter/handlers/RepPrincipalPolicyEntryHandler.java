@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import org.apache.jackrabbit.vault.util.DocViewProperty;
 import org.apache.sling.feature.cpconverter.accesscontrol.AccessControlEntry;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
@@ -126,15 +127,10 @@ public final class RepPrincipalPolicyEntryHandler extends AbstractPolicyEntryHan
         
         @NotNull
         private static String extractEffectivePath(@Nullable String value) {
-            if (value == null) {
+            if (value == null || value.isEmpty()) {
                 return "";
             }
-            if (value.startsWith("{Path}")) {
-                return value.substring("{Path}".length());
-            } else {
-                // malformed content package that defines rep:effectivePath as prop of type String instead of Path
-                return value;
-            }
+            return DocViewProperty.parse(REP_EFFECTIVE_PATH, value).values[0];
         }
     }
 }
