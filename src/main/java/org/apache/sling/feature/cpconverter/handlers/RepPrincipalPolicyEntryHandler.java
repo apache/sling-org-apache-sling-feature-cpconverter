@@ -16,10 +16,12 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import org.apache.jackrabbit.vault.util.DocViewProperty;
 import org.apache.sling.feature.cpconverter.accesscontrol.AccessControlEntry;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -78,7 +80,7 @@ public final class RepPrincipalPolicyEntryHandler extends AbstractPolicyEntryHan
                         throw new IllegalStateException("isolated principal-based access control entry. no principal found.");
                     }
                     List<String> privileges = extractValues(attributes.getValue(REP_PRIVILEGES));
-                    RepoPath effectivePath = new RepoPath(attributes.getValue(REP_EFFECTIVE_PATH));
+                    RepoPath effectivePath = new RepoPath(extractEffectivePath(attributes.getValue(REP_EFFECTIVE_PATH)));
 
                     AccessControlEntry ace = new AccessControlEntry(true, privileges, effectivePath, true);
                     // NOTE: nt-definition doesn't allow for jr2-stype restrictions defined right below the entry.
@@ -121,6 +123,14 @@ public final class RepPrincipalPolicyEntryHandler extends AbstractPolicyEntryHan
             } else {
                 return super.isRestriction(attributeName);
             }
+        }
+        
+        @NotNull
+        private static String extractEffectivePath(@Nullable String value) {
+            if (value == null || value.isEmpty()) {
+                return "";
+            }
+            return DocViewProperty.parse(REP_EFFECTIVE_PATH, value).values[0];
         }
     }
 }

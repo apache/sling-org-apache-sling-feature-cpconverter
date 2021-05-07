@@ -145,6 +145,23 @@ public final class RepPrincipalPolicyEntryHandlerTest {
         assertFalse(operations.isEmpty());
     }
 
+    @Test
+    public void parsePolicyWithWrongTypeEffectivePath() throws Exception {
+        Extension repoinitExtension = parseAndSetRepoinit("service4", "random5").getRepoinitExtension();
+        String expected = normalize(
+                "create service user service4 with path system/services\n" +
+                        "set principal ACL for service4\n" +
+                        "    allow jcr:read on /effective/path/of/type/string\n" +
+                        "end\n");
+
+        String actual = repoinitExtension.getText();
+        assertEquals(expected, actual);
+
+        RepoInitParser repoInitParser = new RepoInitParserService();
+        List<Operation> operations = repoInitParser.parse(new StringReader(actual));
+        assertFalse(operations.isEmpty());
+    }
+
     @NotNull
     private static SystemUser createSystemUser(@NotNull String systemUsersName, @NotNull String nodeName) {
         RepoPath repoPath = new RepoPath("/home/users/system/services/"+nodeName);

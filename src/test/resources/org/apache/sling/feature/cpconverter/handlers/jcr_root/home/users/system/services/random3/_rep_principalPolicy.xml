@@ -21,6 +21,6 @@
     <entry0
             jcr:primaryType="rep:PrincipalEntry"
             rep:privileges="{Name}[jcr:all]"
-            rep:effectivePath="/home/users/system/services/random3/subtree">
+            rep:effectivePath="{Path}/home/users/system/services/random3/subtree">
     </entry0>
 </jcr:root>
