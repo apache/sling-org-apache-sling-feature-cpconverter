@@ -46,8 +46,8 @@ public class JcrNamespaceRegistry implements NamespaceRegistry, NamespaceResolve
         prefixUriMapping.put(PREFIX_MIX, NAMESPACE_MIX);
         prefixUriMapping.put(PREFIX_NT, NAMESPACE_NT);
         prefixUriMapping.put(PREFIX_XML, NAMESPACE_XML);
-        // referencing from org.apache.sling.api.SlingConstants would require an additional dependency
-        prefixUriMapping.put("sling", "http://sling.apache.org/");
+        // referencing from org.apache.sling.jcr.resource.api.JcrResourceConstants.SLING_NAMESPACE_URI would require an additional dependency
+        prefixUriMapping.put("sling", "http://sling.apache.org/jcr/sling/1.0");
         registeredCndSystemIds = new ArrayList<>();
     }
 
