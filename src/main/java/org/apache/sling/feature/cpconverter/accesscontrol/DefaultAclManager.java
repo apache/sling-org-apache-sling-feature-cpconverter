@@ -439,6 +439,9 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
             // user-root 
             log.warn("Failed to extract primary type information for node at path '{}'", path);
             return null;
+        } else if (path.getParent() == null) {
+            log.debug("Omit create path statement for path '{}'", path);
+            return null;
         } else {
             // assume that primary type information is present or can be extracted from default primary type definition 
             // of the the top-level nodes (i.e. their effective node type definition).
