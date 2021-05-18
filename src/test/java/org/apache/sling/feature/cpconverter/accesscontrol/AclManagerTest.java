@@ -28,6 +28,7 @@ import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.repoinit.parser.RepoInitParser;
 import org.apache.sling.repoinit.parser.RepoInitParsingException;
 import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
+import org.apache.sling.repoinit.parser.operations.CreatePath;
 import org.apache.sling.repoinit.parser.operations.Operation;
 import org.junit.After;
 import org.junit.Before;
@@ -47,6 +48,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -377,4 +379,33 @@ public class AclManagerTest {
         return new AccessControlEntry(isAllow, Arrays.asList(privileges.split(",")), new RepoPath(PlatformNameFormat.getRepositoryPath(path)));
     }
 
+    @Test
+    public void testGetCreatePathForRootNode() {
+        RepoPath rootPath = new RepoPath("/");
+        DefaultAclManager aclManager = new DefaultAclManager();
+        CreatePath cp = aclManager.getCreatePath(rootPath, Collections.emptyList());
+        assertNull(cp);
+    }
+
+    @Test
+    public void testGetCreatePathForRepositoryPath() {
+        RepoPath repoPath = new RepoPath("");
+        assertTrue(repoPath.isRepositoryPath());
+        
+        DefaultAclManager aclManager = new DefaultAclManager();
+        CreatePath cp = aclManager.getCreatePath(repoPath, Collections.emptyList());
+        assertNull(cp);
+    }
+
+    @Test
+    public void testGetCreatePathForPathBelowUserRoot() {
+        RepoPath userPath = new RepoPath("/home/user/system/feature/usernode");
+        DefaultAclManager aclManager = new DefaultAclManager();
+        aclManager.addSystemUser(new SystemUser("systemUser", userPath, userPath.getParent()));
+        
+        CreatePath cp = aclManager.getCreatePath(new RepoPath("/home/somenode"), Collections.emptyList());
+        assertNull(cp);
+        cp = aclManager.getCreatePath(new RepoPath("/home"), Collections.emptyList());
+        assertNull(cp);
+    }
 }
