@@ -415,7 +415,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
         boolean foundType = false;
 
         CreatePath cp = new CreatePath(null);
-        for (String part : path.toString().substring(1).split("/")) {
+        for (String part : path.getSegments()) {
             String platformname = PlatformNameFormat.getPlatformName(part);
             platformPath += platformPath.isEmpty() ? platformname : "/" + platformname;
             boolean segmentAdded = false;

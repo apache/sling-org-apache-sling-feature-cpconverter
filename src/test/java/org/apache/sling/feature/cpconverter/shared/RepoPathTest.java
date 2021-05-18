@@ -23,6 +23,8 @@ import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -52,30 +54,85 @@ public class RepoPathTest {
     public void testGetParent() {
         RepoPath r1 = new RepoPath("/foo/bar");
         RepoPath r2 = new RepoPath("foo");
+        RepoPath r3 = new RepoPath("/foo");
 
         assertEquals(r2, r1.getParent());
-
-        assertNull(r2.getParent());
-        assertNull(new RepoPath(Collections.emptyList()).getParent());
-    }
-
-    @Test
-    public void testGetSegmentCount() {
-        assertEquals(2, new RepoPath("/foo/bar").getSegmentCount());
+        assertEquals(r3, r1.getParent());
     }
 
     @Test
     public void testStartsWith() {
         RepoPath r1 = new RepoPath("/foo/bar");
         RepoPath r2 = new RepoPath("foo");
+        RepoPath r3 = new RepoPath("/foo");
 
         assertTrue(r1.startsWith(r2));
+        assertTrue(r1.startsWith(r3));
         assertFalse(r2.startsWith(r1));
         assertTrue(r1.startsWith(r1));
         assertTrue(r2.startsWith(r2));
+        assertTrue(r2.startsWith(r3));
         assertFalse(r2.startsWith(new RepoPath(Collections.singletonList("fo"))));
 
         assertTrue(r1.startsWith(r1.getParent()));
         assertTrue(r2.startsWith(r2.getParent()));
+        assertTrue(r3.startsWith(r3.getParent()));
+    }
+
+    @Test
+    public void testTopLevelPath() {
+        RepoPath path = new RepoPath("/foo");
+        assertEquals("/foo", path.toString());
+        assertFalse(path.isRepositoryPath());
+
+        RepoPath parent = path.getParent();
+        assertNotNull(parent);
+        assertFalse(parent.isRepositoryPath());
+        assertEquals(new RepoPath("/"), parent);
+        
+        assertTrue(path.startsWith(path));
+        assertTrue(path.startsWith(new RepoPath("/")));
+        assertFalse(path.startsWith(new RepoPath("")));
+
+        assertEquals(new RepoPath("/foo"), path);
+        assertEquals(new RepoPath("foo"), path);
+        assertEquals(new RepoPath(Collections.singletonList("foo")), path);
+        
+        assertNotEquals(new RepoPath("/bar"), path);
+        assertNotEquals(new RepoPath("/"), path);
+        assertNotEquals(new RepoPath(""), path);
+    }
+    
+    @Test
+    public void testRootPath() {
+        RepoPath path = new RepoPath("/");
+        assertEquals("/", path.toString());
+        assertFalse(path.isRepositoryPath());
+
+        assertNull(path.getParent());
+
+        assertTrue(path.startsWith(path));
+        assertFalse(path.startsWith(new RepoPath("")));
+        assertFalse(path.startsWith(new RepoPath("/foo")));
+        
+        assertEquals(new RepoPath(Collections.emptyList()), path);
+        assertEquals(new RepoPath("/"), path);
+        assertNotEquals(new RepoPath(""), path);
+    }
+
+    @Test
+    public void testRepositoryPath() {
+        RepoPath path = new RepoPath("");
+        assertEquals("", path.toString());
+        assertTrue(path.isRepositoryPath());
+
+        assertNull(path.getParent());
+
+        assertFalse(path.startsWith(path));
+        assertFalse(path.startsWith(new RepoPath("/")));
+        assertFalse(path.startsWith(new RepoPath("/foo")));
+
+        assertEquals(new RepoPath(""), path);
+        assertNotEquals(new RepoPath(Collections.emptyList()), path);
     }
 }
