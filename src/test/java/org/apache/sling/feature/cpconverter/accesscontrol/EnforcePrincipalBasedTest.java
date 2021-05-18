@@ -197,6 +197,7 @@ public class EnforcePrincipalBasedTest {
 
         String expected = normalize(
                 "create service user user1 with path " +relativeIntermediatePath+ "\n" +
+                "create path /content/feature\n" +        
                 "set ACL for user1\n" +
                 "    allow jcr:read on /content/feature\n" +
                 "end\n");
@@ -239,6 +240,7 @@ public class EnforcePrincipalBasedTest {
 
         String expected = normalize(
                 "create service user user1 with path " + relativeIntermediatePath + "\n" +
+                        "create path /content/feature\n" +
                         "set ACL for user1\n" +
                         "    allow jcr:read on /content/feature\n" +
                         "end\n");

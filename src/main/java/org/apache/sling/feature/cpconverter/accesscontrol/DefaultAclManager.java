@@ -20,9 +20,9 @@ import org.apache.jackrabbit.spi.Name;
 import org.apache.jackrabbit.spi.PrivilegeDefinition;
 import org.apache.jackrabbit.spi.commons.conversion.DefaultNamePathResolver;
 import org.apache.jackrabbit.spi.commons.conversion.NameResolver;
+import org.apache.jackrabbit.util.Text;
 import org.apache.jackrabbit.vault.fs.spi.PrivilegeDefinitions;
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
-import org.apache.jackrabbit.vault.util.Text;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.repoinit.NoOpVisitor;
 import org.apache.sling.feature.cpconverter.repoinit.OperationProcessor;
@@ -92,6 +92,8 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     private final List<RegisterNodetypes> nodetypeOperations = new LinkedList<>();
 
     private volatile PrivilegeDefinitions privilegeDefinitions;
+    
+    private RepoPath userRootPath;
 
     public DefaultAclManager() {
         this(null, "system");
@@ -118,6 +120,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     public boolean addSystemUser(@NotNull SystemUser systemUser) {
         if (systemUsers.add(systemUser)) {
             recordSystemUserIds(systemUser.getId());
+            setUserRoot(systemUser.getPath());
             return true;
         } else {
             return false;
@@ -307,7 +310,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
         }
     }
 
-    private List<AclLine> asAcLines(@NotNull Map<AccessControlEntry, String> entries) {
+    private static List<AclLine> asAcLines(@NotNull Map<AccessControlEntry, String> entries) {
         List<AclLine> lines = new ArrayList<>();
         entries.forEach((entry, path) -> lines.add(entry.asAclLine(path)));
         return lines;
@@ -430,10 +433,20 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
                 cp.addSegment(part, null);
             }
         }
-        return (foundType) ? cp : null;
+        
+        if (!foundType && isBelowUserRoot(path)) {
+            // if no type information has been detected, don't issue a 'create path' statement for nodes below the 
+            // user-root 
+            log.warn("Failed to extract primary type information for node at path '{}'", path);
+            return null;
+        } else {
+            // assume that primary type information is present or can be extracted from default primary type definition 
+            // of the the top-level nodes (i.e. their effective node type definition).
+            return cp;
+        }
     }
 
-    private boolean addSegment(@NotNull CreatePath cp, @NotNull String part, @NotNull File currentContent) {
+    private static boolean addSegment(@NotNull CreatePath cp, @NotNull String part, @NotNull File currentContent) {
         try (FileInputStream input = new FileInputStream(currentContent);
              FileInputStream input2 = new FileInputStream(currentContent)) {
             String primary = new PrimaryTypeParser().parse(input);
@@ -480,7 +493,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
         }
     }
 
-    private boolean isHomePath(@NotNull RepoPath path, @NotNull RepoPath systemUserPath) {
+    private static boolean isHomePath(@NotNull RepoPath path, @NotNull RepoPath systemUserPath) {
         // ACE located in the subtree are not supported
         return path.equals(systemUserPath);
     }
@@ -491,7 +504,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     }
 
     @NotNull
-    private String getHomePath(@NotNull AbstractUser abstractUser) {
+    private static String getHomePath(@NotNull AbstractUser abstractUser) {
         // since ACEs located in the subtree of a user are not supported by the converter,
         // there is no need to calculate a potential sub-path to be appended.
         return "home("+abstractUser.getId()+")";
@@ -523,5 +536,20 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
                 }
             }).collect(Collectors.toList());
         }
+    }
+
+    /**
+     * Record the root path for all users/groups assuming that their common ancestor is a top-level node
+     * 
+     * @param userPath A user path
+     */
+    private void setUserRoot(@NotNull RepoPath userPath) {
+        if (userRootPath == null) {
+            userRootPath = new RepoPath(Text.getAbsoluteParent(userPath.toString(), 0));
+        }
+    }
+    
+    private boolean isBelowUserRoot(@NotNull RepoPath path) {
+        return userRootPath != null && path.startsWith(userRootPath);
     }
 }

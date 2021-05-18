@@ -191,6 +191,7 @@ public class AclManagerTest {
 
         String expected = Util.normalize(
                 "create service user sys-usr with path system\n" +
+                "create path /content/cq:tags\n"+
                 "set ACL for sys-usr\n" +
                 "    allow jcr:read on /content/cq:tags\n" +
                 "    allow jcr:write on /content/cq:tags\n" +
@@ -205,7 +206,7 @@ public class AclManagerTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testGroupHandlingWithGroupUsed() throws RepoInitParsingException {
+    public void testGroupHandlingWithGroupUsed() {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addGroup(new Group("test", new RepoPath("/home/groups/test"),  new RepoPath("/home/groups/test")));
@@ -242,6 +243,7 @@ public class AclManagerTest {
 
         String expected = Util.normalize(
                 "create service user sys-usr with path system\n" +
+                        "create path /content/test\n" +
                         "set ACL for sys-usr\n" +
                         "    allow jcr:read on /content/test\n" +
                         "end\n");
@@ -252,7 +254,7 @@ public class AclManagerTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testGroupHandlingWithGroupMatchingSubPath() throws RepoInitParsingException {
+    public void testGroupHandlingWithGroupMatchingSubPath() {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addGroup(new Group("test", new RepoPath("/home/groups/test"),  new RepoPath("/home/groups/test")));
@@ -267,7 +269,7 @@ public class AclManagerTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testUserHandlingWithMatchingUser() throws RepoInitParsingException {
+    public void testUserHandlingWithMatchingUser() {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addUser(new User("test", new RepoPath("/home/users/test"),  new RepoPath("/home/users/test")));
@@ -301,6 +303,7 @@ public class AclManagerTest {
 
         String expected = Util.normalize(
                 "create service user sys-usr with path system\n" +
+                        "create path /content/test\n" +
                         "set ACL for sys-usr\n" +
                         "    allow jcr:read on /content/test\n" +
                         "end\n");
@@ -314,7 +317,7 @@ public class AclManagerTest {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addUser(new User("test", new RepoPath("/home/users/test"),  new RepoPath("/home/users/test")));
-        aclManager.addAcl("sys-usr", newAcl(true, "jcr:read", "/home/users/test2"));
+        aclManager.addAcl("sys-usr", newAcl(true, "jcr:read", "/home/users/notMatching"));
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
         when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
@@ -327,10 +330,13 @@ public class AclManagerTest {
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
 
+        // in contrast to testUserHandlingWithMatchingUser in this test /home/users/test2 is not detected 
+        // as user-home-path and thus is processed like a regular path (no 'home(uid)' repo-init statement and no exception).\
+        // however, no attempt is made to create the path without any available node type information.
         String expected = Util.normalize(
                 "create service user sys-usr with path system\n" +
                         "set ACL for sys-usr\n" +
-                        "    allow jcr:read on /home/users/test2\n" +
+                        "    allow jcr:read on /home/users/notMatching\n" +
                         "end\n");
 
         String actual = repoinitExtension.getText();
