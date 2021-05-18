@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -50,7 +51,7 @@ public class RepoPath implements Comparable<RepoPath>{
         if (path.startsWith("/"))
             path = path.substring(1);
 
-        this.path = Arrays.asList(path.split("/"));
+        this.path = (path.isEmpty()) ? Collections.emptyList() : Arrays.asList(path.split("/"));
     }
 
     /**
@@ -78,23 +79,16 @@ public class RepoPath implements Comparable<RepoPath>{
      * further parent.
      */
     public @Nullable RepoPath getParent() {
+        // root path or repository path
         if (path.isEmpty())
             return null;
 
         ArrayList<String> parentPath = new ArrayList<>(path.subList(0, path.size() - 1));
-        if (parentPath.isEmpty())
-            return null;
-
         return new RepoPath(parentPath);
     }
-
-    /**
-     * Get the nubmer of segments in this path.
-     *
-     * @return The number of segments.
-     */
-    public int getSegmentCount() {
-        return path.size();
+    
+    public List<String> getSegments() {
+        return path;
     }
 
     /**
@@ -104,11 +98,13 @@ public class RepoPath implements Comparable<RepoPath>{
      * @return If it starts with the other path or not.
      */
     public boolean startsWith(RepoPath otherPath) {
-        if (otherPath == null)
-            return true; // Every path starts with the root path
-
-        if (path.size() < otherPath.path.size())
+        if (otherPath == null || isRepositoryPath || otherPath.isRepositoryPath) {
             return false;
+        }
+
+        if (path.size() < otherPath.path.size()) {
+            return false;
+        }
 
         List<String> l = new ArrayList<>(path.subList(0, otherPath.path.size()));
         return l.equals(otherPath.path);
@@ -120,7 +116,7 @@ public class RepoPath implements Comparable<RepoPath>{
 
     @Override
     public int hashCode() {
-        return Objects.hash(path);
+        return Objects.hash(path, isRepositoryPath);
     }
 
     @Override
@@ -132,11 +128,11 @@ public class RepoPath implements Comparable<RepoPath>{
         if (getClass() != obj.getClass())
             return false;
         RepoPath other = (RepoPath) obj;
-        return Objects.equals(path, other.path);
+        return Objects.equals(path, other.path) && isRepositoryPath == other.isRepositoryPath;
     }
 
     @Override
     public String toString() {
-        return "/" + path.stream().collect(Collectors.joining("/"));
+        return isRepositoryPath ? "" : "/" + path.stream().collect(Collectors.joining("/"));
     }
 }
