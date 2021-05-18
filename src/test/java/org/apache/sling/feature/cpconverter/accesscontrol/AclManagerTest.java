@@ -398,6 +398,14 @@ public class AclManagerTest {
     }
 
     @Test
+    public void testGetCreatePathForToplevel() {
+        RepoPath toplevel = new RepoPath("/apps");
+        DefaultAclManager aclManager = new DefaultAclManager();
+        CreatePath cp = aclManager.getCreatePath(toplevel, Collections.emptyList());
+        assertNotNull(cp);
+    }
+
+    @Test
     public void testGetCreatePathForPathBelowUserRoot() {
         RepoPath userPath = new RepoPath("/home/user/system/feature/usernode");
         DefaultAclManager aclManager = new DefaultAclManager();
