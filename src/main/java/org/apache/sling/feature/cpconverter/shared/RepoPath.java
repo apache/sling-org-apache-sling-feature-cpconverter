@@ -26,7 +26,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-/** A Repo Path represents a path in the repository, for example when used in
+/** 
+ * A Repo Path represents a path in the repository, for example when used in
  * a repoinit section.
  *
  * @see
@@ -87,7 +88,7 @@ public class RepoPath implements Comparable<RepoPath>{
         return new RepoPath(parentPath);
     }
     
-    public List<String> getSegments() {
+    public @NotNull List<String> getSegments() {
         return path;
     }
 
@@ -97,7 +98,7 @@ public class RepoPath implements Comparable<RepoPath>{
      * @param otherPath The other path to check against.
      * @return If it starts with the other path or not.
      */
-    public boolean startsWith(RepoPath otherPath) {
+    public boolean startsWith(@Nullable RepoPath otherPath) {
         if (otherPath == null || isRepositoryPath || otherPath.isRepositoryPath) {
             return false;
         }
