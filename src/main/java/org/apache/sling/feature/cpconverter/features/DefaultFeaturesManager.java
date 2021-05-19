@@ -325,6 +325,10 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
             if (mappings != null) {
                 List<String> newMappings = new ArrayList<>();
                 for (String usermapping : mappings) {
+                    if (usermapping == null || usermapping.trim().isEmpty()) {
+                        // invalid empty mapping => ignore
+                        continue;
+                    }
                     Mapping mapping = new Mapping(usermapping, enforceServiceMappingByPrincipal);
                     getAclManager().addMapping(mapping);
                     newMappings.add(mapping.asString());
