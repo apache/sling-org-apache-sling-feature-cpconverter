@@ -326,12 +326,18 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
                 List<String> newMappings = new ArrayList<>();
                 for (String usermapping : mappings) {
                     if (usermapping == null || usermapping.trim().isEmpty()) {
+                        logger.warn("ServiceUserMapping: Ignoring empty mapping in {}", pid);
                         // invalid empty mapping => ignore
                         continue;
                     }
-                    Mapping mapping = new Mapping(usermapping, enforceServiceMappingByPrincipal);
-                    getAclManager().addMapping(mapping);
-                    newMappings.add(mapping.asString());
+                    try {
+                        Mapping mapping = new Mapping(usermapping, enforceServiceMappingByPrincipal);
+                        getAclManager().addMapping(mapping);
+                        newMappings.add(mapping.asString());
+                    } catch (IllegalArgumentException iae) {
+                        logger.error("ServiceUserMapping: Detected invalid mapping in {}", pid);
+                        throw iae;
+                    }
                 }
                 // replace 'user.mapping' property by the new mappings, which may have been refactored
                 if (!newMappings.isEmpty()) {
