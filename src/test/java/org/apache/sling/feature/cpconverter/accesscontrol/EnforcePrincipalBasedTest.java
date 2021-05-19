@@ -40,10 +40,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.List;
 
 import static org.apache.sling.feature.cpconverter.Util.normalize;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -272,6 +274,42 @@ public class EnforcePrincipalBasedTest {
 
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testWhitespaceUserMapping() throws IOException {
+        DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 1, File.createTempFile("foo", "bar"), "*", "*", new HashMap<>(), aclManager);
+        Feature seed = new Feature(ArtifactId.fromMvnId("org:foo:2"));
+        
+        // create a user.mapping configuratian with an empty-mapping
+        Configuration foo = new Configuration("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl~foo");
+        Dictionary<String, Object> props = foo.getProperties();
+        props.put("user.mapping", new String[]{"serviceName:subservice=[user1]","     ","serviceName2:subservice2=[user2]"});
+        seed.getConfigurations().add(foo);
+
+        fm.init("groupId", "artifactId", "version1.0");
+        fm.addConfiguration("author", foo.getPid(), "/path", props);
+        
+        // verify that invalid empty mapping has been stripped (without Exception)
+        String[] result = (String[]) foo.getProperties().get("user.mapping");
+        assertArrayEquals(new String[]{"serviceName:subservice=[user1]","serviceName2:subservice2=[user2]"}, result);
+    }
+
+    @Test
+    public void testEmptyUserMapping() throws IOException {
+        DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 1, File.createTempFile("foo", "bar"), "*", "*", new HashMap<>(), aclManager);
+
+        // create a user.mapping configuratian with an empty-mapping
+        Configuration foo = new Configuration("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl~foo");
+        Dictionary<String, Object> props = foo.getProperties();
+        props.put("user.mapping", new String[]{"serviceName:subservice=[user1]","","serviceName2:subservice2=[user2]"});
+
+        fm.init("groupId", "artifactId", "version1.0");
+        fm.addConfiguration("author", foo.getPid(), "/path", props);
+
+        // verify that invalid empty mapping has been stripped (without Exception)
+        String[] result = (String[]) foo.getProperties().get("user.mapping");
+        assertArrayEquals(new String[]{"serviceName:subservice=[user1]","serviceName2:subservice2=[user2]"}, result);
     }
 
     @NotNull
