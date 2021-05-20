@@ -62,7 +62,7 @@
   <dependencySets>
     <dependencySet>
       <outputDirectory>lib</outputDirectory>
-      <scope>provided</scope>
+      <scope>compile</scope>
       <useTransitiveDependencies>true</useTransitiveDependencies>
       <useProjectArtifact>true</useProjectArtifact>
     </dependencySet>
