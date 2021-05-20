@@ -90,6 +90,7 @@ public class VaultPackageUtils {
 
     public static void setDependencies(@Nullable Set<Dependency> dependencies, @NotNull Properties properties) {
         if (dependencies == null || dependencies.isEmpty()) {
+            properties.remove(PackageProperties.NAME_DEPENDENCIES);
             return;
         }
 
