@@ -123,9 +123,11 @@ public class VaultPackageAssembler implements EntryHandler {
             originalPackageProperties = originalPackageProperties.entrySet().stream().filter(new RemoveInstallHooksPredicate()).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
         properties.putAll(originalPackageProperties);
-        properties.setProperty(PackageProperties.NAME_VERSION,
-                               vaultPackage.getId().getVersion().toString()
-                                                             + VERSION_SUFFIX);
+        String version = vaultPackage.getId().getVersion().toString();
+        if (!version.endsWith(VERSION_SUFFIX)) {
+            version += VERSION_SUFFIX;
+        }
+        properties.setProperty(PackageProperties.NAME_VERSION, version);
 
         Set<Dependency> dependencies = getDependencies(vaultPackage);
 

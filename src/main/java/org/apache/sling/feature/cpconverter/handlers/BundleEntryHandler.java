@@ -417,8 +417,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
     void finalizePackageAssembly(@NotNull Map<PackageType, VaultPackageAssembler> packageAssemblers, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws Exception {
         for (java.util.Map.Entry<PackageType, VaultPackageAssembler> entry : packageAssemblers.entrySet()) {
             File packageFile = entry.getValue().createPackage(false);
-            converter.processContentPackageArchive(packageFile, runMode);
-            Files.delete(packageFile.toPath());
+            converter.processContentPackageArchive(packageFile, entry.getValue(), runMode);
         }
     }
 

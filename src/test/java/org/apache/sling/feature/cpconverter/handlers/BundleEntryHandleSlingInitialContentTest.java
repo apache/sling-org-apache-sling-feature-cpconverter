@@ -65,6 +65,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
         handler.handle("/jcr_root/apps/gav/install/io.wcm.handler.media-1.11.6.jar", archive, entry, converter);
 
+        converter.deployPackages();
         // verify generated bundle
         try (JarFile jarFile = new JarFile(new File(targetFolder, "io.wcm.handler.media-1.11.6-cp2fm-converted.jar"))) {
             String bundleVersion = jarFile.getManifest().getMainAttributes().getValue(Constants.BUNDLE_VERSION);
@@ -97,7 +98,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
         handler.handle("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", archive, entry, converter);
         // verify no additional content package created (as it only contains the configuration which should end up in the feature model only)
-        Mockito.verify(converter, Mockito.never()).processContentPackageArchive(Mockito.any(), Mockito.isNull());
+        Mockito.verify(converter, Mockito.never()).processContentPackageArchive(Mockito.any(), Mockito.any(), Mockito.isNull());
         // modified bundle
         Mockito.verify(featuresManager).addArtifact(null, ArtifactId.fromMvnId("com.composum.nodes:composum-nodes-config:2.5.3-cp2fm-converted"), null);
         // need to use ArgumentCaptur to properly compare string arrays

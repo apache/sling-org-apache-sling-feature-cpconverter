@@ -275,18 +275,13 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 logger.info("Converting content-package '{}'...", vaultPackage.getId());
 
                 traverse(vaultPackage);
-
-                // make sure
-
-                mainPackageAssembler.updateDependencies(mutableContentsIds);
-
                 // attach all unmatched resources as new content-package
 
                 File contentPackageArchive = mainPackageAssembler.createPackage();
 
                 // deploy the new zip content-package to the local mvn bundles dir
 
-                processContentPackageArchive(contentPackageArchive, null);
+                processContentPackageArchive(contentPackageArchive, mainPackageAssembler,null);
 
                 // finally serialize the Feature Model(s) file(s)
 
@@ -308,6 +303,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             }
         }
 
+        deployPackages();
         mutableContentsIds.clear();
 
         emitters.stream().forEach(e -> e.end());
@@ -357,8 +353,6 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
         // scan the detected package, first
         traverse(vaultPackage);
-
-        clonedPackage.updateDependencies(mutableContentsIds);
         
         //set dependency to parent package if the parent package is an application package & subpackage is embedded
         if (isEmbeddedPackage && !isContainerPackage) {
@@ -371,7 +365,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         File contentPackageArchive = clonedPackage.createPackage();
 
         // deploy the new content-package to the local mvn bundles dir and attach it to the feature
-        processContentPackageArchive(contentPackageArchive, runMode);
+        processContentPackageArchive(contentPackageArchive, clonedPackage, runMode);
 
         // restore the previous assembler
         mainPackageAssembler = handler;
@@ -379,7 +373,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         emitters.stream().forEach(e -> e.endSubPackage());
     }
 
-    public void processContentPackageArchive(@NotNull File contentPackageArchive,
+    public void processContentPackageArchive(@NotNull File contentPackageArchive, @NotNull VaultPackageAssembler assembler,
                                              @Nullable String runMode) throws Exception {
         try (VaultPackage vaultPackage = open(contentPackageArchive)) {
             PackageType packageType = detectPackageType(vaultPackage);
@@ -413,15 +407,40 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                                     mvnPackageId.getArtifactId(), vaultPackage.getId(), unreferencedArtifactsDeployer.getBaseDirectory());
                         break;
                     case REFERENCE:
-                        artifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), mvnPackageId);
-                        featuresManager.addArtifact(runMode, mvnPackageId);
+                        deploy(assembler, mvnPackageId, runMode);
                 }
             } else {
-                // deploy the new content-package to the local mvn bundles dir
-                getArtifactsDeployer().deploy(new FileArtifactWriter(contentPackageArchive), mvnPackageId);
-                getFeaturesManager().addArtifact(runMode, mvnPackageId);
+                deploy(assembler, mvnPackageId, runMode);
             }
         }
+    }
+
+    public void deployPackages() throws Exception {
+        try {
+            deployTasks.forEach(Runnable::run);
+        } catch (RuntimeException ex) {
+            if (ex.getCause() instanceof Exception) {
+                throw (Exception) ex;
+            }
+            throw ex;
+        }
+        deployTasks.clear();
+    }
+
+    private List<Runnable> deployTasks = new ArrayList<>();
+
+    private void deploy(VaultPackageAssembler assembler, ArtifactId mvnPackageId, String runMode) {
+        getFeaturesManager().addArtifact(runMode, mvnPackageId);
+        deployTasks.add(() -> {
+            assembler.updateDependencies(mutableContentsIds);
+            try {
+                File finalContentPackageArchive = assembler.createPackage();
+                // deploy the new content-package to the local mvn bundles dir
+                getArtifactsDeployer().deploy(new FileArtifactWriter(finalContentPackageArchive), mvnPackageId);
+            } catch (Exception ex) {
+                throw new RuntimeException(ex);
+            }
+        });
     }
 
     protected boolean isSubContentPackageIncluded(@NotNull String path) {
@@ -483,7 +502,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         if (version.endsWith(VaultPackageAssembler.VERSION_SUFFIX)) {
             version = version.substring(0, version.length() - VaultPackageAssembler.VERSION_SUFFIX.length());
         }
-        if (version == null || version.isEmpty()) {
+        if (version.isEmpty()) {
             version = DEFAULT_VERSION;
         }
 
