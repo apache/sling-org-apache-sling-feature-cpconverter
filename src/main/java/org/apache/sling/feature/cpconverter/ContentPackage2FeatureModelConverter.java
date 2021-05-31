@@ -414,9 +414,11 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             }
         }
     }
-
     public void deployPackages() throws Exception {
         try {
+            mutableContentsIds.values().forEach(
+                value -> value.removeIf(dep -> mutableContentsIds.keySet().stream().anyMatch(dep::matches)));
+
             deployTasks.forEach(Runnable::run);
         } catch (RuntimeException ex) {
             if (ex.getCause() instanceof Exception) {

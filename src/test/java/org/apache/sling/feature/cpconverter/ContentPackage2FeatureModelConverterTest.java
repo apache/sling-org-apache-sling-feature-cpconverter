@@ -898,7 +898,7 @@ public class ContentPackage2FeatureModelConverterTest {
         }
     }
 
-    // see SLING-8649
+    // see SLING-10433
     @Test
     public void filteredOutContentPackagesAreExcludedDependencies() throws Exception {
         File[] contentPackages = load("test_dep_a-1.0.zip", "test_dep_b-1.0.zip");
@@ -927,6 +927,39 @@ public class ContentPackage2FeatureModelConverterTest {
             VaultPackage vaultPackage = new PackageManagerImpl().open(contentPackage);
             String dependencies = vaultPackage.getProperties().getProperty(PackageProperties.NAME_DEPENDENCIES);
             assertEquals("my_packages:test_c", dependencies);
+        }
+        finally {
+            deleteDirTree(outputDirectory);
+        }
+    }
+
+    // see SLING-8649
+    @Test
+    public void filteredOutSubContentPackagesAreExcludedDependencies() throws Exception {
+        File[] contentPackages = load("test_dep_sub.zip");
+
+        // input: c <- a <- b
+        // expected output: c <- a
+
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+        try {
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
+                    .setContentTypePackagePolicy(PackagePolicy.DROP)
+                    .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
+                    .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                    .convert(contentPackages);
+
+            Feature sub = getFeature(outputDirectory, "test_sub.json");
+
+            assertNotNull(sub.getExtensions().getByName("content-packages"));
+            Artifacts artifacts = sub.getExtensions().getByName("content-packages").getArtifacts();
+            assertEquals(2, artifacts.size());
+            assertTrue(artifacts.containsExact(ArtifactId.fromMvnId("my_packages:test_b:zip:cp2fm-converted:1.0")));
+
+            File contentPackage = new File(outputDirectory, "my_packages/test_b/1.0/test_b-1.0-cp2fm-converted.zip");
+            VaultPackage vaultPackage = new PackageManagerImpl().open(contentPackage);
+            String dependencies = vaultPackage.getProperties().getProperty(PackageProperties.NAME_DEPENDENCIES);
+            assertEquals("my_packages:test_sub:[1.0-cp2fm-converted,1.0-cp2fm-converted]", dependencies);
         }
         finally {
             deleteDirTree(outputDirectory);
