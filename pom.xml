@@ -57,11 +57,14 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
-      <scope>provided</scope>
+      <scope>compile</scope>
+      <!-- make optional to not transitively pollute class loaders -->
+      <optional>true</optional>
     </dependency>
 
     <!--
@@ -71,7 +74,8 @@
       <groupId>info.picocli</groupId>
       <artifactId>picocli</artifactId>
       <version>${picocli.version}</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
+      <optional>true</optional>
     </dependency>
 
     <!--
@@ -81,24 +85,24 @@
       <groupId>org.apache.jackrabbit.vault</groupId>
       <artifactId>org.apache.jackrabbit.vault</artifactId>
       <version>${org.apache.jackrabbit.vault.version}</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.jackrabbit</groupId>
       <artifactId>jackrabbit-spi-commons</artifactId>
       <version>${jackrabbit-spi-commons.version}</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>javax.jcr</groupId>
       <artifactId>jcr</artifactId>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
       <version>2.8.0</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
 
     <!--
@@ -108,67 +112,67 @@
       <groupId>org.apache.sling</groupId>
       <artifactId>org.apache.sling.feature</artifactId>
       <version>1.2.22</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.sling</groupId>
       <artifactId>org.apache.sling.feature.extension.apiregions</artifactId>
       <version>1.2.0</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.sling</groupId>
       <artifactId>org.apache.sling.repoinit.parser</artifactId>
       <version>1.6.8</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.felix</groupId>
       <artifactId>org.apache.felix.converter</artifactId>
       <version>1.0.14</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.felix</groupId>
       <artifactId>org.apache.felix.utils</artifactId>
       <version>1.11.4</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.util.function</artifactId>
       <version>1.0.0</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.geronimo.specs</groupId>
       <artifactId>geronimo-json_1.1_spec</artifactId>
       <version>1.2</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.johnzon</groupId>
       <artifactId>johnzon-core</artifactId>
       <version>1.2.3</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.felix</groupId>
       <artifactId>org.apache.felix.cm.json</artifactId>
       <version>1.0.6</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.annotation.versioning</artifactId>
       <version>1.1.0</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.framework</artifactId>
       <version>1.9.0</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
 
     <!--
@@ -178,13 +182,13 @@
       <groupId>org.apache.felix</groupId>
       <artifactId>org.apache.felix.configadmin</artifactId>
       <version>1.9.16</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.jackrabbit</groupId>
       <artifactId>jackrabbit-api</artifactId>
       <version>${jackrabbit-api.version}</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <!-- 
      | Sling-Initial-Content
@@ -193,25 +197,25 @@
       <groupId>org.apache.sling</groupId>
       <artifactId>org.apache.sling.jcr.contentloader</artifactId>
       <version>2.4.2</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.sling</groupId>
       <artifactId>org.apache.sling.commons.osgi</artifactId>
       <version>2.3.0</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
      </dependency>
     <dependency>
       <groupId>org.apache.sling</groupId>
       <artifactId>org.apache.sling.contentparser.api</artifactId>
       <version>2.0.0</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.sling</groupId>
       <artifactId>org.apache.sling.contentparser.json</artifactId>
       <version>2.0.0</version>
-      <scope>provided</scope>
+      <scope>compile</scope>
     </dependency>
     <!--
      | Test only dependencies
