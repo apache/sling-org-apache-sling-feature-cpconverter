@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
 import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.detectPackageType;
 import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.getDependencies;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -61,7 +62,7 @@ import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanner {
+public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanner implements Closeable {
 
     public static final String ZIP_TYPE = "zip";
 
@@ -208,15 +209,11 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return this.tmpDirectory;
     }
     
-    public void cleanup() {
+    public void cleanup() throws IOException {
         if ( this.tmpDirectory.exists() ) {
             logger.info( "Cleaning up tmp directory {}", this.tmpDirectory);
 
-            try {
-                FileUtils.deleteDirectory( this.tmpDirectory );
-            } catch (IOException e) {
-                logger.error( "Error Deleting {}", this.tmpDirectory );
-            }
+            FileUtils.deleteDirectory( this.tmpDirectory );
         }
     }
     
@@ -514,6 +511,11 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     @Override
     protected void addCdnPattern(@NotNull Pattern cndPattern) {
         handlersManager.addEntryHandler(NodeTypesEntryHandler.forCndPattern(cndPattern));
+    }
+
+    @Override
+    public void close() throws IOException {
+        cleanup();
     }
 
 }

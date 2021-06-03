@@ -205,21 +205,19 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                     }
                 }
 
-                ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation)
-                                                                .setFeaturesManager(featuresManager)
-                                                                .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(artifactsOutputDirectory))
-                                                                .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap, !disableInstallerPolicy, slingInitialContentPolicy))
-                                                                .setAclManager(aclManager)
-                                                                .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
-                                                                .setFailOnMixedPackages(failOnMixedPackages)
-                                                                .setContentTypePackagePolicy(contentTypePackagePolicy);
-                                                                
-                if (unreferencedArtifactsOutputDirectory != null) {
-                    converter.setUnreferencedArtifactsDeployer(new SimpleFolderArtifactsDeployer(unreferencedArtifactsOutputDirectory));
-                } else if (contentTypePackagePolicy == ContentPackage2FeatureModelConverter.PackagePolicy.PUT_IN_DEDICATED_FOLDER) {
-                    throw new IllegalStateException("Argument '--content-type-package-policy PUT_IN_DEDICATED_FOLDER' requires argument '--unreferenced-artifacts-output-directory' as well!");
-                }
-                try {
+                try (ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation)) {
+                    converter.setFeaturesManager(featuresManager)
+                             .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(artifactsOutputDirectory))
+                             .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap, !disableInstallerPolicy, slingInitialContentPolicy))
+                             .setAclManager(aclManager)
+                             .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
+                             .setFailOnMixedPackages(failOnMixedPackages)
+                             .setContentTypePackagePolicy(contentTypePackagePolicy);
+                    if (unreferencedArtifactsOutputDirectory != null) {
+                        converter.setUnreferencedArtifactsDeployer(new SimpleFolderArtifactsDeployer(unreferencedArtifactsOutputDirectory));
+                    } else if (contentTypePackagePolicy == ContentPackage2FeatureModelConverter.PackagePolicy.PUT_IN_DEDICATED_FOLDER) {
+                        throw new IllegalStateException("Argument '--content-type-package-policy PUT_IN_DEDICATED_FOLDER' requires argument '--unreferenced-artifacts-output-directory' as well!");
+                    }
                     if (filteringPatterns != null && filteringPatterns.length > 0) {
                         RegexBasedResourceFilter filter = new RegexBasedResourceFilter();
 
@@ -229,10 +227,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
 
                         converter.setResourceFilter(filter);
                     }
-
                     converter.convert(contentPackages);
-                } finally {
-                    converter.cleanup();
                 }
 
                 logger.info( "+-----------------------------------------------------+" );

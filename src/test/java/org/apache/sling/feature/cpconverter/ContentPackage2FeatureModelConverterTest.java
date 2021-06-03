@@ -103,8 +103,8 @@ public class ContentPackage2FeatureModelConverterTest {
     }
 
     @After
-    public void tearDown() {
-        converter.cleanup();
+    public void tearDown() throws IOException {
+        converter.close();
     }
 
     @Test
