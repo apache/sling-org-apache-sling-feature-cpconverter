@@ -206,6 +206,9 @@ public class ConfigurationEntryHandlerTest {
         return Arrays.asList(new Object[][] {
             { path + EXPECTED_PID + ".empty.cfg", 1, 2, 0, new PropertiesConfigurationEntryHandler(), null, false},
             { path + EXPECTED_PID + ".cfg", 1, 2, 1, new PropertiesConfigurationEntryHandler(), null, false},
+            { path + EXPECTED_PID + ".cfg.dir", 0, 0, 0, new PropertiesConfigurationEntryHandler(), null, false},
+            { path + EXPECTED_PID + ".cfg.dir/.content.xml", 0, 0, 0, new PropertiesConfigurationEntryHandler(), null, false},
+
 
             { path + EXPECTED_PID + ".empty.cfg.json", 1, 2, 0, new JsonConfigurationEntryHandler(), null, true },
             { path + EXPECTED_PID + ".cfg.json", 1, 2, 3, new JsonConfigurationEntryHandler(), null, true },
