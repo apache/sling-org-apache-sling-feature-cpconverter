@@ -33,7 +33,7 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
     private boolean enforceConfigurationBelowConfigFolder;
 
     public AbstractConfigurationEntryHandler(@NotNull String extension) {
-        super("/jcr_root/(?:apps|libs)/.+/(?<foldername>config|install)(\\.(?<runmode>[^/]+))?/(?<pid>[^\\/]*)\\." + extension + ("(?<dir>.dir(/\\.content\\.xml)?)?$"));
+        super("/jcr_root/(?:apps|libs)/.+/(?<foldername>config|install)(\\.(?<runmode>[^/]+))?(.*)/(?<pid>[^\\/]*)\\." + extension + ("(?<dir>.dir(/\\.content\\.xml)?)?$"));
     }
 
     void setEnforceConfgurationBelowConfigFolder(boolean enforceConfigurationBelowConfigFolder) {
