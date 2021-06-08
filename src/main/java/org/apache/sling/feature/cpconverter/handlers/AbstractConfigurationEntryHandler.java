@@ -31,10 +31,10 @@ import org.jetbrains.annotations.Nullable;
 abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandler {
 
     private boolean enforceConfigurationBelowConfigFolder;
-
+    
+    // SLING-10469 - regexp to catch configs and poetential sibling .dir folders that would carry the node properties from an export that would need to be ignored as well
     public AbstractConfigurationEntryHandler(@NotNull String extension) {
-        // SLING-10469 - regexp to catch configs and poetential sibling .dir folders that would carry the node properties from an export that would need to be ignored as well
-        super("/jcr_root/(?:apps|libs)/.+/(?<foldername>config|install)(\\.(?<runmode>[^/]+))?/(?<pid>[^\\/]*)\\." + extension + ("(?<dir>.dir(/\\.content\\.xml)?)?$"));
+        super("/jcr_root/(?:apps|libs)/.+/(?<foldername>config|install)(\\.(?<runmode>[^/]+))?(.*)/(?<pid>[^\\/]*)\\." + extension + ("(?<dir>.dir(/\\.content\\.xml)?)?$"));
     }
 
     void setEnforceConfgurationBelowConfigFolder(boolean enforceConfigurationBelowConfigFolder) {
