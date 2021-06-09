@@ -36,7 +36,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.regex.Matcher;
 
-abstract class AbstractPolicyEntryHandler  extends AbstractRegexEntryHandler {
+abstract class AbstractPolicyEntryHandler extends AbstractRegexEntryHandler {
 
     private final SAXTransformerFactory saxTransformerFactory = (SAXTransformerFactory) TransformerFactory.newInstance();
 
@@ -67,13 +67,12 @@ abstract class AbstractPolicyEntryHandler  extends AbstractRegexEntryHandler {
         StringWriter stringWriter = new StringWriter();
         handler.setResult(new StreamResult(stringWriter));
 
-        AbstractPolicyParser systemUserParser = createPolicyParser(new RepoPath(PlatformNameFormat.getRepositoryPath(resourcePath)),
+        AbstractPolicyParser policyParser = createPolicyParser(new RepoPath(PlatformNameFormat.getRepositoryPath(resourcePath)),
                 converter.getAclManager(),
                 handler);
         boolean hasRejectedAcls;
-
         try (InputStream input = archive.openInputStream(entry)) {
-            hasRejectedAcls = systemUserParser.parse(input);
+            hasRejectedAcls = policyParser.parse(input);
         }
 
         if (hasRejectedAcls) {
