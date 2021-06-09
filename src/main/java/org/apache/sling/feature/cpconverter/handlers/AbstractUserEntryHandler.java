@@ -25,16 +25,12 @@ import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.jetbrains.annotations.NotNull;
 
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.sax.SAXTransformerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.regex.Matcher;
 
 abstract class AbstractUserEntryHandler extends AbstractRegexEntryHandler {
-
-    private final SAXTransformerFactory saxTransformerFactory = (SAXTransformerFactory) TransformerFactory.newInstance();
     
     // FIXME: use first segment of 'systemUserRelPath' config value instead of hardcoding 
     private static final String SYSTEM_USER_SEGMENT = "/system/";
