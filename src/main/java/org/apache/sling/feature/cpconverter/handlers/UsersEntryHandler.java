@@ -47,6 +47,8 @@ public final class UsersEntryHandler extends AbstractUserEntryHandler {
 
         private static final String REP_SYSTEM_USER = "rep:SystemUser";
         private static final String REP_USER = "rep:User";
+        
+        private boolean isSystemUser = false;
 
         /**
          * @param converter - the converter to use.
@@ -64,8 +66,14 @@ public final class UsersEntryHandler extends AbstractUserEntryHandler {
                 converter.getAclManager().addUser(new User(id, path, intermediatePath, disabledReason));
             } else {
                 converter.getAclManager().addSystemUser(new SystemUser(id, path, intermediatePath, disabledReason));
+                isSystemUser = true;
             }
         }
-    }
 
+        @Override
+        protected Boolean getParsingResult() {
+            // intermediate paths and regular users are never handled by repo-init
+            return isSystemUser;
+        }
+    }
 }

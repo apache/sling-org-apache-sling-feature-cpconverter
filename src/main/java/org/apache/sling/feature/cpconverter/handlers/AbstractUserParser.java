@@ -22,7 +22,7 @@ import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.jetbrains.annotations.NotNull;
 import org.xml.sax.Attributes;
 
-abstract class AbstractUserParser extends AbstractJcrNodeParser<Void> {
+abstract class AbstractUserParser extends AbstractJcrNodeParser<Boolean> {
 
     private static final String REP_AUTHORIZABLE_ID = "rep:authorizableId";
 
@@ -54,8 +54,9 @@ abstract class AbstractUserParser extends AbstractJcrNodeParser<Void> {
     }
 
     @Override
-    protected Void getParsingResult() {
-        return null;
+    protected Boolean getParsingResult() {
+        // false for all intermediate paths, regular users and groups
+        return false;
     }
 
     abstract void handleUser(@NotNull String id, @NotNull Attributes attributes);
