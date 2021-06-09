@@ -17,6 +17,7 @@
 package org.apache.sling.feature.cpconverter.handlers;
 
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.SlingInitialContentPolicy;
+import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,10 +32,11 @@ public class DefaultEntryHandlersManager implements EntryHandlersManager {
     private final List<EntryHandler> entryHandlers = new LinkedList<>();
 
     public DefaultEntryHandlersManager() {
-        this(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP);
+        this(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
     }
 
-    public DefaultEntryHandlersManager(@NotNull Map<String, String> configs, boolean enforceConfigurationsAndBundlesBelowProperFolder, SlingInitialContentPolicy slingInitialContentPolicy) {
+    public DefaultEntryHandlersManager(@NotNull Map<String, String> configs, boolean enforceConfigurationsAndBundlesBelowProperFolder, 
+                                       SlingInitialContentPolicy slingInitialContentPolicy, @NotNull String systemUserRelPath) {
         ServiceLoader<EntryHandler> entryHandlersLoader = ServiceLoader.load(EntryHandler.class);
         for (EntryHandler entryHandler : entryHandlersLoader) {
             if (configs.containsKey(entryHandler.getClass().getName())) {
@@ -45,6 +47,8 @@ public class DefaultEntryHandlersManager implements EntryHandlersManager {
             } else if (entryHandler instanceof BundleEntryHandler) {
                 ((BundleEntryHandler) entryHandler).setEnforceBundlesBelowInstallFolder(enforceConfigurationsAndBundlesBelowProperFolder);
                 ((BundleEntryHandler) entryHandler).setSlingInitialContentPolicy(slingInitialContentPolicy);
+            } else if (entryHandler instanceof AbstractUserEntryHandler) {
+                ((AbstractUserEntryHandler) entryHandler).setSystemUserRelPath(systemUserRelPath);
             }
             addEntryHandler(entryHandler);
         }

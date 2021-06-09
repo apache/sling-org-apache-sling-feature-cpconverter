@@ -37,6 +37,7 @@ import org.apache.sling.feature.cpconverter.artifacts.SimpleFolderArtifactsDeplo
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
+import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.jetbrains.annotations.NotNull;
@@ -111,7 +112,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     private String enforcePrincipalBasedSupportedPath = null;
 
     @Option(names= {"--system-user-rel-path"}, description = "Relative path for system user as configured with Apache Jackrabbit Oak", required = false)
-    private String systemUserRelPath = "system";
+    private String systemUserRelPath = ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT;
 
     @Option(names = { "--enforce-servicemapping-by-principal" }, description = "Converts service user mappings with the form 'service:sub=userID' to 'service:sub=[principalname]'. Note, this may result in group membership no longer being resolved upon service login.", required = false)
     private boolean enforceServiceMappingByPrincipal = false;
@@ -208,7 +209,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                 try (ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation)) {
                     converter.setFeaturesManager(featuresManager)
                              .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(artifactsOutputDirectory))
-                             .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap, !disableInstallerPolicy, slingInitialContentPolicy))
+                             .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap, !disableInstallerPolicy, slingInitialContentPolicy, systemUserRelPath))
                              .setAclManager(aclManager)
                              .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
                              .setFailOnMixedPackages(failOnMixedPackages)

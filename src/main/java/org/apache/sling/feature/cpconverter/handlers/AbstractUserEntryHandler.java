@@ -21,6 +21,7 @@ import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.jetbrains.annotations.NotNull;
@@ -32,8 +33,7 @@ import java.util.regex.Matcher;
 
 abstract class AbstractUserEntryHandler extends AbstractRegexEntryHandler {
     
-    // FIXME: use first segment of 'systemUserRelPath' config value instead of hardcoding 
-    private static final String SYSTEM_USER_SEGMENT = "/system/";
+    private String systemUserSegment = createSegment(ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
 
     AbstractUserEntryHandler(@NotNull String rexex) {
         super(rexex);
@@ -50,7 +50,7 @@ abstract class AbstractUserEntryHandler extends AbstractRegexEntryHandler {
             byte[] tmp = IOUtils.toByteArray((archive.openInputStream(entry)));
             AbstractUserParser parser = createParser(converter, originalPath, intermediatePath);
             boolean converted = parser.parse(new ByteArrayInputStream(tmp));
-            if (!converted && !path.contains(SYSTEM_USER_SEGMENT)) {
+            if (!converted && !path.contains(systemUserSegment)) {
                 // write back regular users, groups and their intermediate folders that did not get converted into
                 // repo-init statements to the content package
                 VaultPackageAssembler assembler = converter.getMainPackageAssembler();
@@ -67,4 +67,12 @@ abstract class AbstractUserEntryHandler extends AbstractRegexEntryHandler {
 
     abstract AbstractUserParser createParser(@NotNull ContentPackage2FeatureModelConverter converter, @NotNull RepoPath originalPath, @NotNull RepoPath intermediatePath);
 
+    void setSystemUserRelPath(@NotNull String systemUserRelPath) {
+        int index = systemUserRelPath.indexOf('/');
+        systemUserSegment = (index == -1) ? createSegment(systemUserRelPath) : createSegment(systemUserRelPath.substring(0, index));
+    }
+    
+    private static String createSegment(@NotNull String relPath) {
+        return "/" + relPath + "/";
+    }
 }

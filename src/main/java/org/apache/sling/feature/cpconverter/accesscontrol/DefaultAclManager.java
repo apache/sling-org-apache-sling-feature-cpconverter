@@ -26,6 +26,7 @@ import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.repoinit.NoOpVisitor;
 import org.apache.sling.feature.cpconverter.repoinit.OperationProcessor;
+import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.repoinit.parser.RepoInitParsingException;
@@ -96,7 +97,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     private RepoPath userRootPath;
 
     public DefaultAclManager() {
-        this(null, "system");
+        this(null, ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
     }
     public DefaultAclManager(@Nullable String enforcePrincipalBasedSupportedPath, @NotNull String systemRelPath) {
         if (enforcePrincipalBasedSupportedPath != null && !enforcePrincipalBasedSupportedPath.contains(systemRelPath)) {

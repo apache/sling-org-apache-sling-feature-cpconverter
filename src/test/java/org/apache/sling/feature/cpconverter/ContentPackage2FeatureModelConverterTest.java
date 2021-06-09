@@ -69,13 +69,17 @@ import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
+import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
+@RunWith(Parameterized.class)
 public class ContentPackage2FeatureModelConverterTest {
 
     /**
@@ -94,10 +98,23 @@ public class ContentPackage2FeatureModelConverterTest {
 
     private ContentPackage2FeatureModelConverter converter;
     private EntryHandlersManager handlersManager;
-
+    
+    private final String systemUserRelPath;
+    
+    @Parameterized.Parameters(name = "name={1}")
+    public static Collection<Object[]> parameters() {
+        return Arrays.asList(
+                new Object[] {ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT, "Default system user rel-path"},
+                new Object[] { "system/cq:services", "Modified system user rel-path"});
+    }
+    
+    public ContentPackage2FeatureModelConverterTest(@NotNull String systemUserRelPath, @NotNull String name) {
+        this.systemUserRelPath = systemUserRelPath;
+    }
+        
     @Before
     public void setUp() {
-        handlersManager = new DefaultEntryHandlersManager();
+        handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP, systemUserRelPath);
         converter = new ContentPackage2FeatureModelConverter()
                     .setEntryHandlersManager(handlersManager)
                     .setAclManager(new DefaultAclManager());
