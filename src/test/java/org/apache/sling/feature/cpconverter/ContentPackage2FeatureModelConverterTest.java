@@ -71,6 +71,7 @@ import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
 import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -81,11 +82,11 @@ public class ContentPackage2FeatureModelConverterTest {
      * Test package A-1.0. Depends on B and C-1.X
      * Test package B-1.0. Depends on C
      */
-    private static String[] TEST_PACKAGES_INPUT = { "test_c-1.0.zip", "test_a-1.0.zip", "test_b-1.0.zip" };
+    private static final String[] TEST_PACKAGES_INPUT = { "test_c-1.0.zip", "test_a-1.0.zip", "test_b-1.0.zip" };
 
-    private static String[] TEST_PACKAGES_OUTPUT = { "my_packages:test_c:1.0", "my_packages:test_b:1.0", "my_packages:test_a:1.0" };
+    private static final String[] TEST_PACKAGES_OUTPUT = { "my_packages:test_c:1.0", "my_packages:test_b:1.0", "my_packages:test_a:1.0" };
 
-    private static String[] TEST_PACKAGES_CYCLIC_DEPENDENCY = { "test_d-1.0.zip",
+    private static final String[] TEST_PACKAGES_CYCLIC_DEPENDENCY = { "test_d-1.0.zip",
                                                                 "test_c-1.0.zip",
                                                                 "test_a-1.0.zip",
                                                                 "test_b-1.0.zip",
@@ -156,8 +157,8 @@ public class ContentPackage2FeatureModelConverterTest {
             verifyFeatureFile(outputDirectory,
                             "asd.retail.all.json",
                             "asd.sample:asd.retail.all:slingosgifeature:0.0.1",
-                            Arrays.asList("org.apache.felix:org.apache.felix.framework:6.0.1"),
-                            Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
+                            Collections.singletonList("org.apache.felix:org.apache.felix.framework:6.0.1"),
+                            Collections.singletonList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
                             Arrays.asList("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1",
                                             "asd.sample:Asd.Retail.ui.content:zip:cp2fm-converted:0.0.1",
                                             "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1",
@@ -165,14 +166,14 @@ public class ContentPackage2FeatureModelConverterTest {
             verifyFeatureFile(outputDirectory,
                             "asd.retail.all-author.json",
                             "asd.sample:asd.retail.all:slingosgifeature:author:0.0.1",
-                            Arrays.asList("org.apache.sling:org.apache.sling.api:2.20.0"),
+                            Collections.singletonList("org.apache.sling:org.apache.sling.api:2.20.0"),
                             Collections.emptyList(),
                             Collections.emptyList());
             verifyFeatureFile(outputDirectory,
                             "asd.retail.all-publish.json",
                             "asd.sample:asd.retail.all:slingosgifeature:publish:0.0.1",
-                            Arrays.asList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
-                            Arrays.asList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
+                            Collections.singletonList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
+                            Collections.singletonList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
                             Collections.emptyList());
 
             // verify the runmode.mapper integrity
@@ -237,21 +238,20 @@ public class ContentPackage2FeatureModelConverterTest {
             verifyFeatureFile(outputDirectory,
                             "asd.retail.all.json",
                             "asd.sample:asd.retail.all:slingosgifeature:0.0.1",
-                            Arrays.asList("org.apache.felix:org.apache.felix.framework:6.0.1"),
-                            Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
-                            Arrays.asList("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1",
-                                            "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1"));
+                            Collections.singletonList("org.apache.felix:org.apache.felix.framework:6.0.1"),
+                            Collections.singletonList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
+                            Arrays.asList("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1", "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1"));
             verifyFeatureFile(outputDirectory,
                             "asd.retail.all-author.json",
                             "asd.sample:asd.retail.all:slingosgifeature:author:0.0.1",
-                            Arrays.asList("org.apache.sling:org.apache.sling.api:2.20.0"),
+                            Collections.singletonList("org.apache.sling:org.apache.sling.api:2.20.0"),
                             Collections.emptyList(),
                             Collections.emptyList());
             verifyFeatureFile(outputDirectory,
                             "asd.retail.all-publish.json",
                             "asd.sample:asd.retail.all:slingosgifeature:publish:0.0.1",
-                            Arrays.asList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
-                            Arrays.asList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
+                            Collections.singletonList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
+                            Collections.singletonList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
                             Collections.emptyList());
 
             // verify the runmode.mapper integrity
@@ -309,21 +309,21 @@ public class ContentPackage2FeatureModelConverterTest {
             verifyFeatureFile(outputDirectory,
                             "asd.retail.all.json",
                             "asd.sample:asd.retail.all:slingosgifeature:0.0.1",
-                            Arrays.asList("org.apache.felix:org.apache.felix.framework:6.0.1"),
-                            Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
+                            Collections.singletonList("org.apache.felix:org.apache.felix.framework:6.0.1"),
+                            Collections.singletonList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
                             Arrays.asList("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1",
                                     "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1"));
             verifyFeatureFile(outputDirectory,
                             "asd.retail.all-author.json",
                             "asd.sample:asd.retail.all:slingosgifeature:author:0.0.1",
-                            Arrays.asList("org.apache.sling:org.apache.sling.api:2.20.0"),
+                            Collections.singletonList("org.apache.sling:org.apache.sling.api:2.20.0"),
                             Collections.emptyList(),
                             Collections.emptyList());
             verifyFeatureFile(outputDirectory,
                             "asd.retail.all-publish.json",
                             "asd.sample:asd.retail.all:slingosgifeature:publish:0.0.1",
-                            Arrays.asList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
-                            Arrays.asList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
+                            Collections.singletonList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
+                            Collections.singletonList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
                             Collections.emptyList());
 
             // verify the runmode.mapper integrity
@@ -584,10 +584,16 @@ public class ContentPackage2FeatureModelConverterTest {
     }
 
     private void verifyContentPackage(File contentPackage, String...expectedEntries) throws Exception {
+        verifyContentPackage(contentPackage, Collections.emptySet(), expectedEntries);
+    }
+    
+    private void verifyContentPackage(File contentPackage, @NotNull Set<String> notExpected, String...expectedEntries) throws Exception {
         try (ZipFile zipFile = new ZipFile(contentPackage)) {
             for (String expectedEntry : expectedEntries) {
-                assertNotNull("Expected entry not found: " + expectedEntry + " in file " + contentPackage,
-                              zipFile.getEntry(expectedEntry));
+                assertNotNull("Expected entry not found: " + expectedEntry + " in file " + contentPackage, zipFile.getEntry(expectedEntry));
+            }
+            for (String notExpectedEntry : notExpected) {
+                assertNull("Not expected entry found: " + notExpectedEntry + " in file " + contentPackage, zipFile.getEntry(notExpectedEntry));
             }
         }
     }
@@ -750,7 +756,7 @@ public class ContentPackage2FeatureModelConverterTest {
         try {
             converter.setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outDir))
             .setFeaturesManager(new DefaultFeaturesManager(false, 5, outDir, null, null, null, new DefaultAclManager())
-                    .setAPIRegions(Arrays.asList("a.b.c")))
+                    .setAPIRegions(Collections.singletonList("a.b.c")))
             .setEmitter(DefaultPackagesEventsEmitter.open(outDir))
             .convert(cpFile);
 
@@ -798,8 +804,8 @@ public class ContentPackage2FeatureModelConverterTest {
             verifyFeatureFile(outputDirectory,
                             "asd.retail.all.json",
                             "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0:${project.version}",
-                            Arrays.asList("org.apache.felix:org.apache.felix.framework:6.0.1"),
-                            Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
+                            Collections.singletonList("org.apache.felix:org.apache.felix.framework:6.0.1"),
+                            Collections.singletonList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
                             Arrays.asList("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1",
                                             "asd.sample:Asd.Retail.ui.content:zip:cp2fm-converted:0.0.1",
                                             "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1",
@@ -807,14 +813,14 @@ public class ContentPackage2FeatureModelConverterTest {
             verifyFeatureFile(outputDirectory,
                             "asd.retail.all-author.json",
                             "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0-author:${project.version}",
-                            Arrays.asList("org.apache.sling:org.apache.sling.api:2.20.0"),
+                            Collections.singletonList("org.apache.sling:org.apache.sling.api:2.20.0"),
                             Collections.emptyList(),
                             Collections.emptyList());
             verifyFeatureFile(outputDirectory,
                             "asd.retail.all-publish.json",
                             "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0-publish:${project.version}",
-                            Arrays.asList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
-                            Arrays.asList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
+                            Collections.singletonList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
+                            Collections.singletonList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
                             Collections.emptyList());
 
             verifyContentPackage(new File(outputDirectory, "asd/sample/asd.retail.all/0.0.1/asd.retail.all-0.0.1-cp2fm-converted.zip"),
@@ -978,4 +984,49 @@ public class ContentPackage2FeatureModelConverterTest {
         return loadedResources;
     }
 
+    @Test
+    public void testConvertPackageWithUsersGroupsAndServiceUsers() throws Exception {
+        URL packageUrl = getClass().getResource("demo-cp.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+        try {
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
+                    .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
+                    .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                    .convert(packageFile);
+
+            File converted = new File(outputDirectory, "my_packages/demo-cp/0.0.0/demo-cp-0.0.0-cp2fm-converted.zip");
+            Set<String> notExpected = new HashSet<>();
+            notExpected.add("jcr_root/apps/demo-cp/.content.xml");
+            notExpected.add("jcr_root/home/users/demo-cp/_rep_policy.xml");
+            notExpected.add("jcr_root/home/groups/demo-cp/_rep_policy.xml");
+            notExpected.add("jcr_root/home/users/system/.content.xml");
+            notExpected.add("jcr_root/home/users/system/_cq_services/.content.xml");
+            notExpected.add("jcr_root/home/users/system/_cq_services/demo-cp/.content.xml");
+            notExpected.add("jcr_root/home/users/system/_cq_services/demo-cp/qStDu7IQBLa95gURmer1/.content.xml");
+            notExpected.add("jcr_root/home/users/system/_cq_services/demo-cp/qStDu7IQBLa95gURmer1/_rep_principalPolicy.xml");
+            verifyContentPackage(converted, 
+                    notExpected,
+                    "META-INF/vault/properties.xml",
+                    "META-INF/vault/config.xml",
+                    "META-INF/vault/filter.xml",
+                    "jcr_root/.content.xml",
+                    "jcr_root/demo-cp/.content.xml",
+                    "jcr_root/demo-cp/_rep_policy.xml",
+                    "jcr_root/apps/.content.xml",
+                    "jcr_root/home/.content.xml",
+                    "jcr_root/home/users/demo-cp/.content.xml",
+                    "jcr_root/home/users/demo-cp/XPXhA_RKMFRKNO8ViIhn/.content.xml",
+                    "jcr_root/home/users/demo-cp/XPXhA_RKMFRKNO8ViIhn/_rep_policy.xml",
+                    "jcr_root/home/groups/.content.xml",
+                    "jcr_root/home/groups/demo-cp/.content.xml",
+                    "jcr_root/home/groups/demo-cp/EsYrXeBdSRkna2kqbxjl/.content.xml",
+                    "jcr_root/home/groups/demo-cp/EsYrXeBdSRkna2kqbxjl/_rep_policy.xml"
+                    );
+
+        } finally {
+            deleteDirTree(outputDirectory);
+        }
+    }
+    
 }

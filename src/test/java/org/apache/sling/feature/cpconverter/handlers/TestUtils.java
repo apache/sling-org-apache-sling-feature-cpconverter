@@ -26,15 +26,13 @@ import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.acl.Acl;
 import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.anyString;
@@ -49,17 +47,14 @@ class TestUtils {
     private TestUtils() {}
 
     static Extension createRepoInitExtension(@NotNull EntryHandler handler, @NotNull AclManager aclManager, @NotNull String path, @NotNull InputStream is) throws Exception {
-        return createRepoInitExtension(handler, aclManager, path, is, null);
+        return createRepoInitExtension(handler, aclManager, path, is, new ByteArrayOutputStream());
     }
 
-    static Extension createRepoInitExtension(@NotNull EntryHandler handler, @NotNull AclManager aclManager, @NotNull String path, @NotNull InputStream is, @Nullable OutputStream out) throws Exception {
+    static Extension createRepoInitExtension(@NotNull EntryHandler handler, @NotNull AclManager aclManager, @NotNull String path, @NotNull InputStream is, @NotNull OutputStream out) throws Exception {
         Archive archive = mock(Archive.class);
         Archive.Entry entry = mock(Archive.Entry.class);
         VaultPackageAssembler packageAssembler = mock(VaultPackageAssembler.class);
-        if (out != null) {
-            when(packageAssembler.createEntry(anyString())).thenReturn(out);
-        }
-
+        when(packageAssembler.createEntry(anyString())).thenReturn(out);
         when(archive.openInputStream(entry)).thenReturn(is);
 
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));

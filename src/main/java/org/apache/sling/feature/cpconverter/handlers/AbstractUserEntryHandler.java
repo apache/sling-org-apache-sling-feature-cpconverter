@@ -16,17 +16,28 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
+import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.jetbrains.annotations.NotNull;
 
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.regex.Matcher;
 
 abstract class AbstractUserEntryHandler extends AbstractRegexEntryHandler {
+
+    private final SAXTransformerFactory saxTransformerFactory = (SAXTransformerFactory) TransformerFactory.newInstance();
+    
+    // FIXME: use first segment of 'systemUserRelPath' config value instead of hardcoding 
+    private static final String SYSTEM_USER_SEGMENT = "/system/";
 
     AbstractUserEntryHandler(@NotNull String rexex) {
         super(rexex);
@@ -37,14 +48,23 @@ abstract class AbstractUserEntryHandler extends AbstractRegexEntryHandler {
             throws Exception {
         Matcher matcher = getPattern().matcher(path);
         if (matcher.matches()) {
-            path = matcher.group(1);
-
-            RepoPath originalPath = new RepoPath(PlatformNameFormat.getRepositoryPath(path));
+            RepoPath originalPath = new RepoPath(PlatformNameFormat.getRepositoryPath(matcher.group(1)));
             RepoPath intermediatePath = originalPath.getParent();
 
+            byte[] tmp = IOUtils.toByteArray((archive.openInputStream(entry)));
             AbstractUserParser parser = createParser(converter, originalPath, intermediatePath);
-            try (InputStream input = archive.openInputStream(entry)) {
-                parser.parse(input);
+            boolean converted = parser.parse(new ByteArrayInputStream(tmp));
+            if (!converted && !path.contains(SYSTEM_USER_SEGMENT)) {
+                // write back regular users, groups and their intermediate folders that did not get converted into
+                // repo-init statements to the content package
+                VaultPackageAssembler assembler = converter.getMainPackageAssembler();
+                // FIXME: assembler is null when handler is called from RecollectorVaultPackageScanner (???)
+                if (assembler != null) {
+                    try (InputStream input = new ByteArrayInputStream(tmp);
+                         OutputStream output = assembler.createEntry(path)){
+                        IOUtils.copy(input, output);
+                    }
+                }
             }
         }
     }
