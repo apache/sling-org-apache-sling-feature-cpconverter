@@ -54,7 +54,6 @@ abstract class AbstractUserEntryHandler extends AbstractRegexEntryHandler {
                 // write back regular users, groups and their intermediate folders that did not get converted into
                 // repo-init statements to the content package
                 VaultPackageAssembler assembler = converter.getMainPackageAssembler();
-                // FIXME: assembler is null when handler is called from RecollectorVaultPackageScanner (???)
                 if (assembler != null) {
                     try (InputStream input = new ByteArrayInputStream(tmp);
                          OutputStream output = assembler.createEntry(path)){

@@ -29,13 +29,13 @@ import static org.mockito.Mockito.verify;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -47,6 +47,7 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.spi.PrivilegeDefinitions;
 import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
 import org.apache.jackrabbit.vault.packaging.PackageId;
@@ -73,6 +74,7 @@ import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -509,7 +511,7 @@ public class ContentPackage2FeatureModelConverterTest {
         }
     }
 
-    private void deleteDirTree(File dir) throws IOException {
+    private static void deleteDirTree(File dir) throws IOException {
         Path tempDir = dir.toPath();
 
         Files.walk(tempDir)
@@ -518,7 +520,7 @@ public class ContentPackage2FeatureModelConverterTest {
             .forEach(File::delete);
     }
 
-    private Feature getFeature(File outputDirectory, String name) throws Exception {
+    private static Feature getFeature(File outputDirectory, String name) throws Exception {
         File featureFile = new File(outputDirectory, name);
         assertTrue(featureFile + " was not correctly created", featureFile.exists());
 
@@ -527,7 +529,7 @@ public class ContentPackage2FeatureModelConverterTest {
         }
     }
 
-    private void verifyFeatureFile(File outputDirectory,
+    private static void verifyFeatureFile(File outputDirectory,
                                    String name,
                                    String expectedArtifactId,
                                    List<String> expectedArtifacts,
@@ -558,7 +560,7 @@ public class ContentPackage2FeatureModelConverterTest {
         }
     }
 
-    private void verifyInstalledArtifact(File outputDirectory, String coordinates) {
+    private static void verifyInstalledArtifact(File outputDirectory, String coordinates) {
         ArtifactId bundleId = ArtifactId.fromMvnId(coordinates);
 
         StringTokenizer tokenizer = new StringTokenizer(bundleId.getGroupId(), ".");
@@ -585,9 +587,8 @@ public class ContentPackage2FeatureModelConverterTest {
         assertTrue("POM file " + pomFile + " does not exist", pomFile.exists());
     }
 
-    private void verifyContentPackageEntryNames(File contentPackage, String...expectedEntryNames) throws Exception {
+    private static void verifyContentPackageEntryNames(File contentPackage, String...expectedEntryNames) throws Exception {
         try (ZipFile zipFile = new ZipFile(contentPackage)) {
-            
             List<String> expectedEntryNamesList = Arrays.asList(expectedEntryNames);
             for (Enumeration<? extends ZipEntry> zipEntries = zipFile.entries(); zipEntries.hasMoreElements();) {
                 ZipEntry zipEntry = zipEntries.nextElement();
@@ -596,15 +597,14 @@ public class ContentPackage2FeatureModelConverterTest {
                     assertTrue("ZipEntry with name " + entryName + " not expected", expectedEntryNamesList.contains(entryName));
                 }
             }
-            
         }
     }
 
-    private void verifyContentPackage(File contentPackage, String...expectedEntries) throws Exception {
+    private static void verifyContentPackage(File contentPackage, String...expectedEntries) throws Exception {
         verifyContentPackage(contentPackage, Collections.emptySet(), expectedEntries);
     }
     
-    private void verifyContentPackage(File contentPackage, @NotNull Set<String> notExpected, String...expectedEntries) throws Exception {
+    private static void verifyContentPackage(File contentPackage, @NotNull Set<String> notExpected, String...expectedEntries) throws Exception {
         try (ZipFile zipFile = new ZipFile(contentPackage)) {
             for (String expectedEntry : expectedEntries) {
                 assertNotNull("Expected entry not found: " + expectedEntry + " in file " + contentPackage, zipFile.getEntry(expectedEntry));
@@ -615,7 +615,7 @@ public class ContentPackage2FeatureModelConverterTest {
         }
     }
 
-    private void verifyPropertiesXmlEntry(File contentPackage, String... expectedPropertyKeys) throws InvalidPropertiesFormatException, IOException {
+    private static void verifyPropertiesXmlEntry(File contentPackage, String... expectedPropertyKeys) throws IOException {
         try (ZipFile zipFile = new ZipFile(contentPackage)) {
             ZipEntry zipEntry = zipFile.getEntry(Constants.META_DIR + "/" + Constants.PROPERTIES_XML);
             assertNotNull("Package didn't contain properties.xml", zipEntry);
@@ -707,8 +707,8 @@ public class ContentPackage2FeatureModelConverterTest {
                      .convert(packageFile);
     
             String pid = "this.is.just.a.pid";
-            converter.getFeaturesManager().addConfiguration(runmodeA, pid, "/a", new Hashtable<String, Object>());
-            converter.getFeaturesManager().addConfiguration(runmodeB, pid, "/b", new Hashtable<String, Object>());
+            converter.getFeaturesManager().addConfiguration(runmodeA, pid, "/a", new Hashtable<>());
+            converter.getFeaturesManager().addConfiguration(runmodeB, pid, "/b", new Hashtable<>());
     
         } finally {
             deleteDirTree(outputDirectory);
@@ -786,7 +786,7 @@ public class ContentPackage2FeatureModelConverterTest {
 
     }
 
-    private void assertAPIRegion(File featureFile, String region) throws IOException, FileNotFoundException {
+    private static void assertAPIRegion(File featureFile, String region) throws IOException {
         try (Reader reader = new FileReader(featureFile)) {
             Feature feature = FeatureJSONReader.read(reader, featureFile.getAbsolutePath());
 
@@ -1041,9 +1041,30 @@ public class ContentPackage2FeatureModelConverterTest {
                     "jcr_root/home/groups/demo-cp/EsYrXeBdSRkna2kqbxjl/_rep_policy.xml"
                     );
 
+            assertPolicy(converted, "jcr_root/demo-cp/_rep_policy.xml", "cp-serviceuser-1", "cp-user1", "cp-group1");
+            assertPolicy(converted, "jcr_root/home/groups/demo-cp/EsYrXeBdSRkna2kqbxjl/_rep_policy.xml", null, "cp-group1");
+            assertPolicy(converted,  "jcr_root/home/users/demo-cp/XPXhA_RKMFRKNO8ViIhn/_rep_policy.xml", null, "cp-user1");
         } finally {
             deleteDirTree(outputDirectory);
         }
+    }
+    
+    private static void assertPolicy(@NotNull File contentPackage, @NotNull String path, @Nullable String unExpectedPrincipalName, @NotNull String... expectedPrincipalNames) throws IOException {
+        try (ZipFile zipFile = new ZipFile(contentPackage)) {
+            ZipEntry entry = zipFile.getEntry(path);
+            assertNotNull(entry);
+            assertFalse(entry.isDirectory());
+            
+            try (InputStream in = zipFile.getInputStream(entry)) {
+                String policy = IOUtils.toString(in, StandardCharsets.UTF_8);
+                for (String principalName : expectedPrincipalNames) {
+                    assertTrue(policy.contains("rep:principalName=\""+principalName+"\""));
+                }
+                if (unExpectedPrincipalName != null) {
+                    assertFalse(policy.contains("rep:principalName=\""+unExpectedPrincipalName+"\""));
+                }
+            }
+        } 
     }
     
 }
