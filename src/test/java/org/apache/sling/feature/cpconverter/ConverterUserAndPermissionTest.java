@@ -39,10 +39,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -127,9 +129,10 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
 
             Set<String> expected = new HashSet<>(COMMON_EXPECTED_PATHS);
             expected.add("jcr_root/apps/.content.xml");
-            
+
             verifyContentPackage(converted, notExpected, expected);
             assertExpectedPolicies(converted);
+            assertFilterXml(converted);
         } finally {
             deleteDirTree(outputDirectory);
         }
@@ -138,10 +141,10 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
     /**
      * "demo-cp3.zip" contains the same content as "demo-cp.zip" but with altered order leading to ACE being read before 
      * the corresponding system-user, whose principal is referenced in the ACE.
-     * 
+     *
      * This test would fail if user/group information was not collected during the first pass (i.e. corresponding 
      * handlers listed in {@link org.apache.sling.feature.cpconverter.vltpkg.RecollectorVaultPackageScanner}.
-     * 
+     *
      * @throws Exception
      */
     @Test
@@ -164,6 +167,7 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
 
             verifyContentPackage(converted, notExpected, expected);
             assertExpectedPolicies(converted);
+            assertFilterXml(converted);
         } finally {
             deleteDirTree(outputDirectory);
         }
@@ -192,6 +196,7 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
             File converted = new File(unrefOutputDir, "my_packages/demo-cp/0.0.0/demo-cp-0.0.0-cp2fm-converted.zip");
             verifyContentPackage(converted, COMMON_NOT_EXPECTED_PATHS, COMMON_EXPECTED_PATHS);
             assertExpectedPolicies(converted);
+            assertFilterXml(converted);
         } finally {
             deleteDirTree(outputDirectory);
         }
@@ -202,7 +207,7 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
         assertPolicy(converted, "jcr_root/home/groups/demo-cp/EsYrXeBdSRkna2kqbxjl/_rep_policy.xml", null, "cp-group1");
         assertPolicy(converted,  "jcr_root/home/users/demo-cp/XPXhA_RKMFRKNO8ViIhn/_rep_policy.xml", null, "cp-user1");
     }
-    
+
     private static void assertPolicy(@NotNull File contentPackage, @NotNull String path, @Nullable String unExpectedPrincipalName, @NotNull String... expectedPrincipalNames) throws IOException {
         try (ZipFile zipFile = new ZipFile(contentPackage)) {
             ZipEntry entry = zipFile.getEntry(path);
@@ -219,5 +224,43 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
                 }
             }
         }
+    }
+
+    private static void assertFilterXml(@NotNull File contentPackage) throws IOException {
+        try (ZipFile zipFile = new ZipFile(contentPackage)) {
+            ZipEntry entry = zipFile.getEntry("META-INF/vault/filter.xml");
+            assertNotNull(entry);
+            assertFalse(entry.isDirectory());
+
+            try (InputStream in = zipFile.getInputStream(entry)) {
+                String filterXml = IOUtils.toString(in, StandardCharsets.UTF_8);
+
+                List<String> expected = new ArrayList<>();
+                expected.add("/home/users/demo-cp");
+                expected.add("/home/groups/demo-cp");
+                expected.add("/demo-cp");
+
+                for (String expectedPath : expected) {
+                    String p = getFilterPath(expectedPath);
+                    assertTrue(p, filterXml.contains(p));
+                }
+
+                List<String> notExpected = new ArrayList<>();
+                notExpected.add("/apps/demo-cp");
+                notExpected.add("/home/users/system/demo-cp");
+                notExpected.add("/home/users/system/cq:services/demo-cp");
+
+                for (String unexpectedPath : notExpected) {
+                    String p = getFilterPath(unexpectedPath);
+                    assertFalse(p, filterXml.contains(p));
+                }
+            }
+        }
+    }
+
+    @NotNull
+    private static String getFilterPath(@NotNull String path) {
+        String p = (path.startsWith("jcr_root")) ? path.substring("jcr_root".length()) : path;
+        return "<filter root=\""+p+"\"/>";
     }
 }
