@@ -39,16 +39,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 import static org.junit.Assert.assertFalse;
@@ -134,7 +130,6 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
             
             verifyContentPackage(converted, notExpected, expected);
             assertExpectedPolicies(converted);
-            assertFilterXml(converted);
         } finally {
             deleteDirTree(outputDirectory);
         }
@@ -169,7 +164,6 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
 
             verifyContentPackage(converted, notExpected, expected);
             assertExpectedPolicies(converted);
-            assertFilterXml(converted);
         } finally {
             deleteDirTree(outputDirectory);
         }
@@ -198,7 +192,6 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
             File converted = new File(unrefOutputDir, "my_packages/demo-cp/0.0.0/demo-cp-0.0.0-cp2fm-converted.zip");
             verifyContentPackage(converted, COMMON_NOT_EXPECTED_PATHS, COMMON_EXPECTED_PATHS);
             assertExpectedPolicies(converted);
-            assertFilterXml(converted);
         } finally {
             deleteDirTree(outputDirectory);
         }
@@ -226,43 +219,5 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
                 }
             }
         }
-    }
-    
-    private static void assertFilterXml(@NotNull File contentPackage) throws IOException {
-        try (ZipFile zipFile = new ZipFile(contentPackage)) {
-            ZipEntry entry = zipFile.getEntry("META-INF/vault/filter.xml");
-            assertNotNull(entry);
-            assertFalse(entry.isDirectory());
-
-            try (InputStream in = zipFile.getInputStream(entry)) {
-                String filterXml = IOUtils.toString(in, StandardCharsets.UTF_8);
-
-                List<String> expected = new ArrayList<>();
-                expected.add("/home/users/demo-cp");
-                expected.add("/home/groups/demo-cp");
-                expected.add("/demo-cp");
-
-                for (String expectedPath : expected) {
-                    String p = getFilterPath(expectedPath);
-                    assertTrue(p, filterXml.contains(p));
-                }
-
-                List<String> notExpected = new ArrayList<>();
-                notExpected.add("/apps/demo-cp");
-                notExpected.add("/home/users/system/demo-cp");
-                notExpected.add("/home/users/system/cq:services/demo-cp");
-                
-                for (String unexpectedPath : notExpected) {
-                    String p = getFilterPath(unexpectedPath);
-                    assertFalse(p, filterXml.contains(p));
-                }
-            }
-        }
-    }
-    
-    @NotNull
-    private static String getFilterPath(@NotNull String path) {
-        String p = (path.startsWith("jcr_root")) ? path.substring("jcr_root".length()) : path;
-        return "<filter root=\""+p+"\"/>";
     }
 }
