@@ -135,6 +135,15 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
         }
     }
 
+    /**
+     * "demo-cp3.zip" contains the same content as "demo-cp.zip" but with altered order leading to ACE being read before 
+     * the corresponding system-user, whose principal is referenced in the ACE.
+     * 
+     * This test would fail if user/group information was not collected during the first pass (i.e. corresponding 
+     * handlers listed in {@link org.apache.sling.feature.cpconverter.vltpkg.RecollectorVaultPackageScanner}.
+     * 
+     * @throws Exception
+     */
     @Test
     public void testConvertPackageWithUsersGroupsAndServiceUsersRepPolicyFirst() throws Exception {
         URL packageUrl = getClass().getResource("demo-cp3.zip");
@@ -159,7 +168,13 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
             deleteDirTree(outputDirectory);
         }
     }
-    
+
+    /**
+     * "demo-cp2.zip" contains the same content as "demo-cp.zip" except for the application content below /apps.
+     * The content package therefore gets type CONTENT assigned (and not MIXED).
+     *
+     * @throws Exception
+     */
     @Test
     public void testConvertCONTENTPackageWithUsersGroupsAndServiceUsers() throws Exception {
         URL packageUrl = getClass().getResource("demo-cp2.zip");
