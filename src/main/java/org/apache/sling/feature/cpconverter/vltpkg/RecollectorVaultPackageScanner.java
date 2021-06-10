@@ -24,6 +24,8 @@ import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageManager;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
+import org.apache.sling.feature.cpconverter.handlers.GroupEntryHandler;
+import org.apache.sling.feature.cpconverter.handlers.UsersEntryHandler;
 import org.apache.sling.feature.cpconverter.handlers.VersionResolverContentPackageEntryHandler;
 import org.jetbrains.annotations.NotNull;
 
@@ -40,6 +42,8 @@ public final class RecollectorVaultPackageScanner extends BaseVaultPackageScanne
         super(packageManager, strictValidation);
         this.converter = converter;
         handlers = new EntryHandler[] {
+                new UsersEntryHandler(),
+                new GroupEntryHandler(),
                 new VersionResolverContentPackageEntryHandler(this, subContentPackages)
         };
     }

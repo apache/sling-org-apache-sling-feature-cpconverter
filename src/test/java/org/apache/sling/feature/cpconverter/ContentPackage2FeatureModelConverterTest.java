@@ -1048,7 +1048,53 @@ public class ContentPackage2FeatureModelConverterTest {
             deleteDirTree(outputDirectory);
         }
     }
+    @Test
+    public void testConvertPackageWithUsersGroupsAndServiceUsersRepPolicyFirst() throws Exception {
+        URL packageUrl = getClass().getResource("demo-cp3.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+        try {
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
+                    .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
+                    .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                    .convert(packageFile);
 
+            File converted = new File(outputDirectory, "my_packages/demo-cp/0.0.0/demo-cp-0.0.0-cp2fm-converted.zip");
+            Set<String> notExpected = new HashSet<>();
+            notExpected.add("jcr_root/apps/demo-cp/.content.xml");
+            notExpected.add("jcr_root/home/users/demo-cp/_rep_policy.xml");
+            notExpected.add("jcr_root/home/groups/demo-cp/_rep_policy.xml");
+            notExpected.add("jcr_root/home/users/system/.content.xml");
+            notExpected.add("jcr_root/home/users/system/_cq_services/.content.xml");
+            notExpected.add("jcr_root/home/users/system/_cq_services/demo-cp/.content.xml");
+            notExpected.add("jcr_root/home/users/system/_cq_services/demo-cp/qStDu7IQBLa95gURmer1/.content.xml");
+            notExpected.add("jcr_root/home/users/system/_cq_services/demo-cp/qStDu7IQBLa95gURmer1/_rep_principalPolicy.xml");
+            verifyContentPackage(converted,
+                    notExpected,
+                    "META-INF/vault/properties.xml",
+                    "META-INF/vault/config.xml",
+                    "META-INF/vault/filter.xml",
+                    "jcr_root/.content.xml",
+                    "jcr_root/demo-cp/.content.xml",
+                    "jcr_root/demo-cp/_rep_policy.xml",
+                    "jcr_root/apps/.content.xml",
+                    "jcr_root/home/.content.xml",
+                    "jcr_root/home/users/demo-cp/.content.xml",
+                    "jcr_root/home/users/demo-cp/XPXhA_RKMFRKNO8ViIhn/.content.xml",
+                    "jcr_root/home/users/demo-cp/XPXhA_RKMFRKNO8ViIhn/_rep_policy.xml",
+                    "jcr_root/home/groups/.content.xml",
+                    "jcr_root/home/groups/demo-cp/.content.xml",
+                    "jcr_root/home/groups/demo-cp/EsYrXeBdSRkna2kqbxjl/.content.xml",
+                    "jcr_root/home/groups/demo-cp/EsYrXeBdSRkna2kqbxjl/_rep_policy.xml"
+            );
+
+            assertPolicy(converted, "jcr_root/demo-cp/_rep_policy.xml", "cp-serviceuser-1", "cp-user1", "cp-group1");
+            assertPolicy(converted, "jcr_root/home/groups/demo-cp/EsYrXeBdSRkna2kqbxjl/_rep_policy.xml", null, "cp-group1");
+            assertPolicy(converted,  "jcr_root/home/users/demo-cp/XPXhA_RKMFRKNO8ViIhn/_rep_policy.xml", null, "cp-user1");
+        } finally {
+            deleteDirTree(outputDirectory);
+        }
+    }
     @Test
     public void testConvertCONTENTPackageWithUsersGroupsAndServiceUsers() throws Exception {
         URL packageUrl = getClass().getResource("demo-cp2.zip");

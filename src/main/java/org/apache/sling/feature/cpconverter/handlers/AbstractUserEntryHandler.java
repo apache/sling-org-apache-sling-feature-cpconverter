@@ -54,9 +54,12 @@ abstract class AbstractUserEntryHandler extends AbstractRegexEntryHandler {
                 // write back regular users, groups and their intermediate folders that did not get converted into
                 // repo-init statements to the content package
                 VaultPackageAssembler assembler = converter.getMainPackageAssembler();
-                try (InputStream input = new ByteArrayInputStream(tmp);
-                     OutputStream output = assembler.createEntry(path)){
-                    IOUtils.copy(input, output);
+                // if we don't have an assembler we are in the firstPass and are only collecting
+                if (assembler != null) {
+                    try (InputStream input = new ByteArrayInputStream(tmp);
+                         OutputStream output = assembler.createEntry(path)) {
+                        IOUtils.copy(input, output);
+                    }
                 }
             }
         }
