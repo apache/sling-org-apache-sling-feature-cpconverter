@@ -301,19 +301,20 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
             assertNotNull(entry);
             String filter = IOUtils.toString(new InputStreamReader(zipFile.getInputStream(entry)));
 
-            // TODO: verify content of filter.xml. entries that have been moved out of the content package must no longer 
-            //       be referenced in the meta data (see SLING-10467)
-            
-//            if (!isContentOnly) {
-//                assertFalse(filter.contains("/apps/demo-cp"));
-//            }
-//            assertFalse(filter.contains("/home/users/system"));
-//            assertFalse(filter.contains("/home/users/system/demo-cp"));
-//            assertFalse(filter.contains("/home/users/system/cq:services/demo-cp"));
+            if (!isContentOnly) {
+                assertFalse(filter.contains("/apps/demo-cp"));
+            }
+            assertFalse(filter.contains("/home/users/system"));
+            assertFalse(filter.contains("/home/users/system/demo-cp"));
+            assertFalse(filter.contains("/home/users/system/cq:services/demo-cp"));
             
             assertTrue(filter.contains("<filter root=\"/demo-cp\"/>"));
-            assertTrue(filter.contains("<filter root=\"/home/users/demo-cp\"/>"));
-            assertTrue(filter.contains("<filter root=\"/home/groups/demo-cp\"/>"));
+            assertTrue(filter.contains("<filter root=\"/home/users/demo-cp\">"));
+            assertTrue(filter.contains("<filter root=\"/home/groups/demo-cp\">"));
+            
+            // verify that explicit excludes have been added for filter roots that contain mixed content
+            assertTrue(filter.contains("<exclude pattern=\"/home/groups/demo-cp/_rep_policy.xml\"/>"));
+            assertTrue(filter.contains("<exclude pattern=\"/home/users/demo-cp/_rep_policy.xml\"/>"));
         }
     }
 }

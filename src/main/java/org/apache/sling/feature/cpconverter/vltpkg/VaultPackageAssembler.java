@@ -16,13 +16,31 @@
  */
 package org.apache.sling.feature.cpconverter.vltpkg;
 
-import static org.apache.jackrabbit.vault.util.Constants.FILTER_XML;
-import static org.apache.jackrabbit.vault.util.Constants.META_DIR;
-import static org.apache.jackrabbit.vault.util.Constants.PROPERTIES_XML;
-import static org.apache.jackrabbit.vault.util.Constants.ROOT_DIR;
-import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER;
-import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.getDependencies;
-import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.setDependencies;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.filefilter.DirectoryFileFilter;
+import org.apache.jackrabbit.vault.fs.api.FilterSet;
+import org.apache.jackrabbit.vault.fs.api.PathFilter;
+import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
+import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
+import org.apache.jackrabbit.vault.fs.config.ConfigurationException;
+import org.apache.jackrabbit.vault.fs.config.DefaultWorkspaceFilter;
+import org.apache.jackrabbit.vault.fs.filter.DefaultPathFilter;
+import org.apache.jackrabbit.vault.fs.io.Archive;
+import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
+import org.apache.jackrabbit.vault.packaging.Dependency;
+import org.apache.jackrabbit.vault.packaging.PackageId;
+import org.apache.jackrabbit.vault.packaging.PackageProperties;
+import org.apache.jackrabbit.vault.packaging.PackageType;
+import org.apache.jackrabbit.vault.packaging.VaultPackage;
+import org.apache.jackrabbit.vault.util.Constants;
+import org.apache.jackrabbit.vault.util.PlatformNameFormat;
+import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -48,27 +66,13 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.Deflater;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.filefilter.DirectoryFileFilter;
-import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
-import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
-import org.apache.jackrabbit.vault.fs.config.DefaultWorkspaceFilter;
-import org.apache.jackrabbit.vault.fs.io.Archive;
-import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
-import org.apache.jackrabbit.vault.packaging.Dependency;
-import org.apache.jackrabbit.vault.packaging.PackageId;
-import org.apache.jackrabbit.vault.packaging.PackageProperties;
-import org.apache.jackrabbit.vault.packaging.PackageType;
-import org.apache.jackrabbit.vault.packaging.VaultPackage;
-import org.apache.jackrabbit.vault.util.Constants;
-import org.apache.jackrabbit.vault.util.PlatformNameFormat;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.apache.jackrabbit.vault.util.Constants.FILTER_XML;
+import static org.apache.jackrabbit.vault.util.Constants.META_DIR;
+import static org.apache.jackrabbit.vault.util.Constants.PROPERTIES_XML;
+import static org.apache.jackrabbit.vault.util.Constants.ROOT_DIR;
+import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER;
+import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.getDependencies;
+import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.setDependencies;
 
 public class VaultPackageAssembler implements EntryHandler {
 
@@ -77,6 +81,9 @@ public class VaultPackageAssembler implements EntryHandler {
     public static final String VERSION_SUFFIX = '-' + PACKAGE_CLASSIFIER;
 
     private static final Logger log = LoggerFactory.getLogger(VaultPackageAssembler.class);
+    
+    private final Set<String> convertedCpPaths = new HashSet<>();
+    private final Set<String> allPaths = new HashSet<>();
 
     private final static class RemoveInstallHooksPredicate implements Predicate<Map.Entry<Object, Object>> {
         @Override
@@ -255,6 +262,7 @@ public class VaultPackageAssembler implements EntryHandler {
         if (!target.getParentFile().mkdirs() && !target.getParentFile().isDirectory()) {
             throw new IOException("Could not create parent directory: " + target.getParentFile());
         }
+        convertedCpPaths.add(path);
         return new FileOutputStream(target);
     }
 
@@ -264,6 +272,10 @@ public class VaultPackageAssembler implements EntryHandler {
         }
 
         return new File(storingDirectory, path);
+    }
+    
+    public boolean addPath(@NotNull String path) {
+        return allPaths.add(path);
     }
 
     public void updateDependencies(@NotNull Map<PackageId, Set<Dependency>> mutableContentsIds) {
@@ -322,9 +334,15 @@ public class VaultPackageAssembler implements EntryHandler {
             // generate the Vault filter XML file based on new contents of the package
             computeFilters(storingDirectory);
         }
+        
+        Set<String> allRepoPaths = toRepositoryPaths(allPaths);
+        Set<String> convertedCpRepoPaths = toRepositoryPaths(convertedCpPaths);
+        Set<String> filteredPaths = new HashSet<>(allRepoPaths);
+        filteredPaths.removeAll(convertedCpRepoPaths);
+        WorkspaceFilter adjustedFilter = createAdjustedFilter(filter, filteredPaths, convertedCpRepoPaths);
 
         File xmlFilter = new File(metaDir, FILTER_XML);
-        try (InputStream input = filter.getSource();
+        try (InputStream input = adjustedFilter.getSource();
                 FileOutputStream output = new FileOutputStream(xmlFilter)) {
             IOUtils.copy(input, output);
         }
@@ -346,6 +364,66 @@ public class VaultPackageAssembler implements EntryHandler {
         }
 
         return destFile;
+    }
+
+    private static Set<String> toRepositoryPaths(@NotNull Set<String> paths) {
+        return paths.stream().map(s -> {
+            if (s.startsWith("/jcr_root")) {
+                return s.substring("/jcr_root".length());
+            } else {
+                return s;
+            }
+        }).collect(Collectors.toSet());
+    }
+    
+    private static WorkspaceFilter createAdjustedFilter(@NotNull WorkspaceFilter base, @NotNull Set<String> filteredPaths, @NotNull Set<String> cpPaths) throws IOException {
+        try {
+            DefaultWorkspaceFilter dwf = new DefaultWorkspaceFilter();
+            for (PathFilterSet pfs : base.getPropertyFilterSets()) {
+                processPathFilterSet(pfs, dwf, true, filteredPaths, cpPaths);
+            }
+            for (PathFilterSet pfs : base.getFilterSets()) {
+                processPathFilterSet(pfs, dwf, false, filteredPaths, cpPaths);
+            }
+            return dwf;
+        } catch (ConfigurationException e) {
+            throw new IOException(e);
+        }
+    }
+    
+    private static void processPathFilterSet(@NotNull PathFilterSet pfs, @NotNull DefaultWorkspaceFilter newFilter, 
+                                             boolean isPropertyFilterSet, @NotNull Set<String> filteredPaths, 
+                                             @NotNull Set<String> cpPaths) throws ConfigurationException {
+        if (cpPaths.stream().noneMatch(pfs::covers)) {
+            // the given filterset no longer covers any of the paths included in the converted content package
+            // -> save to no longer include it in the new workspace filter.
+            return;
+        }
+        
+        // create a new path-filter-set
+        PathFilterSet filterSet = new PathFilterSet(pfs.getRoot());
+        filterSet.setType(pfs.getType());
+
+        // copy all entries to the new path-filter-set
+        for (FilterSet.Entry<PathFilter> entry : pfs.getEntries()) {
+            if (entry.isInclude()) {
+                filterSet.addInclude(entry.getFilter());
+            } else {
+                filterSet.addExclude(entry.getFilter());
+            }
+        }
+
+        // for all paths that got filtered out and moved to repo-init make sure they get explicitly excluded
+        for (String path : filteredPaths) {
+            if (pfs.covers(path)) {
+                filterSet.addExclude(new DefaultPathFilter(path));
+            }
+        }
+        if (isPropertyFilterSet) {
+            newFilter.addPropertyFilterSet(filterSet);
+        } else {
+            newFilter.add(filterSet);
+        }
     }
 
     private void addDirectory(final JarOutputStream jos, final File dir, final int prefixLength) throws IOException {
