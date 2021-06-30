@@ -471,6 +471,9 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             }
         }
         entryHandler.handle(entryPath, archive, entry, this);
+        if (useMainPackageAssembler) {
+            mainPackageAssembler.recordEntryPath(entryPath);
+        }
         return true;
     }
 
