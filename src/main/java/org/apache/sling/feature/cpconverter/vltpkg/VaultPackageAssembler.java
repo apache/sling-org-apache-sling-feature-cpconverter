@@ -273,9 +273,18 @@ public class VaultPackageAssembler implements EntryHandler {
 
         return new File(storingDirectory, path);
     }
-    
-    public boolean addPath(@NotNull String path) {
-        return allPaths.add(path);
+
+    /**
+     * Records an entry path as it is processed by the {@link ContentPackage2FeatureModelConverter}. The path of all 
+     * original entries that got processed will later be compared to the paths of those entries written back 
+     * to this assembler to build the converted content package and generate an updated {@code WorkspaceFilter} that no 
+     * longer refers to paths that got moved out to the feature model (see also https://issues.apache.org/jira/browse/SLING-10467)
+     *  
+     * @param entryPath The path of a content package entry processed by the converter.
+     * @return {@code true} if the given path was successfully added to the internal set, {@code false} otherwise.
+     */
+    public boolean recordEntryPath(@NotNull String entryPath) {
+        return allPaths.add(entryPath);
     }
 
     public void updateDependencies(@NotNull Map<PackageId, Set<Dependency>> mutableContentsIds) {
