@@ -205,15 +205,14 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                     }
                 }
 
-                try (ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation)) {
+                try (ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation, slingInitialContentPolicy)) {
                     converter.setFeaturesManager(featuresManager)
                              .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(artifactsOutputDirectory))
                              .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap, !disableInstallerPolicy, slingInitialContentPolicy, systemUserRelPath))
                              .setAclManager(aclManager)
                              .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
                              .setFailOnMixedPackages(failOnMixedPackages)
-                             .setContentTypePackagePolicy(contentTypePackagePolicy)
-                             .setSlingInitalContentPolicy(slingInitialContentPolicy);
+                             .setContentTypePackagePolicy(contentTypePackagePolicy);
                     if (unreferencedArtifactsOutputDirectory != null) {
                         converter.setUnreferencedArtifactsDeployer(new LocalMavenRepositoryArtifactsDeployer(unreferencedArtifactsOutputDirectory));
                     } else if (contentTypePackagePolicy == ContentPackage2FeatureModelConverter.PackagePolicy.PUT_IN_DEDICATED_FOLDER) {

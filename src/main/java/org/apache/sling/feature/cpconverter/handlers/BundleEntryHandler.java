@@ -105,7 +105,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
 
     private boolean enforceBundlesBelowInstallFolder;
 
-    protected SlingInitialContentPolicy slingInitialContentPolicy;
+    private SlingInitialContentPolicy slingInitialContentPolicy;
 
     public BundleEntryHandler() {
         super("/jcr_root/(?:apps|libs)/.+/(?<foldername>install|config)(?:\\.(?<runmode>[^/]+))?/(?:(?<startlevel>[0-9]+)/)?.+\\.jar");
@@ -115,7 +115,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
         this.enforceBundlesBelowInstallFolder = enforceBundlesBelowInstallFolder;
     }
 
-    public void setSlingInitialContentPolicy(SlingInitialContentPolicy slingInitialContentPolicy) {
+    public void setSlingInitialContentPolicy(@NotNull SlingInitialContentPolicy slingInitialContentPolicy) {
         this.slingInitialContentPolicy = slingInitialContentPolicy;
     }
 
@@ -264,7 +264,6 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
      * 
      * @param jarEntry
      * @param bundleFileInputStream
-     * @param pathEntriesStream
      * @param packageAssemblers
      * @param converter
      * @return {@code true} in case the given entry was part of the initial content otherwise {@code false}

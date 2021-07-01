@@ -32,9 +32,9 @@ import java.util.jar.JarFile;
 public class SlingInitialContentBundleHandler extends BundleEntryHandler {
     private final @NotNull AbstractContentPackageHandler handler;
 
-    public SlingInitialContentBundleHandler(@NotNull AbstractContentPackageHandler handler) {
+    public SlingInitialContentBundleHandler(@NotNull AbstractContentPackageHandler handler, @NotNull ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy) {
         this.handler = handler;
-        setSlingInitialContentPolicy(ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP);
+        setSlingInitialContentPolicy(slingInitialContentPolicy);
     }
 
     @Override

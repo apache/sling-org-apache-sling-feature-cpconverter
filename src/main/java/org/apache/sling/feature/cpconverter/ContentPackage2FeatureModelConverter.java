@@ -138,22 +138,17 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     }
 
     public ContentPackage2FeatureModelConverter() {
-        this(false);
+        this(false, SlingInitialContentPolicy.KEEP);
     }
 
-    public ContentPackage2FeatureModelConverter(boolean strictValidation) {
+    public ContentPackage2FeatureModelConverter(boolean strictValidation, @NotNull SlingInitialContentPolicy slingInitialContentPolicy) {
         super(strictValidation);
-        this.recollectorVaultPackageScanner = new RecollectorVaultPackageScanner(this, this.packageManager, strictValidation, subContentPackages);
+        this.recollectorVaultPackageScanner = new RecollectorVaultPackageScanner(this, this.packageManager, strictValidation, subContentPackages, slingInitialContentPolicy);
         try {
             this.tmpDirectory = Files.createTempDirectory("cp2fm-converter").toFile();
         } catch (final IOException io) {
             throw new RuntimeException("Unable to create a temporary directory", io);
         }
-    }
-
-    public @NotNull ContentPackage2FeatureModelConverter setSlingInitalContentPolicy(@NotNull SlingInitialContentPolicy policy) {
-        this.recollectorVaultPackageScanner.setSlingInitialContentPolicy(policy);
-        return this;
     }
 
     public @NotNull ContentPackage2FeatureModelConverter setEntryHandlersManager(@Nullable EntryHandlersManager handlersManager) {
