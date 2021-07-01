@@ -87,7 +87,7 @@ import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
 
-public final class BundleEntryHandler extends AbstractRegexEntryHandler {
+public class BundleEntryHandler extends AbstractRegexEntryHandler {
 
     private static final String NAME_GROUP_ID = "groupId";
 
@@ -105,7 +105,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
 
     private boolean enforceBundlesBelowInstallFolder;
 
-    private SlingInitialContentPolicy slingInitialContentPolicy;
+    protected SlingInitialContentPolicy slingInitialContentPolicy;
 
     public BundleEntryHandler() {
         super("/jcr_root/(?:apps|libs)/.+/(?<foldername>install|config)(?:\\.(?<runmode>[^/]+))?/(?:(?<startlevel>[0-9]+)/)?.+\\.jar");
@@ -115,7 +115,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         this.enforceBundlesBelowInstallFolder = enforceBundlesBelowInstallFolder;
     }
 
-    void setSlingInitialContentPolicy(SlingInitialContentPolicy slingInitialContentPolicy) {
+    public void setSlingInitialContentPolicy(SlingInitialContentPolicy slingInitialContentPolicy) {
         this.slingInitialContentPolicy = slingInitialContentPolicy;
     }
 
@@ -172,18 +172,18 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
             IOUtils.copy(input, output);
         }
         try {
-            processBundleInputStream(tmpBundleJar, bundleName, runMode, startLevel, converter);
+            processBundleInputStream(path, tmpBundleJar, bundleName, runMode, startLevel, converter);
         } finally {
             Files.delete(tmpBundleJar);
         }
     }
 
-    void processBundleInputStream(@NotNull Path originalBundleFile, @NotNull String bundleName, @Nullable String runMode, @Nullable Integer startLevel, @NotNull ContentPackage2FeatureModelConverter converter) throws Exception {
+    void processBundleInputStream(@NotNull String path, @NotNull Path originalBundleFile, @NotNull String bundleName, @Nullable String runMode, @Nullable Integer startLevel, @NotNull ContentPackage2FeatureModelConverter converter) throws Exception {
         try (JarFile jarFile = new JarFile(originalBundleFile.toFile())) {
             // first extract bundle metadata from JAR input stream
             ArtifactId id = extractArtifactId(bundleName, jarFile);
 
-            try (InputStream strippedBundleInput = extractSlingInitialContent(id, jarFile, converter, runMode)) {
+            try (InputStream strippedBundleInput = extractSlingInitialContent(path, originalBundleFile, id, jarFile, converter, runMode)) {
                 if (strippedBundleInput != null && slingInitialContentPolicy == SlingInitialContentPolicy.EXTRACT_AND_REMOVE) {
                     id = id.changeVersion(id.getVersion() + "-" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);
                     Objects.requireNonNull(converter.getArtifactsDeployer()).deploy(new InputStreamArtifactWriter(strippedBundleInput), id);
@@ -207,7 +207,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         return new Version(originalVersion.getMajor(), originalVersion.getMinor(), originalVersion.getMicro(), originalVersion.getQualifier() + "_" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);
     }
 
-    @Nullable InputStream extractSlingInitialContent(@NotNull ArtifactId bundleArtifactId, @NotNull JarFile jarFile, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws Exception {
+    @Nullable InputStream extractSlingInitialContent(@NotNull String path, @NotNull Path bundlePath, @NotNull ArtifactId bundleArtifactId, @NotNull JarFile jarFile, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws Exception {
         if (slingInitialContentPolicy == SlingInitialContentPolicy.KEEP) {
             return null;
         }
@@ -254,7 +254,7 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
             }
         }
         // add additional content packages to feature model
-        finalizePackageAssembly(packageAssemblers, converter, runMode);
+        finalizePackageAssembly(path, packageAssemblers, converter, runMode);
         
         // return stripped bundle's inputstream which must be deleted on close
         return Files.newInputStream(newBundleFile, StandardOpenOption.READ, StandardOpenOption.DELETE_ON_CLOSE);
@@ -306,16 +306,12 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
             }
             try (Archive virtualArchive = SingleFileArchive.fromPathOrInputStream(tmpDocViewInputFile, bundleFileInputStream, 
                     () -> Files.createTempFile(converter.getTempDirectory().toPath(), "initial-content", Text.getName(jarEntry.getName())), contentPackageEntryPath)) {
-                // does entry in initial content need to be extracted into feature model (e.g. for OSGi configurations)?
-                if (!converter.process(contentPackageEntryPath, virtualArchive, null, false)) {
-                    // ... otherwise add it to the content package
-                    // in which content package should this end up?
-                    VaultPackageAssembler packageAssembler = initPackageAssemblerForPath(bundleArtifactId, repositoryPath, pathEntry.get(), packageAssemblers, converter);
-                    if (tmpDocViewInputFile != null) {
-                        packageAssembler.addEntry(contentPackageEntryPath, tmpDocViewInputFile.toFile());
-                    } else {
-                        packageAssembler.addEntry(contentPackageEntryPath, bundleFileInputStream);
-                    }
+                // in which content package should this end up?
+                VaultPackageAssembler packageAssembler = initPackageAssemblerForPath(bundleArtifactId, repositoryPath, pathEntry.get(), packageAssemblers, converter);
+                if (tmpDocViewInputFile != null) {
+                    packageAssembler.addEntry(contentPackageEntryPath, tmpDocViewInputFile.toFile());
+                } else {
+                    packageAssembler.addEntry(contentPackageEntryPath, bundleFileInputStream);
                 }
             }
         } finally {
@@ -414,10 +410,10 @@ public final class BundleEntryHandler extends AbstractRegexEntryHandler {
         return assembler;
     }
 
-    void finalizePackageAssembly(@NotNull Map<PackageType, VaultPackageAssembler> packageAssemblers, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws Exception {
+    void finalizePackageAssembly(@NotNull String path, @NotNull Map<PackageType, VaultPackageAssembler> packageAssemblers, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws Exception {
         for (java.util.Map.Entry<PackageType, VaultPackageAssembler> entry : packageAssemblers.entrySet()) {
             File packageFile = entry.getValue().createPackage(false);
-            converter.processContentPackageArchive(packageFile, entry.getValue(), runMode);
+            converter.processSubPackage(path + "-" + entry.getKey(), runMode, converter.open(packageFile), true);
         }
     }
 

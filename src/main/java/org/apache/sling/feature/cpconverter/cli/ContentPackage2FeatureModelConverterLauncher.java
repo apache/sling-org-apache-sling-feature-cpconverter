@@ -33,7 +33,6 @@ import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.LocalMavenRepositoryArtifactsDeployer;
-import org.apache.sling.feature.cpconverter.artifacts.SimpleFolderArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
@@ -213,9 +212,10 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                              .setAclManager(aclManager)
                              .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
                              .setFailOnMixedPackages(failOnMixedPackages)
-                             .setContentTypePackagePolicy(contentTypePackagePolicy);
+                             .setContentTypePackagePolicy(contentTypePackagePolicy)
+                             .setSlingInitalContentPolicy(slingInitialContentPolicy);
                     if (unreferencedArtifactsOutputDirectory != null) {
-                        converter.setUnreferencedArtifactsDeployer(new SimpleFolderArtifactsDeployer(unreferencedArtifactsOutputDirectory));
+                        converter.setUnreferencedArtifactsDeployer(new LocalMavenRepositoryArtifactsDeployer(unreferencedArtifactsOutputDirectory));
                     } else if (contentTypePackagePolicy == ContentPackage2FeatureModelConverter.PackagePolicy.PUT_IN_DEDICATED_FOLDER) {
                         throw new IllegalStateException("Argument '--content-type-package-policy PUT_IN_DEDICATED_FOLDER' requires argument '--unreferenced-artifacts-output-directory' as well!");
                     }

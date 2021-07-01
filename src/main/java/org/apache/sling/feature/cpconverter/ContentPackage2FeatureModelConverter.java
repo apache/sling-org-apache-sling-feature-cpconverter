@@ -151,6 +151,11 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         }
     }
 
+    public @NotNull ContentPackage2FeatureModelConverter setSlingInitalContentPolicy(@NotNull SlingInitialContentPolicy policy) {
+        this.recollectorVaultPackageScanner.setSlingInitialContentPolicy(policy);
+        return this;
+    }
+
     public @NotNull ContentPackage2FeatureModelConverter setEntryHandlersManager(@Nullable EntryHandlersManager handlersManager) {
         this.handlersManager = handlersManager;
         return this;
@@ -198,6 +203,11 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     public @Nullable VaultPackageAssembler getMainPackageAssembler() {
         return mainPackageAssembler;
+    }
+
+    public @NotNull ContentPackage2FeatureModelConverter setMainPackageAssembler(@Nullable VaultPackageAssembler assembler) {
+        this.mainPackageAssembler = assembler;
+        return this;
     }
 
     public @NotNull ContentPackage2FeatureModelConverter setEmitter(@NotNull PackagesEventsEmitter emitter) {
@@ -277,8 +287,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         for (VaultPackage vaultPackage : orderedContentPackages) {
             try {
                 emitters.stream().forEach(e -> e.startPackage(vaultPackage));
-                mainPackageAssembler = VaultPackageAssembler.create(this.getTempDirectory(), vaultPackage, removeInstallHooks);
-                assemblers.add(mainPackageAssembler);
+                setMainPackageAssembler(VaultPackageAssembler.create(this.getTempDirectory(), vaultPackage, removeInstallHooks));
+                assemblers.add(getMainPackageAssembler());
 
                 ArtifactId mvnPackageId = toArtifactId(vaultPackage.getId(), vaultPackage.getFile());
 
@@ -289,11 +299,11 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 traverse(vaultPackage);
                 // attach all unmatched resources as new content-package
 
-                File contentPackageArchive = mainPackageAssembler.createPackage();
+                File contentPackageArchive = getMainPackageAssembler().createPackage();
 
                 // deploy the new zip content-package to the local mvn bundles dir
 
-                processContentPackageArchive(contentPackageArchive, mainPackageAssembler, null);
+                processContentPackageArchive(contentPackageArchive, getMainPackageAssembler(), null);
 
                 // finally serialize the Feature Model(s) file(s)
 
@@ -357,11 +367,11 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
         // Please note: THIS IS A HACK to meet the new requirement without drastically change the original design
         // temporary swap the main handler to collect stuff
-        VaultPackageAssembler handler = mainPackageAssembler;
+        VaultPackageAssembler handler = getMainPackageAssembler();
         assemblers.add(handler);
         Properties parentProps = handler.getPackageProperties();
         boolean isContainerPackage = PackageType.CONTAINER.equals(parentProps.get(PackageProperties.NAME_PACKAGE_TYPE));
-        mainPackageAssembler = clonedPackage;
+        setMainPackageAssembler(clonedPackage);
 
         // scan the detected package, first
         traverse(vaultPackage);
@@ -380,7 +390,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         processContentPackageArchive(contentPackageArchive, clonedPackage, runMode);
 
         // restore the previous assembler
-        mainPackageAssembler = handler;
+        setMainPackageAssembler(handler);
 
         emitters.stream().forEach(PackagesEventsEmitter::endSubPackage);
     }
@@ -457,11 +467,11 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         });
     }
 
-    protected boolean isSubContentPackageIncluded(@NotNull String path) {
+    public boolean isSubContentPackageIncluded(@NotNull String path) {
         return subContentPackages.containsValue(path);
     }
 
-    public boolean process(@NotNull String entryPath, @NotNull Archive archive, @Nullable Entry entry, boolean useMainPackageAssembler) throws Exception {
+    private boolean process(@NotNull String entryPath, @NotNull Archive archive, @Nullable Entry entry) throws Exception {
         if (resourceFilter != null && resourceFilter.isFilteredOut(entryPath)) {
             throw new IllegalArgumentException("Path '"
                     + entryPath
@@ -472,11 +482,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
         EntryHandler entryHandler = handlersManager.getEntryHandlerByEntryPath(entryPath);
         if (entryHandler == null) {
-            if (useMainPackageAssembler) {
-                entryHandler = mainPackageAssembler;
-            } else {
-                return false;
-            }
+            entryHandler = getMainPackageAssembler();
         }
 
         if (entry == null) {
@@ -486,7 +492,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             }
         }
         entryHandler.handle(entryPath, archive, entry, this);
-        if (useMainPackageAssembler && !mainPackageAssembler.recordEntryPath(entryPath)) {
+        if (!getMainPackageAssembler().recordEntryPath(entryPath)) {
             logger.warn("Duplicate entry path {}", entryPath);
         }
         return true;
@@ -494,7 +500,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     @Override
     protected void onFile(@NotNull String entryPath, @NotNull Archive archive, @NotNull Entry entry) throws Exception {
-        process(entryPath, archive, entry, true);
+        process(entryPath, archive, entry);
     }
 
     public static @NotNull ArtifactId toArtifactId(@NotNull PackageId packageId, @NotNull File file) {

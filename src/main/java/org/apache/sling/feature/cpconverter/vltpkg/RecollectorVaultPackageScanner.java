@@ -25,6 +25,7 @@ import org.apache.jackrabbit.vault.packaging.PackageManager;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
 import org.apache.sling.feature.cpconverter.handlers.GroupEntryHandler;
+import org.apache.sling.feature.cpconverter.handlers.SlingInitialContentBundleHandler;
 import org.apache.sling.feature.cpconverter.handlers.UsersEntryHandler;
 import org.apache.sling.feature.cpconverter.handlers.VersionResolverContentPackageEntryHandler;
 import org.jetbrains.annotations.NotNull;
@@ -34,6 +35,7 @@ public final class RecollectorVaultPackageScanner extends BaseVaultPackageScanne
     private final ContentPackage2FeatureModelConverter converter;
 
     private final EntryHandler[] handlers;
+    private final SlingInitialContentBundleHandler slingInitialContentBundleHandler;
 
     public RecollectorVaultPackageScanner(@NotNull ContentPackage2FeatureModelConverter converter,
                                           @NotNull PackageManager packageManager,
@@ -41,11 +43,18 @@ public final class RecollectorVaultPackageScanner extends BaseVaultPackageScanne
                                           @NotNull Map<PackageId, String> subContentPackages) {
         super(packageManager, strictValidation);
         this.converter = converter;
+        VersionResolverContentPackageEntryHandler versionResolverContentPackageEntryHandler = new VersionResolverContentPackageEntryHandler(this, subContentPackages);
+        slingInitialContentBundleHandler = new SlingInitialContentBundleHandler(versionResolverContentPackageEntryHandler);
         handlers = new EntryHandler[] {
                 new UsersEntryHandler(),
                 new GroupEntryHandler(),
-                new VersionResolverContentPackageEntryHandler(this, subContentPackages)
+                versionResolverContentPackageEntryHandler,
+                slingInitialContentBundleHandler
         };
+    }
+
+    public void setSlingInitialContentPolicy(ContentPackage2FeatureModelConverter.SlingInitialContentPolicy policy) {
+        this.slingInitialContentBundleHandler.setSlingInitialContentPolicy(policy);
     }
 
     @Override
