@@ -54,12 +54,13 @@ public class PackagesEventsEmitterTest {
         PackagesEventsEmitter emitter = new DefaultPackagesEventsEmitter(stringWriter);
         emitter.start();
         emitter.startPackage(parent);
-
+        emitter.finalizePackage(parent.getId(), parent);
         VaultPackage contentChild = mock(VaultPackage.class);
         when(contentChild.getPackageType()).thenReturn(PackageType.CONTENT);
         when(contentChild.getId()).thenReturn(ID_CONTENT_CHILD);
         when(contentChild.getDependencies()).thenReturn(new Dependency[]{new Dependency(ID_PARENT), new Dependency(ID_APPLICATION_CHILD)});
         emitter.startSubPackage("/jcr_root/etc/packages/org/apache/sling/content-child-1.0.zip", contentChild);
+        emitter.finalizePackage(contentChild.getId(), contentChild);
         emitter.endSubPackage();
 
         VaultPackage applicationChild = mock(VaultPackage.class);
@@ -67,12 +68,13 @@ public class PackagesEventsEmitterTest {
         when(applicationChild.getId()).thenReturn(ID_APPLICATION_CHILD);
         when(applicationChild.getDependencies()).thenReturn(new Dependency[]{new Dependency(ID_PARENT)});
         emitter.startSubPackage("/jcr_root/etc/packages/org/apache/sling/application-child-1.0.zip", applicationChild);
-
+        emitter.finalizePackage(applicationChild.getId(), applicationChild);
         VaultPackage nestedChild = mock(VaultPackage.class);
         when(nestedChild.getPackageType()).thenReturn(PackageType.CONTAINER);
         when(nestedChild.getId()).thenReturn(ID_NESTED_CHILD);
         when(nestedChild.getDependencies()).thenReturn(new Dependency[]{new Dependency(ID_APPLICATION_CHILD)});
         emitter.startSubPackage("/jcr_root/etc/packages/org/apache/sling/nested-child-1.0.zip", nestedChild);
+        emitter.finalizePackage(nestedChild.getId(), nestedChild);
         emitter.endSubPackage();
 
         // applicationChild

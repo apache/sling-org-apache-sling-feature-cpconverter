@@ -298,7 +298,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
                 // deploy the new zip content-package to the local mvn bundles dir
 
-                processContentPackageArchive(contentPackageArchive, getMainPackageAssembler(), null);
+                processContentPackageArchive(vaultPackage.getId(), contentPackageArchive, getMainPackageAssembler(), null);
 
                 // finally serialize the Feature Model(s) file(s)
 
@@ -382,7 +382,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         File contentPackageArchive = clonedPackage.createPackage();
 
         // deploy the new content-package to the local mvn bundles dir and attach it to the feature
-        processContentPackageArchive(contentPackageArchive, clonedPackage, runMode);
+        processContentPackageArchive(vaultPackage.getId(), contentPackageArchive, clonedPackage, runMode);
 
         // restore the previous assembler
         setMainPackageAssembler(handler);
@@ -390,9 +390,11 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         emitters.stream().forEach(PackagesEventsEmitter::endSubPackage);
     }
 
-    public void processContentPackageArchive(@NotNull File contentPackageArchive, @NotNull VaultPackageAssembler assembler,
+    public void processContentPackageArchive(@NotNull PackageId id, @NotNull File contentPackageArchive, @NotNull VaultPackageAssembler assembler,
                                              @Nullable String runMode) throws Exception {
         try (VaultPackage vaultPackage = open(contentPackageArchive)) {
+            emitters.stream().forEach(e -> e.finalizePackage(id, vaultPackage));
+
             PackageType packageType = detectPackageType(vaultPackage);
 
             // SLING-8608 - Fail the conversion if the resulting attached content-package is MIXED type

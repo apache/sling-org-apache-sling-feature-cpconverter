@@ -123,10 +123,13 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
         idOutputLine.put(id, String.format("%s,%s,%s,,,\n",
             paths.peek(),
             hierarchy.peek(),
-            detectPackageType(vaultPackage)));
+            "PACKAGE_TYPE"));
     }
 
-   
+    @Override
+    public void finalizePackage(@NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
+        idOutputLine.computeIfPresent(id, (key, value) -> value.replace("PACKAGE_TYPE", detectPackageType(vaultPackage).toString()));
+    }
 
     @Override
     public void endPackage() {
@@ -145,7 +148,7 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
         idOutputLine.put(vaultPackage.getId(), String.format("%s,%s,%s,%s,%s,%s\n",
             current.getFile().getAbsolutePath(),
             id,
-            detectPackageType(vaultPackage),
+            "PACKAGE_TYPE",
             hierarchy.peek(),
             path,
             absolutePath));
