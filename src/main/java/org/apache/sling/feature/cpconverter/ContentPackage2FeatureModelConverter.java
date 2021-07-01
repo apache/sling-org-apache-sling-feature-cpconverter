@@ -32,6 +32,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -92,35 +93,49 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     private final RecollectorVaultPackageScanner recollectorVaultPackageScanner;
 
-    private List<PackagesEventsEmitter> emitters = new ArrayList<>();
+    private final List<PackagesEventsEmitter> emitters = new ArrayList<>();
+
+    private final List<Runnable> deployTasks = new ArrayList<>();
+
+    private final File tmpDirectory;
 
     private boolean failOnMixedPackages = false;
-
-    public enum PackagePolicy {
-        /** References the content package in the feature model and deploys via the {@link ContentPackage2FeatureModelConverter#artifactsDeployer} */
-        REFERENCE, 
-        /** Drops the content package completely (i.e. neither reference it in the feature model nor deploy anywhere)
-          * @deprecated
-          */
-        DROP,
-        /** Deploys the content package via the {@link ContentPackage2FeatureModelConverter#unreferencedArtifactsDeployer} */
-        PUT_IN_DEDICATED_FOLDER;
-    }
 
     private PackagePolicy contentTypePackagePolicy = PackagePolicy.REFERENCE;
 
     private boolean removeInstallHooks = false;
-    
-    public enum SlingInitialContentPolicy {
-        /** Keep in bundle and don't extract */
-        KEEP,
-        /** Extract from bundle into content-packages and feature model */
-        EXTRACT_AND_REMOVE,
-        /** Extract from bundle into content-packages and feature model but keep in bundle as well */
-        EXTRACT_AND_KEEP
+
+    public enum PackagePolicy {
+        /**
+         * References the content package in the feature model and deploys via the {@link ContentPackage2FeatureModelConverter#artifactsDeployer}
+         */
+        REFERENCE,
+        /**
+         * Drops the content package completely (i.e. neither reference it in the feature model nor deploy anywhere)
+         *
+         * @deprecated
+         */
+        DROP,
+        /**
+         * Deploys the content package via the {@link ContentPackage2FeatureModelConverter#unreferencedArtifactsDeployer}
+         */
+        PUT_IN_DEDICATED_FOLDER
     }
 
-    private final File tmpDirectory;
+    public enum SlingInitialContentPolicy {
+        /**
+         * Keep in bundle and don't extract
+         */
+        KEEP,
+        /**
+         * Extract from bundle into content-packages and feature model
+         */
+        EXTRACT_AND_REMOVE,
+        /**
+         * Extract from bundle into content-packages and feature model but keep in bundle as well
+         */
+        EXTRACT_AND_KEEP
+    }
 
     public ContentPackage2FeatureModelConverter() {
         this(false);
@@ -131,7 +146,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         this.recollectorVaultPackageScanner = new RecollectorVaultPackageScanner(this, this.packageManager, strictValidation, subContentPackages);
         try {
             this.tmpDirectory = Files.createTempDirectory("cp2fm-converter").toFile();
-        } catch ( final IOException io) {
+        } catch (final IOException io) {
             throw new RuntimeException("Unable to create a temporary directory", io);
         }
     }
@@ -145,10 +160,10 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return featuresManager;
     }
 
-    public @NotNull ContentPackage2FeatureModelConverter setFeaturesManager(@Nullable FeaturesManager featuresManager) {
+    public @NotNull ContentPackage2FeatureModelConverter setFeaturesManager(@NotNull FeaturesManager featuresManager) {
         this.featuresManager = featuresManager;
-        if ( featuresManager instanceof PackagesEventsEmitter ) {
-            this.emitters.add((PackagesEventsEmitter)featuresManager);
+        if (featuresManager instanceof PackagesEventsEmitter) {
+            this.emitters.add((PackagesEventsEmitter) featuresManager);
         }
         return this;
     }
@@ -162,12 +177,12 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return artifactsDeployer;
     }
 
-    public @NotNull ContentPackage2FeatureModelConverter setBundlesDeployer(@Nullable ArtifactsDeployer bundlesDeployer) {
+    public @NotNull ContentPackage2FeatureModelConverter setBundlesDeployer(@NotNull ArtifactsDeployer bundlesDeployer) {
         this.artifactsDeployer = bundlesDeployer;
         return this;
     }
 
-    public @NotNull ContentPackage2FeatureModelConverter setUnreferencedArtifactsDeployer(@Nullable ArtifactsDeployer unreferencedArtifactsDeployer) {
+    public @NotNull ContentPackage2FeatureModelConverter setUnreferencedArtifactsDeployer(@NotNull ArtifactsDeployer unreferencedArtifactsDeployer) {
         this.unreferencedArtifactsDeployer = unreferencedArtifactsDeployer;
         return this;
     }
@@ -176,7 +191,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return aclManager;
     }
 
-    public @NotNull ContentPackage2FeatureModelConverter setAclManager(@Nullable AclManager aclManager) {
+    public @NotNull ContentPackage2FeatureModelConverter setAclManager(@NotNull AclManager aclManager) {
         this.aclManager = aclManager;
         return this;
     }
@@ -185,12 +200,12 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return mainPackageAssembler;
     }
 
-    public @NotNull ContentPackage2FeatureModelConverter setEmitter(@Nullable PackagesEventsEmitter emitter) {
+    public @NotNull ContentPackage2FeatureModelConverter setEmitter(@NotNull PackagesEventsEmitter emitter) {
         this.emitters.add(emitter);
         return this;
     }
-    
-    public @NotNull ContentPackage2FeatureModelConverter setContentTypePackagePolicy(PackagePolicy contentTypePackagePolicy) {
+
+    public @NotNull ContentPackage2FeatureModelConverter setContentTypePackagePolicy(@NotNull PackagePolicy contentTypePackagePolicy) {
         this.contentTypePackagePolicy = contentTypePackagePolicy;
         return this;
     }
@@ -210,19 +225,19 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     }
     
     public void cleanup() throws IOException {
-        if ( this.tmpDirectory.exists() ) {
-            logger.info( "Cleaning up tmp directory {}", this.tmpDirectory);
+        if (this.tmpDirectory.exists()) {
+            logger.info("Cleaning up tmp directory {}", this.tmpDirectory);
 
-            FileUtils.deleteDirectory( this.tmpDirectory );
+            FileUtils.deleteDirectory(this.tmpDirectory);
         }
     }
-    
-    public void convert(@NotNull File...contentPackages) throws Exception {
-        requireNonNull(contentPackages , "Null content-package(s) can not be converted.");
+
+    public void convert(@NotNull File... contentPackages) throws Exception {
+        requireNonNull(contentPackages, "Null content-package(s) can not be converted.");
         secondPass(firstPass(contentPackages));
     }
 
-    protected @NotNull Collection<VaultPackage> firstPass(@NotNull File...contentPackages) throws Exception {
+    protected @NotNull Collection<VaultPackage> firstPass(@NotNull File... contentPackages) throws Exception {
         Map<PackageId, VaultPackage> idFileMap = new LinkedHashMap<>();
         Map<PackageId, VaultPackage> idPackageMapping = new ConcurrentHashMap<>();
 
@@ -256,8 +271,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return idFileMap.values();
     }
 
-    protected void secondPass(@NotNull Collection<VaultPackage> orderedContentPackages) throws Exception {
-        emitters.stream().forEach(e -> e.start());
+    private void secondPass(@NotNull Collection<VaultPackage> orderedContentPackages) throws Exception {
+        emitters.stream().forEach(PackagesEventsEmitter::start);
 
         for (VaultPackage vaultPackage : orderedContentPackages) {
             try {
@@ -278,7 +293,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
                 // deploy the new zip content-package to the local mvn bundles dir
 
-                processContentPackageArchive(contentPackageArchive, mainPackageAssembler,null);
+                processContentPackageArchive(contentPackageArchive, mainPackageAssembler, null);
 
                 // finally serialize the Feature Model(s) file(s)
 
@@ -287,7 +302,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 logger.info("Conversion complete!");
 
                 featuresManager.serialize();
-                emitters.stream().forEach(e -> e.endPackage());
+                emitters.stream().forEach(PackagesEventsEmitter::endPackage);
             } finally {
                 aclManager.reset();
                 assemblers.clear();
@@ -303,13 +318,13 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         deployPackages();
         mutableContentsIds.clear();
 
-        emitters.stream().forEach(e -> e.end());
+        emitters.stream().forEach(PackagesEventsEmitter::end);
     }
 
-    private void orderDependencies(@NotNull Map<PackageId, VaultPackage> idFileMap,
-                                   @NotNull Map<PackageId, VaultPackage> idPackageMapping,
-                                   @NotNull VaultPackage pack,
-                                   @NotNull Set<PackageId> visited) throws CyclicDependencyException {
+    private static void orderDependencies(@NotNull Map<PackageId, VaultPackage> idFileMap,
+                                          @NotNull Map<PackageId, VaultPackage> idPackageMapping,
+                                          @NotNull VaultPackage pack,
+                                          @NotNull Set<PackageId> visited) throws CyclicDependencyException {
         if (!visited.add(pack.getId())) {
             throw new CyclicDependencyException("Cyclic dependency detected, " + pack.getId() + " was previously visited already");
         }
@@ -353,9 +368,9 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         
         //set dependency to parent package if the parent package is an application package & subpackage is embedded
         if (isEmbeddedPackage && !isContainerPackage) {
-            PackageId parentId = new PackageId((String)parentProps.get(PackageProperties.NAME_GROUP), 
-                                                (String)parentProps.get(PackageProperties.NAME_NAME),
-                                                (String)parentProps.get(PackageProperties.NAME_VERSION));
+            PackageId parentId = new PackageId((String) parentProps.get(PackageProperties.NAME_GROUP),
+                    (String) parentProps.get(PackageProperties.NAME_NAME),
+                    (String) parentProps.get(PackageProperties.NAME_VERSION));
             clonedPackage.addDependency(new Dependency(parentId));
         }
 
@@ -367,7 +382,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         // restore the previous assembler
         mainPackageAssembler = handler;
 
-        emitters.stream().forEach(e -> e.endSubPackage());
+        emitters.stream().forEach(PackagesEventsEmitter::endSubPackage);
     }
 
     public void processContentPackageArchive(@NotNull File contentPackageArchive, @NotNull VaultPackageAssembler assembler,
@@ -378,10 +393,10 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             // SLING-8608 - Fail the conversion if the resulting attached content-package is MIXED type
             if (PackageType.MIXED == packageType && failOnMixedPackages) {
                 throw new IllegalStateException("Generated content-package '"
-                                    + vaultPackage.getId()
-                                    + "' located in file "
-                                    + contentPackageArchive
-                                    + " is of MIXED type");
+                        + vaultPackage.getId()
+                        + "' located in file "
+                        + contentPackageArchive
+                        + " is of MIXED type");
             }
 
             ArtifactId mvnPackageId = toArtifactId(vaultPackage.getId(), contentPackageArchive);
@@ -391,7 +406,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                     case DROP:
                         mutableContentsIds.put(vaultPackage.getId(), getDependencies(vaultPackage));
                         logger.info("Dropping package of PackageType.CONTENT {} (content-package id: {})",
-                                    mvnPackageId.getArtifactId(), vaultPackage.getId());
+                                mvnPackageId.getArtifactId(), vaultPackage.getId());
                         break;
                     case PUT_IN_DEDICATED_FOLDER:
                         mutableContentsIds.put(vaultPackage.getId(), getDependencies(vaultPackage));
@@ -401,7 +416,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                         }
                         unreferencedArtifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), mvnPackageId);
                         logger.info("Put converted package of PackageType.CONTENT {} (content-package id: {}) in {} (not referenced in feature model)",
-                                    mvnPackageId.getArtifactId(), vaultPackage.getId(), unreferencedArtifactsDeployer.getBaseDirectory());
+                                mvnPackageId.getArtifactId(), vaultPackage.getId(), unreferencedArtifactsDeployer.getBaseDirectory());
                         break;
                     case REFERENCE:
                         deploy(assembler, mvnPackageId, runMode);
@@ -411,31 +426,31 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             }
         }
     }
-    public void deployPackages() throws Exception {
+
+    public void deployPackages() {
         try {
             mutableContentsIds.values().forEach(
-                value -> value.removeIf(dep -> mutableContentsIds.keySet().stream().anyMatch(dep::matches)));
+                    value -> value.removeIf(dep -> mutableContentsIds.keySet().stream().anyMatch(dep::matches)));
 
             deployTasks.forEach(Runnable::run);
         } catch (RuntimeException ex) {
             if (ex.getCause() instanceof Exception) {
-                throw (Exception) ex;
+                throw ex;
             }
             throw ex;
         }
         deployTasks.clear();
     }
 
-    private List<Runnable> deployTasks = new ArrayList<>();
-
-    private void deploy(VaultPackageAssembler assembler, ArtifactId mvnPackageId, String runMode) {
-        getFeaturesManager().addArtifact(runMode, mvnPackageId);
+    private void deploy(@NotNull VaultPackageAssembler assembler, @NotNull ArtifactId mvnPackageId, @Nullable String runMode) {
+        Objects.requireNonNull(getFeaturesManager()).addArtifact(runMode, mvnPackageId);
+        ArtifactsDeployer deployer = Objects.requireNonNull(getArtifactsDeployer());
         deployTasks.add(() -> {
             assembler.updateDependencies(mutableContentsIds);
             try {
                 File finalContentPackageArchive = assembler.createPackage();
                 // deploy the new content-package to the local mvn bundles dir
-                getArtifactsDeployer().deploy(new FileArtifactWriter(finalContentPackageArchive), mvnPackageId);
+                deployer.deploy(new FileArtifactWriter(finalContentPackageArchive), mvnPackageId);
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
@@ -449,10 +464,10 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     public boolean process(@NotNull String entryPath, @NotNull Archive archive, @Nullable Entry entry, boolean useMainPackageAssembler) throws Exception {
         if (resourceFilter != null && resourceFilter.isFilteredOut(entryPath)) {
             throw new IllegalArgumentException("Path '"
-                                               + entryPath
-                                               + "' in archive "
-                                               + archive.getMetaInf().getPackageProperties().getId()
-                                               + " not allowed by user configuration, please check configured filtering patterns");
+                    + entryPath
+                    + "' in archive "
+                    + archive.getMetaInf().getPackageProperties().getId()
+                    + " not allowed by user configuration, please check configured filtering patterns");
         }
 
         EntryHandler entryHandler = handlersManager.getEntryHandlerByEntryPath(entryPath);
@@ -471,8 +486,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             }
         }
         entryHandler.handle(entryPath, archive, entry, this);
-        if (useMainPackageAssembler) {
-            mainPackageAssembler.recordEntryPath(entryPath);
+        if (useMainPackageAssembler && !mainPackageAssembler.recordEntryPath(entryPath)) {
+            logger.warn("Duplicate entry path {}", entryPath);
         }
         return true;
     }
@@ -484,20 +499,20 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     public static @NotNull ArtifactId toArtifactId(@NotNull PackageId packageId, @NotNull File file) {
         String groupId = requireNonNull(packageId.getGroup(),
-            PackageProperties.NAME_GROUP
-                + " property not found in content-package "
-                + file
-                + ", please check META-INF/vault/properties.xml").replace('/', '.');
+                PackageProperties.NAME_GROUP
+                        + " property not found in content-package "
+                        + file
+                        + ", please check META-INF/vault/properties.xml").replace('/', '.');
         // Replace any space with an underscore to adhere to Maven Group Id specification
-        groupId = groupId.replaceAll(" ", "_");
+        groupId = groupId.replace(" ", "_");
 
-        String artifactid = requireNonNull(packageId.getName(),
-            PackageProperties.NAME_NAME
-                + " property not found in content-package "
-                + file
-                + ", please check META-INF/vault/properties.xml");
+        String artifactId = requireNonNull(packageId.getName(),
+                PackageProperties.NAME_NAME
+                        + " property not found in content-package "
+                        + file
+                        + ", please check META-INF/vault/properties.xml");
         // Replace any space with an underscore to adhere to Maven Artifact Id specification
-        artifactid = artifactid.replaceAll(" ", "_");
+        artifactId = artifactId.replace(" ", "_");
 
         // package versions may use suffix "-cp2fm-converted" which is redundant as for artifactIds this is set as dedicated classifier
         String version = packageId.getVersionString();
@@ -508,7 +523,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             version = DEFAULT_VERSION;
         }
 
-        return new ArtifactId(groupId, artifactid, version, PACKAGE_CLASSIFIER, ZIP_TYPE);
+        return new ArtifactId(groupId, artifactId, version, PACKAGE_CLASSIFIER, ZIP_TYPE);
     }
 
     @Override

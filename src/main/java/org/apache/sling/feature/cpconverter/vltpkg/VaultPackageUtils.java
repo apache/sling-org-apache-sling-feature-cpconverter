@@ -16,12 +16,17 @@
  */
 package org.apache.sling.feature.cpconverter.vltpkg;
 
+import java.io.File;
+import java.io.FileFilter;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
 import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
 import org.apache.jackrabbit.vault.packaging.Dependency;
@@ -30,6 +35,8 @@ import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import static org.apache.jackrabbit.vault.util.Constants.ROOT_DIR;
 
 public class VaultPackageUtils {
 
@@ -73,6 +80,38 @@ public class VaultPackageUtils {
             return PackageType.APPLICATION;
         } else {
             return PackageType.CONTENT;
+        }
+    }
+
+    static @Nullable PackageType recalculatePackageType(PackageType sourcePackageType, @NotNull File outputDirectory) {
+        if (sourcePackageType != null && sourcePackageType != PackageType.MIXED) {
+            return null;
+        }
+        AtomicBoolean foundMutableFiles = new AtomicBoolean();
+        AtomicBoolean foundImmutableFiles = new AtomicBoolean();
+        forEachDirectoryBelowJcrRoot(outputDirectory, (child, base) -> {
+            if (child.getName().equals("apps") || child.getName().equals("libs")) {
+                foundImmutableFiles.weakCompareAndSet(false, true);
+            } else {
+                foundMutableFiles.weakCompareAndSet(false, true);
+            }
+        });
+        if (foundImmutableFiles.get() && !foundMutableFiles.get()) {
+            return PackageType.APPLICATION;
+        } else if (!foundImmutableFiles.get() && foundMutableFiles.get()) {
+            return PackageType.CONTENT;
+        } else {
+            return PackageType.MIXED;
+        }
+    }
+
+    static void forEachDirectoryBelowJcrRoot(File outputDirectory, BiConsumer<File, File> consumer) {
+        File jcrRootDir = new File(outputDirectory, ROOT_DIR);
+        if (jcrRootDir.exists() && jcrRootDir.isDirectory()) {
+            for (File child : jcrRootDir.listFiles((FileFilter) DirectoryFileFilter.INSTANCE)) {
+                // calls consumer with absolute files
+                consumer.accept(child, jcrRootDir);
+            }
         }
     }
 
