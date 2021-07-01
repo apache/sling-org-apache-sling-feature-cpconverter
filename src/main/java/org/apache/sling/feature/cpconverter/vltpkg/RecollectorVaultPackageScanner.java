@@ -35,7 +35,6 @@ public final class RecollectorVaultPackageScanner extends BaseVaultPackageScanne
     private final ContentPackage2FeatureModelConverter converter;
 
     private final EntryHandler[] handlers;
-    private final SlingInitialContentBundleHandler slingInitialContentBundleHandler;
 
     public RecollectorVaultPackageScanner(@NotNull ContentPackage2FeatureModelConverter converter,
                                           @NotNull PackageManager packageManager,
@@ -45,12 +44,11 @@ public final class RecollectorVaultPackageScanner extends BaseVaultPackageScanne
         super(packageManager, strictValidation);
         this.converter = converter;
         VersionResolverContentPackageEntryHandler versionResolverContentPackageEntryHandler = new VersionResolverContentPackageEntryHandler(this, subContentPackages);
-        slingInitialContentBundleHandler = new SlingInitialContentBundleHandler(versionResolverContentPackageEntryHandler, slingInitialContentPolicy);
         handlers = new EntryHandler[] {
                 new UsersEntryHandler(),
                 new GroupEntryHandler(),
                 versionResolverContentPackageEntryHandler,
-                slingInitialContentBundleHandler
+                new SlingInitialContentBundleHandler(versionResolverContentPackageEntryHandler, slingInitialContentPolicy)
         };
     }
 
