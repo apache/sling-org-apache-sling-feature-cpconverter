@@ -36,7 +36,7 @@ public class DefaultEntryHandlersManager implements EntryHandlersManager {
     }
 
     public DefaultEntryHandlersManager(@NotNull Map<String, String> configs, boolean enforceConfigurationsAndBundlesBelowProperFolder, 
-                                       SlingInitialContentPolicy slingInitialContentPolicy, @NotNull String systemUserRelPath) {
+                                       @NotNull SlingInitialContentPolicy slingInitialContentPolicy, @NotNull String systemUserRelPath) {
         ServiceLoader<EntryHandler> entryHandlersLoader = ServiceLoader.load(EntryHandler.class);
         for (EntryHandler entryHandler : entryHandlersLoader) {
             if (configs.containsKey(entryHandler.getClass().getName())) {

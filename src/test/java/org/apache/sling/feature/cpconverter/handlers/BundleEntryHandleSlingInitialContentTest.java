@@ -20,22 +20,26 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Map;
+import java.util.Properties;
 import java.util.jar.JarFile;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.PackageId;
+import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.SlingInitialContentPolicy;
 import org.apache.sling.feature.cpconverter.artifacts.SimpleFolderArtifactsDeployer;
+import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -62,6 +66,16 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
         File targetFolder = tmpFolder.newFolder();
         when(converter.getArtifactsDeployer()).thenReturn(new SimpleFolderArtifactsDeployer(targetFolder));
+        when(converter.isSubContentPackageIncluded("/jcr_root/apps/gav/install/io.wcm.handler.media-1.11.6.jar-APPLICATION")).thenReturn(true);
+
+        VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
+        Properties props = new Properties();
+        props.setProperty(PackageProperties.NAME_GROUP, "io.wcm");
+        props.setProperty(PackageProperties.NAME_NAME, "handler.media");
+        props.setProperty(PackageProperties.NAME_VERSION, "1.11.6");
+        when(assembler.getPackageProperties()).thenReturn(props);
+        converter.setMainPackageAssembler(assembler);
+
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
         handler.handle("/jcr_root/apps/gav/install/io.wcm.handler.media-1.11.6.jar", archive, entry, converter);
 
@@ -95,10 +109,16 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         setUpArchive("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", "composum-nodes-config-2.5.3.jar");
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
         converter.setEntryHandlersManager(handlersManager);
+        when(converter.isSubContentPackageIncluded("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar-APPLICATION")).thenReturn(true);
+        VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
+        Properties props = new Properties();
+        props.setProperty(PackageProperties.NAME_GROUP, "io.wcm");
+        props.setProperty(PackageProperties.NAME_NAME, "handler.media");
+        props.setProperty(PackageProperties.NAME_VERSION, "1.11.6");
+        when(assembler.getPackageProperties()).thenReturn(props);
+        converter.setMainPackageAssembler(assembler);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
         handler.handle("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", archive, entry, converter);
-        // verify no additional content package created (as it only contains the configuration which should end up in the feature model only)
-        Mockito.verify(converter, Mockito.never()).processContentPackageArchive(Mockito.any(), Mockito.any(), Mockito.isNull());
         // modified bundle
         Mockito.verify(featuresManager).addArtifact(null, ArtifactId.fromMvnId("com.composum.nodes:composum-nodes-config:2.5.3-cp2fm-converted"), null);
         // need to use ArgumentCaptur to properly compare string arrays
@@ -115,6 +135,14 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         setUpArchive("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", "composum-nodes-config-2.5.3.jar");
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
         converter.setEntryHandlersManager(handlersManager);
+        when(converter.isSubContentPackageIncluded("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar-APPLICATION")).thenReturn(true);
+        VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
+        Properties props = new Properties();
+        props.setProperty(PackageProperties.NAME_GROUP, "io.wcm");
+        props.setProperty(PackageProperties.NAME_NAME, "handler.media");
+        props.setProperty(PackageProperties.NAME_VERSION, "1.11.6");
+        when(assembler.getPackageProperties()).thenReturn(props);
+        converter.setMainPackageAssembler(assembler);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_KEEP);
         handler.handle("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", archive, entry, converter);
         // original bundle

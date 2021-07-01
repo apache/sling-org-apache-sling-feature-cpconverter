@@ -25,6 +25,7 @@ import org.apache.jackrabbit.vault.packaging.PackageManager;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
 import org.apache.sling.feature.cpconverter.handlers.GroupEntryHandler;
+import org.apache.sling.feature.cpconverter.handlers.SlingInitialContentBundleHandler;
 import org.apache.sling.feature.cpconverter.handlers.UsersEntryHandler;
 import org.apache.sling.feature.cpconverter.handlers.VersionResolverContentPackageEntryHandler;
 import org.jetbrains.annotations.NotNull;
@@ -38,13 +39,16 @@ public final class RecollectorVaultPackageScanner extends BaseVaultPackageScanne
     public RecollectorVaultPackageScanner(@NotNull ContentPackage2FeatureModelConverter converter,
                                           @NotNull PackageManager packageManager,
                                           boolean strictValidation,
-                                          @NotNull Map<PackageId, String> subContentPackages) {
+                                          @NotNull Map<PackageId, String> subContentPackages,
+                                          @NotNull ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy) {
         super(packageManager, strictValidation);
         this.converter = converter;
+        VersionResolverContentPackageEntryHandler versionResolverContentPackageEntryHandler = new VersionResolverContentPackageEntryHandler(this, subContentPackages);
         handlers = new EntryHandler[] {
                 new UsersEntryHandler(),
                 new GroupEntryHandler(),
-                new VersionResolverContentPackageEntryHandler(this, subContentPackages)
+                versionResolverContentPackageEntryHandler,
+                new SlingInitialContentBundleHandler(versionResolverContentPackageEntryHandler, slingInitialContentPolicy)
         };
     }
 
