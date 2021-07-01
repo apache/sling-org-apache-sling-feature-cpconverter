@@ -55,8 +55,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -84,37 +82,35 @@ public class VaultPackageAssembler implements EntryHandler {
     
     private final Set<String> convertedCpPaths = new HashSet<>();
     private final Set<String> allPaths = new HashSet<>();
-
-    private final static class RemoveInstallHooksPredicate implements Predicate<Map.Entry<Object, Object>> {
-        @Override
-        public boolean test(java.util.Map.Entry<Object, Object> entry) {
-            String key = (String)entry.getKey();
-            return !key.startsWith(PackageProperties.PREFIX_INSTALL_HOOK);
-        }
+    private final DefaultWorkspaceFilter filter = new DefaultWorkspaceFilter();
+    private final Set<Dependency> dependencies;
+    private final File storingDirectory;
+    private final Properties properties;
+    private final File tmpDir;
+    private final boolean removeInstallHooks;
+    
+    /**
+     * This class can not be instantiated from outside
+     */
+    private VaultPackageAssembler(@NotNull File tempDir, @NotNull File storingDirectory, @NotNull Properties properties, 
+                                  @NotNull Set<Dependency> dependencies, boolean removeInstallHooks) {
+        this.storingDirectory = storingDirectory;
+        this.properties = properties;
+        this.dependencies = dependencies;
+        this.tmpDir = tempDir;
+        this.removeInstallHooks = removeInstallHooks;
     }
-
+    
     /**
      * Creates a new package assembler based on an existing package.
      * Takes over properties and filter rules from existing package.
-     * @param tempDir the temp dir
-     * @param vaultPackage the package to take as blueprint
-     * @param removeInstallHooks whether to remove install hooks or not
-     * @return the package assembler
-     */
-    public static @NotNull VaultPackageAssembler create(@NotNull File tempDir, @NotNull VaultPackage vaultPackage, boolean removeInstallHooks) {
-        return create(tempDir, vaultPackage, Objects.requireNonNull(vaultPackage.getMetaInf().getFilter()), removeInstallHooks);
-    }
-
-    /**
-     * Creates a new package assembler based on an existing package.
-     * Takes over properties from existing package.
+     * 
      * @param baseTempDir the temp dir
      * @param vaultPackage the package to take as blueprint
-     * @param filter the filter with which to initialize the new package
      * @param removeInstallHooks whether to remove install hooks or not
      * @return the package assembler
      */
-    private static @NotNull VaultPackageAssembler create(@NotNull File baseTempDir, @NotNull VaultPackage vaultPackage, @NotNull WorkspaceFilter filter, boolean removeInstallHooks) {
+    public static @NotNull VaultPackageAssembler create(@NotNull File baseTempDir, @NotNull VaultPackage vaultPackage, boolean removeInstallHooks) {
         final File tempDir = new File(baseTempDir, "synthetic-content-packages_" + System.currentTimeMillis());
         PackageId packageId = vaultPackage.getId();
         File storingDirectory = initStoringDirectory(packageId, tempDir);
@@ -139,12 +135,13 @@ public class VaultPackageAssembler implements EntryHandler {
         Set<Dependency> dependencies = getDependencies(vaultPackage);
 
         VaultPackageAssembler assembler = new VaultPackageAssembler(tempDir, storingDirectory, properties, dependencies, removeInstallHooks);
-        assembler.mergeFilters(filter);
+        assembler.mergeFilters(Objects.requireNonNull(vaultPackage.getMetaInf().getFilter()));
         return assembler;
     }
 
     /**
      * Creates a new package assembler.
+     * 
      * @param baseTempDir the temp dir
      * @param packageId the package id from which to generate a minimal properties.xml
      * @param description the description which should end up in the package properties
@@ -163,13 +160,13 @@ public class VaultPackageAssembler implements EntryHandler {
         return new VaultPackageAssembler(tempDir, storingDirectory, props, new HashSet<>(), false);
     }
 
-    static @NotNull File initStoringDirectory(PackageId packageId, @NotNull File tempDir) {
+    private static @NotNull File initStoringDirectory(PackageId packageId, @NotNull File tempDir) {
         String fileName = packageId.toString().replace('/', '-').replace(':', '-');
         File storingDirectory = new File(tempDir, fileName + "-deflated");
-        if(storingDirectory.exists()) {
+        if (storingDirectory.exists()) {
             try {
                 FileUtils.deleteDirectory(storingDirectory);
-            } catch(IOException e) {
+            } catch (IOException e) {
                 throw new IllegalStateException("Unable to delete existing deflated folder: '" + storingDirectory + "'", e);
             }
         }
@@ -180,18 +177,6 @@ public class VaultPackageAssembler implements EntryHandler {
         }
         return storingDirectory;
     }
-
-    private final DefaultWorkspaceFilter filter = new DefaultWorkspaceFilter();
-
-    private final Set<Dependency> dependencies;
-
-    private final File storingDirectory;
-
-    private final Properties properties;
-
-    private final File tmpDir;
-
-    private final boolean removeInstallHooks;
 
     File getTempDir() {
         return this.tmpDir;
@@ -210,17 +195,6 @@ public class VaultPackageAssembler implements EntryHandler {
         } else {
             addEntry(path, archive, entry);
         }
-    }
-
-    /**
-     * This class can not be instantiated from outside
-     */
-    private VaultPackageAssembler(@NotNull File tempDir, @NotNull File storingDirectory, @NotNull Properties properties, @NotNull Set<Dependency> dependencies, boolean removeInstallHooks) {
-        this.storingDirectory = storingDirectory;
-        this.properties = properties;
-        this.dependencies = dependencies;
-        this.tmpDir = tempDir;
-        this.removeInstallHooks = removeInstallHooks;
     }
 
     public @NotNull Properties getPackageProperties() {
@@ -296,12 +270,11 @@ public class VaultPackageAssembler implements EntryHandler {
                 }
             }
         }
-        for(java.util.Map.Entry<Dependency, Set<Dependency>>  match : matches.entrySet()) {
+        for (java.util.Map.Entry<Dependency, Set<Dependency>> match : matches.entrySet()) {
             dependencies.remove(match.getKey());
             dependencies.addAll(match.getValue());
         }
     }
-    
 
     public void addDependency(@NotNull Dependency dependency) {
         dependencies.add(dependency);
@@ -320,13 +293,13 @@ public class VaultPackageAssembler implements EntryHandler {
         }
 
         final PackageType sourcePackageType;
-        final String sourcePackageTypeValue = (String)properties.get(PackageProperties.NAME_PACKAGE_TYPE);
+        final String sourcePackageTypeValue = (String) properties.get(PackageProperties.NAME_PACKAGE_TYPE);
         if (sourcePackageTypeValue != null) {
             sourcePackageType = PackageType.valueOf(sourcePackageTypeValue.toUpperCase());
         } else {
             sourcePackageType = null;
         }
-        PackageType newPackageType = recalculatePackageType(sourcePackageType, storingDirectory);
+        PackageType newPackageType = VaultPackageUtils.recalculatePackageType(sourcePackageType, storingDirectory);
         if (newPackageType != null) {
             properties.setProperty(PackageProperties.NAME_PACKAGE_TYPE, newPackageType.name().toLowerCase());
         }
@@ -352,7 +325,7 @@ public class VaultPackageAssembler implements EntryHandler {
 
         File xmlFilter = new File(metaDir, FILTER_XML);
         try (InputStream input = adjustedFilter.getSource();
-                FileOutputStream output = new FileOutputStream(xmlFilter)) {
+             FileOutputStream output = new FileOutputStream(xmlFilter)) {
             IOUtils.copy(input, output);
         }
 
@@ -361,13 +334,13 @@ public class VaultPackageAssembler implements EntryHandler {
         final File destFile = new File(this.tmpDir, destFileName);
         final File manifestFile = new File(storingDirectory, JarFile.MANIFEST_NAME.replace('/', File.separatorChar));
         Manifest manifest = null;
-        if ( manifestFile.exists() ) {
-            try ( final InputStream r = new FileInputStream(manifestFile)) {
+        if (manifestFile.exists()) {
+            try (final InputStream r = new FileInputStream(manifestFile)) {
                 manifest = new Manifest(r);
             }
         }
-        try ( final JarOutputStream jos = manifest == null ? new JarOutputStream(new FileOutputStream(destFile)) 
-                                                           : new JarOutputStream(new FileOutputStream(destFile), manifest)) {            
+        try (final JarOutputStream jos = manifest == null ? new JarOutputStream(new FileOutputStream(destFile)) 
+                                                          : new JarOutputStream(new FileOutputStream(destFile), manifest)) {            
             jos.setLevel(Deflater.DEFAULT_COMPRESSION);
             addDirectory(jos, storingDirectory, storingDirectory.getAbsolutePath().length() + 1);
         }
@@ -375,7 +348,7 @@ public class VaultPackageAssembler implements EntryHandler {
         return destFile;
     }
 
-    private static Set<String> toRepositoryPaths(@NotNull Set<String> paths) {
+    private static @NotNull Set<String> toRepositoryPaths(@NotNull Set<String> paths) {
         return paths.stream().map(s -> {
             if (s.startsWith("/jcr_root")) {
                 return s.substring("/jcr_root".length());
@@ -384,8 +357,8 @@ public class VaultPackageAssembler implements EntryHandler {
             }
         }).collect(Collectors.toSet());
     }
-    
-    private static WorkspaceFilter createAdjustedFilter(@NotNull WorkspaceFilter base, @NotNull Set<String> filteredPaths, @NotNull Set<String> cpPaths) throws IOException {
+
+    private static @NotNull WorkspaceFilter createAdjustedFilter(@NotNull WorkspaceFilter base, @NotNull Set<String> filteredPaths, @NotNull Set<String> cpPaths) throws IOException {
         try {
             DefaultWorkspaceFilter dwf = new DefaultWorkspaceFilter();
             for (PathFilterSet pfs : base.getPropertyFilterSets()) {
@@ -399,9 +372,9 @@ public class VaultPackageAssembler implements EntryHandler {
             throw new IOException(e);
         }
     }
-    
-    private static void processPathFilterSet(@NotNull PathFilterSet pfs, @NotNull DefaultWorkspaceFilter newFilter, 
-                                             boolean isPropertyFilterSet, @NotNull Set<String> filteredPaths, 
+
+    private static void processPathFilterSet(@NotNull PathFilterSet pfs, @NotNull DefaultWorkspaceFilter newFilter,
+                                             boolean isPropertyFilterSet, @NotNull Set<String> filteredPaths,
                                              @NotNull Set<String> cpPaths) throws ConfigurationException {
         if (cpPaths.stream().noneMatch(pfs::covers)) {
             // the given filterset no longer covers any of the paths included in the converted content package
@@ -435,82 +408,49 @@ public class VaultPackageAssembler implements EntryHandler {
         }
     }
 
-    private void addDirectory(final JarOutputStream jos, final File dir, final int prefixLength) throws IOException {
-        if ( dir.getAbsolutePath().length() > prefixLength && dir.listFiles().length == 0 ) {
+    private static void addDirectory(@NotNull final JarOutputStream jos, @NotNull final File dir, final int prefixLength) throws IOException {
+        if (dir.getAbsolutePath().length() > prefixLength && dir.listFiles().length == 0) {
             final String dirName = dir.getAbsolutePath().substring(prefixLength).replace(File.separatorChar, '/');
             final JarEntry entry = new JarEntry(dirName);
             entry.setTime(dir.lastModified());
             entry.setSize(0);
             jos.putNextEntry(entry);
-            jos.closeEntry();       
+            jos.closeEntry();
         }
-        for(final File f : dir.listFiles()) {
+        for (final File f : dir.listFiles()) {
             final String name = f.getAbsolutePath().substring(prefixLength).replace(File.separatorChar, '/');
-            if ( f.isFile() && !JarFile.MANIFEST_NAME.equals(name) ) {                
+            if (f.isFile() && !JarFile.MANIFEST_NAME.equals(name)) {
                 final JarEntry entry = new JarEntry(name);
                 entry.setTime(f.lastModified());
                 jos.putNextEntry(entry);
 
-                try ( final FileInputStream in = new FileInputStream(f)) {
+                try (final FileInputStream in = new FileInputStream(f)) {
                     IOUtils.copy(in, jos);
-                }  
-                jos.closeEntry();   
-            } else if ( f.isDirectory() ) {
+                }
+                jos.closeEntry();
+            } else if (f.isDirectory()) {
                 addDirectory(jos, f, prefixLength);
             }
         }
     }
-    
-    static @Nullable PackageType recalculatePackageType(PackageType sourcePackageType, @NotNull File outputDirectory) {
-        if (sourcePackageType != null && sourcePackageType != PackageType.MIXED) {
-            return null;
-        }
-        AtomicBoolean foundMutableFiles = new AtomicBoolean();
-        AtomicBoolean foundImmutableFiles  = new AtomicBoolean();
-        forEachDirectoryBelowJcrRoot(outputDirectory, (child, base) -> {
-            if (child.getName().equals("apps") || child.getName().equals("libs")) {
-                foundImmutableFiles.weakCompareAndSet(false, true);
-            } else {
-                foundMutableFiles.weakCompareAndSet(false, true);
-            }
-        });
-        if (foundImmutableFiles.get() && !foundMutableFiles.get()) {
-            return PackageType.APPLICATION;
-        } else if (!foundImmutableFiles.get() && foundMutableFiles.get()) {
-            return PackageType.CONTENT;
-        } else {
-            return PackageType.MIXED;
-        }
-       
-    }
 
     private void computeFilters(@NotNull File outputDirectory) {
-        forEachDirectoryBelowJcrRoot(outputDirectory, (child, base) -> {
-                TreeNode node = lowestCommonAncestor(new TreeNode(child));
-                File lowestCommonAncestor = node != null ? node.val : null;
-                if (lowestCommonAncestor != null) {
-                    String root = "/" + PlatformNameFormat.getRepositoryPath(base.toURI().relativize(lowestCommonAncestor.toURI()).getPath(), true);
-                    filter.add(new PathFilterSet(root));
-                }
-            });
-    }
-
-    private static void forEachDirectoryBelowJcrRoot(File outputDirectory, BiConsumer<File, File> consumer) {
-        File jcrRootDir = new File(outputDirectory, ROOT_DIR);
-        if (jcrRootDir.exists() && jcrRootDir.isDirectory()) {
-            for (File child : jcrRootDir.listFiles((FileFilter)DirectoryFileFilter.INSTANCE)) {
-                // calls consumer with absolute files
-                consumer.accept(child, jcrRootDir);
+        VaultPackageUtils.forEachDirectoryBelowJcrRoot(outputDirectory, (child, base) -> {
+            TreeNode node = lowestCommonAncestor(new TreeNode(child));
+            File lowestCommonAncestor = node != null ? node.val : null;
+            if (lowestCommonAncestor != null) {
+                String root = "/" + PlatformNameFormat.getRepositoryPath(base.toURI().relativize(lowestCommonAncestor.toURI()).getPath(), true);
+                filter.add(new PathFilterSet(root));
             }
-        }
+        });
     }
 
-    private @Nullable TreeNode lowestCommonAncestor(@NotNull TreeNode root) {
+    private static @Nullable TreeNode lowestCommonAncestor(@NotNull TreeNode root) {
         int currMaxDepth = 0;//curr tree's deepest leaf depth
         int countMaxDepth = 0;//num of deepest leaves
         TreeNode node = null;
 
-        for (File child : root.val.listFiles((FileFilter)DirectoryFileFilter.INSTANCE)) {
+        for (File child : root.val.listFiles((FileFilter) DirectoryFileFilter.INSTANCE)) {
             TreeNode temp = lowestCommonAncestor(new TreeNode(child));
 
             if (temp == null) {
@@ -553,5 +493,13 @@ public class VaultPackageAssembler implements EntryHandler {
             maxDepth = 0;
         }
 
+    }
+
+    private static final class RemoveInstallHooksPredicate implements Predicate<Map.Entry<Object, Object>> {
+        @Override
+        public boolean test(java.util.Map.Entry<Object, Object> entry) {
+            String key = (String) entry.getKey();
+            return !key.startsWith(PackageProperties.PREFIX_INSTALL_HOOK);
+        }
     }
 }
