@@ -50,16 +50,13 @@ abstract class AbstractUserEntryHandler extends AbstractRegexEntryHandler {
             byte[] tmp = IOUtils.toByteArray((archive.openInputStream(entry)));
             AbstractUserParser parser = createParser(converter, originalPath, intermediatePath);
             boolean converted = parser.parse(new ByteArrayInputStream(tmp));
-            if (!converted && !path.contains(systemUserSegment)) {
+            if (!converted && !path.contains(systemUserSegment) && converter.hasMainPackageAssembler()) {
                 // write back regular users, groups and their intermediate folders that did not get converted into
                 // repo-init statements to the content package
                 VaultPackageAssembler assembler = converter.getMainPackageAssembler();
-                // if we don't have an assembler we are in the firstPass and are only collecting
-                if (assembler != null) {
-                    try (InputStream input = new ByteArrayInputStream(tmp);
-                         OutputStream output = assembler.createEntry(path)) {
-                        IOUtils.copy(input, output);
-                    }
+                try (InputStream input = new ByteArrayInputStream(tmp);
+                     OutputStream output = assembler.createEntry(path)) {
+                    IOUtils.copy(input, output);
                 }
             }
         }

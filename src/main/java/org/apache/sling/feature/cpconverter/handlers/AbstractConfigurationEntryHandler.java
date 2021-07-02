@@ -76,7 +76,7 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
     
             if (configurationProperties == null) {
                 logger.info("{} entry does not contain a valid OSGi configuration, treating it as a regular resource", path);
-                Objects.requireNonNull(converter.getMainPackageAssembler()).addEntry(path, archive, entry);
+                converter.getMainPackageAssembler().addEntry(path, archive, entry);
                 return;
             }
 

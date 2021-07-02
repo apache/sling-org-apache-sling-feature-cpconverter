@@ -195,12 +195,17 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         this.aclManager = aclManager;
         return this;
     }
-
-    public @Nullable VaultPackageAssembler getMainPackageAssembler() {
-        return mainPackageAssembler;
+    
+    public boolean hasMainPackageAssembler() {
+        return mainPackageAssembler != null;
     }
 
-    public @NotNull ContentPackage2FeatureModelConverter setMainPackageAssembler(@Nullable VaultPackageAssembler assembler) {
+    public @NotNull VaultPackageAssembler getMainPackageAssembler() {
+        // verify that mainPackageAssembler has been set before retrieving it
+        return Objects.requireNonNull(mainPackageAssembler);
+    }
+
+    public @NotNull ContentPackage2FeatureModelConverter setMainPackageAssembler(@NotNull VaultPackageAssembler assembler) {
         this.mainPackageAssembler = assembler;
         return this;
     }
@@ -294,7 +299,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 traverse(vaultPackage);
 
                 // retrieve the resulting zip-content-package and deploy it to the local mvn bundles dir.
-                try (VaultPackage result = processContentPackageArchive(Objects.requireNonNull(getMainPackageAssembler()), null)) {
+                try (VaultPackage result = processContentPackageArchive(getMainPackageAssembler(), null)) {
 
                     // finally serialize the Feature Model(s) file(s)
 
@@ -465,7 +470,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return subContentPackages.containsValue(path);
     }
 
-    private boolean process(@NotNull String entryPath, @NotNull Archive archive, @Nullable Entry entry) throws Exception {
+    private void process(@NotNull String entryPath, @NotNull Archive archive, @Nullable Entry entry) throws Exception {
         if (resourceFilter != null && resourceFilter.isFilteredOut(entryPath)) {
             throw new IllegalArgumentException("Path '"
                     + entryPath
@@ -489,7 +494,6 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         if (!getMainPackageAssembler().recordEntryPath(entryPath)) {
             logger.warn("Duplicate entry path {}", entryPath);
         }
-        return true;
     }
 
     @Override
