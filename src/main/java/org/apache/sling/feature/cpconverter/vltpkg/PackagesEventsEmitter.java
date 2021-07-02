@@ -50,15 +50,15 @@ public interface PackagesEventsEmitter {
     /**
      * Marks the start of the given sub package.
      * 
-     * @param path The path
+     * @param path The path of the sub package in the original parent package
      * @param originalPackage the sub package to be converted.
      */
     void startSubPackage(@NotNull String path, @NotNull VaultPackage originalPackage);
 
     /**
      * Marks the end of the conversion of the sub package with {@code originalPackageId}.
-     * 
-     * @param path The path
+     *
+     * @param path The path of the original sub package in the parent package
      * @param originalPackageId The id of the original sub package as passed to {@link #startSubPackage(String, VaultPackage)}.
      * @param convertedPackage the converted package
      */
