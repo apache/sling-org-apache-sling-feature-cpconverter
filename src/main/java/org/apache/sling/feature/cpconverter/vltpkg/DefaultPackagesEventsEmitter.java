@@ -78,7 +78,7 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
 
     private final Stack<PackageId> hierarchy = new Stack<>();
     
-    private final Collection<VaultPackage> packages = new LinkedList<>();
+    private final Collection<VaultPackage> dependenciesOnly = new LinkedList<>();
     
     private final Map<PackageId, String> idOutputLine = new HashMap<>();
 
@@ -99,8 +99,8 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
     @Override
     public void end() {
         try {
-            DependencyUtil.sort(packages);
-            for (VaultPackage pkg : packages) {
+            DependencyUtil.sort(dependenciesOnly);
+            for (VaultPackage pkg : dependenciesOnly) {
                 writer.printf(idOutputLine.get(pkg.getId()));
             }
 
@@ -122,7 +122,7 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
         hierarchy.add(id);
         current = vaultPackage;
 
-        packages.add(getDepOnlyPackage(id, dependencies));
+        dependenciesOnly.add(getDepOnlyPackage(id, dependencies));
         idOutputLine.put(id, String.format("%s,%s,%s,,,\n",
             paths.peek(),
             hierarchy.peek(),
@@ -142,7 +142,7 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
         paths.add(path);
         String absolutePath = paths.stream().collect(joining(PATH_SEPARATOR_CHAR));
 
-        packages.add(getDepOnlyPackage(id, dependencies));
+        dependenciesOnly.add(getDepOnlyPackage(id, dependencies));
         idOutputLine.put(vaultPackage.getId(), String.format("%s,%s,%s,%s,%s,%s\n",
             current.getFile().getAbsolutePath(),
             id, PACKAGE_TYPE,
