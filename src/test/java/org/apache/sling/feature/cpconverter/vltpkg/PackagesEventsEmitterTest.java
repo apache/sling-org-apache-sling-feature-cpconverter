@@ -54,31 +54,29 @@ public class PackagesEventsEmitterTest {
         PackagesEventsEmitter emitter = new DefaultPackagesEventsEmitter(stringWriter);
         emitter.start();
         emitter.startPackage(parent);
-
         VaultPackage contentChild = mock(VaultPackage.class);
         when(contentChild.getPackageType()).thenReturn(PackageType.CONTENT);
         when(contentChild.getId()).thenReturn(ID_CONTENT_CHILD);
         when(contentChild.getDependencies()).thenReturn(new Dependency[]{new Dependency(ID_PARENT), new Dependency(ID_APPLICATION_CHILD)});
         emitter.startSubPackage("/jcr_root/etc/packages/org/apache/sling/content-child-1.0.zip", contentChild);
-        emitter.endSubPackage();
+        emitter.endSubPackage("/jcr_root/etc/packages/org/apache/sling/content-child-1.0.zip", contentChild.getId(), contentChild);
 
         VaultPackage applicationChild = mock(VaultPackage.class);
         when(applicationChild.getPackageType()).thenReturn(PackageType.APPLICATION);
         when(applicationChild.getId()).thenReturn(ID_APPLICATION_CHILD);
         when(applicationChild.getDependencies()).thenReturn(new Dependency[]{new Dependency(ID_PARENT)});
         emitter.startSubPackage("/jcr_root/etc/packages/org/apache/sling/application-child-1.0.zip", applicationChild);
-
         VaultPackage nestedChild = mock(VaultPackage.class);
         when(nestedChild.getPackageType()).thenReturn(PackageType.CONTAINER);
         when(nestedChild.getId()).thenReturn(ID_NESTED_CHILD);
         when(nestedChild.getDependencies()).thenReturn(new Dependency[]{new Dependency(ID_APPLICATION_CHILD)});
         emitter.startSubPackage("/jcr_root/etc/packages/org/apache/sling/nested-child-1.0.zip", nestedChild);
-        emitter.endSubPackage();
+        emitter.endSubPackage("/jcr_root/etc/packages/org/apache/sling/nested-child-1.0.zip", nestedChild.getId(), nestedChild);
 
         // applicationChild
-        emitter.endSubPackage();
+        emitter.endSubPackage("/jcr_root/etc/packages/org/apache/sling/application-child-1.0.zip", applicationChild.getId(), applicationChild);
 
-        emitter.endPackage();
+        emitter.endPackage(parent.getId(),parent);
         emitter.end();
 
         String actual = stringWriter.toString();

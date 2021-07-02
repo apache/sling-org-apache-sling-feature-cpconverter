@@ -16,21 +16,51 @@
  */
 package org.apache.sling.feature.cpconverter.vltpkg;
 
+import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.jetbrains.annotations.NotNull;
 
 public interface PackagesEventsEmitter {
 
+    /**
+     * Package converter starts
+     */
     void start();
 
+    /**
+     * Package converter ends
+     */
     void end();
 
-    void startPackage(@NotNull VaultPackage vaultPackage);
+    /**
+     * Marks the start of the given original package.
+     *
+     * @param originalPackage the package to be converted.
+     */
+    void startPackage(@NotNull VaultPackage originalPackage);
 
-    void endPackage();
+    /**
+     * Marks the end of the conversion of the package with {@code originalPackageId}.
+     * 
+     *  @param originalPackageId The id of the original package as passed to {@link #startPackage(VaultPackage)}. 
+     * @param convertedPackage the converted package.
+     */
+    void endPackage(@NotNull PackageId originalPackageId, @NotNull VaultPackage convertedPackage);
 
-    void startSubPackage(@NotNull String path, @NotNull VaultPackage vaultPackage);
+    /**
+     * Marks the start of the given sub package.
+     * 
+     * @param path The path of the sub package in the original parent package
+     * @param originalPackage the sub package to be converted.
+     */
+    void startSubPackage(@NotNull String path, @NotNull VaultPackage originalPackage);
 
-    void endSubPackage();
-
+    /**
+     * Marks the end of the conversion of the sub package with {@code originalPackageId}.
+     *
+     * @param path The path of the original sub package in the parent package
+     * @param originalPackageId The id of the original sub package as passed to {@link #startSubPackage(String, VaultPackage)}.
+     * @param convertedPackage the converted package
+     */
+    void endSubPackage(@NotNull String path, @NotNull PackageId originalPackageId, @NotNull VaultPackage convertedPackage);
 }

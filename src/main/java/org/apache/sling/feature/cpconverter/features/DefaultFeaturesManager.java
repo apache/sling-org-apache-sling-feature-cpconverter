@@ -36,6 +36,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Stack;
 
+import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.Artifact;
 import org.apache.sling.feature.ArtifactId;
@@ -73,7 +74,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         ORDERED,
         MERGE,
         STRICT
-    };
+    }
 
     private static final String CONTENT_PACKAGES = "content-packages";
 
@@ -538,49 +539,34 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
             }
         }
     }
-
-    /**
-     * Package converter starts
-     */
+    
+    @Override
     public void start() {
         // nothing to do
     }
 
-    /** 
-     * Package converter ends
-     */
+    @Override
     public void end() {
         // nothing to do
     }
 
-    /**
-     * Package starts
-     * @param vaultPackage the package
-     */
-    public void startPackage(final @NotNull VaultPackage vaultPackage) {
-        packageIds.push(vaultPackage.getId().toString());
+    @Override
+    public void startPackage(@NotNull VaultPackage originalPackage) {
+        packageIds.push(originalPackage.getId().toString());
     }
 
-    /**
-     * Package ends
-     */
-    public void endPackage() {
+    @Override
+    public void endPackage(@NotNull PackageId originalPackageId, @NotNull VaultPackage convertedPackage) {
         packageIds.pop();
     }
 
-    /**
-     * Sub package starts
-     * @param path The path
-     * @param vaultPackage the package
-     */
-    public void startSubPackage(final @NotNull String path, final @NotNull VaultPackage vaultPackage) {
-        packageIds.push(vaultPackage.getId().toString());
+    @Override
+    public void startSubPackage(@NotNull String path, @NotNull VaultPackage originalPackage) {
+        packageIds.push(originalPackage.getId().toString());
     }
 
-    /**
-     * Sub package ends
-     */
-    public void endSubPackage() {
+    @Override
+    public void endSubPackage(@NotNull String path, @NotNull PackageId originalPackageId, @NotNull VaultPackage convertedPackage) {
         packageIds.pop();
     }
 }
