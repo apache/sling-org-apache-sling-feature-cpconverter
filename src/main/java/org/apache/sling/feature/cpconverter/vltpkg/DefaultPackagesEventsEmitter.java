@@ -116,11 +116,12 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
     }
 
     @Override
-    public void startPackage(@NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
-        Dependency[] dependencies = vaultPackage.getDependencies();
-        paths.add(vaultPackage.getFile().getAbsolutePath());
+    public void startPackage(@NotNull VaultPackage originalPackage) {
+        PackageId id = originalPackage.getId();
+        Dependency[] dependencies = originalPackage.getDependencies();
+        paths.add(originalPackage.getFile().getAbsolutePath());
         hierarchy.add(id);
-        current = vaultPackage;
+        current = originalPackage;
 
         dependenciesOnly.add(getDepOnlyPackage(id, dependencies));
         idOutputLine.put(id, String.format("%s,%s,%s,,,\n",
@@ -130,20 +131,21 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
     }
 
     @Override
-    public void endPackage(@NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
-        idOutputLine.computeIfPresent(id, (key, value) -> value.replace(PACKAGE_TYPE, detectPackageType(vaultPackage).toString()));
+    public void endPackage(@NotNull PackageId originalPackageId, @NotNull VaultPackage convertedPackage) {
+        idOutputLine.computeIfPresent(originalPackageId, (key, value) -> value.replace(PACKAGE_TYPE, detectPackageType(convertedPackage).toString()));
         paths.pop();
         hierarchy.pop();
     }
 
     @Override
-    public void startSubPackage(@NotNull String path, @NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
-        Dependency[] dependencies = vaultPackage.getDependencies();
+    public void startSubPackage(@NotNull String path, @NotNull VaultPackage originalPackage) {
+        Dependency[] dependencies = originalPackage.getDependencies();
         paths.add(path);
         String absolutePath = paths.stream().collect(joining(PATH_SEPARATOR_CHAR));
 
+        PackageId id = originalPackage.getId();
         dependenciesOnly.add(getDepOnlyPackage(id, dependencies));
-        idOutputLine.put(vaultPackage.getId(), String.format("%s,%s,%s,%s,%s,%s\n",
+        idOutputLine.put(id, String.format("%s,%s,%s,%s,%s,%s\n",
             current.getFile().getAbsolutePath(),
             id, PACKAGE_TYPE,
             hierarchy.peek(),
@@ -154,8 +156,8 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
     }
 
     @Override
-    public void endSubPackage(@NotNull String path, @NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
-        endPackage(id,vaultPackage);
+    public void endSubPackage(@NotNull String path, @NotNull PackageId originalPackageId, @NotNull VaultPackage convertedPackage) {
+        endPackage(originalPackageId,convertedPackage);
     }
     
     static @NotNull VaultPackage getDepOnlyPackage(@NotNull PackageId id,

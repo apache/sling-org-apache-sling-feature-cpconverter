@@ -286,7 +286,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
         for (VaultPackage vaultPackage : orderedContentPackages) {
             try {
-                emitters.stream().forEach(e -> e.startPackage(vaultPackage.getId(), vaultPackage));
+                emitters.stream().forEach(e -> e.startPackage(vaultPackage));
                 setMainPackageAssembler(VaultPackageAssembler.create(this.getTempDirectory(), vaultPackage, removeInstallHooks));
                 assemblers.add(getMainPackageAssembler());
 
@@ -359,7 +359,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             return;
         }
 
-        emitters.stream().forEach(e -> e.startSubPackage(path, vaultPackage.getId(), vaultPackage));
+        emitters.stream().forEach(e -> e.startSubPackage(path, vaultPackage));
 
         VaultPackageAssembler clonedPackage = VaultPackageAssembler.create(this.getTempDirectory(), vaultPackage, removeInstallHooks);
 

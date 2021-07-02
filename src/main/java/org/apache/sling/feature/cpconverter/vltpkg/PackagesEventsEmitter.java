@@ -33,36 +33,34 @@ public interface PackagesEventsEmitter {
     void end();
 
     /**
-     * Marks the start of the given package
-     * 
-     * @param id The id of the package to be converted.
-     * @param vaultPackage the package to be converted.
+     * Marks the start of the given original package.
+     *
+     * @param originalPackage the package to be converted.
      */
-    void startPackage(@NotNull PackageId id, @NotNull VaultPackage vaultPackage);
+    void startPackage(@NotNull VaultPackage originalPackage);
 
     /**
-     * Marks the end of the given package
+     * Marks the end of the conversion of the package with {@code originalPackageId}.
      * 
-     * @param id The (original) id of the original package as passed to {@link #startPackage(PackageId, VaultPackage)}. 
-     * @param vaultPackage the converted package.
+     *  @param originalPackageId The id of the original package as passed to {@link #startPackage(VaultPackage)}. 
+     * @param convertedPackage the converted package.
      */
-    void endPackage(@NotNull PackageId id, @NotNull VaultPackage vaultPackage);
+    void endPackage(@NotNull PackageId originalPackageId, @NotNull VaultPackage convertedPackage);
 
     /**
-     * Marks the start of the given sub package
+     * Marks the start of the given sub package.
      * 
      * @param path The path
-     * @param id The id of the sub package.
-     * @param vaultPackage the sub package
+     * @param originalPackage the sub package to be converted.
      */
-    void startSubPackage(@NotNull String path, @NotNull PackageId id, @NotNull VaultPackage vaultPackage);
+    void startSubPackage(@NotNull String path, @NotNull VaultPackage originalPackage);
 
     /**
-     * Marks the end of the given sub package.
+     * Marks the end of the conversion of the sub package with {@code originalPackageId}.
      * 
      * @param path The path
-     * @param id The id of the original sub package as passed to {@link #startSubPackage(String, PackageId, VaultPackage)}.
-     * @param vaultPackage the converted package
+     * @param originalPackageId The id of the original sub package as passed to {@link #startSubPackage(String, VaultPackage)}.
+     * @param convertedPackage the converted package
      */
-    void endSubPackage(@NotNull String path, @NotNull PackageId id, @NotNull VaultPackage vaultPackage);
+    void endSubPackage(@NotNull String path, @NotNull PackageId originalPackageId, @NotNull VaultPackage convertedPackage);
 }

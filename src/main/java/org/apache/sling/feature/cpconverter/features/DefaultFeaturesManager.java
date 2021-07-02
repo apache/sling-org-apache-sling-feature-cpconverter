@@ -551,22 +551,22 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
     }
 
     @Override
-    public void startPackage(@NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
-        packageIds.push(id.toString());
+    public void startPackage(@NotNull VaultPackage originalPackage) {
+        packageIds.push(originalPackage.getId().toString());
     }
 
     @Override
-    public void endPackage(@NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
+    public void endPackage(@NotNull PackageId originalPackageId, @NotNull VaultPackage convertedPackage) {
         packageIds.pop();
     }
 
     @Override
-    public void startSubPackage(@NotNull String path, @NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
-        packageIds.push(id.toString());
+    public void startSubPackage(@NotNull String path, @NotNull VaultPackage originalPackage) {
+        packageIds.push(originalPackage.getId().toString());
     }
 
     @Override
-    public void endSubPackage(@NotNull String path, @NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
+    public void endSubPackage(@NotNull String path, @NotNull PackageId originalPackageId, @NotNull VaultPackage convertedPackage) {
         packageIds.pop();
     }
 }
