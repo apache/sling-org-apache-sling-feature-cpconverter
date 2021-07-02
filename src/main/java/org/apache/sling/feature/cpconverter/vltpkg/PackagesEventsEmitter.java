@@ -22,15 +22,47 @@ import org.jetbrains.annotations.NotNull;
 
 public interface PackagesEventsEmitter {
 
+    /**
+     * Package converter starts
+     */
     void start();
 
+    /**
+     * Package converter ends
+     */
     void end();
 
+    /**
+     * Marks the start of the given package
+     * 
+     * @param id The id of the package to be converted.
+     * @param vaultPackage the package to be converted.
+     */
     void startPackage(@NotNull PackageId id, @NotNull VaultPackage vaultPackage);
 
+    /**
+     * Marks the end of the given package
+     * 
+     * @param id The (original) id of the original package as passed to {@link #startPackage(PackageId, VaultPackage)}. 
+     * @param vaultPackage the converted package.
+     */
     void endPackage(@NotNull PackageId id, @NotNull VaultPackage vaultPackage);
 
+    /**
+     * Marks the start of the given sub package
+     * 
+     * @param path The path
+     * @param id The id of the sub package.
+     * @param vaultPackage the sub package
+     */
     void startSubPackage(@NotNull String path, @NotNull PackageId id, @NotNull VaultPackage vaultPackage);
 
+    /**
+     * Marks the end of the given sub package.
+     * 
+     * @param path The path
+     * @param id The id of the original sub package as passed to {@link #startSubPackage(String, PackageId, VaultPackage)}.
+     * @param vaultPackage the converted package
+     */
     void endSubPackage(@NotNull String path, @NotNull PackageId id, @NotNull VaultPackage vaultPackage);
 }

@@ -74,7 +74,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         ORDERED,
         MERGE,
         STRICT
-    };
+    }
 
     private static final String CONTENT_PACKAGES = "content-packages";
 
@@ -539,48 +539,33 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
             }
         }
     }
-
-    /**
-     * Package converter starts
-     */
+    
+    @Override
     public void start() {
         // nothing to do
     }
 
-    /** 
-     * Package converter ends
-     */
+    @Override
     public void end() {
         // nothing to do
     }
 
-    /**
-     * Package starts
-     * @param vaultPackage the package
-     */
+    @Override
     public void startPackage(@NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
         packageIds.push(id.toString());
     }
 
-    /**
-     * Package ends
-     */
+    @Override
     public void endPackage(@NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
         packageIds.pop();
     }
 
-    /**
-     * Sub package starts
-     * @param path The path
-     * @param vaultPackage the package
-     */
+    @Override
     public void startSubPackage(@NotNull String path, @NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
         packageIds.push(id.toString());
     }
 
-    /**
-     * Sub package ends
-     */
+    @Override
     public void endSubPackage(@NotNull String path, @NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
         packageIds.pop();
     }
