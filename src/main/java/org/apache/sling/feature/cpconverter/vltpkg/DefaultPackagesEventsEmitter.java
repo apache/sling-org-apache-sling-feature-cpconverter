@@ -60,6 +60,10 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
     private static final String FILENAME = "content-packages.csv";
 
     private static final String PATH_SEPARATOR_CHAR = "!";
+    /**
+     * placeholder used in the idOutputLine for the package type until the final package is given in the end call
+     */
+    private static final String PACKAGE_TYPE = "PACKAGE_TYPE";
 
     public static @NotNull DefaultPackagesEventsEmitter open(@NotNull File featureModelsOutputDirectory) throws IOException {
         if (!featureModelsOutputDirectory.exists()) {
@@ -122,12 +126,12 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
         idOutputLine.put(id, String.format("%s,%s,%s,,,\n",
             paths.peek(),
             hierarchy.peek(),
-            "PACKAGE_TYPE"));
+                PACKAGE_TYPE));
     }
 
     @Override
     public void endPackage(@NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
-        idOutputLine.computeIfPresent(id, (key, value) -> value.replace("PACKAGE_TYPE", detectPackageType(vaultPackage).toString()));
+        idOutputLine.computeIfPresent(id, (key, value) -> value.replace(PACKAGE_TYPE, detectPackageType(vaultPackage).toString()));
         paths.pop();
         hierarchy.pop();
     }
@@ -141,8 +145,7 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
         packages.add(getDepOnlyPackage(id, dependencies));
         idOutputLine.put(vaultPackage.getId(), String.format("%s,%s,%s,%s,%s,%s\n",
             current.getFile().getAbsolutePath(),
-            id,
-            "PACKAGE_TYPE",
+            id, PACKAGE_TYPE,
             hierarchy.peek(),
             path,
             absolutePath));

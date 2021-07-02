@@ -52,6 +52,7 @@ import org.apache.jackrabbit.vault.fs.spi.PrivilegeDefinitions;
 import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
 import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
+import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
 import org.apache.jackrabbit.vault.util.Constants;
@@ -849,6 +850,34 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         }
         finally {
             deleteDirTree(outputDirectory);
+        }
+    }
+
+    /**
+     * "demo-cp2.zip" contains no application content below /apps.
+     * The content package therefore gets type CONTENT assigned (and not MIXED).
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testConvertedCONTENTPackageHasTypeCalculatedCorrectly() throws Exception {
+        URL packageUrl = getClass().getResource("demo-cp2.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+
+        File unrefOutputDir = new File(outputDirectory, "unref");
+
+        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
+                .setUnreferencedArtifactsDeployer(new LocalMavenRepositoryArtifactsDeployer(unrefOutputDir))
+                .setContentTypePackagePolicy(PackagePolicy.PUT_IN_DEDICATED_FOLDER)
+                .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                .convert(packageFile);
+
+        File converted = new File(unrefOutputDir, "my_packages/demo-cp/0.0.0/demo-cp-0.0.0-cp2fm-converted.zip");
+
+        assertEquals(PackageType.CONTENT, converter.open(converted).getProperties().getPackageType());
+        try (FileReader reader = new FileReader(new File(outputDirectory, "content-packages.csv"))){
+            assertTrue(IOUtils.readLines(reader).get(2).contains("my_packages:demo-cp,CONTENT"));
         }
     }
 

@@ -223,10 +223,6 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
         assertExpectedPolicies(converted);
         verifyWorkspaceFilter(converted, true);
         verifyRepoInit();
-        assertEquals(PackageType.CONTENT, converter.open(converted).getProperties().getPackageType());
-        try (FileReader reader = new FileReader(new File(outputDirectory, "content-packages.csv"))){
-            assertTrue(IOUtils.readLines(reader).get(2).contains("my_packages:demo-cp,CONTENT"));
-        }
     }
 
     private static void assertExpectedPolicies(@NotNull File converted ) throws IOException {

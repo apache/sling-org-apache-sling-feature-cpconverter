@@ -292,13 +292,9 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 logger.info("Converting content-package '{}'...", vaultPackage.getId());
 
                 traverse(vaultPackage);
-                // attach all unmatched resources as new content-package
 
-                File contentPackageArchive = getMainPackageAssembler().createPackage();
-
-                // deploy the new zip content-package to the local mvn bundles dir
-
-                try (VaultPackage result = processContentPackageArchive(contentPackageArchive, getMainPackageAssembler(), null)) {
+                // retrieve the resulting zip-content-package and deploy it to the local mvn bundles dir.
+                try (VaultPackage result = processContentPackageArchive(getMainPackageAssembler(), null)) {
 
                     // finally serialize the Feature Model(s) file(s)
 
@@ -381,10 +377,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             clonedPackage.addDependency(new Dependency(parentId));
         }
 
-        File contentPackageArchive = clonedPackage.createPackage();
-
         // deploy the new content-package to the local mvn bundles dir and attach it to the feature
-        try (VaultPackage result = processContentPackageArchive( contentPackageArchive, clonedPackage, runMode)) {
+        try (VaultPackage result = processContentPackageArchive(clonedPackage, runMode)) {
             emitters.stream().forEach(e -> e.endSubPackage(path, vaultPackage.getId(), result));
         }
 
@@ -392,8 +386,10 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         setMainPackageAssembler(handler);
     }
 
-    private @NotNull VaultPackage processContentPackageArchive(@NotNull File contentPackageArchive, @NotNull VaultPackageAssembler assembler,
+    private @NotNull VaultPackage processContentPackageArchive(@NotNull VaultPackageAssembler assembler,
                                              @Nullable String runMode) throws Exception {
+        File contentPackageArchive = getMainPackageAssembler().createPackage();
+
         VaultPackage vaultPackage = open(contentPackageArchive);
 
         PackageType packageType = detectPackageType(vaultPackage);
