@@ -294,7 +294,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 traverse(vaultPackage);
 
                 // retrieve the resulting zip-content-package and deploy it to the local mvn bundles dir.
-                try (VaultPackage result = processContentPackageArchive(getMainPackageAssembler(), null)) {
+                try (VaultPackage result = processContentPackageArchive(Objects.requireNonNull(getMainPackageAssembler()), null)) {
 
                     // finally serialize the Feature Model(s) file(s)
 
@@ -388,7 +388,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     private @NotNull VaultPackage processContentPackageArchive(@NotNull VaultPackageAssembler assembler,
                                              @Nullable String runMode) throws Exception {
-        File contentPackageArchive = getMainPackageAssembler().createPackage();
+        File contentPackageArchive = assembler.createPackage();
 
         VaultPackage vaultPackage = open(contentPackageArchive);
 
