@@ -36,6 +36,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Stack;
 
+import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.Artifact;
 import org.apache.sling.feature.ArtifactId;
@@ -557,14 +558,14 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
      * Package starts
      * @param vaultPackage the package
      */
-    public void startPackage(final @NotNull VaultPackage vaultPackage) {
-        packageIds.push(vaultPackage.getId().toString());
+    public void startPackage(@NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
+        packageIds.push(id.toString());
     }
 
     /**
      * Package ends
      */
-    public void endPackage() {
+    public void endPackage(@NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
         packageIds.pop();
     }
 
@@ -573,14 +574,14 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
      * @param path The path
      * @param vaultPackage the package
      */
-    public void startSubPackage(final @NotNull String path, final @NotNull VaultPackage vaultPackage) {
-        packageIds.push(vaultPackage.getId().toString());
+    public void startSubPackage(@NotNull String path, @NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
+        packageIds.push(id.toString());
     }
 
     /**
      * Sub package ends
      */
-    public void endSubPackage() {
+    public void endSubPackage(@NotNull String path, @NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
         packageIds.pop();
     }
 }

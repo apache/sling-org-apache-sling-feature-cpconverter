@@ -281,7 +281,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
         for (VaultPackage vaultPackage : orderedContentPackages) {
             try {
-                emitters.stream().forEach(e -> e.startPackage(vaultPackage));
+                emitters.stream().forEach(e -> e.startPackage(vaultPackage.getId(), vaultPackage));
                 setMainPackageAssembler(VaultPackageAssembler.create(this.getTempDirectory(), vaultPackage, removeInstallHooks));
                 assemblers.add(getMainPackageAssembler());
 
@@ -298,16 +298,18 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
                 // deploy the new zip content-package to the local mvn bundles dir
 
-                processContentPackageArchive(vaultPackage.getId(), contentPackageArchive, getMainPackageAssembler(), null);
+                try (VaultPackage result = processContentPackageArchive(contentPackageArchive, getMainPackageAssembler(), null)) {
 
-                // finally serialize the Feature Model(s) file(s)
+                    // finally serialize the Feature Model(s) file(s)
 
-                aclManager.addRepoinitExtension(assemblers, featuresManager);
+                    aclManager.addRepoinitExtension(assemblers, featuresManager);
 
-                logger.info("Conversion complete!");
+                    logger.info("Conversion complete!");
 
-                featuresManager.serialize();
-                emitters.stream().forEach(PackagesEventsEmitter::endPackage);
+                    featuresManager.serialize();
+
+                    emitters.stream().forEach(e -> e.endPackage(vaultPackage.getId(), result));
+                }
             } finally {
                 aclManager.reset();
                 assemblers.clear();
@@ -356,7 +358,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             return;
         }
 
-        emitters.stream().forEach(e -> e.startSubPackage(path, vaultPackage));
+        emitters.stream().forEach(e -> e.startSubPackage(path, vaultPackage.getId(), vaultPackage));
 
         VaultPackageAssembler clonedPackage = VaultPackageAssembler.create(this.getTempDirectory(), vaultPackage, removeInstallHooks);
 
@@ -382,56 +384,55 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         File contentPackageArchive = clonedPackage.createPackage();
 
         // deploy the new content-package to the local mvn bundles dir and attach it to the feature
-        processContentPackageArchive(vaultPackage.getId(), contentPackageArchive, clonedPackage, runMode);
+        try (VaultPackage result = processContentPackageArchive( contentPackageArchive, clonedPackage, runMode)) {
+            emitters.stream().forEach(e -> e.endSubPackage(path, vaultPackage.getId(), result));
+        }
 
         // restore the previous assembler
         setMainPackageAssembler(handler);
-
-        emitters.stream().forEach(PackagesEventsEmitter::endSubPackage);
     }
 
-    public void processContentPackageArchive(@NotNull PackageId id, @NotNull File contentPackageArchive, @NotNull VaultPackageAssembler assembler,
+    private @NotNull VaultPackage processContentPackageArchive(@NotNull File contentPackageArchive, @NotNull VaultPackageAssembler assembler,
                                              @Nullable String runMode) throws Exception {
-        try (VaultPackage vaultPackage = open(contentPackageArchive)) {
-            emitters.stream().forEach(e -> e.finalizePackage(id, vaultPackage));
+        VaultPackage vaultPackage = open(contentPackageArchive);
 
-            PackageType packageType = detectPackageType(vaultPackage);
+        PackageType packageType = detectPackageType(vaultPackage);
 
-            // SLING-8608 - Fail the conversion if the resulting attached content-package is MIXED type
-            if (PackageType.MIXED == packageType && failOnMixedPackages) {
-                throw new IllegalStateException("Generated content-package '"
-                        + vaultPackage.getId()
-                        + "' located in file "
-                        + contentPackageArchive
-                        + " is of MIXED type");
-            }
-
-            ArtifactId mvnPackageId = toArtifactId(vaultPackage.getId(), contentPackageArchive);
-            // special handling for converted packages of type content
-            if (PackageType.CONTENT == packageType) {
-                switch (contentTypePackagePolicy) {
-                    case DROP:
-                        mutableContentsIds.put(vaultPackage.getId(), getDependencies(vaultPackage));
-                        logger.info("Dropping package of PackageType.CONTENT {} (content-package id: {})",
-                                mvnPackageId.getArtifactId(), vaultPackage.getId());
-                        break;
-                    case PUT_IN_DEDICATED_FOLDER:
-                        mutableContentsIds.put(vaultPackage.getId(), getDependencies(vaultPackage));
-                        // deploy the new content-package to the unreferenced artifacts deployer
-                        if (unreferencedArtifactsDeployer == null) {
-                            throw new IllegalStateException("ContentTypePackagePolicy PUT_IN_DEDICATED_FOLDER requires a valid deployer ");
-                        }
-                        unreferencedArtifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), mvnPackageId);
-                        logger.info("Put converted package of PackageType.CONTENT {} (content-package id: {}) in {} (not referenced in feature model)",
-                                mvnPackageId.getArtifactId(), vaultPackage.getId(), unreferencedArtifactsDeployer.getBaseDirectory());
-                        break;
-                    case REFERENCE:
-                        deploy(assembler, mvnPackageId, runMode);
-                }
-            } else {
-                deploy(assembler, mvnPackageId, runMode);
-            }
+        // SLING-8608 - Fail the conversion if the resulting attached content-package is MIXED type
+        if (PackageType.MIXED == packageType && failOnMixedPackages) {
+            throw new IllegalStateException("Generated content-package '"
+                    + vaultPackage.getId()
+                    + "' located in file "
+                    + contentPackageArchive
+                    + " is of MIXED type");
         }
+
+        ArtifactId mvnPackageId = toArtifactId(vaultPackage.getId(), contentPackageArchive);
+        // special handling for converted packages of type content
+        if (PackageType.CONTENT == packageType) {
+            switch (contentTypePackagePolicy) {
+                case DROP:
+                    mutableContentsIds.put(vaultPackage.getId(), getDependencies(vaultPackage));
+                    logger.info("Dropping package of PackageType.CONTENT {} (content-package id: {})",
+                            mvnPackageId.getArtifactId(), vaultPackage.getId());
+                    break;
+                case PUT_IN_DEDICATED_FOLDER:
+                    mutableContentsIds.put(vaultPackage.getId(), getDependencies(vaultPackage));
+                    // deploy the new content-package to the unreferenced artifacts deployer
+                    if (unreferencedArtifactsDeployer == null) {
+                        throw new IllegalStateException("ContentTypePackagePolicy PUT_IN_DEDICATED_FOLDER requires a valid deployer ");
+                    }
+                    unreferencedArtifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), mvnPackageId);
+                    logger.info("Put converted package of PackageType.CONTENT {} (content-package id: {}) in {} (not referenced in feature model)",
+                            mvnPackageId.getArtifactId(), vaultPackage.getId(), unreferencedArtifactsDeployer.getBaseDirectory());
+                    break;
+                case REFERENCE:
+                    deploy(assembler, mvnPackageId, runMode);
+            }
+        } else {
+            deploy(assembler, mvnPackageId, runMode);
+        }
+        return vaultPackage;
     }
 
     public void deployPackages() {

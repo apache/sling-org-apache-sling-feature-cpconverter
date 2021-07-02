@@ -26,14 +26,11 @@ public interface PackagesEventsEmitter {
 
     void end();
 
-    void startPackage(@NotNull VaultPackage vaultPackage);
+    void startPackage(@NotNull PackageId id, @NotNull VaultPackage vaultPackage);
 
-    void endPackage();
+    void endPackage(@NotNull PackageId id, @NotNull VaultPackage vaultPackage);
 
-    void startSubPackage(@NotNull String path, @NotNull VaultPackage vaultPackage);
+    void startSubPackage(@NotNull String path, @NotNull PackageId id, @NotNull VaultPackage vaultPackage);
 
-    void endSubPackage();
-
-    default void finalizePackage(@NotNull PackageId id, @NotNull VaultPackage vaultPackage){};
-
+    void endSubPackage(@NotNull String path, @NotNull PackageId id, @NotNull VaultPackage vaultPackage);
 }

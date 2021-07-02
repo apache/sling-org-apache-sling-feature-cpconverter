@@ -112,8 +112,7 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
     }
 
     @Override
-    public void startPackage(@NotNull VaultPackage vaultPackage) {
-        PackageId id = vaultPackage.getId();
+    public void startPackage(@NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
         Dependency[] dependencies = vaultPackage.getDependencies();
         paths.add(vaultPackage.getFile().getAbsolutePath());
         hierarchy.add(id);
@@ -127,19 +126,14 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
     }
 
     @Override
-    public void finalizePackage(@NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
+    public void endPackage(@NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
         idOutputLine.computeIfPresent(id, (key, value) -> value.replace("PACKAGE_TYPE", detectPackageType(vaultPackage).toString()));
-    }
-
-    @Override
-    public void endPackage() {
         paths.pop();
         hierarchy.pop();
     }
 
     @Override
-    public void startSubPackage(@NotNull String path, @NotNull VaultPackage vaultPackage) {
-        PackageId id = vaultPackage.getId();
+    public void startSubPackage(@NotNull String path, @NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
         Dependency[] dependencies = vaultPackage.getDependencies();
         paths.add(path);
         String absolutePath = paths.stream().collect(joining(PATH_SEPARATOR_CHAR));
@@ -157,8 +151,8 @@ public final class DefaultPackagesEventsEmitter implements PackagesEventsEmitter
     }
 
     @Override
-    public void endSubPackage() {
-        endPackage();
+    public void endSubPackage(@NotNull String path, @NotNull PackageId id, @NotNull VaultPackage vaultPackage) {
+        endPackage(id,vaultPackage);
     }
     
     static @NotNull VaultPackage getDepOnlyPackage(@NotNull PackageId id,
