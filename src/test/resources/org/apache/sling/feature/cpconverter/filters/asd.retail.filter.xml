@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workspaceFilter version="1.0">
+    <filter root="/apps/asd/config" mode="merge">
+        <exclude pattern="/apps/asd/config/org.apache.sling.commons.log.LogManager.factory.config-asd-retail.xml"/>
+    </filter>
+    <filter root="/apps/asd/config.publish">
+        <exclude pattern="/apps/asd/config.publish/org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended-asd-retail.xml"/>
+    </filter>
+</workspaceFilter>

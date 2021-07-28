@@ -39,6 +39,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -69,6 +70,7 @@ import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.LocalMavenRepositoryArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.artifacts.SimpleFolderArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
+import org.apache.sling.feature.cpconverter.filtering.FilterXmlEntryValidator;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
@@ -151,7 +153,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
     public void convertContentPackage() throws Exception {
         URL packageUrl = getClass().getResource("test-content-package.zip");
         File packageFile = FileUtils.toFile(packageUrl);
-
+        File expectedConfigPackageFilter = load("filters/asd.retail.filter.xml")[0];
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
         try {
@@ -161,15 +163,23 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .convert(packageFile);
 
+            List<ContentPackageExtensionVerifier> verifiers = new ArrayList<>();
+            verifiers.add(new ContentPackageExtensionVerifier("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1"));
+            verifiers.add(new ContentPackageExtensionVerifier("asd.sample:Asd.Retail.ui.content:zip:cp2fm-converted:0.0.1"));
+
+            ContentPackageExtensionVerifier configPackageVerifier = new ContentPackageExtensionVerifier("asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1");
+
+            configPackageVerifier.setExpectedFilterXml(expectedConfigPackageFilter);
+            verifiers.add(configPackageVerifier);
+            verifiers.add(new ContentPackageExtensionVerifier("asd.sample:asd.retail.all:zip:cp2fm-converted:0.0.1"));
+
             verifyFeatureFile(outputDirectory,
                             "asd.retail.all.json",
                             "asd.sample:asd.retail.all:slingosgifeature:0.0.1",
-                            Collections.singletonList("org.apache.felix:org.apache.felix.framework:6.0.1"),
-                            Collections.singletonList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
-                            Arrays.asList("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1",
-                                            "asd.sample:Asd.Retail.ui.content:zip:cp2fm-converted:0.0.1",
-                                            "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1",
-                                            "asd.sample:asd.retail.all:zip:cp2fm-converted:0.0.1"));
+                            Arrays.asList("org.apache.felix:org.apache.felix.framework:6.0.1"),
+                            Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
+                            verifiers
+            );
             verifyFeatureFile(outputDirectory,
                             "asd.retail.all-author.json",
                             "asd.sample:asd.retail.all:slingosgifeature:author:0.0.1",
@@ -245,9 +255,11 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             verifyFeatureFile(outputDirectory,
                             "asd.retail.all.json",
                             "asd.sample:asd.retail.all:slingosgifeature:0.0.1",
-                            Collections.singletonList("org.apache.felix:org.apache.felix.framework:6.0.1"),
-                            Collections.singletonList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
-                            Arrays.asList("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1", "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1"));
+                            Arrays.asList("org.apache.felix:org.apache.felix.framework:6.0.1"),
+                            Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
+                            buildSimpleContentPackageVerification(
+                                    "asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1",
+                                    "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1"));
             verifyFeatureFile(outputDirectory,
                             "asd.retail.all-author.json",
                             "asd.sample:asd.retail.all:slingosgifeature:author:0.0.1",
@@ -316,9 +328,9 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             verifyFeatureFile(outputDirectory,
                             "asd.retail.all.json",
                             "asd.sample:asd.retail.all:slingosgifeature:0.0.1",
-                            Collections.singletonList("org.apache.felix:org.apache.felix.framework:6.0.1"),
-                            Collections.singletonList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
-                            Arrays.asList("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1",
+                            Arrays.asList("org.apache.felix:org.apache.felix.framework:6.0.1"),
+                            Arrays.asList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
+                            buildSimpleContentPackageVerification("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1",
                                     "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1"));
             verifyFeatureFile(outputDirectory,
                             "asd.retail.all-author.json",
@@ -688,7 +700,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                             "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0:${project.version}",
                             Collections.singletonList("org.apache.felix:org.apache.felix.framework:6.0.1"),
                             Collections.singletonList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
-                            Arrays.asList("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1",
+                            buildSimpleContentPackageVerification("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1",
                                             "asd.sample:Asd.Retail.ui.content:zip:cp2fm-converted:0.0.1",
                                             "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1",
                                             "asd.sample:asd.retail.all:zip:cp2fm-converted:0.0.1"));

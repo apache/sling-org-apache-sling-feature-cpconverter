@@ -16,10 +16,12 @@
  */
 package org.apache.sling.feature.cpconverter;
 
+import org.apache.jackrabbit.vault.fs.config.ConfigurationException;
 import org.apache.jackrabbit.vault.util.Constants;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Artifacts;
 import org.apache.sling.feature.Feature;
+import org.apache.sling.feature.cpconverter.filtering.FilterXmlEntryValidator;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,16 +40,46 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public abstract class AbstractConverterTest {
+
+    static String PATH_TO_FILTER_XML = "META-INF/vault/filter.xml";
+
+    static void verifyFeatureFile(File outputDirectory,
+                                   String name,
+                                   String expectedArtifactId,
+                                   List<String> expectedArtifacts,
+                                   List<String> expectedConfigurations,
+                                   List<ContentPackage2FeatureModelConverterTest.ContentPackageExtensionVerifier> expectedContentPackagesExtensions) throws Exception {
+        Feature feature = getFeature(outputDirectory, name);
+
+        assertEquals(expectedArtifactId, feature.getId().toMvnId());
+
+        for (String expectedArtifact : expectedArtifacts) {
+            assertTrue(expectedArtifact + " not found in Feature " + expectedArtifactId, feature.getBundles().containsExact(ArtifactId.fromMvnId(expectedArtifact)));
+            verifyInstalledArtifact(outputDirectory, new ContentPackageExtensionVerifier(expectedArtifact));
+        }
+
+        for (String expectedConfiguration : expectedConfigurations) {
+            assertNotNull(expectedConfiguration + " not found in Feature " + expectedArtifactId, feature.getConfigurations().getConfiguration(expectedConfiguration));
+        }
+
+        if (expectedContentPackagesExtensions.size() > 0) {
+            Artifacts contentPackages = feature.getExtensions().getByName("content-packages").getArtifacts();
+            assertEquals(expectedContentPackagesExtensions.size(), contentPackages.size());
+
+            for (ContentPackage2FeatureModelConverterTest.ContentPackageExtensionVerifier expectedContentPackagesExtension : expectedContentPackagesExtensions) {
+                assertTrue(expectedContentPackagesExtension + " not found in Feature " + expectedArtifactId,
+                        contentPackages.containsExact(ArtifactId.fromMvnId(expectedContentPackagesExtension.getExtension())));
+                verifyInstalledArtifact(outputDirectory, expectedContentPackagesExtension);
+            }
+        }
+    }
 
     static void deleteDirTree(File dir) throws IOException {
         Path tempDir = dir.toPath();
@@ -64,37 +96,6 @@ public abstract class AbstractConverterTest {
 
         try (Reader reader = new FileReader(featureFile)) {
             return FeatureJSONReader.read(reader, featureFile.getAbsolutePath());
-        }
-    }
-
-    static void verifyFeatureFile(File outputDirectory,
-                                  String name,
-                                  String expectedArtifactId,
-                                  List<String> expectedArtifacts,
-                                  List<String> expectedConfigurations,
-                                  List<String> expectedContentPackagesExtensions) throws Exception {
-        Feature feature = getFeature(outputDirectory, name);
-
-        assertEquals(expectedArtifactId, feature.getId().toMvnId());
-
-        for (String expectedArtifact : expectedArtifacts) {
-            assertTrue(expectedArtifact + " not found in Feature " + expectedArtifactId, feature.getBundles().containsExact(ArtifactId.fromMvnId(expectedArtifact)));
-            verifyInstalledArtifact(outputDirectory, expectedArtifact);
-        }
-
-        for (String expectedConfiguration : expectedConfigurations) {
-            assertNotNull(expectedConfiguration + " not found in Feature " + expectedArtifactId, feature.getConfigurations().getConfiguration(expectedConfiguration));
-        }
-
-        if (expectedContentPackagesExtensions.size() > 0) {
-            Artifacts contentPackages = feature.getExtensions().getByName("content-packages").getArtifacts();
-            assertEquals(expectedContentPackagesExtensions.size(), contentPackages.size());
-
-            for (String expectedContentPackagesExtension : expectedContentPackagesExtensions) {
-                assertTrue(expectedContentPackagesExtension + " not found in Feature " + expectedArtifactId,
-                        contentPackages.containsExact(ArtifactId.fromMvnId(expectedContentPackagesExtension)));
-                verifyInstalledArtifact(outputDirectory, expectedContentPackagesExtension);
-            }
         }
     }
 
@@ -145,7 +146,9 @@ public abstract class AbstractConverterTest {
         }
     }
 
-    static void verifyInstalledArtifact(File outputDirectory, String coordinates) {
+    static void verifyInstalledArtifact(File outputDirectory, ContentPackageExtensionVerifier verifier) {
+        String coordinates = verifier.getExtension();
+
         ArtifactId bundleId = ArtifactId.fromMvnId(coordinates);
 
         StringTokenizer tokenizer = new StringTokenizer(bundleId.getGroupId(), ".");
@@ -170,5 +173,47 @@ public abstract class AbstractConverterTest {
 
         File pomFile = new File(outputDirectory, String.format("%s-%s.pom", bundleId.getArtifactId(), bundleId.getVersion()));
         assertTrue("POM file " + pomFile + " does not exist", pomFile.exists());
+
+        if(verifier.getExpectedFilterXml() != null){
+            try {
+                verifyFilterXmlOfArtifact(bundleFile, verifier.getExpectedFilterXml());
+            } catch (IOException | ConfigurationException e) {
+                fail();
+            }
+        }
+    }
+
+    private static void verifyFilterXmlOfArtifact(File bundleFile, File expectedFilterXml) throws IOException, ConfigurationException {
+        try(ZipFile zipFile = new ZipFile(bundleFile)){
+            ZipEntry entry = zipFile.getEntry(PATH_TO_FILTER_XML);
+            InputStream expectedFilterXMLStream = zipFile.getInputStream(entry);
+
+            new FilterXmlEntryValidator(expectedFilterXml, expectedFilterXMLStream).validate();
+        }
+    }
+
+    static List<ContentPackageExtensionVerifier> buildSimpleContentPackageVerification(String... extensions){
+        return Arrays.stream(extensions).map(ContentPackageExtensionVerifier::new).collect(Collectors.toList());
+    }
+
+    static class ContentPackageExtensionVerifier{
+        private final String extension;
+        private File expectedFilterXml;
+
+        public ContentPackageExtensionVerifier(String extension){
+            this.extension = extension;
+        }
+
+        public String getExtension() {
+            return extension;
+        }
+
+        public File getExpectedFilterXml() {
+            return expectedFilterXml;
+        }
+
+        public void setExpectedFilterXml(File expectedFilterXml) {
+            this.expectedFilterXml = expectedFilterXml;
+        }
     }
 }
