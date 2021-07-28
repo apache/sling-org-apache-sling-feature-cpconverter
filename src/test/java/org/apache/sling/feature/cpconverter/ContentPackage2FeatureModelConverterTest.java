@@ -153,7 +153,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
     public void convertContentPackage() throws Exception {
         URL packageUrl = getClass().getResource("test-content-package.zip");
         File packageFile = FileUtils.toFile(packageUrl);
-        File expectedConfigPackageFilter = load("filters/asd.retail.filter.xml")[0];
+        File expectedConfigPackageFilter = load("filters/asd.retail.ui.config.filter.xml")[0];
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
         try {
