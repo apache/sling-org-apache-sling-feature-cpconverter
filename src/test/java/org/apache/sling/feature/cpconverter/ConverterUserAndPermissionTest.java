@@ -18,7 +18,12 @@ package org.apache.sling.feature.cpconverter;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.jackrabbit.vault.packaging.PackageType;
+import org.apache.jackrabbit.vault.fs.api.FilterSet;
+import org.apache.jackrabbit.vault.fs.api.ImportMode;
+import org.apache.jackrabbit.vault.fs.api.PathFilter;
+import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
+import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
+import org.apache.jackrabbit.vault.fs.config.DefaultWorkspaceFilter;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.PackagePolicy;
@@ -49,10 +54,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -109,7 +112,7 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
     }
 
     private ContentPackage2FeatureModelConverter converter;
-    
+
     private final EntryHandlersManager handlersManager;
     private final AclManager aclManager;
     private final boolean enforcePrincipalBased;
@@ -127,7 +130,7 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
 
     public ConverterUserAndPermissionTest(@NotNull String systemUserRelPath, @Nullable String enforcePrincipalBasedSupportedPath, @NotNull String name) {
         this.aclManager = new DefaultAclManager(enforcePrincipalBasedSupportedPath, systemUserRelPath);
-        this.handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, 
+        this.handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false,
                 ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP, systemUserRelPath);
         this.enforcePrincipalBased = (enforcePrincipalBasedSupportedPath != null);
         this.withRelPath = (enforcePrincipalBased) ? enforcePrincipalBasedSupportedPath.substring(enforcePrincipalBasedSupportedPath.indexOf(systemUserRelPath)) : systemUserRelPath;
@@ -141,7 +144,7 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
 
         outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
         featuresManager = new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, aclManager);
-        
+
         converter.setFeaturesManager(featuresManager)
                 .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                 .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory));
@@ -174,12 +177,12 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
     }
 
     /**
-     * "demo-cp3.zip" contains the same content as "demo-cp.zip" but with altered order leading to ACE being read before 
+     * "demo-cp3.zip" contains the same content as "demo-cp.zip" but with altered order leading to ACE being read before
      * the corresponding system-user, whose principal is referenced in the ACE.
-     * 
-     * This test would fail if user/group information was not collected during the first pass (i.e. corresponding 
+     *
+     * This test would fail if user/group information was not collected during the first pass (i.e. corresponding
      * handlers listed in {@link org.apache.sling.feature.cpconverter.vltpkg.RecollectorVaultPackageScanner}.
-     * 
+     *
      * @throws Exception
      */
     @Test
@@ -225,6 +228,35 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
         verifyRepoInit();
     }
 
+    @Test
+    public void testConvertPackageWithImportModes() throws Exception {
+        URL packageUrl = getClass().getResource("demo-cp-with-importmode.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+        converter.convert(packageFile);
+
+        File converted = new File(outputDirectory, "my_packages/demo-cp/0.0.0/demo-cp-0.0.0-cp2fm-converted.zip");
+
+        Set<String> notExpected = new HashSet<>(COMMON_NOT_EXPECTED_PATHS);
+        notExpected.add("jcr_root/apps/demo-cp/.content.xml");
+
+        Set<String> expected = new HashSet<>(COMMON_EXPECTED_PATHS);
+        expected.add("jcr_root/apps/.content.xml");
+
+        verifyContentPackage(converted, notExpected, expected);
+        assertExpectedPolicies(converted);
+        WorkspaceFilter filter = verifyWorkspaceFilter(converted, false);
+        verifyRepoInit();
+
+        assertEquals(ImportMode.MERGE, filter.getImportMode("/demo-cp"));
+        assertEquals(ImportMode.UPDATE, filter.getImportMode("/home/groups/demo-cp"));
+        assertEquals(ImportMode.REPLACE, filter.getImportMode("/home/users/demo-cp"));
+
+        PathFilterSet filterSet = filter.getCoveringFilterSet("/home/users/demo-cp");
+        assertNotNull(filterSet);
+        List<FilterSet.Entry<PathFilter>> entries = filterSet.getEntries();
+        assertEquals(3, entries.size());
+    }
+
     private static void assertExpectedPolicies(@NotNull File converted ) throws IOException {
         assertPolicy(converted, "jcr_root/demo-cp/_rep_policy.xml", "cp-serviceuser-1", "cp-user1", "cp-group1");
         assertPolicy(converted, "jcr_root/home/groups/demo-cp/EsYrXeBdSRkna2kqbxjl/_rep_policy.xml", null, "cp-group1");
@@ -232,7 +264,7 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
         assertPolicy(converted, "jcr_root/home/groups/demo-cp/_rep_policy.xml", "cp-serviceuser-3");
         assertPolicy(converted, "jcr_root/home/users/demo-cp/_rep_policy.xml", "cp-serviceuser-3");
     }
-    
+
     private static void assertPolicy(@NotNull File contentPackage, @NotNull String path, @Nullable String unExpectedPrincipalName, @NotNull String... expectedPrincipalNames) throws IOException {
         try (ZipFile zipFile = new ZipFile(contentPackage)) {
             ZipEntry entry = zipFile.getEntry(path);
@@ -254,18 +286,18 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
             }
         }
     }
-    
+
     private void verifyRepoInit() throws RepoInitParsingException {
         Feature f = featuresManager.getTargetFeature();
         Extension ext = f.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(ext);
-        
+
         List<Operation> ops = new RepoInitParserService().parse(new StringReader(ext.getText()));
         int size = (enforcePrincipalBased) ? 7 : 8;
         assertEquals(size, ops.size());
-        
+
         assertEquals(1, ops.stream().filter(operation -> operation instanceof RegisterNodetypes).count());
-        
+
         List<Operation> createServiceUsers = ops.stream().filter(op -> op instanceof CreateServiceUser).collect(Collectors.toList());
         assertEquals(3, createServiceUsers.size());
         if (enforcePrincipalBased) {
@@ -277,7 +309,7 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
             assertFalse(createServiceUsers.stream().anyMatch(operation -> ((CreateServiceUser) operation).isForcedPath()));
             assertEquals(2, createServiceUsers.stream().filter(operation -> ((CreateServiceUser) operation).getPath().startsWith(withRelPath+"/demo-cp")).count());
         }
-        
+
         List<Operation> setAcl = ops.stream().filter(op -> op instanceof SetAclPrincipals).collect(Collectors.toList());
         List<Operation> setAclPrincipalBased = ops.stream().filter(op -> op instanceof SetAclPrincipalBased).collect(Collectors.toList());
         if (enforcePrincipalBased) {
@@ -288,7 +320,7 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
             assertEquals(1, setAclPrincipalBased.size());
         }
         assertTrue(ops.stream().noneMatch(op -> op instanceof SetAclPaths));
-        
+
         List<Operation> createPaths = ops.stream().filter(op -> op instanceof CreatePath).collect(Collectors.toList());
         if (enforcePrincipalBased) {
             assertTrue(createPaths.isEmpty());
@@ -297,26 +329,39 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
         }
     }
 
-    private static void verifyWorkspaceFilter(@NotNull File contentPackage, boolean isContentOnly) throws IOException {
+    private static WorkspaceFilter verifyWorkspaceFilter(@NotNull File contentPackage, boolean isContentOnly) throws Exception {
+        DefaultWorkspaceFilter filter;
         try (ZipFile zipFile = new ZipFile(contentPackage)) {
-            ZipEntry entry = zipFile.getEntry("META-INF/vault/filter.xml");
-            assertNotNull(entry);
-            String filter = IOUtils.toString(new InputStreamReader(zipFile.getInputStream(entry)));
-
+            filter = new DefaultWorkspaceFilter();
+            filter.load(getFilterInputStream(zipFile));
             if (!isContentOnly) {
                 assertFalse(filter.contains("/apps/demo-cp"));
             }
-            assertFalse(filter.contains("/home/users/system"));
-            assertFalse(filter.contains("/home/users/system/demo-cp"));
-            assertFalse(filter.contains("/home/users/system/cq:services/demo-cp"));
-            
-            assertTrue(filter.contains("<filter root=\"/demo-cp\"/>"));
-            assertTrue(filter.contains("<filter root=\"/home/users/demo-cp\">"));
-            assertTrue(filter.contains("<filter root=\"/home/groups/demo-cp\">"));
-            
+            assertFalse(filter.covers("/home/users/system"));
+            assertFalse(filter.covers("/home/users/system/demo-cp"));
+            assertFalse(filter.covers("/home/users/system/cq:services/demo-cp"));
+
+            assertTrue(filter.covers("/demo-cp"));
+            assertTrue(filter.covers("/home/users/demo-cp"));
+            assertTrue(filter.covers("/home/groups/demo-cp"));
+
             // verify that explicit excludes have been added for filter roots that contain mixed content
-            assertTrue(filter.contains("<exclude pattern=\"/home/groups/demo-cp/_rep_policy.xml\"/>"));
-            assertTrue(filter.contains("<exclude pattern=\"/home/users/demo-cp/_rep_policy.xml\"/>"));
+            PathFilterSet filterSet = filter.getCoveringFilterSet("/home/groups/demo-cp");
+            assertNotNull(filterSet);
+            assertEquals(1, filterSet.getEntries().stream().filter(pathFilterEntry -> !pathFilterEntry.isInclude() &&
+                    pathFilterEntry.getFilter().matches("/home/groups/demo-cp/_rep_policy.xml")).count());
+
+            filterSet = filter.getCoveringFilterSet("/home/users/demo-cp");
+            assertNotNull(filterSet);
+            assertEquals(1, filterSet.getEntries().stream().filter(pathFilterEntry -> !pathFilterEntry.isInclude() &&
+                    pathFilterEntry.getFilter().matches("/home/users/demo-cp/_rep_policy.xml")).count());
         }
+        return filter;
+    }
+
+    private static InputStream getFilterInputStream(@NotNull ZipFile zipFile) throws IOException {
+        ZipEntry entry = zipFile.getEntry("META-INF/vault/filter.xml");
+        assertNotNull(entry);
+        return zipFile.getInputStream(entry);
     }
 }
