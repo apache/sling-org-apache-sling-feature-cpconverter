@@ -19,8 +19,6 @@ package org.apache.sling.feature.cpconverter.vltpkg;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
-import org.apache.jackrabbit.vault.fs.api.FilterSet;
-import org.apache.jackrabbit.vault.fs.api.PathFilter;
 import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
 import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
 import org.apache.jackrabbit.vault.fs.config.ConfigurationException;
@@ -385,15 +383,10 @@ public class VaultPackageAssembler implements EntryHandler {
         // create a new path-filter-set
         PathFilterSet filterSet = new PathFilterSet(pfs.getRoot());
         filterSet.setType(pfs.getType());
+        filterSet.setImportMode(pfs.getImportMode());
 
         // copy all entries to the new path-filter-set
-        for (FilterSet.Entry<PathFilter> entry : pfs.getEntries()) {
-            if (entry.isInclude()) {
-                filterSet.addInclude(entry.getFilter());
-            } else {
-                filterSet.addExclude(entry.getFilter());
-            }
-        }
+        filterSet.addAll(pfs);
 
         // for all paths that got filtered out and moved to repo-init make sure they get explicitly excluded
         for (String path : filteredPaths) {
