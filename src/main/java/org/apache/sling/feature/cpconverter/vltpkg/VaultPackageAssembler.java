@@ -49,8 +49,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -202,9 +204,16 @@ public class VaultPackageAssembler implements EntryHandler {
     }
 
     public void mergeFilters(@NotNull WorkspaceFilter filter) {
+        Map<String, PathFilterSet> propFilterSets = extractPropertyFilters(filter);
+        // copy over all node-filters together if the corresponding property-filters if existing.
         for (PathFilterSet pathFilterSet : filter.getFilterSets()) {
             if (!OSGI_BUNDLE_PATTERN.matcher(pathFilterSet.getRoot()).matches()) {
-                this.filter.add(pathFilterSet);
+                PathFilterSet propSet = propFilterSets.remove(pathFilterSet.getRoot());
+                if (propSet != null) {
+                    this.filter.add(pathFilterSet, propSet);
+                } else {
+                    this.filter.add(pathFilterSet);
+                }
             }
         }
     }
@@ -351,7 +360,15 @@ public class VaultPackageAssembler implements EntryHandler {
     private static @NotNull Set<String> toRepositoryPaths(@NotNull Set<String> paths) {
         return paths.stream().map(s -> {
             if (s.startsWith("/jcr_root")) {
-                return s.substring("/jcr_root".length());
+                String path = PlatformNameFormat.getRepositoryPath(s.substring("/jcr_root".length()));
+                if (path.endsWith("/.content.xml")) {
+                    return path.substring(0, path.lastIndexOf("/.content.xml"));
+                } else if (path.endsWith(".xml")) {
+                    // remove .xml extension from policy-nodes
+                    return path.substring(0, path.lastIndexOf(".xml"));
+                } else {
+                    return path;
+                }
             } else {
                 return s;
             }
@@ -361,11 +378,9 @@ public class VaultPackageAssembler implements EntryHandler {
     private static @NotNull WorkspaceFilter createAdjustedFilter(@NotNull WorkspaceFilter base, @NotNull Set<String> filteredPaths, @NotNull Set<String> cpPaths) throws IOException {
         try {
             DefaultWorkspaceFilter dwf = new DefaultWorkspaceFilter();
-            for (PathFilterSet pfs : base.getPropertyFilterSets()) {
-                processPathFilterSet(pfs, dwf, true, filteredPaths, cpPaths);
-            }
+            Map<String, PathFilterSet> propFilters = extractPropertyFilters(base);
             for (PathFilterSet pfs : base.getFilterSets()) {
-                processPathFilterSet(pfs, dwf, false, filteredPaths, cpPaths);
+                processPathFilterSet(pfs, propFilters, dwf, filteredPaths, cpPaths);
             }
             return dwf;
         } catch (ConfigurationException e) {
@@ -373,18 +388,33 @@ public class VaultPackageAssembler implements EntryHandler {
         }
     }
 
-    private static void processPathFilterSet(@NotNull PathFilterSet pfs, @NotNull DefaultWorkspaceFilter newFilter,
-                                             boolean isPropertyFilterSet, @NotNull Set<String> filteredPaths,
+    private static void processPathFilterSet(@NotNull PathFilterSet pfs, @NotNull Map<String, PathFilterSet> propFilters, 
+                                             @NotNull DefaultWorkspaceFilter newFilter, @NotNull Set<String> filteredPaths,
                                              @NotNull Set<String> cpPaths) throws ConfigurationException {
         if (cpPaths.stream().noneMatch(pfs::covers)) {
             // the given filterset no longer covers any of the paths included in the converted content package
-            // -> save to no longer include it in the new workspace filter.
+            // -> ok to no longer include it in the new workspace filter.
             return;
         }
         
+        // create a new node path-filter-set (and if existing the corresponding property filter)
+        PathFilterSet nodeFilterSet = copyPathFilterSet(pfs, filteredPaths);
+        PathFilterSet propPfs = propFilters.remove(pfs.getRoot());
+        if (propPfs != null) {
+            // note: no need to add additional exclude entries for property-filters
+            PathFilterSet propFilterSet = copyPathFilterSet(propPfs, Collections.emptySet());
+            newFilter.add(nodeFilterSet, propFilterSet);
+        } else {
+            newFilter.add(nodeFilterSet);
+        }
+    }
+    
+    @NotNull
+    private static PathFilterSet copyPathFilterSet(@NotNull PathFilterSet pfs, @NotNull Set<String> filteredPaths) throws ConfigurationException {
         // create a new path-filter-set
         PathFilterSet filterSet = new PathFilterSet(pfs.getRoot());
         filterSet.setType(pfs.getType());
+        filterSet.setImportMode(pfs.getImportMode());
 
         // copy all entries to the new path-filter-set
         for (FilterSet.Entry<PathFilter> entry : pfs.getEntries()) {
@@ -401,11 +431,21 @@ public class VaultPackageAssembler implements EntryHandler {
                 filterSet.addExclude(new DefaultPathFilter(path));
             }
         }
-        if (isPropertyFilterSet) {
-            newFilter.addPropertyFilterSet(filterSet);
-        } else {
-            newFilter.add(filterSet);
-        }
+        return filterSet;
+    }
+
+    /**
+     * Extract all property-filters and remember them for later as DefaultWorkspaceFilter.addPropertyFilterSet
+     * is deprecated in favor of DefaultWorkspaceFilter.add(PathFilterSet nodeFilter, PathFilterSet propFilter).
+     * The map created then allows to process property-filters together with node filters.
+     *
+     * @param base The filter from which to extract property-filters
+     * @return A map of path (the root) to the corresponding property-pathfilterset.
+     */
+    private static Map<String, PathFilterSet> extractPropertyFilters(@NotNull WorkspaceFilter base) {
+        Map<String, PathFilterSet> propFilters = new LinkedHashMap<>();
+        base.getPropertyFilterSets().forEach(pathFilterSet -> propFilters.put(pathFilterSet.getRoot(), pathFilterSet));
+        return propFilters;
     }
 
     private static void addDirectory(@NotNull final JarOutputStream jos, @NotNull final File dir, final int prefixLength) throws IOException {

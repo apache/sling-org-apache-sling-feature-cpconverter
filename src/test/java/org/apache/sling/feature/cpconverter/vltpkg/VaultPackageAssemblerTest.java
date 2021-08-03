@@ -16,20 +16,11 @@
  */
 package org.apache.sling.feature.cpconverter.vltpkg;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
-
 import org.apache.commons.io.FileUtils;
+import org.apache.jackrabbit.vault.fs.api.ImportMode;
+import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
+import org.apache.jackrabbit.vault.fs.config.DefaultWorkspaceFilter;
+import org.apache.jackrabbit.vault.fs.filter.DefaultPathFilter;
 import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
@@ -39,6 +30,20 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
 public class VaultPackageAssemblerTest {
@@ -107,6 +112,35 @@ public class VaultPackageAssemblerTest {
         assertTrue("Storing Directory for Vault Package does not exist", storingDirectory.exists());
     }
 
+    @Test
+    public void testMergeFiltersWithPropertyFilterSet() throws Exception {
+        PathFilterSet nodeFilter = new PathFilterSet();
+        nodeFilter.setRoot("/test");
+        nodeFilter.setImportMode(ImportMode.MERGE);
+        nodeFilter.addExclude(new DefaultPathFilter(".*/pattern"));
+        nodeFilter.addInclude(new DefaultPathFilter("/test/content/subtree"));
+
+        PathFilterSet propFilter = new PathFilterSet();
+        propFilter.setRoot("/test");
+        propFilter.addExclude(new DefaultPathFilter(".*/excludedProperty"));
+
+        DefaultWorkspaceFilter toMerge = new DefaultWorkspaceFilter();
+        toMerge.add(nodeFilter, propFilter);
+        
+        List<PathFilterSet> before = new ArrayList<>(assembler.getFilter().getFilterSets());
+        List<PathFilterSet> beforeProperties = new ArrayList<>(assembler.getFilter().getPropertyFilterSets());
+        
+        assembler.mergeFilters(toMerge);
+        
+        List<PathFilterSet> after = assembler.getFilter().getFilterSets();
+        assertEquals(before.size()+1, after.size());
+        assertTrue(after.contains(nodeFilter));
+
+        List<PathFilterSet> afterProperties = assembler.getFilter().getPropertyFilterSets();
+        assertEquals(beforeProperties.size()+1, afterProperties.size());
+        assertTrue(afterProperties.contains(propFilter));
+    }
+    
     @Parameters
     public static Collection<Object[]> data() throws Exception {
         return Arrays.asList(new Object[][] {

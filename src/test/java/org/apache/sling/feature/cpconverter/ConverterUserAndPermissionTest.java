@@ -18,7 +18,12 @@ package org.apache.sling.feature.cpconverter;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.jackrabbit.vault.packaging.PackageType;
+import org.apache.jackrabbit.vault.fs.api.FilterSet;
+import org.apache.jackrabbit.vault.fs.api.ImportMode;
+import org.apache.jackrabbit.vault.fs.api.PathFilter;
+import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
+import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
+import org.apache.jackrabbit.vault.fs.config.DefaultWorkspaceFilter;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.PackagePolicy;
@@ -49,10 +54,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -71,6 +74,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(Parameterized.class)
 public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
@@ -225,6 +229,109 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
         verifyRepoInit();
     }
 
+    @Test
+    public void testConvertPackageWithImportModes() throws Exception {
+        URL packageUrl = getClass().getResource("demo-cp-with-importmode.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+        converter.convert(packageFile);
+
+        File converted = new File(outputDirectory, "my_packages/demo-cp/0.0.0/demo-cp-0.0.0-cp2fm-converted.zip");
+
+        Set<String> notExpected = new HashSet<>(COMMON_NOT_EXPECTED_PATHS);
+        notExpected.add("jcr_root/apps/demo-cp/.content.xml");
+
+        Set<String> expected = new HashSet<>(COMMON_EXPECTED_PATHS);
+        expected.add("jcr_root/apps/.content.xml");
+
+        verifyContentPackage(converted, notExpected, expected);
+        assertExpectedPolicies(converted);
+        WorkspaceFilter filter = verifyWorkspaceFilter(converted, false);
+        verifyRepoInit();
+
+        assertEquals(ImportMode.MERGE, filter.getImportMode("/demo-cp"));
+        assertEquals(ImportMode.UPDATE, filter.getImportMode("/home/groups/demo-cp"));
+        assertEquals(ImportMode.REPLACE, filter.getImportMode("/home/users/demo-cp"));
+    }
+
+    @Test
+    public void testConvertPackageWithPropertyFilterSetEntry() throws Exception {
+        URL packageUrl = getClass().getResource("demo-cp-with-importmode.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+        converter.convert(packageFile);
+
+        File converted = new File(outputDirectory, "my_packages/demo-cp/0.0.0/demo-cp-0.0.0-cp2fm-converted.zip");
+        WorkspaceFilter filter = verifyWorkspaceFilter(converted, false);
+        
+        // verify that the 'matchProperties=true' exclude entry with /home/groups/demo-cp was properly converted
+        // and is still present in the adjusted filter.
+        List<PathFilterSet> propertyFilters = filter.getPropertyFilterSets();
+        assertNotNull(propertyFilters);
+        assertEquals(3, propertyFilters.size());
+        // there is only a single exclude entry matching properties with /home/groups/demo-cp
+        // the other filters don't have any property-entries
+        for (PathFilterSet filterSet : propertyFilters) {
+            List<FilterSet.Entry<PathFilter>> entries = filterSet.getEntries();
+            int expectedSize = ("/home/groups/demo-cp".equals(filterSet.getRoot())) ? 1 : 0;
+            assertEquals(expectedSize, entries.size());
+        }
+        
+        // verify that the node-filtersets got updated with additional excludes for paths filtered out
+        List<PathFilterSet> nodeFilters = filter.getFilterSets();
+        assertEquals(3, nodeFilters.size());
+        for (PathFilterSet filterSet : nodeFilters) {
+            List<FilterSet.Entry<PathFilter>> entries = filterSet.getEntries();
+            switch (filterSet.getRoot()) {
+                case "/demo-cp":
+                    assertEquals(0, entries.size());
+                    break;
+                case "/home/groups/demo-cp":
+                    assertEquals(1, entries.size());
+                    assertFalse(filterSet.contains(filterSet.getRoot() + "/rep:policy"));
+                    assertEquals(0, entries.stream().filter(FilterSet.Entry::isInclude).count());
+                    break;
+                case "/home/users/demo-cp":
+                    assertEquals(3, entries.size());
+                    assertFalse(filterSet.contains(filterSet.getRoot() + "/rep:policy"));
+                    assertEquals(1, entries.stream().filter(FilterSet.Entry::isInclude).count());
+                    break;
+                default:
+                    fail("unexpected path "+ filterSet.getRoot());
+            }
+        }
+    }
+
+    @Test
+    public void testConvertPackageWithSingleUserRoot() throws Exception {
+        URL packageUrl = getClass().getResource("demo-cp-single-user-root.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+        converter.convert(packageFile);
+
+        File converted = new File(outputDirectory, "my_packages/demo-cp/0.0.0/demo-cp-0.0.0-cp2fm-converted.zip");
+
+        Set<String> notExpected = new HashSet<>(COMMON_NOT_EXPECTED_PATHS);
+        notExpected.add("jcr_root/apps/demo-cp/.content.xml");
+
+        Set<String> expected = new HashSet<>(COMMON_EXPECTED_PATHS);
+        expected.add("jcr_root/apps/.content.xml");
+
+        verifyContentPackage(converted, notExpected, expected);
+        assertExpectedPolicies(converted);
+        verifyRepoInit();
+
+        WorkspaceFilter filter = getWorkspaceFilter(converted);
+        assertEquals(ImportMode.MERGE, filter.getImportMode("/home"));
+        
+        List<PathFilterSet> filterSets = filter.getFilterSets();
+        assertEquals(2, filterSets.size());
+        assertNotNull(filter.getCoveringFilterSet("/demo-cp"));
+        PathFilterSet homeFilter = filter.getCoveringFilterSet("/home");
+        assertNotNull(homeFilter);
+        // 11 excludes must have been added for paths that got moved to repo-init
+        List<FilterSet.Entry<PathFilter>> entries = homeFilter.getEntries();
+        assertEquals(11, entries.size());
+        assertFalse(entries.stream().anyMatch(FilterSet.Entry::isInclude));
+    }
+
     private static void assertExpectedPolicies(@NotNull File converted ) throws IOException {
         assertPolicy(converted, "jcr_root/demo-cp/_rep_policy.xml", "cp-serviceuser-1", "cp-user1", "cp-group1");
         assertPolicy(converted, "jcr_root/home/groups/demo-cp/EsYrXeBdSRkna2kqbxjl/_rep_policy.xml", null, "cp-group1");
@@ -297,26 +404,40 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
         }
     }
 
-    private static void verifyWorkspaceFilter(@NotNull File contentPackage, boolean isContentOnly) throws IOException {
+    private static WorkspaceFilter verifyWorkspaceFilter(@NotNull File contentPackage, boolean isContentOnly) throws Exception {
+        DefaultWorkspaceFilter filter = getWorkspaceFilter(contentPackage);
+        if (!isContentOnly) {
+            assertFalse(filter.contains("/apps/demo-cp"));
+        }
+        assertFalse(filter.covers("/home/users/system"));
+        assertFalse(filter.covers("/home/users/system/demo-cp"));
+        assertFalse(filter.covers("/home/users/system/cq:services/demo-cp"));
+
+        assertTrue(filter.covers("/demo-cp"));
+        assertTrue(filter.covers("/home/users/demo-cp"));
+        assertTrue(filter.covers("/home/groups/demo-cp"));
+
+        // verify that explicit excludes have been added for filter roots that contain mixed content
+        PathFilterSet filterSet = filter.getCoveringFilterSet("/home/groups/demo-cp");
+        assertNotNull(filterSet);
+        assertEquals(1, filterSet.getEntries().stream().filter(pathFilterEntry -> !pathFilterEntry.isInclude() &&
+                pathFilterEntry.getFilter().matches("/home/groups/demo-cp/rep:policy")).count());
+
+        filterSet = filter.getCoveringFilterSet("/home/users/demo-cp");
+        assertNotNull(filterSet);
+        assertEquals(1, filterSet.getEntries().stream().filter(pathFilterEntry -> !pathFilterEntry.isInclude() &&
+                pathFilterEntry.getFilter().matches("/home/users/demo-cp/rep:policy")).count());
+        return filter;
+    }
+    
+    private static DefaultWorkspaceFilter getWorkspaceFilter(@NotNull File contentPackage) throws Exception {
+        DefaultWorkspaceFilter filter;
         try (ZipFile zipFile = new ZipFile(contentPackage)) {
+            filter = new DefaultWorkspaceFilter();
             ZipEntry entry = zipFile.getEntry("META-INF/vault/filter.xml");
             assertNotNull(entry);
-            String filter = IOUtils.toString(new InputStreamReader(zipFile.getInputStream(entry)));
-
-            if (!isContentOnly) {
-                assertFalse(filter.contains("/apps/demo-cp"));
-            }
-            assertFalse(filter.contains("/home/users/system"));
-            assertFalse(filter.contains("/home/users/system/demo-cp"));
-            assertFalse(filter.contains("/home/users/system/cq:services/demo-cp"));
-            
-            assertTrue(filter.contains("<filter root=\"/demo-cp\"/>"));
-            assertTrue(filter.contains("<filter root=\"/home/users/demo-cp\">"));
-            assertTrue(filter.contains("<filter root=\"/home/groups/demo-cp\">"));
-            
-            // verify that explicit excludes have been added for filter roots that contain mixed content
-            assertTrue(filter.contains("<exclude pattern=\"/home/groups/demo-cp/_rep_policy.xml\"/>"));
-            assertTrue(filter.contains("<exclude pattern=\"/home/users/demo-cp/_rep_policy.xml\"/>"));
+            filter.load(zipFile.getInputStream(entry));
         }
+        return filter;
     }
 }
