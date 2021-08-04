@@ -205,7 +205,7 @@ public class VaultPackageAssembler implements EntryHandler {
 
     public void mergeFilters(@NotNull WorkspaceFilter filter) {
         Map<String, PathFilterSet> propFilterSets = extractPropertyFilters(filter);
-        // copy over all node-filters together if the corresponding property-filters if existing.
+        // copy over node-filters together with the corresponding property-filters
         for (PathFilterSet pathFilterSet : filter.getFilterSets()) {
             if (!OSGI_BUNDLE_PATTERN.matcher(pathFilterSet.getRoot()).matches()) {
                 PathFilterSet propSet = propFilterSets.remove(pathFilterSet.getRoot());
