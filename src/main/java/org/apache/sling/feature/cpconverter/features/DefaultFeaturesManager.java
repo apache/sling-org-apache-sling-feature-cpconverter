@@ -514,8 +514,11 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
 
     @Override
     public void addOrAppendRepoInitExtension(@NotNull String text, @Nullable String runMode) {
-
-        logger.info("Adding/Appending RepoInitExtension for runMode: {}", runMode );
+        if ( runMode == null ) {
+            logger.info("Adding global repo-init");
+        } else {
+            logger.info("Adding repo-init for run mode: {}", runMode);
+        }
         Extension repoInitExtension = getRunMode(runMode).getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
 
         if (repoInitExtension == null) {
