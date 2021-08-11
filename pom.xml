@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.apache.sling</groupId>
     <artifactId>sling</artifactId>
-    <version>43</version>
+    <version>44</version>
     <relativePath />
   </parent>
 
@@ -41,6 +41,7 @@
     <mockito-core.version>3.2.0</mockito-core.version>
     <license-maven-plugin.version>1.16</license-maven-plugin.version>
     <appassembler-maven-plugin.version>2.0.0</appassembler-maven-plugin.version>
+    <project.build.outputTimestamp>1</project.build.outputTimestamp>
   </properties>
 
   <scm>
@@ -153,7 +154,7 @@
     <dependency>
       <groupId>org.apache.johnzon</groupId>
       <artifactId>johnzon-core</artifactId>
-      <version>1.2.3</version>
+      <version>1.2.14</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
