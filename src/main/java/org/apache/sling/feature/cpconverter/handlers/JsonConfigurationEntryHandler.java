@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -23,6 +24,7 @@ import java.util.Dictionary;
 import java.util.Hashtable;
 
 import org.apache.felix.cm.json.Configurations;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.jetbrains.annotations.NotNull;
 
 public final class JsonConfigurationEntryHandler extends AbstractConfigurationEntryHandler {
@@ -32,7 +34,7 @@ public final class JsonConfigurationEntryHandler extends AbstractConfigurationEn
     }
 
     @Override
-    protected @NotNull Dictionary<String, Object> parseConfiguration(@NotNull String name, @NotNull InputStream input) throws Exception {
+    protected @NotNull Dictionary<String, Object> parseConfiguration(@NotNull String name, @NotNull InputStream input) throws IOException, ConverterException {
         final Hashtable<String, Object> props = Configurations.buildReader()
             .withIdentifier(name)
             .build(new InputStreamReader(input, StandardCharsets.UTF_8))

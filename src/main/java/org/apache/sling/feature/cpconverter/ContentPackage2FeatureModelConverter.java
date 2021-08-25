@@ -350,7 +350,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         idPackageMapping.remove(pack.getId());
     }
 
-    public void processSubPackage(@NotNull String path, @Nullable String runMode, @NotNull VaultPackage vaultPackage, boolean isEmbeddedPackage) throws Exception {
+    public void processSubPackage(@NotNull String path, @Nullable String runMode, @NotNull VaultPackage vaultPackage, boolean isEmbeddedPackage) throws IOException, ConverterException {
         requireNonNull(path, "Impossible to process a null vault package");
         requireNonNull(vaultPackage, "Impossible to process a null vault package");
 
@@ -392,7 +392,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     }
 
     private @NotNull VaultPackage processContentPackageArchive(@NotNull VaultPackageAssembler assembler,
-                                             @Nullable String runMode) throws Exception {
+                                             @Nullable String runMode) throws IOException, ConverterException {
         File contentPackageArchive = assembler.createPackage();
 
         VaultPackage vaultPackage = open(contentPackageArchive);
@@ -470,7 +470,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return subContentPackages.containsValue(path);
     }
 
-    private void process(@NotNull String entryPath, @NotNull Archive archive, @Nullable Entry entry) throws Exception {
+    private void process(@NotNull String entryPath, @NotNull Archive archive, @Nullable Entry entry) throws IOException, ConverterException {
         if (resourceFilter != null && resourceFilter.isFilteredOut(entryPath)) {
             throw new IllegalArgumentException("Path '"
                     + entryPath
@@ -497,7 +497,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     }
 
     @Override
-    protected void onFile(@NotNull String entryPath, @NotNull Archive archive, @NotNull Entry entry) throws Exception {
+    protected void onFile(@NotNull String entryPath, @NotNull Archive archive, @NotNull Entry entry) throws IOException, ConverterException {
         process(entryPath, archive, entry);
     }
 

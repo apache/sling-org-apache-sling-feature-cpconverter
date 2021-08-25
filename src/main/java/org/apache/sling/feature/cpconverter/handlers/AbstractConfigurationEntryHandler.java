@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Dictionary;
 import java.util.Objects;
@@ -24,6 +25,7 @@ import java.util.regex.Matcher;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,7 +44,7 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
     }
 
     @Override
-    public final void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter) throws Exception {
+    public final void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter) throws IOException, ConverterException {
 
         Matcher matcher = getPattern().matcher(path);
         
@@ -86,7 +88,7 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
                 }
 
                 if (enforceConfigurationBelowConfigFolder && !"config".equals(matcher.group("foldername"))) {
-                    throw new IllegalStateException("OSGi configuration are only considered if placed below a folder called 'config', but the configuration at '"+ path + "' is placed outside!");
+                    throw new ConverterException("OSGi configuration are only considered if placed below a folder called 'config', but the configuration at '"+ path + "' is placed outside!");
                 }
                 
                 // there is a specified RunMode
@@ -104,6 +106,6 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
         }
     }
 
-    protected abstract @Nullable Dictionary<String, Object> parseConfiguration(@NotNull String name, @NotNull InputStream input) throws Exception;
+    protected abstract @Nullable Dictionary<String, Object> parseConfiguration(@NotNull String name, @NotNull InputStream input) throws IOException, ConverterException;
 
 }

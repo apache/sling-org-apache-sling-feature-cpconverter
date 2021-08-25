@@ -20,15 +20,19 @@ import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.jetbrains.annotations.NotNull;
 
 import javax.xml.transform.OutputKeys;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
+
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
@@ -46,7 +50,7 @@ abstract class AbstractPolicyEntryHandler extends AbstractRegexEntryHandler {
 
     @Override
     public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Archive.Entry entry, @NotNull ContentPackage2FeatureModelConverter converter)
-            throws Exception {
+            throws IOException, ConverterException {
         String resourcePath;
         Matcher matcher = getPattern().matcher(path);
         // we are pretty sure it matches, here
@@ -60,26 +64,30 @@ abstract class AbstractPolicyEntryHandler extends AbstractRegexEntryHandler {
                                             + "' but it does not, currently");
         }
 
-        TransformerHandler handler = saxTransformerFactory.newTransformerHandler();
-        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
-        handler.getTransformer().setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
-        handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-        StringWriter stringWriter = new StringWriter();
-        handler.setResult(new StreamResult(stringWriter));
+        try {
+            TransformerHandler handler = saxTransformerFactory.newTransformerHandler();
+            handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
+            handler.getTransformer().setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+            handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+            StringWriter stringWriter = new StringWriter();
+            handler.setResult(new StreamResult(stringWriter));
 
-        AbstractPolicyParser policyParser = createPolicyParser(new RepoPath(PlatformNameFormat.getRepositoryPath(resourcePath)),
-                converter.getAclManager(),
-                handler);
-        boolean hasRejectedAcls;
-        try (InputStream input = archive.openInputStream(entry)) {
-            hasRejectedAcls = policyParser.parse(input);
-        }
-
-        if (hasRejectedAcls) {
-            try (Reader reader = new StringReader(stringWriter.toString());
-                 OutputStreamWriter writer = new OutputStreamWriter(converter.getMainPackageAssembler().createEntry(path))) {
-                IOUtils.copy(reader, writer);
+            AbstractPolicyParser policyParser = createPolicyParser(new RepoPath(PlatformNameFormat.getRepositoryPath(resourcePath)),
+                    converter.getAclManager(),
+                    handler);
+            boolean hasRejectedAcls;
+            try (InputStream input = archive.openInputStream(entry)) {
+                hasRejectedAcls = policyParser.parse(input);
             }
+
+            if (hasRejectedAcls) {
+                try (Reader reader = new StringReader(stringWriter.toString());
+                    OutputStreamWriter writer = new OutputStreamWriter(converter.getMainPackageAssembler().createEntry(path))) {
+                    IOUtils.copy(reader, writer);
+                }
+            }
+        } catch ( final TransformerConfigurationException e) {
+            throw new IOException(e.getMessage(), e);
         }
     }
 

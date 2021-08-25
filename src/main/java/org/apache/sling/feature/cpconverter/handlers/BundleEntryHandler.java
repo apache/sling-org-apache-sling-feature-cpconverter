@@ -73,6 +73,7 @@ import org.apache.sling.contentparser.json.JSONParserOptions;
 import org.apache.sling.contentparser.json.internal.JSONContentParser;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.SlingInitialContentPolicy;
 import org.apache.sling.feature.cpconverter.artifacts.InputStreamArtifactWriter;
 import org.apache.sling.feature.cpconverter.vltpkg.DocViewSerializerContentHandler;
@@ -120,7 +121,10 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
     }
 
     @Override
-    public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter) throws Exception {
+    public void handle(@NotNull String path,
+           @NotNull Archive archive, 
+           @NotNull Entry entry, 
+           @NotNull ContentPackage2FeatureModelConverter converter) throws IOException, ConverterException {
         logger.info("Processing bundle {}...", entry.getName());
 
         Matcher matcher = getPattern().matcher(path);
@@ -136,7 +140,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
         }
 
         if (enforceBundlesBelowInstallFolder && !"install".equals(matcher.group("foldername"))) {
-            throw new IllegalStateException("OSGi bundles are only considered if placed below a folder called 'install', but the bundle at '"+ path + "' is placed outside!");
+            throw new ConverterException("OSGi bundles are only considered if placed below a folder called 'install', but the bundle at '"+ path + "' is placed outside!");
         }
 
         
@@ -167,18 +171,19 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
         
         // create a temporary JAR file (extracted from archive)
         Path tmpBundleJar = Files.createTempFile(converter.getTempDirectory().toPath(), "extracted", bundleName + ".jar");
-        try (OutputStream output = Files.newOutputStream(tmpBundleJar);
-             InputStream input = Objects.requireNonNull(archive.openInputStream(entry))) {
-            IOUtils.copy(input, output);
-        }
         try {
+            try (OutputStream output = Files.newOutputStream(tmpBundleJar);
+                InputStream input = Objects.requireNonNull(archive.openInputStream(entry))) {
+                IOUtils.copy(input, output);
+            }
             processBundleInputStream(path, tmpBundleJar, bundleName, runMode, startLevel, converter);
         } finally {
             Files.delete(tmpBundleJar);
         }
     }
 
-    void processBundleInputStream(@NotNull String path, @NotNull Path originalBundleFile, @NotNull String bundleName, @Nullable String runMode, @Nullable Integer startLevel, @NotNull ContentPackage2FeatureModelConverter converter) throws Exception {
+    void processBundleInputStream(@NotNull String path, @NotNull Path originalBundleFile, @NotNull String bundleName, @Nullable String runMode, @Nullable Integer startLevel, @NotNull ContentPackage2FeatureModelConverter converter)
+        throws ConverterException, IOException {
         try (JarFile jarFile = new JarFile(originalBundleFile.toFile())) {
             // first extract bundle metadata from JAR input stream
             ArtifactId id = extractArtifactId(bundleName, jarFile);
@@ -207,7 +212,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
         return new Version(originalVersion.getMajor(), originalVersion.getMinor(), originalVersion.getMicro(), originalVersion.getQualifier() + "_" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);
     }
 
-    @Nullable InputStream extractSlingInitialContent(@NotNull String path, @NotNull Path bundlePath, @NotNull ArtifactId bundleArtifactId, @NotNull JarFile jarFile, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws Exception {
+    @Nullable InputStream extractSlingInitialContent(@NotNull String path, @NotNull Path bundlePath, @NotNull ArtifactId bundleArtifactId, @NotNull JarFile jarFile, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws IOException, ConverterException {
         if (slingInitialContentPolicy == SlingInitialContentPolicy.KEEP) {
             return null;
         }
@@ -269,7 +274,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
      * @return {@code true} in case the given entry was part of the initial content otherwise {@code false}
      * @throws Exception 
      */
-    boolean extractSlingInitialContent(@NotNull JarEntry jarEntry, @NotNull InputStream bundleFileInputStream, @NotNull ArtifactId bundleArtifactId, @NotNull Collection<PathEntry> pathEntries, @NotNull Map<PackageType, VaultPackageAssembler> packageAssemblers, @NotNull JcrNamespaceRegistry nsRegistry, @NotNull ContentPackage2FeatureModelConverter converter) throws Exception {
+    boolean extractSlingInitialContent(@NotNull JarEntry jarEntry, @NotNull InputStream bundleFileInputStream, @NotNull ArtifactId bundleArtifactId, @NotNull Collection<PathEntry> pathEntries, @NotNull Map<PackageType, VaultPackageAssembler> packageAssemblers, @NotNull JcrNamespaceRegistry nsRegistry, @NotNull ContentPackage2FeatureModelConverter converter) throws IOException, ConverterException {
         final String entryName = jarEntry.getName();
         // check if current JAR entry is initial content
         Optional<PathEntry> pathEntry = pathEntries.stream().filter(p -> entryName.startsWith(p.getPath())).findFirst();
@@ -321,48 +326,52 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
         return true;
     }
 
-    JcrNamespaceRegistry createNamespaceRegistry(@NotNull Manifest manifest, @NotNull JarFile jarFile, @NotNull Map<String, String> predefinedNamespaceUriByPrefix) throws RepositoryException, IOException, ParseException {
-        JcrNamespaceRegistry registry = new JcrNamespaceRegistry();
-        for (Map.Entry<String, String> entry : predefinedNamespaceUriByPrefix.entrySet()) {
-            registry.registerNamespace(entry.getKey(), entry.getValue());
-        }
-
-        // parse Sling-Namespaces header (https://github.com/apache/sling-org-apache-sling-jcr-base/blob/66be360910c265473799635fcac0e23895898913/src/main/java/org/apache/sling/jcr/base/internal/loader/Loader.java#L192)
-        final String namespacesDefinitionHeader = manifest.getMainAttributes().getValue(NAMESPACES_BUNDLE_HEADER);
-        if (namespacesDefinitionHeader != null) {
-            final StringTokenizer st = new StringTokenizer(namespacesDefinitionHeader, ",");
-
-            while ( st.hasMoreTokens() ) {
-                final String token = st.nextToken().trim();
-                int pos = token.indexOf('=');
-                if ( pos == -1 ) {
-                    logger.warn("createNamespaceRegistry: Bundle {} has an invalid namespace manifest header entry: {}",
-                            manifest.getMainAttributes().getValue(Constants.BUNDLE_SYMBOLICNAME), token);
-                } else {
-                    final String prefix = token.substring(0, pos).trim();
-                    final String namespace = token.substring(pos+1).trim();
-                    registry.registerNamespace(prefix, namespace);
-                }
+    JcrNamespaceRegistry createNamespaceRegistry(@NotNull Manifest manifest, @NotNull JarFile jarFile, @NotNull Map<String, String> predefinedNamespaceUriByPrefix) throws IOException {
+        try {
+            JcrNamespaceRegistry registry = new JcrNamespaceRegistry();
+            for (Map.Entry<String, String> entry : predefinedNamespaceUriByPrefix.entrySet()) {
+                registry.registerNamespace(entry.getKey(), entry.getValue());
             }
-        }
 
-        // parse Sling-Nodetypes header
-        final String typesHeader = manifest.getMainAttributes().getValue(NODETYPES_BUNDLE_HEADER);
-        if (typesHeader != null) {
-            for (ManifestHeader.Entry entry : ManifestHeader.parse(typesHeader).getEntries()) {
-                JarEntry jarEntry = jarFile.getJarEntry(entry.getValue());
-                if (jarEntry == null) {
-                    logger.warn("createNamespaceRegistry: Bundle {} has referenced a non existing node type definition: {}",
-                            manifest.getMainAttributes().getValue(Constants.BUNDLE_SYMBOLICNAME), entry.getValue());
-                } else {
-                    try (InputStream inputStream = jarFile.getInputStream(jarEntry);
-                         Reader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
-                        registry.registerCnd(reader, entry.getValue());
+            // parse Sling-Namespaces header (https://github.com/apache/sling-org-apache-sling-jcr-base/blob/66be360910c265473799635fcac0e23895898913/src/main/java/org/apache/sling/jcr/base/internal/loader/Loader.java#L192)
+            final String namespacesDefinitionHeader = manifest.getMainAttributes().getValue(NAMESPACES_BUNDLE_HEADER);
+            if (namespacesDefinitionHeader != null) {
+                final StringTokenizer st = new StringTokenizer(namespacesDefinitionHeader, ",");
+
+                while ( st.hasMoreTokens() ) {
+                    final String token = st.nextToken().trim();
+                    int pos = token.indexOf('=');
+                    if ( pos == -1 ) {
+                        logger.warn("createNamespaceRegistry: Bundle {} has an invalid namespace manifest header entry: {}",
+                                manifest.getMainAttributes().getValue(Constants.BUNDLE_SYMBOLICNAME), token);
+                    } else {
+                        final String prefix = token.substring(0, pos).trim();
+                        final String namespace = token.substring(pos+1).trim();
+                        registry.registerNamespace(prefix, namespace);
                     }
                 }
             }
+
+            // parse Sling-Nodetypes header
+            final String typesHeader = manifest.getMainAttributes().getValue(NODETYPES_BUNDLE_HEADER);
+            if (typesHeader != null) {
+                for (ManifestHeader.Entry entry : ManifestHeader.parse(typesHeader).getEntries()) {
+                    JarEntry jarEntry = jarFile.getJarEntry(entry.getValue());
+                    if (jarEntry == null) {
+                        logger.warn("createNamespaceRegistry: Bundle {} has referenced a non existing node type definition: {}",
+                                manifest.getMainAttributes().getValue(Constants.BUNDLE_SYMBOLICNAME), entry.getValue());
+                    } else {
+                        try (InputStream inputStream = jarFile.getInputStream(jarEntry);
+                            Reader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
+                            registry.registerCnd(reader, entry.getValue());
+                        }
+                    }
+                }
+            }
+            return registry;
+        } catch ( final RepositoryException | ParseException e) {
+            throw new IOException(e.getMessage(), e);
         }
-        return registry;
     }
 
     /**
@@ -373,7 +382,8 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
      * @param converter
      * @return the VaultPackageAssembler from the cache to use for the given repository path
      */
-    public VaultPackageAssembler initPackageAssemblerForPath(@NotNull ArtifactId bundleArtifactId, @NotNull String repositoryPath, @NotNull PathEntry pathEntry, @NotNull Map<PackageType, VaultPackageAssembler> cache, @NotNull ContentPackage2FeatureModelConverter converter) {
+    public VaultPackageAssembler initPackageAssemblerForPath(@NotNull ArtifactId bundleArtifactId, @NotNull String repositoryPath, @NotNull PathEntry pathEntry, @NotNull Map<PackageType, VaultPackageAssembler> cache, @NotNull ContentPackage2FeatureModelConverter converter) 
+    throws ConverterException {
         PackageType packageType = VaultPackageUtils.detectPackageType(repositoryPath);
         VaultPackageAssembler assembler = cache.get(packageType);
         if (assembler == null) {
@@ -386,7 +396,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
                     packageNameSuffix = "-content";
                     break;
                 default:
-                    throw new IllegalStateException("Unexpected package type " + packageType + " detected for path " + repositoryPath);
+                    throw new ConverterException("Unexpected package type " + packageType + " detected for path " + repositoryPath);
             }
             final PackageId packageId = new PackageId(bundleArtifactId.getGroupId(), bundleArtifactId.getArtifactId()+packageNameSuffix, bundleArtifactId.getVersion());
             assembler = VaultPackageAssembler.create(converter.getTempDirectory(), packageId, "Generated out of Sling Initial Content from bundle " + bundleArtifactId + " by cp2fm");
@@ -409,7 +419,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
         return assembler;
     }
 
-    void finalizePackageAssembly(@NotNull String path, @NotNull Map<PackageType, VaultPackageAssembler> packageAssemblers, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws Exception {
+    void finalizePackageAssembly(@NotNull String path, @NotNull Map<PackageType, VaultPackageAssembler> packageAssemblers, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws IOException, ConverterException {
         for (java.util.Map.Entry<PackageType, VaultPackageAssembler> entry : packageAssemblers.entrySet()) {
             File packageFile = entry.getValue().createPackage(false);
             converter.processSubPackage(path + "-" + entry.getKey(), runMode, converter.open(packageFile), true);

@@ -19,11 +19,13 @@ package org.apache.sling.feature.cpconverter.handlers;
 import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Map;
@@ -38,7 +40,7 @@ public class SlingInitialContentBundleHandler extends BundleEntryHandler {
     }
 
     @Override
-    void processBundleInputStream(@NotNull String path, @NotNull Path originalBundleFile, @NotNull String bundleName, @Nullable String runMode, @Nullable Integer startLevel, @NotNull ContentPackage2FeatureModelConverter converter) throws Exception {
+    void processBundleInputStream(@NotNull String path, @NotNull Path originalBundleFile, @NotNull String bundleName, @Nullable String runMode, @Nullable Integer startLevel, @NotNull ContentPackage2FeatureModelConverter converter) throws IOException, ConverterException {
         try (JarFile jarFile = new JarFile(originalBundleFile.toFile())) {
             // first extract bundle metadata from JAR input stream
             ArtifactId id = extractArtifactId(bundleName, jarFile);
@@ -48,7 +50,7 @@ public class SlingInitialContentBundleHandler extends BundleEntryHandler {
     }
 
     @Override
-    void finalizePackageAssembly(@NotNull String path, @NotNull Map<PackageType, VaultPackageAssembler> packageAssemblers, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws Exception {
+    void finalizePackageAssembly(@NotNull String path, @NotNull Map<PackageType, VaultPackageAssembler> packageAssemblers, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws IOException, ConverterException {
         for (java.util.Map.Entry<PackageType, VaultPackageAssembler> entry : packageAssemblers.entrySet()) {
             File packageFile = entry.getValue().createPackage(false);
             handler.processSubPackage(path + "-" + entry.getKey(), runMode, converter.open(packageFile), converter, true);

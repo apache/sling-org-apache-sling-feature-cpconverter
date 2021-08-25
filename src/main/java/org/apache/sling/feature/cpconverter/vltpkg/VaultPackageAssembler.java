@@ -36,6 +36,7 @@ import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.util.Constants;
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -191,7 +192,7 @@ public class VaultPackageAssembler implements EntryHandler {
 
     @Override
     public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter)
-            throws Exception {
+            throws IOException, ConverterException {
         if (removeInstallHooks && path.startsWith("/" + Constants.META_DIR + "/" + Constants.HOOKS_DIR)) {
             log.info("Skipping install hook {} from original package", path);
         } else {

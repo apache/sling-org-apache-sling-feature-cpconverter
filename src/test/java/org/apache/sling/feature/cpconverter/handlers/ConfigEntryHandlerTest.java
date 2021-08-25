@@ -30,6 +30,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -42,6 +43,7 @@ import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
@@ -112,7 +114,7 @@ public class ConfigEntryHandlerTest {
 
         AbstractConfigurationEntryHandler handler = new AbstractConfigurationEntryHandler("cfg") {
             @Override
-            protected @NotNull Dictionary<String, Object> parseConfiguration(@NotNull String name, @NotNull InputStream input) throws Exception {
+            protected @NotNull Dictionary<String, Object> parseConfiguration(@NotNull String name, @NotNull InputStream input) throws IOException {
                 return new Hashtable(){{put("foo", "bar");}};
             }
         };
@@ -129,7 +131,7 @@ public class ConfigEntryHandlerTest {
         Archive archive = Mockito.mock(Archive.class);
         Entry entry = Mockito.mock(Entry.class);
         Mockito.when(archive.openInputStream(entry)).thenReturn(new ByteArrayInputStream(new byte[0]));
-        assertThrows(IllegalStateException.class, () -> {
+        assertThrows(ConverterException.class, () -> {
             handler.handle("/jcr_root/apps/myapp/install/myconfig.config", archive, entry, Mockito.mock(ContentPackage2FeatureModelConverter.class));
         });
     }

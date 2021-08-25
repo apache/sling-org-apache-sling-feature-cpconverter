@@ -16,8 +16,11 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import java.io.IOException;
+
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,9 +30,8 @@ public final class ContentPackageEntryHandler extends AbstractContentPackageHand
     protected void processSubPackage(@NotNull String path, @Nullable String runMode,
                                      @NotNull VaultPackage contentPackage,
                                      @NotNull ContentPackage2FeatureModelConverter converter,
-                                     boolean isEmbeddedPackage) throws Exception {
-        converter.processSubPackage(path, runMode, contentPackage, isEmbeddedPackage);
-        
+                                     boolean isEmbeddedPackage) throws IOException, ConverterException {
+        converter.processSubPackage(path, runMode, contentPackage, isEmbeddedPackage);        
     }
 
 }

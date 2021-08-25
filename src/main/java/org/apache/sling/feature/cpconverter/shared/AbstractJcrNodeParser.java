@@ -18,13 +18,16 @@ package org.apache.sling.feature.cpconverter.shared;
 
 import static org.apache.jackrabbit.JcrConstants.JCR_PRIMARYTYPE;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.jetbrains.annotations.NotNull;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -44,10 +47,14 @@ public abstract class AbstractJcrNodeParser<O> extends DefaultHandler {
         this.primaryTypes = Arrays.asList(primaryTypes);
     }
 
-    public O parse(InputStream input) throws Exception {
-        SAXParser saxParser = saxParserFactory.newSAXParser();
-        saxParser.parse(input, this);
-        return getParsingResult();
+    public O parse(InputStream input) throws IOException, ConverterException {
+        try {
+            SAXParser saxParser = saxParserFactory.newSAXParser();
+            saxParser.parse(input, this);
+            return getParsingResult();    
+        } catch ( final ParserConfigurationException | SAXException e) {
+            throw new IOException(e.getMessage(), e);
+        }
     }
 
     @Override

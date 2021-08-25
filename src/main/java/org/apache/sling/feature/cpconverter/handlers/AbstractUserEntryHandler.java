@@ -21,12 +21,14 @@ import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.regex.Matcher;
@@ -41,7 +43,7 @@ abstract class AbstractUserEntryHandler extends AbstractRegexEntryHandler {
 
     @Override
     public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter)
-            throws Exception {
+            throws IOException, ConverterException {
         Matcher matcher = getPattern().matcher(path);
         if (matcher.matches()) {
             RepoPath originalPath = new RepoPath(PlatformNameFormat.getRepositoryPath(matcher.group(1)));

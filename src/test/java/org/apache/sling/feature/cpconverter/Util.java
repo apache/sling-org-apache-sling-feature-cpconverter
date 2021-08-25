@@ -29,11 +29,12 @@ public class Util {
     public static String normalize(String repoinit) throws RepoInitParsingException {
         RepoInitParser parser = new RepoInitParserService();
         List<Operation> operations = parser.parse(new StringReader(repoinit));
-        Formatter formatter = new Formatter();
-        for (Operation op : operations) {
-            formatter.format("%s", op.asRepoInitString());
+        try ( Formatter formatter = new Formatter()) {
+            for (Operation op : operations) {
+                formatter.format("%s", op.asRepoInitString());
+            }
+            return formatter.out().toString();    
         }
-        return formatter.out().toString();
     }
 
     public static String normalizeUnchecked(String repoinit) {

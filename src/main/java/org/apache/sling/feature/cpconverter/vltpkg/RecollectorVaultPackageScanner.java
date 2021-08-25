@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.vltpkg;
 
+import java.io.IOException;
 import java.util.Map;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
@@ -23,6 +24,7 @@ import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageManager;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
 import org.apache.sling.feature.cpconverter.handlers.GroupEntryHandler;
 import org.apache.sling.feature.cpconverter.handlers.SlingInitialContentBundleHandler;
@@ -53,7 +55,7 @@ public final class RecollectorVaultPackageScanner extends BaseVaultPackageScanne
     }
 
     @Override
-    protected void onFile(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry) throws Exception {
+    protected void onFile(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry) throws IOException, ConverterException {
         for (EntryHandler handler : handlers) {
             if (handler.matches(path)) {
                 handler.handle(path, archive, entry, converter);

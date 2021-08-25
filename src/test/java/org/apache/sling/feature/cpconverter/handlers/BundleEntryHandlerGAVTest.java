@@ -20,6 +20,7 @@ import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.when;
 
 import org.apache.sling.feature.ArtifactId;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -53,6 +54,6 @@ public class BundleEntryHandlerGAVTest extends AbstractBundleEntryHandlerTest {
     public void testBundleBelowConfigFolderWithEnforcement() throws Exception {
         handler.setEnforceBundlesBelowInstallFolder(true);
         when(entry.getName()).thenReturn("mybundle.jar");
-        assertThrows(IllegalStateException.class, () -> { handler.handle("/jcr_root/apps/myapp/config/mybundle.jar", null, entry, null); });
+        assertThrows(ConverterException.class, () -> { handler.handle("/jcr_root/apps/myapp/config/mybundle.jar", null, entry, null); });
     }
 }

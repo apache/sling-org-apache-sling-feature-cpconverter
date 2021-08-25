@@ -18,6 +18,7 @@ package org.apache.sling.feature.cpconverter.handlers;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.regex.Matcher;
@@ -28,6 +29,7 @@ import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,7 +45,7 @@ public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHa
 
     @Override
     public final void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter)
-            throws Exception {
+            throws IOException, ConverterException {
         logger.info("Processing sub-content package '{}'...", entry.getName());
 
         final File temporaryDir = new File(converter.getTempDirectory(), "sub-content-packages");
@@ -96,6 +98,6 @@ public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHa
         logger.info("Sub-content package '{}' processing is over", entry.getName());
     }
 
-    protected abstract void processSubPackage(@NotNull String path, @Nullable String runMode, @NotNull VaultPackage contentPackage, @NotNull ContentPackage2FeatureModelConverter converter, boolean isEmbeddedPackage) throws Exception;
+    protected abstract void processSubPackage(@NotNull String path, @Nullable String runMode, @NotNull VaultPackage contentPackage, @NotNull ContentPackage2FeatureModelConverter converter, boolean isEmbeddedPackage) throws IOException, ConverterException;
 
 }

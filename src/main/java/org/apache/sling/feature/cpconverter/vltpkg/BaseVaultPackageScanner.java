@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
 import static org.apache.jackrabbit.vault.packaging.PackageProperties.NAME_CND_PATTERN;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.regex.Pattern;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
@@ -29,6 +30,7 @@ import org.apache.jackrabbit.vault.packaging.PackageManager;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -51,7 +53,7 @@ public abstract class BaseVaultPackageScanner {
         this.strictValidation = strictValidation;
     }
 
-    public @NotNull VaultPackage open(@NotNull File vaultPackage) throws Exception {
+    public @NotNull VaultPackage open(@NotNull File vaultPackage) throws IOException, ConverterException {
         requireNonNull(vaultPackage, "Impossible to process a null vault package");
         return packageManager.open(vaultPackage, strictValidation);
     }
@@ -70,7 +72,7 @@ public abstract class BaseVaultPackageScanner {
         }
     }
 
-    public final void traverse(@NotNull VaultPackage vaultPackage) throws Exception {
+    public final void traverse(@NotNull VaultPackage vaultPackage) throws IOException, ConverterException {
         requireNonNull(vaultPackage, "Impossible to process a null vault package");
 
         PackageProperties properties = vaultPackage.getProperties();
@@ -92,7 +94,7 @@ public abstract class BaseVaultPackageScanner {
         }
     }
 
-    private void traverse(@Nullable String path, @NotNull Archive archive, @NotNull Entry entry) throws Exception {
+    private void traverse(@Nullable String path, @NotNull Archive archive, @NotNull Entry entry) throws IOException, ConverterException {
         String entryPath = newPath(path, entry.getName());
 
         if (entry.isDirectory()) {
@@ -124,7 +126,7 @@ public abstract class BaseVaultPackageScanner {
         // do nothing by default
     }
 
-    protected void onFile(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry) throws Exception {
+    protected void onFile(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry) throws IOException, ConverterException {
         // do nothing by default
     }
 

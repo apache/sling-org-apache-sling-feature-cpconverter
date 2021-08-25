@@ -16,11 +16,13 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import java.io.IOException;
 import java.util.Map;
 
 import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.vltpkg.RecollectorVaultPackageScanner;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,7 +44,7 @@ public final class VersionResolverContentPackageEntryHandler extends AbstractCon
 
     @Override
     protected void processSubPackage(@NotNull String path, @Nullable String runMode, @NotNull VaultPackage contentPackage, @NotNull ContentPackage2FeatureModelConverter converter, boolean isEmbeddedPackage)
-            throws Exception {
+            throws IOException, ConverterException {
 
         boolean addPackage;
         PackageId currentId = contentPackage.getId();

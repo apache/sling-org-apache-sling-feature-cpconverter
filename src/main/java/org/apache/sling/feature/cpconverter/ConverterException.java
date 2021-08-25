@@ -14,24 +14,28 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.sling.feature.cpconverter.handlers;
+package org.apache.sling.feature.cpconverter;
 
-import java.io.IOException;
+/**
+ * A converter exception is thrown when the conversion fails due to errors/problems
+ * in the converted source package(s).
+ */
+public class ConverterException extends Exception {
 
-import org.apache.jackrabbit.vault.fs.io.Archive;
-import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.ConverterException;
-import org.jetbrains.annotations.NotNull;
+    /**
+     * Create a new exception
+     * @param message A message to be prevented to the user of the tool
+     */
+    public ConverterException(final String message) {
+        super(message);
+    }
 
-public interface EntryHandler {
-
-    boolean matches(@NotNull String path);
-
-    void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter) 
-    throws IOException, ConverterException;
-
-    default EntryHandler withConfig(@NotNull String config) {
-        return this;
+    /**
+     * Create a new exception
+     * @param message A message to be prevented to the user of the tool
+     * @param cause The cause
+     */
+    public ConverterException(final String message, final Throwable cause) {
+        super(message, cause);
     }
 }

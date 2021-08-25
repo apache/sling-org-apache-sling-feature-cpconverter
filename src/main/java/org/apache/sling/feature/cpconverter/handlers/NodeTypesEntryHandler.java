@@ -21,8 +21,10 @@ import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.util.Constants;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Objects;
@@ -53,7 +55,7 @@ public class NodeTypesEntryHandler extends AbstractRegexEntryHandler {
 
     @Override
     public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter)
-            throws Exception {
+            throws IOException, ConverterException {
         try (Reader cndStatements = new InputStreamReader(Objects.requireNonNull(archive.openInputStream(entry)))) {
             Objects.requireNonNull(converter.getAclManager()).addNodetypeRegistration(IOUtils.toString(cndStatements));
         }

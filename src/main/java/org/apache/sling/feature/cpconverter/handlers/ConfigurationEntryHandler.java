@@ -16,10 +16,12 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Dictionary;
 
 import org.apache.felix.cm.file.ConfigurationHandler;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.jetbrains.annotations.NotNull;
 
 public final class ConfigurationEntryHandler extends AbstractConfigurationEntryHandler {
@@ -30,7 +32,7 @@ public final class ConfigurationEntryHandler extends AbstractConfigurationEntryH
 
     @Override
     @SuppressWarnings("unchecked")
-    protected @NotNull Dictionary<String, Object> parseConfiguration(@NotNull String name, @NotNull InputStream input) throws Exception {
+    protected @NotNull Dictionary<String, Object> parseConfiguration(@NotNull String name, @NotNull InputStream input) throws IOException, ConverterException {
         return ConfigurationHandler.read(input);
     }
 
