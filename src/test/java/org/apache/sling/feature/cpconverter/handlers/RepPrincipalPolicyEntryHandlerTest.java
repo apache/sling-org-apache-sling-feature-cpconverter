@@ -17,6 +17,7 @@
 package org.apache.sling.feature.cpconverter.handlers;
 
 import org.apache.sling.feature.Extension;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.SystemUser;
@@ -99,7 +100,7 @@ public final class RepPrincipalPolicyEntryHandlerTest {
         assertFalse(operations.isEmpty());
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = ConverterException.class)
     public void parsePolicyInSubtree() throws Exception {
         parseAndSetRepoinit("service3", "random3");
     }

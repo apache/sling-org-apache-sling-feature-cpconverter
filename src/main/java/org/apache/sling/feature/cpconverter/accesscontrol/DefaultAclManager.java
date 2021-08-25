@@ -23,6 +23,7 @@ import org.apache.jackrabbit.spi.commons.conversion.NameResolver;
 import org.apache.jackrabbit.util.Text;
 import org.apache.jackrabbit.vault.fs.spi.PrivilegeDefinitions;
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.repoinit.NoOpVisitor;
 import org.apache.sling.feature.cpconverter.repoinit.OperationProcessor;
@@ -49,6 +50,7 @@ import org.slf4j.LoggerFactory;
 import javax.jcr.NamespaceException;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -150,7 +152,8 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     }
 
     @Override
-    public void addRepoinitExtension(@NotNull List<VaultPackageAssembler> packageAssemblers, @NotNull FeaturesManager featureManager) {
+    public void addRepoinitExtension(@NotNull List<VaultPackageAssembler> packageAssemblers, @NotNull FeaturesManager featureManager)
+    throws IOException, ConverterException {
         try (Formatter formatter = new Formatter()) {
 
             if (privilegeDefinitions != null) {
@@ -179,7 +182,8 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     }
 
     @Override
-    public void addRepoinitExtention(@Nullable String repoInitText, @Nullable String runMode, @NotNull FeaturesManager featuresManager) {
+    public void addRepoinitExtention(@Nullable String repoInitText, @Nullable String runMode, @NotNull FeaturesManager featuresManager)
+    throws IOException, ConverterException {
         if (repoInitText == null || repoInitText.trim().isEmpty()) {
             return;
         }
@@ -196,7 +200,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
                     });
                 }
             } catch (RepoInitParsingException e) {
-                throw new IllegalArgumentException(e);
+                throw new ConverterException(e.getMessage(), e);
             }
             return;
         }
@@ -213,11 +217,11 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
                 featuresManager.addOrAppendRepoInitExtension(text, runMode);
             }
         } catch (RepoInitParsingException e) {
-            throw new IllegalStateException(e);
+            throw new ConverterException(e.getMessage(), e);
         }
     }
 
-    private void addUsersAndGroups(@NotNull Formatter formatter) {
+    private void addUsersAndGroups(@NotNull Formatter formatter) throws ConverterException {
         for (SystemUser systemUser : systemUsers) {
             // make sure all system users are created first
             CreateServiceUser operation = new CreateServiceUser(systemUser.getId(), new WithPathOptions(calculateIntermediatePath(systemUser), enforcePrincipalBased(systemUser)));
@@ -229,17 +233,22 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
             }
 
             if (aclIsBelow(systemUser.getPath())) {
-                throw new IllegalStateException("Detected policy on subpath of system-user: " + systemUser);
+                throw new ConverterException("Detected policy on subpath of system-user: " + systemUser);
             }
         }
 
         // abort the conversion if an access control entry takes effect at or below a user/group which is not
         // created by repo-init statements generated here.
-        Stream.concat(groups.stream(), users.stream()).forEach(abstractUser -> {
-            if (aclStartsWith(abstractUser.getPath())) {
-                throw new IllegalStateException("Detected policy on user/group: " + abstractUser);
+        for(final Group g : groups) {
+            if (aclStartsWith(g.getPath())) {
+                throw new ConverterException("Detected policy on group: " + g);
             }
-        });
+        }
+        for(final User u : users) {
+            if (aclStartsWith(u.getPath())) {
+                throw new ConverterException("Detected policy on user: " + u);
+            }
+        }
     }
 
     @NotNull

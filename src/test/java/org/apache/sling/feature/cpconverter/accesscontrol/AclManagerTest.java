@@ -16,24 +16,15 @@
  */
 package org.apache.sling.feature.cpconverter.accesscontrol;
 
-import org.apache.jackrabbit.vault.util.PlatformNameFormat;
-import org.apache.sling.feature.ArtifactId;
-import org.apache.sling.feature.Extension;
-import org.apache.sling.feature.Feature;
-import org.apache.sling.feature.cpconverter.Util;
-import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
-import org.apache.sling.feature.cpconverter.features.FeaturesManager;
-import org.apache.sling.feature.cpconverter.shared.RepoPath;
-import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
-import org.apache.sling.repoinit.parser.RepoInitParser;
-import org.apache.sling.repoinit.parser.RepoInitParsingException;
-import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
-import org.apache.sling.repoinit.parser.operations.CreatePath;
-import org.apache.sling.repoinit.parser.operations.Operation;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.StringReader;
@@ -44,15 +35,24 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import org.apache.jackrabbit.vault.util.PlatformNameFormat;
+import org.apache.sling.feature.ArtifactId;
+import org.apache.sling.feature.Extension;
+import org.apache.sling.feature.Feature;
+import org.apache.sling.feature.cpconverter.ConverterException;
+import org.apache.sling.feature.cpconverter.Util;
+import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
+import org.apache.sling.feature.cpconverter.features.FeaturesManager;
+import org.apache.sling.feature.cpconverter.shared.RepoPath;
+import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
+import org.apache.sling.repoinit.parser.RepoInitParser;
+import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
+import org.apache.sling.repoinit.parser.operations.CreatePath;
+import org.apache.sling.repoinit.parser.operations.Operation;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
 
 public class AclManagerTest {
     private AclManager aclManager;
@@ -115,7 +115,7 @@ public class AclManagerTest {
     }
 
     @Test
-    public void testReset() throws RepoInitParsingException {
+    public void testReset() throws Exception {
         // We assume this user will not be in the result because of the reset in the next line
         aclManager.addSystemUser(new SystemUser("acs-commons-ensure-oak-index-service", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
@@ -156,7 +156,7 @@ public class AclManagerTest {
     }
 
     @Test
-    public void testAddACLforUnknownUser() throws RepoInitParsingException {
+    public void testAddACLforUnknownUser() throws Exception {
         // we expect this acl to not show up because the user is unknown
         aclManager.addAcl("acs-commons-on-deploy-scripts-service", newAcl(true, "jcr:read,crx:replicate,jcr:removeNode", "/home/users/system"));
 
@@ -175,7 +175,7 @@ public class AclManagerTest {
     }
 
     @Test
-    public void pathWithSpecialCharactersTest() throws RepoInitParsingException {
+    public void pathWithSpecialCharactersTest() throws Exception {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
         aclManager.addAcl("sys-usr", newAcl(true, "jcr:read", "/content/_cq_tags"));
         aclManager.addAcl("sys-usr", newAcl(true, "jcr:write", "/content/cq:tags"));
@@ -207,8 +207,8 @@ public class AclManagerTest {
         assertFalse(operations.isEmpty());
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void testGroupHandlingWithGroupUsed() {
+    @Test(expected = ConverterException.class)
+    public void testGroupHandlingWithGroupUsed() throws Exception {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addGroup(new Group("test", new RepoPath("/home/groups/test"),  new RepoPath("/home/groups/test")));
@@ -226,7 +226,7 @@ public class AclManagerTest {
     }
 
     @Test
-    public void testGroupHandlingWithGroupNotUsed() throws RepoInitParsingException {
+    public void testGroupHandlingWithGroupNotUsed() throws Exception {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addGroup(new Group("test", new RepoPath("/home/groups/test"),  new RepoPath("/home/groups/test")));
@@ -255,8 +255,8 @@ public class AclManagerTest {
 
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void testGroupHandlingWithGroupMatchingSubPath() {
+    @Test(expected = ConverterException.class)
+    public void testGroupHandlingWithGroupMatchingSubPath() throws Exception {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addGroup(new Group("test", new RepoPath("/home/groups/test"),  new RepoPath("/home/groups/test")));
@@ -270,8 +270,8 @@ public class AclManagerTest {
         aclManager.addRepoinitExtension(Collections.singletonList(assembler), fm);
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void testUserHandlingWithMatchingUser() {
+    @Test(expected = ConverterException.class)
+    public void testUserHandlingWithMatchingUser() throws Exception {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addUser(new User("test", new RepoPath("/home/users/test"),  new RepoPath("/home/users/test")));
@@ -286,7 +286,7 @@ public class AclManagerTest {
     }
 
     @Test
-    public void testUserHandlingWithNonMatchingUser() throws RepoInitParsingException {
+    public void testUserHandlingWithNonMatchingUser() throws Exception {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addUser(new User("test", new RepoPath("/home/users/test"),  new RepoPath("/home/users/test")));
@@ -315,7 +315,7 @@ public class AclManagerTest {
     }
 
     @Test
-    public void testPathHandlingWithUser() throws RepoInitParsingException {
+    public void testPathHandlingWithUser() throws Exception {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addUser(new User("test", new RepoPath("/home/users/test"),  new RepoPath("/home/users/test")));
@@ -351,14 +351,14 @@ public class AclManagerTest {
         aclManager.calculateEnforcedIntermediatePath("/home/users/system/some/path");
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void testAddRepoinitExtentionInvalidTxt() {
+    @Test(expected = ConverterException.class)
+    public void testAddRepoinitExtentionInvalidTxt() throws Exception {
         DefaultAclManager aclManager = new DefaultAclManager("/home/users/system/cq:services", "system");
         aclManager.addRepoinitExtention("some invalid txt", null, mock(FeaturesManager.class));
     }
 
     @Test
-    public void testAddRepoinitExtentionEmptyTxt() {
+    public void testAddRepoinitExtentionEmptyTxt()throws Exception {
         FeaturesManager fm = mock(FeaturesManager.class);
         DefaultAclManager aclManager = new DefaultAclManager("/home/users/system/cq:services", "system");
         aclManager.addRepoinitExtention("", null, fm);
@@ -367,7 +367,7 @@ public class AclManagerTest {
     }
 
     @Test
-    public void testAddRepoinitExtentionNullTxt() {
+    public void testAddRepoinitExtentionNullTxt() throws Exception {
         FeaturesManager fm = mock(FeaturesManager.class);
         DefaultAclManager aclManager = new DefaultAclManager("/home/users/system/cq:services", "system");
         aclManager.addRepoinitExtention(null, null, fm);

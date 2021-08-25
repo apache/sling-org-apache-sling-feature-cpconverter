@@ -22,7 +22,6 @@ import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.repoinit.parser.RepoInitParser;
-import org.apache.sling.repoinit.parser.RepoInitParsingException;
 import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
 import org.apache.sling.repoinit.parser.operations.CreatePath;
 import org.apache.sling.repoinit.parser.operations.Operation;
@@ -34,7 +33,6 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,7 +47,6 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -92,7 +89,7 @@ public class EnforcePrincipalBasedTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testInvalidSupportedPath() throws RepoInitParsingException {
+    public void testInvalidSupportedPath() throws Exception {
         AclManager acMgr = new DefaultAclManager("/an/invalid/supported/path", "invalid");
         RepoPath accessControlledPath = new RepoPath("/content/feature");
         getRepoInitExtension(acMgr, accessControlledPath, systemUser, false);
@@ -104,7 +101,7 @@ public class EnforcePrincipalBasedTest {
     }
 
     @Test
-    public void testResourceBasedConversionWithoutForce() throws RepoInitParsingException {
+    public void testResourceBasedConversionWithoutForce() throws Exception {
         AclManager acMgr = new DefaultAclManager(null, "system") {
             @Override
             protected @Nullable CreatePath getCreatePath(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
@@ -134,7 +131,7 @@ public class EnforcePrincipalBasedTest {
     }
 
     @Test
-    public void testResourceBasedConversion() throws RepoInitParsingException {
+    public void testResourceBasedConversion() throws Exception {
         RepoPath accessControlledPath = new RepoPath("/content/feature");
         Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, false);
 
@@ -153,7 +150,7 @@ public class EnforcePrincipalBasedTest {
     }
 
     @Test
-    public void testPrincipalBased() throws RepoInitParsingException {
+    public void testPrincipalBased() throws Exception {
         RepoPath accessControlledPath = new RepoPath("/content/feature");
         Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, true);
 
@@ -172,7 +169,7 @@ public class EnforcePrincipalBasedTest {
     }
 
     @Test
-    public void testPrincipalBasedForUserHome() throws RepoInitParsingException {
+    public void testPrincipalBasedForUserHome() throws Exception {
         RepoPath accessControlledPath = systemUser.getPath();
         Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, true);
 
@@ -191,7 +188,7 @@ public class EnforcePrincipalBasedTest {
     }
 
     @Test
-    public void testSingleUserMapping() throws RepoInitParsingException {
+    public void testSingleUserMapping() throws Exception {
         aclManager.addMapping(new Mapping("org.apache.sling.testbundle:subservice="+systemUser.getId()));
 
         RepoPath accessControlledPath = new RepoPath("/content/feature");
@@ -209,7 +206,7 @@ public class EnforcePrincipalBasedTest {
     }
 
     @Test
-    public void testPrincipalMapping() throws RepoInitParsingException {
+    public void testPrincipalMapping() throws Exception {
         aclManager.addMapping(new Mapping("org.apache.sling.testbundle:subservice=["+systemUser.getId()+"]"));
 
         RepoPath accessControlledPath = new RepoPath("/content/feature");
@@ -226,7 +223,7 @@ public class EnforcePrincipalBasedTest {
     }
 
     @Test
-    public void testSingleUserMappingInSeed() throws IOException, RepoInitParsingException {
+    public void testSingleUserMappingInSeed() throws Exception {
         DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 1, File.createTempFile("foo", "bar"), "*", "*", new HashMap<>(), aclManager);
         Feature seed = new Feature(ArtifactId.fromMvnId("org:foo:2"));
         Configuration foo = new Configuration("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl~foo");
@@ -252,7 +249,7 @@ public class EnforcePrincipalBasedTest {
     }
 
     @Test
-    public void testPrincipalMappingInSeed() throws IOException, RepoInitParsingException {
+    public void testPrincipalMappingInSeed() throws Exception {
         DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 1, File.createTempFile("foo", "bar"), "*", "*", new HashMap<>(), aclManager);
         Feature seed = new Feature(ArtifactId.fromMvnId("org:foo:2"));
         Configuration foo = new Configuration("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl~foo");
@@ -277,7 +274,7 @@ public class EnforcePrincipalBasedTest {
     }
 
     @Test
-    public void testWhitespaceUserMapping() throws IOException {
+    public void testWhitespaceUserMapping() throws Exception {
         DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 1, File.createTempFile("foo", "bar"), "*", "*", new HashMap<>(), aclManager);
         Feature seed = new Feature(ArtifactId.fromMvnId("org:foo:2"));
         
@@ -296,7 +293,7 @@ public class EnforcePrincipalBasedTest {
     }
 
     @Test
-    public void testEmptyUserMapping() throws IOException {
+    public void testEmptyUserMapping() throws Exception {
         DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 1, File.createTempFile("foo", "bar"), "*", "*", new HashMap<>(), aclManager);
 
         // create a user.mapping configuratian with an empty-mapping
@@ -313,7 +310,7 @@ public class EnforcePrincipalBasedTest {
     }
 
     @NotNull
-    private Extension getRepoInitExtension(@NotNull AclManager aclManager, @NotNull RepoPath accessControlledPath, @NotNull SystemUser systemUser, boolean isPrincipalBased) throws RepoInitParsingException {
+    private Extension getRepoInitExtension(@NotNull AclManager aclManager, @NotNull RepoPath accessControlledPath, @NotNull SystemUser systemUser, boolean isPrincipalBased) throws Exception {
         aclManager.addSystemUser(systemUser);
 
         AccessControlEntry acl = new AccessControlEntry(true, Collections.singletonList("jcr:read"), accessControlledPath, isPrincipalBased);

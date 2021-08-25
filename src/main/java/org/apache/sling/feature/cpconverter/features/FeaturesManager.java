@@ -16,11 +16,13 @@
  */
 package org.apache.sling.feature.cpconverter.features;
 
+import java.io.IOException;
 import java.util.Dictionary;
 import java.util.Map;
 
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Feature;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -41,11 +43,13 @@ public interface FeaturesManager {
     void addConfiguration(@Nullable String runMode, 
         @NotNull String pid,
         @NotNull String path,
-        @NotNull Dictionary<String, Object> configurationProperties);
+        @NotNull Dictionary<String, Object> configurationProperties)
+    throws IOException, ConverterException;
 
-    void serialize() throws Exception;
+    void serialize() throws IOException;
 
-    void addOrAppendRepoInitExtension(@NotNull String text, @Nullable String runMode);
+    void addOrAppendRepoInitExtension(@NotNull String text, @Nullable String runMode)
+    throws IOException, ConverterException;
 
     @NotNull
     Map<String, String> getNamespaceUriByPrefix();

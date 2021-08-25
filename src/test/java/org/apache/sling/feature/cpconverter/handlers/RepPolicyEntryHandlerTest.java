@@ -17,6 +17,7 @@
 package org.apache.sling.feature.cpconverter.handlers;
 
 import org.apache.sling.feature.Extension;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.Group;
@@ -223,7 +224,7 @@ public final class RepPolicyEntryHandlerTest {
         assertTrue(result.getExcludedAcls().isEmpty());
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = ConverterException.class)
     public void policyAtGroupNode() throws Exception {
         SystemUser s1 = new SystemUser("service1", new RepoPath("/home/users/system/services/random1"), new RepoPath("/home/users/system/services"));
         Group gr = new Group("testgroup", new RepoPath("/home/groups/g/HjDnfdMCjekaF4jhhUvO"), new RepoPath("/home/groups/g"));
@@ -233,7 +234,7 @@ public final class RepPolicyEntryHandlerTest {
         parseAndSetRepoinit("/jcr_root/home/groups/g/HjDnfdMCjekaF4jhhUvO/_rep_policy.xml", aclManager);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = ConverterException.class)
     public void policyAtGroupSubTree() throws Exception {
         SystemUser s1 = new SystemUser("service1", new RepoPath("/home/users/system/services/random1"), new RepoPath("/home/users/system/services"));
         Group gr = new Group("testgroup3", new RepoPath("/home/groups/g/ouStmkrzT9wCEhtMD9sT"), new RepoPath("/home/groups/g"));
@@ -244,7 +245,7 @@ public final class RepPolicyEntryHandlerTest {
         parseAndSetRepoinit("/jcr_root/home/groups/g/ouStmkrzT9wCEhtMD9sT/profile/_rep_policy.xml", aclManager);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = ConverterException.class)
     public void policyAtUserNode() throws Exception {
         SystemUser s1 = new SystemUser("service1", new RepoPath("/home/users/system/services/random1"), new RepoPath("/home/users/system/services"));
         User user = new User("author", new RepoPath("/home/users/a/author"), new RepoPath("/home/users/a"));

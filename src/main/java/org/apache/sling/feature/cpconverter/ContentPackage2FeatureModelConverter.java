@@ -41,7 +41,6 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.FileUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
-import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
 import org.apache.jackrabbit.vault.packaging.Dependency;
 import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
@@ -137,18 +136,14 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         EXTRACT_AND_KEEP
     }
 
-    public ContentPackage2FeatureModelConverter() {
+    public ContentPackage2FeatureModelConverter() throws IOException {
         this(false, SlingInitialContentPolicy.KEEP);
     }
 
-    public ContentPackage2FeatureModelConverter(boolean strictValidation, @NotNull SlingInitialContentPolicy slingInitialContentPolicy) {
+    public ContentPackage2FeatureModelConverter(boolean strictValidation, @NotNull SlingInitialContentPolicy slingInitialContentPolicy) throws IOException {
         super(strictValidation);
         this.recollectorVaultPackageScanner = new RecollectorVaultPackageScanner(this, this.packageManager, strictValidation, subContentPackages, slingInitialContentPolicy);
-        try {
-            this.tmpDirectory = Files.createTempDirectory("cp2fm-converter").toFile();
-        } catch (final IOException io) {
-            throw new RuntimeException("Unable to create a temporary directory", io);
-        }
+        this.tmpDirectory = Files.createTempDirectory("cp2fm-converter").toFile();
     }
 
     public @NotNull ContentPackage2FeatureModelConverter setEntryHandlersManager(@Nullable EntryHandlersManager handlersManager) {
@@ -242,12 +237,12 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         }
     }
 
-    public void convert(@NotNull File... contentPackages) throws Exception {
+    public void convert(@NotNull File... contentPackages) throws IOException, ConverterException {
         requireNonNull(contentPackages, "Null content-package(s) can not be converted.");
         secondPass(firstPass(contentPackages));
     }
 
-    protected @NotNull Collection<VaultPackage> firstPass(@NotNull File... contentPackages) throws Exception {
+    protected @NotNull Collection<VaultPackage> firstPass(@NotNull File... contentPackages) throws IOException, ConverterException {
         Map<PackageId, VaultPackage> idFileMap = new LinkedHashMap<>();
         Map<PackageId, VaultPackage> idPackageMapping = new ConcurrentHashMap<>();
 
@@ -281,7 +276,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return idFileMap.values();
     }
 
-    private void secondPass(@NotNull Collection<VaultPackage> orderedContentPackages) throws Exception {
+    private void secondPass(@NotNull Collection<VaultPackage> orderedContentPackages) throws IOException, ConverterException {
         emitters.stream().forEach(PackagesEventsEmitter::start);
 
         for (VaultPackage vaultPackage : orderedContentPackages) {
@@ -332,9 +327,9 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     private static void orderDependencies(@NotNull Map<PackageId, VaultPackage> idFileMap,
                                           @NotNull Map<PackageId, VaultPackage> idPackageMapping,
                                           @NotNull VaultPackage pack,
-                                          @NotNull Set<PackageId> visited) throws CyclicDependencyException {
+                                          @NotNull Set<PackageId> visited) throws IOException, ConverterException {
         if (!visited.add(pack.getId())) {
-            throw new CyclicDependencyException("Cyclic dependency detected, " + pack.getId() + " was previously visited already");
+            throw new ConverterException("Cyclic dependency detected, " + pack.getId() + " was previously visited already");
         }
 
         for (Dependency dep : pack.getDependencies()) {

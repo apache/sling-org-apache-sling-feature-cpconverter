@@ -16,9 +16,11 @@
  */
 package org.apache.sling.feature.cpconverter.accesscontrol;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.jackrabbit.vault.fs.spi.PrivilegeDefinitions;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.jetbrains.annotations.NotNull;
@@ -39,9 +41,11 @@ public interface AclManager {
 
     boolean addAcl(@NotNull String systemUser, @NotNull AccessControlEntry acl);
 
-    void addRepoinitExtension(@NotNull List<VaultPackageAssembler> packageAssemblers, @NotNull FeaturesManager featureManager);
+    void addRepoinitExtension(@NotNull List<VaultPackageAssembler> packageAssemblers, @NotNull FeaturesManager featureManager)
+    throws IOException, ConverterException;
 
-    void addRepoinitExtention(@Nullable String repoInitText, @Nullable String runMode, @NotNull FeaturesManager featuresManager);
+    void addRepoinitExtention(@Nullable String repoInitText, @Nullable String runMode, @NotNull FeaturesManager featuresManager)
+    throws IOException, ConverterException;
 
     void addNodetypeRegistration(@NotNull String cndStatements);
 

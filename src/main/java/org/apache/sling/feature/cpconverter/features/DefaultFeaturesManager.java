@@ -47,6 +47,7 @@ import org.apache.sling.feature.ExtensionState;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Extensions;
 import org.apache.sling.feature.Feature;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.Mapping;
 import org.apache.sling.feature.cpconverter.interpolator.SimpleVariablesInterpolator;
@@ -170,7 +171,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
     @Override
     public @NotNull Feature getRunMode(@Nullable String runMode) {
         if (getTargetFeature() == null) {
-            throw new IllegalStateException("Target Feature not initialized yet, please make sure convert() method was invoked first.");
+            throw new IllegalStateException("Target feature not initialized yet, please make sure convert() method was invoked first.");
         }
 
         if (runMode == null) {
@@ -267,7 +268,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         this.enforceServiceMappingByPrincipal = enforceServiceMappingByPrincipal;
     }
 
-    public void addSeed(Feature seed) {
+    public void addSeed(Feature seed) throws IOException, ConverterException {
         for (Configuration conf : seed.getConfigurations()) {
             handleRepoinitAndMappings("seed", conf.isFactoryConfiguration() ? conf.getFactoryPid() : conf.getPid(), conf.getConfigurationProperties(), false);
         }
@@ -308,7 +309,8 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         this.aclManager = aclManager;
     }
 
-    private boolean handleRepoinitAndMappings(String runMode, String pid, Dictionary<String, Object> configurationProperties, boolean enforceServiceMappingByPrincipal) {
+    private boolean handleRepoinitAndMappings(String runMode, String pid, Dictionary<String, Object> configurationProperties, boolean enforceServiceMappingByPrincipal) 
+    throws IOException, ConverterException {
         if (REPOINIT_FACTORY_PID.equals(pid)) {
             final String[] scripts = Converters.standardConverter().convert(configurationProperties.get("scripts")).to(String[].class);
             if (scripts != null && scripts.length > 0 ) {
@@ -336,8 +338,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
                         getAclManager().addMapping(mapping);
                         newMappings.add(mapping.asString());
                     } catch (IllegalArgumentException iae) {
-                        logger.error("ServiceUserMapping: Detected invalid mapping in {}", pid);
-                        throw iae;
+                        throw new ConverterException("ServiceUserMapping: Detected invalid mapping in " + pid);
                     }
                 }
                 // replace 'user.mapping' property by the new mappings, which may have been refactored
@@ -353,7 +354,8 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
     public void addConfiguration(@Nullable String runMode, 
         @NotNull String pid, 
         @NotNull String path,
-        @NotNull Dictionary<String, Object> configurationProperties) {
+        @NotNull Dictionary<String, Object> configurationProperties) 
+    throws IOException, ConverterException {
         String factoryPid = null;
         int n = pid.indexOf('~');
         if (n > 0) {
@@ -372,7 +374,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
             this.pidToPathMapping.put(pid, path);
         } else {
             switch ( this.configurationHandling ) {
-                case STRICT : throw new IllegalStateException("Configuration '"
+                case STRICT : throw new ConverterException("Configuration '"
                                + pid
                                + "' already defined in Feature Model '"
                                + feature.getId().toMvnId()
@@ -444,7 +446,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
     }
 
     @Override
-    public void serialize() throws Exception {
+    public void serialize() throws IOException {
         RunmodeMapper runmodeMapper = RunmodeMapper.open(featureModelsOutputDirectory);
 
         serialize(targetFeature, null, runmodeMapper);
@@ -459,7 +461,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         runmodeMapper.save();
     }
 
-    private void serialize(Feature feature, String runMode, RunmodeMapper runmodeMapper) throws Exception {
+    private void serialize(Feature feature, String runMode, RunmodeMapper runmodeMapper) throws IOException {
         addAPIRegions(feature, apiRegionExports.get(runMode));
 
         StringBuilder fileNameBuilder = new StringBuilder()

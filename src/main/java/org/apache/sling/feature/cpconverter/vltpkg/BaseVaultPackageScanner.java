@@ -58,7 +58,7 @@ public abstract class BaseVaultPackageScanner {
         return packageManager.open(vaultPackage, strictValidation);
     }
 
-    public final void traverse(@NotNull File vaultPackageFile, boolean closeOnTraversed) throws Exception {
+    public final void traverse(@NotNull File vaultPackageFile, boolean closeOnTraversed) throws IOException, ConverterException {
         VaultPackage vaultPackage = null;
         try {
             vaultPackage = open(vaultPackageFile);
@@ -122,7 +122,7 @@ public abstract class BaseVaultPackageScanner {
         return path + '/' + entryName;
     }
 
-    protected void onDirectory(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry)  {
+    protected void onDirectory(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry) throws IOException, ConverterException {
         // do nothing by default
     }
 

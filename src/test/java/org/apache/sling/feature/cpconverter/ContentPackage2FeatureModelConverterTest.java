@@ -31,15 +31,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import javax.json.Json;
@@ -55,7 +51,6 @@ import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
-import org.apache.jackrabbit.vault.util.Constants;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Artifacts;
 import org.apache.sling.feature.Configuration;
@@ -72,16 +67,11 @@ import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
-import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 public class ContentPackage2FeatureModelConverterTest extends AbstractConverterTest {
 
@@ -103,7 +93,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
     private EntryHandlersManager handlersManager;
         
     @Before
-    public void setUp() {
+    public void setUp() throws IOException {
         handlersManager = new DefaultEntryHandlersManager();
         converter = new ContentPackage2FeatureModelConverter()
                     .setEntryHandlersManager(handlersManager)
@@ -550,7 +540,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         }
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = ConverterException.class)
     public void doesNotAllowSameConfigurationPidForSameRunmode() throws Exception {
         addSamePidConfiguration(null, null);
     }
@@ -728,7 +718,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         }
     }
 
-    @Test(expected = CyclicDependencyException.class)
+    @Test(expected = ConverterException.class)
     public void testDependencyCycle() throws Exception {
         File[] contentPackages = load(TEST_PACKAGES_CYCLIC_DEPENDENCY);
         converter.firstPass(contentPackages);
