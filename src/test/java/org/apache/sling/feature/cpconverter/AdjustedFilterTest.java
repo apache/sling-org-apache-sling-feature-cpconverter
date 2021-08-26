@@ -16,7 +16,9 @@
  */
 package org.apache.sling.feature.cpconverter;
 
+import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
@@ -40,13 +42,18 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class AdjustedFilterTest extends AbstractConverterTest {
@@ -87,12 +94,42 @@ public class AdjustedFilterTest extends AbstractConverterTest {
 
         File converted = new File(outputDirectory, "subtree_in_contentxml/0.0.0/subtree_in_contentxml-0.0.0-cp2fm-converted.zip");
         WorkspaceFilter filter = getWorkspaceFilter(converted);
+        assertCoverage(filter);
+    }
+
+    /**
+     * Same as {@link #testSubTreeInContentXml}, but 'subtree_in_contentxml_sibling.zip' contains an 
+     * uncovered sibling /oak:index/custom-2 instead in the .content.xml, which is not covered by the filter, which only 
+     * lists /oak:index/custom as filter root.
+     */
+    @Test
+    public void testSubTreeInContentWithSiblingsXml() throws Exception {
+        URL packageUrl = getClass().getResource("subtree_in_contentxml_sibling.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+        WorkspaceFilter filter = getWorkspaceFilter(packageFile);
+        assertCoverage(filter);
+        assertFalse(filter.covers("/oak:index/custom-2"));
         
+        converter.convert(packageFile);
+
+        File converted = new File(outputDirectory, "subtree_in_contentxml_sibling/0.0.0/subtree_in_contentxml_sibling-0.0.0-cp2fm-converted.zip");
+        filter = getWorkspaceFilter(converted);
+        assertCoverage(filter);
+        assertFalse(filter.covers("/oak:index/custom-2"));
+        
+        try (ZipFile zipFile = new ZipFile(converted)) {
+            ZipEntry entry = zipFile.getEntry("jcr_root/_oak_index/.content.xml");
+            String content = IOUtils.toString(zipFile.getInputStream(entry), StandardCharsets.UTF_8);
+            assertTrue(content.contains("<custom-2>"));
+        }
+    }
+    
+    private void assertCoverage(@NotNull WorkspaceFilter filter) {
         assertFalse(filter.covers("/"));
         assertFalse(filter.covers("/oak:index"));
         assertFalse(filter.covers("/oak:index/uuid"));
-        
-        assertTrue(filter.contains("/oak:index/custom"));
+
+        assertTrue(filter.covers("/oak:index/custom"));
         assertTrue(filter.covers("/oak:index/custom/indexRules"));
         assertTrue(filter.covers("/oak:index/custom/indexRules/nt:unstructured"));
         assertTrue(filter.covers("/oak:index/custom/indexRules/nt:unstructured/properties"));
