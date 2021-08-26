@@ -37,6 +37,7 @@ import org.apache.jackrabbit.vault.util.Constants;
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.ConverterException;
+import org.apache.sling.feature.cpconverter.handlers.DefaultEntryParser;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -227,6 +228,14 @@ public class VaultPackageAssembler implements EntryHandler {
         try (InputStream input = Objects.requireNonNull(archive.openInputStream(entry))) {
             addEntry(path, input);
         }
+        String repoPath = toRepositoryPath(path);
+        if (!filter.covers(repoPath) && DefaultEntryParser.isContentEntry(path)) {
+            try (InputStream input = Objects.requireNonNull(archive.openInputStream(entry))) {
+                DefaultEntryParser parser = new DefaultEntryParser(repoPath);
+                parser.parse(input);
+                convertedCpPaths.addAll(parser.getParsingResult());
+            }
+        }
     }
 
     public void addEntry(@NotNull String path, @NotNull File file) throws IOException {
@@ -359,21 +368,22 @@ public class VaultPackageAssembler implements EntryHandler {
     }
 
     private static @NotNull Set<String> toRepositoryPaths(@NotNull Set<String> paths) {
-        return paths.stream().map(s -> {
-            if (s.startsWith("/jcr_root")) {
-                String path = PlatformNameFormat.getRepositoryPath(s.substring("/jcr_root".length()));
-                if (path.endsWith("/.content.xml")) {
-                    return path.substring(0, path.lastIndexOf("/.content.xml"));
-                } else if (path.endsWith(".xml")) {
-                    // remove .xml extension from policy-nodes
-                    return path.substring(0, path.lastIndexOf(".xml"));
-                } else {
-                    return path;
-                }
-            } else {
-                return s;
+        return paths.stream().map(VaultPackageAssembler::toRepositoryPath).collect(Collectors.toSet());
+    }
+    
+    private static @NotNull String toRepositoryPath(@NotNull String s) {
+        if (s.startsWith("/jcr_root")) {
+            String path = PlatformNameFormat.getRepositoryPath(s.substring("/jcr_root".length()));
+            if (path.endsWith("/.content.xml")) {
+                path = path.substring(0, path.lastIndexOf("/.content.xml"));
+            } else if (path.endsWith(".xml")) {
+                // remove .xml extension from policy-nodes
+                path = path.substring(0, path.lastIndexOf(".xml"));
             }
-        }).collect(Collectors.toSet());
+            return (path.isEmpty()) ? "/" : path;
+        } else {
+            return s;
+        }
     }
 
     private static @NotNull WorkspaceFilter createAdjustedFilter(@NotNull WorkspaceFilter base, @NotNull Set<String> filteredPaths, @NotNull Set<String> cpPaths) throws IOException {
