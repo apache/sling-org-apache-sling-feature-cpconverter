@@ -429,15 +429,4 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
                 pathFilterEntry.getFilter().matches("/home/users/demo-cp/rep:policy")).count());
         return filter;
     }
-    
-    private static DefaultWorkspaceFilter getWorkspaceFilter(@NotNull File contentPackage) throws Exception {
-        DefaultWorkspaceFilter filter;
-        try (ZipFile zipFile = new ZipFile(contentPackage)) {
-            filter = new DefaultWorkspaceFilter();
-            ZipEntry entry = zipFile.getEntry("META-INF/vault/filter.xml");
-            assertNotNull(entry);
-            filter.load(zipFile.getInputStream(entry));
-        }
-        return filter;
-    }
 }

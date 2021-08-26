@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter;
 
+import org.apache.jackrabbit.vault.fs.config.DefaultWorkspaceFilter;
 import org.apache.jackrabbit.vault.util.Constants;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Artifacts;
@@ -170,5 +171,17 @@ public abstract class AbstractConverterTest {
 
         File pomFile = new File(outputDirectory, String.format("%s-%s.pom", bundleId.getArtifactId(), bundleId.getVersion()));
         assertTrue("POM file " + pomFile + " does not exist", pomFile.exists());
+    }
+    
+    @NotNull
+    static DefaultWorkspaceFilter getWorkspaceFilter(@NotNull File contentPackage) throws Exception {
+        DefaultWorkspaceFilter filter;
+        try (ZipFile zipFile = new ZipFile(contentPackage)) {
+            filter = new DefaultWorkspaceFilter();
+            ZipEntry entry = zipFile.getEntry("META-INF/vault/filter.xml");
+            assertNotNull(entry);
+            filter.load(zipFile.getInputStream(entry));
+        }
+        return filter;
     }
 }
