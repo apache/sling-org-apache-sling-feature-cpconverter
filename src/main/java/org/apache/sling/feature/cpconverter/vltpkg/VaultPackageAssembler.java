@@ -19,6 +19,7 @@ package org.apache.sling.feature.cpconverter.vltpkg;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
+import org.apache.jackrabbit.util.Text;
 import org.apache.jackrabbit.vault.fs.api.FilterSet;
 import org.apache.jackrabbit.vault.fs.api.PathFilter;
 import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
@@ -59,6 +60,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -86,6 +88,7 @@ public class VaultPackageAssembler implements EntryHandler {
     private static final Logger log = LoggerFactory.getLogger(VaultPackageAssembler.class);
     
     private final Set<String> convertedCpPaths = new HashSet<>();
+    private final Set<String> extractedConvertedRepoPaths = new HashSet<>();
     private final Set<String> allPaths = new HashSet<>();
     private final DefaultWorkspaceFilter filter = new DefaultWorkspaceFilter();
     private final Set<Dependency> dependencies;
@@ -234,7 +237,7 @@ public class VaultPackageAssembler implements EntryHandler {
             try (InputStream input = Objects.requireNonNull(archive.openInputStream(entry))) {
                 DefaultEntryParser parser = new DefaultEntryParser(repoPath);
                 parser.parse(input);
-                convertedCpPaths.addAll(parser.getParsingResult());
+                extractedConvertedRepoPaths.addAll(parser.getParsingResult());
             }
         }
     }
@@ -341,7 +344,7 @@ public class VaultPackageAssembler implements EntryHandler {
         Set<String> convertedCpRepoPaths = VaultPackageUtils.toRepositoryPaths(convertedCpPaths);
         Set<String> filteredPaths = new HashSet<>(allRepoPaths);
         filteredPaths.removeAll(convertedCpRepoPaths);
-        WorkspaceFilter adjustedFilter = createAdjustedFilter(filter, filteredPaths, convertedCpRepoPaths);
+        WorkspaceFilter adjustedFilter = createAdjustedFilter(filter, filteredPaths, convertedCpRepoPaths, extractedConvertedRepoPaths);
 
         File xmlFilter = new File(metaDir, FILTER_XML);
         try (InputStream input = adjustedFilter.getSource();
@@ -368,28 +371,37 @@ public class VaultPackageAssembler implements EntryHandler {
         return destFile;
     }
 
-    private static @NotNull WorkspaceFilter createAdjustedFilter(@NotNull WorkspaceFilter base, @NotNull Set<String> filteredPaths, @NotNull Set<String> cpPaths) throws IOException {
+    private static @NotNull WorkspaceFilter createAdjustedFilter(@NotNull WorkspaceFilter base, 
+                                                                 @NotNull Set<String> filteredPaths, 
+                                                                 @NotNull Set<String> cpPaths,
+                                                                 @NotNull Set<String> extractedConvertedRepoPaths) throws IOException {
         try {
             DefaultWorkspaceFilter dwf = new DefaultWorkspaceFilter();
             Map<String, PathFilterSet> propFilters = extractPropertyFilters(base);
             for (PathFilterSet pfs : base.getFilterSets()) {
-                processPathFilterSet(pfs, propFilters, dwf, filteredPaths, cpPaths);
+                if (coversConvertedPath(pfs, cpPaths, extractedConvertedRepoPaths)) {
+                    processPathFilterSet(pfs, propFilters, dwf, filteredPaths);
+                }
             }
             return dwf;
         } catch (ConfigurationException e) {
             throw new IOException(e);
         }
     }
+    
+    private static boolean coversConvertedPath(@NotNull PathFilterSet pfs,
+                                               @NotNull Set<String> cpPaths, 
+                                               @NotNull Set<String> extractedConvertedRepoPaths) {
+        // if the given filterset no longer covers any of the paths included in the converted content package
+        // AND it's root path isn't a sibling of a manually extracted paths hidden in a .content.xml that get 
+        // installed despite not being covered by the filter
+        // -> ok to no longer include it in the new workspace filter.
+        return cpPaths.stream().anyMatch(pfs::covers) || 
+                extractedConvertedRepoPaths.stream().anyMatch(path -> Text.isSibling(path, pfs.getRoot()));
+    }
 
     private static void processPathFilterSet(@NotNull PathFilterSet pfs, @NotNull Map<String, PathFilterSet> propFilters, 
-                                             @NotNull DefaultWorkspaceFilter newFilter, @NotNull Set<String> filteredPaths,
-                                             @NotNull Set<String> cpPaths) throws ConfigurationException {
-        if (cpPaths.stream().noneMatch(pfs::covers)) {
-            // the given filterset no longer covers any of the paths included in the converted content package
-            // -> ok to no longer include it in the new workspace filter.
-            return;
-        }
-        
+                                             @NotNull DefaultWorkspaceFilter newFilter, @NotNull Set<String> filteredPaths) throws ConfigurationException {
         // create a new node path-filter-set (and if existing the corresponding property filter)
         PathFilterSet nodeFilterSet = copyPathFilterSet(pfs, filteredPaths);
         PathFilterSet propPfs = propFilters.remove(pfs.getRoot());
