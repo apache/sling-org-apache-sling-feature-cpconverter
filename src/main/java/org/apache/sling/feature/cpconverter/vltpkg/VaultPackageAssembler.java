@@ -75,6 +75,7 @@ import static org.apache.jackrabbit.vault.util.Constants.ROOT_DIR;
 import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER;
 import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.getDependencies;
 import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.setDependencies;
+import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.toRepositoryPath;
 
 public class VaultPackageAssembler implements EntryHandler {
 
@@ -229,7 +230,7 @@ public class VaultPackageAssembler implements EntryHandler {
             addEntry(path, input);
         }
         String repoPath = toRepositoryPath(path);
-        if (!filter.covers(repoPath) && DefaultEntryParser.isContentEntry(path)) {
+        if (!filter.covers(repoPath) && VaultPackageUtils.isContentEntry(path)) {
             try (InputStream input = Objects.requireNonNull(archive.openInputStream(entry))) {
                 DefaultEntryParser parser = new DefaultEntryParser(repoPath);
                 parser.parse(input);
@@ -336,8 +337,8 @@ public class VaultPackageAssembler implements EntryHandler {
             computeFilters(storingDirectory);
         }
         
-        Set<String> allRepoPaths = toRepositoryPaths(allPaths);
-        Set<String> convertedCpRepoPaths = toRepositoryPaths(convertedCpPaths);
+        Set<String> allRepoPaths = VaultPackageUtils.toRepositoryPaths(allPaths);
+        Set<String> convertedCpRepoPaths = VaultPackageUtils.toRepositoryPaths(convertedCpPaths);
         Set<String> filteredPaths = new HashSet<>(allRepoPaths);
         filteredPaths.removeAll(convertedCpRepoPaths);
         WorkspaceFilter adjustedFilter = createAdjustedFilter(filter, filteredPaths, convertedCpRepoPaths);
@@ -365,25 +366,6 @@ public class VaultPackageAssembler implements EntryHandler {
         }
 
         return destFile;
-    }
-
-    private static @NotNull Set<String> toRepositoryPaths(@NotNull Set<String> paths) {
-        return paths.stream().map(VaultPackageAssembler::toRepositoryPath).collect(Collectors.toSet());
-    }
-    
-    private static @NotNull String toRepositoryPath(@NotNull String s) {
-        if (s.startsWith("/jcr_root")) {
-            String path = PlatformNameFormat.getRepositoryPath(s.substring("/jcr_root".length()));
-            if (path.endsWith("/.content.xml")) {
-                path = path.substring(0, path.lastIndexOf("/.content.xml"));
-            } else if (path.endsWith(".xml")) {
-                // remove .xml extension from policy-nodes
-                path = path.substring(0, path.lastIndexOf(".xml"));
-            }
-            return (path.isEmpty()) ? "/" : path;
-        } else {
-            return s;
-        }
     }
 
     private static @NotNull WorkspaceFilter createAdjustedFilter(@NotNull WorkspaceFilter base, @NotNull Set<String> filteredPaths, @NotNull Set<String> cpPaths) throws IOException {

@@ -25,9 +25,6 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Set;
 
-import static org.apache.jackrabbit.vault.util.Constants.DOT_CONTENT_XML;
-import static org.apache.jackrabbit.vault.util.Constants.ROOT_DIR;
-
 public class DefaultEntryParser extends AbstractJcrNodeParser<Set<String>> {
     
     private final LinkedList<String> currentPath = new LinkedList<>();
@@ -36,10 +33,6 @@ public class DefaultEntryParser extends AbstractJcrNodeParser<Set<String>> {
     
     public DefaultEntryParser(@NotNull String repositoryPath) {
         currentPath.push(repositoryPath);
-    }
-    
-    public static boolean isContentEntry(@NotNull String entryPath) {
-        return entryPath.startsWith("/"+ROOT_DIR) && entryPath.endsWith(DOT_CONTENT_XML);
     }
 
     @Override
