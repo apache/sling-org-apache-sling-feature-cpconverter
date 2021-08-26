@@ -534,12 +534,12 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
 
 
 
-    private void checkReferences(@NotNull final Dictionary<String, Object> configurationProperties, @NotNull final String pid) {
+    private void checkReferences(@NotNull final Dictionary<String, Object> configurationProperties, @NotNull final String pid) throws ConverterException {
         final String[] references = Converters.standardConverter().convert(configurationProperties.get("references")).to(String[].class);
         if ( references != null && references.length > 0 ) {
             for(final String r  : references ) {
                 if ( r != null && !r.trim().isEmpty() ) {
-                    throw new IllegalArgumentException("References are not supported for repoinit (configuration " + pid + ")");
+                    throw new ConverterException("References are not supported for repoinit (configuration " + pid + ")");
                 }
             }
         }

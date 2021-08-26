@@ -17,6 +17,7 @@
 package org.apache.sling.feature.cpconverter.accesscontrol;
 
 import org.apache.sling.feature.*;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
@@ -88,15 +89,15 @@ public class EnforcePrincipalBasedTest {
                 .forEach(File::delete);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test(expected = ConverterException.class)
     public void testInvalidSupportedPath() throws Exception {
         AclManager acMgr = new DefaultAclManager("/an/invalid/supported/path", "invalid");
         RepoPath accessControlledPath = new RepoPath("/content/feature");
         getRepoInitExtension(acMgr, accessControlledPath, systemUser, false);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testPathMismatch() {
+    @Test(expected = ConverterException.class)
+    public void testPathMismatch() throws ConverterException {
         new DefaultAclManager("/an/invalid/supported/path", "system");
     }
 

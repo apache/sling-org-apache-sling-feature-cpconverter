@@ -48,7 +48,7 @@ public final class RepPolicyEntryHandlerTest {
     private AclManager aclManager;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         handler = new RepPolicyEntryHandler();
         aclManager = new DefaultAclManager();
     }

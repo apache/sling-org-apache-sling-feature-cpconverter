@@ -396,7 +396,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
         // SLING-8608 - Fail the conversion if the resulting attached content-package is MIXED type
         if (PackageType.MIXED == packageType && failOnMixedPackages) {
-            throw new IllegalStateException("Generated content-package '"
+            throw new ConverterException("Generated content-package '"
                     + vaultPackage.getId()
                     + "' located in file "
                     + contentPackageArchive
@@ -467,7 +467,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     private void process(@NotNull String entryPath, @NotNull Archive archive, @Nullable Entry entry) throws IOException, ConverterException {
         if (resourceFilter != null && resourceFilter.isFilteredOut(entryPath)) {
-            throw new IllegalArgumentException("Path '"
+            throw new ConverterException("Path '"
                     + entryPath
                     + "' in archive "
                     + archive.getMetaInf().getPackageProperties().getId()

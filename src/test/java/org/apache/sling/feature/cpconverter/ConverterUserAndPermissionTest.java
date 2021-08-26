@@ -129,7 +129,7 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
                 new Object[] {ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT, "/home/users/system/cq:services", "Default system user rel-path with enforce-principal-based ac-setup"});
     }
 
-    public ConverterUserAndPermissionTest(@NotNull String systemUserRelPath, @Nullable String enforcePrincipalBasedSupportedPath, @NotNull String name) {
+    public ConverterUserAndPermissionTest(@NotNull String systemUserRelPath, @Nullable String enforcePrincipalBasedSupportedPath, @NotNull String name) throws Exception {
         this.aclManager = new DefaultAclManager(enforcePrincipalBasedSupportedPath, systemUserRelPath);
         this.handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, 
                 ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP, systemUserRelPath);

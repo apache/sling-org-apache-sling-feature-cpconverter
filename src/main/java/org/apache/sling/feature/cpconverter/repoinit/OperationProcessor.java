@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.repoinit;
 
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.accesscontrol.EnforceInfo;
 import org.apache.sling.repoinit.parser.operations.Operation;
 import org.apache.sling.repoinit.parser.operations.OperationVisitor;
@@ -26,23 +27,27 @@ import java.util.List;
 
 public class OperationProcessor {
 
-    public void apply(@NotNull List<Operation> ops, @NotNull Formatter formatter, @NotNull EnforceInfo enforceInfo) {
-        ConversionMap toConvert = new ConversionMap();
+    public void apply(@NotNull List<Operation> ops, @NotNull Formatter formatter, @NotNull EnforceInfo enforceInfo) throws ConverterException {
+        try {
+            ConversionMap toConvert = new ConversionMap();
 
-        OperationVisitor[] visitors = {
-                new DefaultVisitor(formatter),
-                new SystemUserVisitor(formatter, enforceInfo),
-                new AccessControlVisitor(formatter, enforceInfo, toConvert)
-        };
-
-        for (Operation op : ops) {
-            for (OperationVisitor v : visitors) {
-                op.accept(v);
+            OperationVisitor[] visitors = {
+                    new DefaultVisitor(formatter),
+                    new SystemUserVisitor(formatter, enforceInfo),
+                    new AccessControlVisitor(formatter, enforceInfo, toConvert)
+            };
+    
+            for (Operation op : ops) {
+                for (OperationVisitor v : visitors) {
+                    op.accept(v);
+                }
             }
+    
+            // finally generate repo-init statements for acl-statements that are recorded as to be
+            // converted to principal-based setup.
+            toConvert.generateRepoInit(formatter);    
+        } catch ( final OperatorConverterException oce) {
+            throw oce.getConverterException();
         }
-
-        // finally generate repo-init statements for acl-statements that are recorded as to be
-        // converted to principal-based setup.
-        toConvert.generateRepoInit(formatter);
     }
 }

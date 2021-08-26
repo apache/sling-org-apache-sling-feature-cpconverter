@@ -29,6 +29,7 @@ import java.util.TimeZone;
 
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.SlingInitialContentPolicy;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
@@ -232,6 +233,13 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
 
                 logger.info( "+-----------------------------------------------------+" );
                 logger.info("{} SUCCESS", appName);
+            } catch (ConverterException ce) {
+                logger.info( "+-----------------------------------------------------+" );
+                logger.info("{} FAILURE", appName);
+                logger.info( "+-----------------------------------------------------+" );
+                logger.error("Unable to convert content-package {}: {}", contentPackages, ce.getMessage());
+                logger.info( "+-----------------------------------------------------+" );
+                exitWithError = true;
             } catch (Throwable t) {
                 logger.info( "+-----------------------------------------------------+" );
                 logger.info("{} FAILURE", appName);

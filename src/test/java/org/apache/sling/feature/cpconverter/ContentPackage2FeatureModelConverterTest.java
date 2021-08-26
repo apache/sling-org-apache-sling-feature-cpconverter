@@ -93,7 +93,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
     private EntryHandlersManager handlersManager;
         
     @Before
-    public void setUp() throws IOException {
+    public void setUp() throws Exception {
         handlersManager = new DefaultEntryHandlersManager();
         converter = new ContentPackage2FeatureModelConverter()
                     .setEntryHandlersManager(handlersManager)
@@ -489,7 +489,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = ConverterException.class)
     public void verifyFilteringOutUndesiredPackages() throws Exception {
         RegexBasedResourceFilter resourceFilter = new RegexBasedResourceFilter();
         resourceFilter.addFilteringPattern(".*\\/install(?!(\\.runMode1\\/|\\.runMode2\\/|\\/))(.*)(?=\\.zip$).*");

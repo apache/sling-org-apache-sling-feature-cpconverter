@@ -346,7 +346,7 @@ public class AclManagerTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testCalculateEnforcedIntermediatePath() {
+    public void testCalculateEnforcedIntermediatePath() throws Exception {
         DefaultAclManager aclManager = new DefaultAclManager(null, "system");
         aclManager.calculateEnforcedIntermediatePath("/home/users/system/some/path");
     }
@@ -380,7 +380,7 @@ public class AclManagerTest {
     }
 
     @Test
-    public void testGetCreatePathForRootNode() {
+    public void testGetCreatePathForRootNode() throws Exception {
         RepoPath rootPath = new RepoPath("/");
         DefaultAclManager aclManager = new DefaultAclManager();
         CreatePath cp = aclManager.getCreatePath(rootPath, Collections.emptyList());
@@ -388,7 +388,7 @@ public class AclManagerTest {
     }
 
     @Test
-    public void testGetCreatePathForRepositoryPath() {
+    public void testGetCreatePathForRepositoryPath() throws Exception {
         RepoPath repoPath = new RepoPath("");
         assertTrue(repoPath.isRepositoryPath());
         
@@ -398,7 +398,7 @@ public class AclManagerTest {
     }
 
     @Test
-    public void testGetCreatePathForToplevel() {
+    public void testGetCreatePathForToplevel() throws Exception {
         RepoPath toplevel = new RepoPath("/apps");
         DefaultAclManager aclManager = new DefaultAclManager();
         CreatePath cp = aclManager.getCreatePath(toplevel, Collections.emptyList());
@@ -406,7 +406,7 @@ public class AclManagerTest {
     }
 
     @Test
-    public void testGetCreatePathForPathBelowUserRoot() {
+    public void testGetCreatePathForPathBelowUserRoot() throws Exception {
         RepoPath userPath = new RepoPath("/home/user/system/feature/usernode");
         DefaultAclManager aclManager = new DefaultAclManager();
         aclManager.addSystemUser(new SystemUser("systemUser", userPath, userPath.getParent()));

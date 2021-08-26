@@ -98,12 +98,13 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     
     private RepoPath userRootPath;
 
-    public DefaultAclManager() {
+    public DefaultAclManager() throws ConverterException {
         this(null, ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
     }
-    public DefaultAclManager(@Nullable String enforcePrincipalBasedSupportedPath, @NotNull String systemRelPath) {
+
+    public DefaultAclManager(@Nullable String enforcePrincipalBasedSupportedPath, @NotNull String systemRelPath) throws ConverterException {
         if (enforcePrincipalBasedSupportedPath != null && !enforcePrincipalBasedSupportedPath.contains(systemRelPath)) {
-            throw new IllegalArgumentException("Relative path for system users "+ systemRelPath + " not included in " + enforcePrincipalBasedSupportedPath);
+            throw new ConverterException("Relative path for system users "+ systemRelPath + " not included in " + enforcePrincipalBasedSupportedPath);
         }
         this.enforcePrincipalBasedSupportedPath = (enforcePrincipalBasedSupportedPath == null) ? null : new RepoPath(enforcePrincipalBasedSupportedPath);
         this.systemRelPath = systemRelPath;
@@ -252,7 +253,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     }
 
     @NotNull
-    private String calculateIntermediatePath(@NotNull SystemUser systemUser) {
+    private String calculateIntermediatePath(@NotNull SystemUser systemUser) throws ConverterException {
         RepoPath intermediatePath = systemUser.getIntermediatePath();
         if (enforcePrincipalBased(systemUser)) {
             return calculateEnforcedIntermediatePath(intermediatePath.toString());
@@ -380,7 +381,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
 
     @Override
     @NotNull
-    public String calculateEnforcedIntermediatePath(@Nullable String intermediatePath) {
+    public String calculateEnforcedIntermediatePath(@Nullable String intermediatePath) throws ConverterException {
         if (enforcePrincipalBasedSupportedPath == null) {
             throw new IllegalStateException("No supported path configured");
         }
@@ -401,12 +402,12 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
                 }
                 parent = Text.getRelativeParent(parent, 1);
             }
-            throw new IllegalStateException("Cannot calculate intermediate path for service user. Configured Supported path " +enforcePrincipalBasedSupportedPath+" has no common ancestor with "+intermediatePath);
+            throw new ConverterException("Cannot calculate intermediate path for service user. Configured Supported path " +enforcePrincipalBasedSupportedPath+" has no common ancestor with "+intermediatePath);
         }
     }
 
     @NotNull
-    private String getRelativeIntermediatePath(@NotNull String intermediatePath) {
+    private String getRelativeIntermediatePath(@NotNull String intermediatePath) throws ConverterException {
         if (intermediatePath.equals(systemRelPath) || intermediatePath.startsWith(systemRelPath+"/")) {
             return intermediatePath;
         } else {
@@ -414,7 +415,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
             String rel = "/" + systemRelPath + "/";
             int i = p.indexOf(rel);
             if (i == -1) {
-                throw new IllegalStateException("Invalid intermediate path for system user " + intermediatePath + ". Must include "+ systemRelPath);
+                throw new ConverterException("Invalid intermediate path for system user " + intermediatePath + ". Must include "+ systemRelPath);
             }
             return intermediatePath.substring(i + 1);
         }

@@ -14,19 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.sling.feature.cpconverter.accesscontrol;
+package org.apache.sling.feature.cpconverter.repoinit;
 
 import org.apache.sling.feature.cpconverter.ConverterException;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-public interface EnforceInfo {
+/**
+ * Runtime exception variant of the converter exception to pass it through
+ * the operators/visitors
+ */
+public class OperatorConverterException extends RuntimeException {
+    
+    public OperatorConverterException(final ConverterException e) {
+        super(e);
+    }
 
-    void recordSystemUserIds(@NotNull String... systemUserIds);
-
-    boolean enforcePrincipalBased(@NotNull String systemUserId);
-
-    @NotNull
-    String calculateEnforcedIntermediatePath(@Nullable String intermediatePath) throws ConverterException;
-
+    public ConverterException getConverterException() {
+        return (ConverterException)this.getCause();
+    }
 }

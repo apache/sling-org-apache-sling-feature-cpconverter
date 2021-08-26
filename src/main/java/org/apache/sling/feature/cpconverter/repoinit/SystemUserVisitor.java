@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.repoinit;
 
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.accesscontrol.EnforceInfo;
 import org.apache.sling.repoinit.parser.impl.WithPathOptions;
 import org.apache.sling.repoinit.parser.operations.CreateServiceUser;
@@ -38,11 +39,15 @@ class SystemUserVisitor extends NoOpVisitor {
         String path = createServiceUser.getPath();
         enforceInfo.recordSystemUserIds(id);
 
-        if (enforceInfo.enforcePrincipalBased(id)) {
-            CreateServiceUser operation = new CreateServiceUser(id, new WithPathOptions(enforceInfo.calculateEnforcedIntermediatePath(path), true));
-            formatter.format("%s", operation.asRepoInitString());
-        } else {
-            formatter.format("%s", createServiceUser.asRepoInitString());
+        try {
+            if (enforceInfo.enforcePrincipalBased(id)) {
+                CreateServiceUser operation = new CreateServiceUser(id, new WithPathOptions(enforceInfo.calculateEnforcedIntermediatePath(path), true));
+                formatter.format("%s", operation.asRepoInitString());
+            } else {
+                formatter.format("%s", createServiceUser.asRepoInitString());
+            }    
+        } catch ( final ConverterException ce) {
+            throw new OperatorConverterException(ce);
         }
     }
 }
