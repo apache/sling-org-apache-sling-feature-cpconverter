@@ -20,6 +20,8 @@ import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
+import org.apache.sling.feature.Extension;
+import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
@@ -30,6 +32,15 @@ import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
 import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
+import org.apache.sling.repoinit.parser.RepoInitParsingException;
+import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
+import org.apache.sling.repoinit.parser.operations.CreatePath;
+import org.apache.sling.repoinit.parser.operations.CreateServiceUser;
+import org.apache.sling.repoinit.parser.operations.Operation;
+import org.apache.sling.repoinit.parser.operations.RegisterNodetypes;
+import org.apache.sling.repoinit.parser.operations.SetAclPaths;
+import org.apache.sling.repoinit.parser.operations.SetAclPrincipalBased;
+import org.apache.sling.repoinit.parser.operations.SetAclPrincipals;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
@@ -41,40 +52,44 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 public class AdjustedFilterTest extends AbstractConverterTest {
 
     private ContentPackage2FeatureModelConverter converter;
-
     private File outputDirectory;
-    private FeaturesManager featuresManager;
+    
+    private final EntryHandlersManager handlersManager = spy(new DefaultEntryHandlersManager(Collections.emptyMap(), false, ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP, ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT));
 
     @Before
     public void setUp() throws Exception {
         AclManager aclManager = new DefaultAclManager();
-        EntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP, ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
 
         converter = new ContentPackage2FeatureModelConverter()
                 .setEntryHandlersManager(handlersManager)
                 .setAclManager(aclManager);
 
         outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
-        featuresManager = new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, aclManager);
-
+        FeaturesManager featuresManager = new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, aclManager);
         converter.setFeaturesManager(featuresManager)
                 .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                 .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory));
@@ -99,11 +114,11 @@ public class AdjustedFilterTest extends AbstractConverterTest {
 
     /**
      * Same as {@link #testSubTreeInContentXml}, but 'subtree_in_contentxml_sibling.zip' contains an 
-     * uncovered sibling /oak:index/custom-2 instead in the .content.xml, which is not covered by the filter, which only 
+     * sibling /oak:index/custom-2 instead in the .content.xml, which is not covered by the filter, which only 
      * lists /oak:index/custom as filter root.
      */
     @Test
-    public void testSubTreeInContentWithSiblingsXml() throws Exception {
+    public void testSubTreeInContentXmlWithSibling() throws Exception {
         URL packageUrl = getClass().getResource("subtree_in_contentxml_sibling.zip");
         File packageFile = FileUtils.toFile(packageUrl);
         WorkspaceFilter filter = getWorkspaceFilter(packageFile);
@@ -120,8 +135,37 @@ public class AdjustedFilterTest extends AbstractConverterTest {
         try (ZipFile zipFile = new ZipFile(converted)) {
             ZipEntry entry = zipFile.getEntry("jcr_root/_oak_index/.content.xml");
             String content = IOUtils.toString(zipFile.getInputStream(entry), StandardCharsets.UTF_8);
-            assertTrue(content.contains("<custom-2>"));
+            assertTrue(content.contains("<custom-2"));
         }
+    }
+
+    /**
+     * Same as {@link #testSubTreeInContentXmlWithSibling()}, but 'subtree_in_contentxml_policy.zip' in addition contains 
+     * policy node /oak:index/rep:policy in the .content.xml, which is not covered by the filter, which only 
+     * lists /oak:index/custom as filter root.
+     */
+    @Test
+    public void testSubTreeInContentXmlWithPolicy() throws Exception {
+        URL packageUrl = getClass().getResource("subtree_in_contentxml_policy.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+        WorkspaceFilter filter = getWorkspaceFilter(packageFile);
+        assertCoverage(filter);
+        assertFalse(filter.covers("/oak:index/rep:policy"));
+
+        converter.convert(packageFile);
+
+        File converted = new File(outputDirectory, "subtree_in_contentxml_policy/0.0.0/subtree_in_contentxml_policy-0.0.0-cp2fm-converted.zip");
+        filter = getWorkspaceFilter(converted);
+        assertCoverage(filter);
+        assertFalse(filter.covers("/oak:index/rep:policy"));
+
+        try (ZipFile zipFile = new ZipFile(converted)) {
+            ZipEntry entry = zipFile.getEntry("jcr_root/_oak_index/.content.xml");
+            String content = IOUtils.toString(zipFile.getInputStream(entry), StandardCharsets.UTF_8);
+            assertTrue(content.contains("<rep:policy"));
+        }
+        // FIXME: SLING-10760
+        //verify(handlersManager).getEntryHandlerByEntryPath("/jcr_root/_oak_index/_rep_policy.xml");
     }
     
     private void assertCoverage(@NotNull WorkspaceFilter filter) {
