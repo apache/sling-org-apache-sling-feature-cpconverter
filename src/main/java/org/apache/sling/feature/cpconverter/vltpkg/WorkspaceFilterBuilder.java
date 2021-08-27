@@ -75,7 +75,10 @@ class WorkspaceFilterBuilder {
             DefaultWorkspaceFilter dwf = new DefaultWorkspaceFilter();
             Map<String, PathFilterSet> propFilters = extractPropertyFilters(baseFilter);
             for (PathFilterSet pfs : baseFilter.getFilterSets()) {
-                if (coversConvertedPath(pfs)) {
+                // add the filter to the new workspace filter if it either covers content from the converted package
+                // or doesn't match any of the content that has been removed to repo-init. the latter condition 
+                // make sure filter sets without any corresponding content (i.e. removal) are not dropped.
+                if (coversConvertedPath(pfs) || !coversFilteredPath(pfs)) {
                     processPathFilterSet(dwf, pfs, propFilters);
                 }
             }
@@ -98,6 +101,10 @@ class WorkspaceFilterBuilder {
         Map<String, PathFilterSet> propFilters = new LinkedHashMap<>();
         base.getPropertyFilterSets().forEach(pathFilterSet -> propFilters.put(pathFilterSet.getRoot(), pathFilterSet));
         return propFilters;
+    }
+    
+    private boolean coversFilteredPath(@NotNull PathFilterSet pfs) {
+        return filteredPaths.stream().anyMatch(pfs::covers);
     }
 
     /**

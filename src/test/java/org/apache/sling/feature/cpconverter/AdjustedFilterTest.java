@@ -72,6 +72,34 @@ public class AdjustedFilterTest extends AbstractConverterTest {
         deleteDirTree(outputDirectory);
         converter.close();
     }
+    
+    /**
+     * @see <a href="https://issues.apache.org/jira/browse/SLING-10754">SLING-10754</a>
+     */
+    @Test
+    public void testRemoveFilter() throws Exception {
+        URL packageUrl = getClass().getResource("remove_filter.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+        converter.convert(packageFile);
+
+        File converted = new File(outputDirectory, "remove_filter/0.0.0/remove_filter-0.0.0-cp2fm-converted.zip");
+        WorkspaceFilter filter = getWorkspaceFilter(converted);
+        assertCoverage(filter);
+    }
+
+    /**
+     * @see <a href="https://issues.apache.org/jira/browse/SLING-10754">SLING-10754</a>
+     */
+    @Test
+    public void testSubTreeRemove() throws Exception {
+        URL packageUrl = getClass().getResource("subtree_remove_filter.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+        converter.convert(packageFile);
+
+        File converted = new File(outputDirectory, "subtree_remove_filter/0.0.0/subtree_remove_filter-0.0.0-cp2fm-converted.zip");
+        WorkspaceFilter filter = getWorkspaceFilter(converted);
+        assertCoverage(filter);
+    }
 
     /**
      * @see <a href="https://issues.apache.org/jira/browse/SLING-10754">SLING-10754</a>
