@@ -25,12 +25,20 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Set;
 
+/**
+ * Implementation of {@link AbstractJcrNodeParser} that builds and records paths of all elements (nodes) using the 
+ * specified initial repository path.
+ */
 public class DefaultEntryParser extends AbstractJcrNodeParser<Set<String>> {
     
     private final LinkedList<String> currentPath = new LinkedList<>();
     private final Set<String> coveredNodePaths = new LinkedHashSet<>();
-    
-    
+
+    /**
+     * Create a new {@link DefaultEntryParser}.
+     * 
+     * @param repositoryPath The base repository path used to build absolute paths from the parsed elements.
+     */
     public DefaultEntryParser(@NotNull String repositoryPath) {
         currentPath.push(repositoryPath);
     }
@@ -56,6 +64,9 @@ public class DefaultEntryParser extends AbstractJcrNodeParser<Set<String>> {
         // nothing to do
     }
 
+    /**
+     * @return All node paths recorded by this parser instance.
+     */
     @Override
     public Set<String> getParsingResult() {
         return coveredNodePaths;
