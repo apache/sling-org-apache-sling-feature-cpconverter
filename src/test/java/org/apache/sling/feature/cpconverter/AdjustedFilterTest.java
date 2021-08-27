@@ -16,13 +16,9 @@
  */
 package org.apache.sling.feature.cpconverter;
 
-import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
-import org.apache.sling.feature.Extension;
-import org.apache.sling.feature.Feature;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.LocalMavenRepositoryArtifactsDeployer;
@@ -32,46 +28,22 @@ import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
 import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
-import org.apache.sling.repoinit.parser.RepoInitParsingException;
-import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
-import org.apache.sling.repoinit.parser.operations.CreatePath;
-import org.apache.sling.repoinit.parser.operations.CreateServiceUser;
-import org.apache.sling.repoinit.parser.operations.Operation;
-import org.apache.sling.repoinit.parser.operations.RegisterNodetypes;
-import org.apache.sling.repoinit.parser.operations.SetAclPaths;
-import org.apache.sling.repoinit.parser.operations.SetAclPrincipalBased;
-import org.apache.sling.repoinit.parser.operations.SetAclPrincipals;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runners.Parameterized;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
 
 public class AdjustedFilterTest extends AbstractConverterTest {
 
@@ -100,7 +72,10 @@ public class AdjustedFilterTest extends AbstractConverterTest {
         deleteDirTree(outputDirectory);
         converter.close();
     }
-    
+
+    /**
+     * @see <a href="https://issues.apache.org/jira/browse/SLING-10754">SLING-10754</a>
+     */
     @Test
     public void testSubTreeInContentXml() throws Exception {
         URL packageUrl = getClass().getResource("subtree_in_contentxml.zip");
@@ -116,6 +91,12 @@ public class AdjustedFilterTest extends AbstractConverterTest {
      * Same as {@link #testSubTreeInContentXml}, but 'subtree_in_contentxml_sibling.zip' contains an 
      * sibling /oak:index/custom-2 instead in the .content.xml, which is not covered by the filter, which only 
      * lists /oak:index/custom as filter root.
+     * 
+     * NOTE: the behaviour tested in this case relies on a bug in Jackrabbit FileVault that results in siblings of a 
+     * filter-root being installed even if not covered by the workspace filter.
+     * 
+     * @see <a href="https://issues.apache.org/jira/browse/SLING-10754">SLING-10754</a> and 
+     *      <a href="https://issues.apache.org/jira/browse/SLING-10760">SLING-10760</a>
      */
     @Test
     public void testSubTreeInContentXmlWithSibling() throws Exception {
@@ -143,6 +124,9 @@ public class AdjustedFilterTest extends AbstractConverterTest {
      * Same as {@link #testSubTreeInContentXmlWithSibling()}, but 'subtree_in_contentxml_policy.zip' in addition contains 
      * policy node /oak:index/rep:policy in the .content.xml, which is not covered by the filter, which only 
      * lists /oak:index/custom as filter root.
+     * 
+     * @see <a href="https://issues.apache.org/jira/browse/SLING-10754">SLING-10754</a> and 
+     *      <a href="https://issues.apache.org/jira/browse/SLING-10760">SLING-10760</a>
      */
     @Test
     public void testSubTreeInContentXmlWithPolicy() throws Exception {

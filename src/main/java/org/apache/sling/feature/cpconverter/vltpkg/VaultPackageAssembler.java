@@ -227,6 +227,7 @@ public class VaultPackageAssembler implements EntryHandler {
         String repoPath = toRepositoryPath(path);
         if (!filter.covers(repoPath) && VaultPackageUtils.isContentEntry(path)) {
             try (InputStream input = Objects.requireNonNull(archive.openInputStream(entry))) {
+                // need to inspect .content.xml to collect the complete set of converted paths (see SLING-10754)
                 DefaultEntryParser parser = new DefaultEntryParser(repoPath);
                 parser.parse(input);
                 extractedConvertedRepoPaths.addAll(parser.getParsingResult());
