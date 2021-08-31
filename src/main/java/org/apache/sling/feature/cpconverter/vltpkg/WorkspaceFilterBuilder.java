@@ -113,7 +113,7 @@ class WorkspaceFilterBuilder {
      * - the given filter-set covers any of the paths included in the converted content package
      * - the given filter-set covers any of the extracted paths hidden in a .content.xml
      * - it's root path is a sibling of a manually extracted paths hidden in a .content.xml that get 
-     *   installed despite not being covered by the filter (issue in older versions of Jackrabbit FileVault)).
+     *   installed despite not being covered by the filter.
      * 
      * @param pfs A {@link PathFilterSet} of the original base filter.
      * @return {@code true} if the given {@code PathFilterSet} is still relevant for the new {@code WorkspaceFilter} given
@@ -121,8 +121,7 @@ class WorkspaceFilterBuilder {
      */
     private boolean coversConvertedPath(@NotNull PathFilterSet pfs) {
         return cpPaths.stream().anyMatch(pfs::covers) ||
-                // test if a extracted path matches and workaround sibling-issue in older versions Jackrabbit FileVault 
-                // (see discussion in SLING-10760)
+                // test if a extracted path matches or is a sibling of the filter root (see discussion in SLING-10760)
                 extractedPaths.stream().anyMatch(path -> path.equals(pfs.getRoot()) || Text.isSibling(path, pfs.getRoot()));
     }
 
