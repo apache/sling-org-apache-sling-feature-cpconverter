@@ -52,6 +52,7 @@ import org.apache.sling.feature.cpconverter.artifacts.ArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.artifacts.FileArtifactWriter;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.ResourceFilter;
+import org.apache.sling.feature.cpconverter.handlers.DefaultHandler;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
 import org.apache.sling.feature.cpconverter.handlers.NodeTypesEntryHandler;
@@ -476,7 +477,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
         EntryHandler entryHandler = handlersManager.getEntryHandlerByEntryPath(entryPath);
         if (entryHandler == null) {
-            entryHandler = getMainPackageAssembler();
+            entryHandler = new DefaultHandler(getMainPackageAssembler(), removeInstallHooks);
         }
 
         if (entry == null) {
