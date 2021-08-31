@@ -71,12 +71,12 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.apache.jackrabbit.vault.util.Constants.DOT_CONTENT_XML;
+
 public class DefaultAclManager implements AclManager, EnforceInfo {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultAclManager.class);
-
-    private static final String CONTENT_XML_FILE_NAME = ".content.xml";
-
+    
     private final RepoPath enforcePrincipalBasedSupportedPath;
     private final String systemRelPath;
 
@@ -431,7 +431,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
             platformPath += platformPath.isEmpty() ? platformname : "/" + platformname;
             boolean segmentAdded = false;
             for (VaultPackageAssembler packageAssembler : packageAssemblers) {
-                File currentContent = packageAssembler.getEntry(platformPath + "/" + CONTENT_XML_FILE_NAME);
+                File currentContent = packageAssembler.getEntry(platformPath + "/" + DOT_CONTENT_XML);
                 if (currentContent.isFile()) {
                     segmentAdded =  addSegment(cp, part, currentContent);
                     if (segmentAdded) {
