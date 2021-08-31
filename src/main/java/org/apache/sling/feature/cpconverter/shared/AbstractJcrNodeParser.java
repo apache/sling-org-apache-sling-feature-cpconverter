@@ -27,7 +27,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.apache.sling.feature.cpconverter.ConverterException;
 import org.jetbrains.annotations.NotNull;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -35,7 +34,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 public abstract class AbstractJcrNodeParser<O> extends DefaultHandler {
 
-    private static final String JCR_ROOT = "jcr:root";
+    public static final String JCR_ROOT = "jcr:root";
 
     private static final SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
 
@@ -47,7 +46,7 @@ public abstract class AbstractJcrNodeParser<O> extends DefaultHandler {
         this.primaryTypes = Arrays.asList(primaryTypes);
     }
 
-    public O parse(InputStream input) throws IOException, ConverterException {
+    public O parse(InputStream input) throws IOException {
         try {
             SAXParser saxParser = saxParserFactory.newSAXParser();
             saxParser.parse(input, this);

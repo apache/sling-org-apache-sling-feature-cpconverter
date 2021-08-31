@@ -33,14 +33,19 @@ import org.apache.jackrabbit.vault.packaging.Dependency;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
+import org.apache.jackrabbit.vault.util.Constants;
+import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import static org.apache.jackrabbit.vault.util.Constants.DOT_CONTENT_XML;
 import static org.apache.jackrabbit.vault.util.Constants.ROOT_DIR;
 
 public class VaultPackageUtils {
 
     private static final String DEPENDENCIES_DELIMITER = ",";
+    
+    private static final String ENTRY_ROOT_PATH = "/" + ROOT_DIR;
 
     private VaultPackageUtils() {
         // this class must not be instantiated from outside
@@ -137,4 +142,26 @@ public class VaultPackageUtils {
         properties.setProperty(PackageProperties.NAME_DEPENDENCIES, dependenciesString);
     }
 
+    public static @NotNull Set<String> toRepositoryPaths(@NotNull Set<String> paths) {
+        return paths.stream().map(VaultPackageUtils::toRepositoryPath).collect(Collectors.toSet());
+    }
+
+    public static @NotNull String toRepositoryPath(@NotNull String s) {
+        if (s.startsWith(ENTRY_ROOT_PATH)) {
+            String path = PlatformNameFormat.getRepositoryPath(s.substring(ENTRY_ROOT_PATH.length()));
+            if (path.endsWith(Constants.DOT_CONTENT_XML)) {
+                path = path.substring(0, path.lastIndexOf(Constants.DOT_CONTENT_XML));
+            } else if (path.endsWith(".xml")) {
+                // remove .xml extension from policy-nodes
+                path = path.substring(0, path.lastIndexOf(".xml"));
+            }
+            return (path.isEmpty()) ? "/" : path;
+        } else {
+            return s;
+        }
+    }
+    
+    public static boolean isContentEntry(@NotNull String entryPath) {
+        return entryPath.startsWith(ENTRY_ROOT_PATH) && entryPath.endsWith(DOT_CONTENT_XML);
+    }
 }
