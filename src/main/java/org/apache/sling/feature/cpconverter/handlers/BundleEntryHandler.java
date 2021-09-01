@@ -87,8 +87,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BundleEntryHandler extends AbstractRegexEntryHandler {
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private static final String NAME_GROUP_ID = "groupId";
 
@@ -305,6 +309,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
             }
     
             // remap CND files to make sure they are picked up by NodeTypesEntryHandler
+            logger.warn("Unable to check for CND files for sling inital content - Not implemented!");
             if (nsRegistry.getRegisteredCndSystemIds().contains(jarEntry.getName())) {
                 contentPackageEntryPath = "/META-INF/vault/" + Text.getName(jarEntry.getName()) + ".cnd";
             }

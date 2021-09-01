@@ -26,10 +26,7 @@ import java.util.Map;
 import javax.jcr.NamespaceException;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
-import javax.jcr.ValueFactory;
-import javax.jcr.nodetype.NodeTypeManager;
 
-import org.apache.jackrabbit.commons.cnd.CndImporter;
 import org.apache.jackrabbit.commons.cnd.ParseException;
 import org.apache.jackrabbit.spi.commons.namespace.NamespaceResolver;
 import org.jetbrains.annotations.NotNull;
@@ -52,10 +49,14 @@ public class JcrNamespaceRegistry implements NamespaceRegistry, NamespaceResolve
     }
 
     public void registerCnd(Reader reader, String systemId) throws ParseException, RepositoryException, IOException {
-        NodeTypeManager ntManager = null;
-        ValueFactory valueFactory = null;
-        CndImporter.registerNodeTypes(reader, systemId, ntManager, this, valueFactory, false);
-        registeredCndSystemIds.add(systemId);
+        throw new IllegalStateException("Not implemented");
+        /*
+        TODO:
+            NodeTypeManager ntManager = null;
+            ValueFactory valueFactory = null;
+            CndImporter.registerNodeTypes(reader, systemId, ntManager, this, valueFactory, false);
+            registeredCndSystemIds.add(systemId);
+         */
     }
 
     @Override
