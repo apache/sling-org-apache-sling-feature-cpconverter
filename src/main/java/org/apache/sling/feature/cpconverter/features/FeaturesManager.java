@@ -40,16 +40,16 @@ public interface FeaturesManager {
 
     void addAPIRegionExport(@Nullable String runMode, @NotNull String exportedPackage);
 
-    void addConfiguration(@Nullable String runMode, 
-        @NotNull String pid,
-        @NotNull String path,
-        @NotNull Dictionary<String, Object> configurationProperties)
-    throws IOException, ConverterException;
+    void addConfiguration(@Nullable String runMode,
+                          @NotNull String pid,
+                          @NotNull String path,
+                          @NotNull Dictionary<String, Object> configurationProperties)
+            throws IOException, ConverterException;
 
     void serialize() throws IOException;
 
     void addOrAppendRepoInitExtension(@NotNull String text, @Nullable String runMode)
-    throws IOException, ConverterException;
+            throws IOException, ConverterException;
 
     @NotNull
     Map<String, String> getNamespaceUriByPrefix();

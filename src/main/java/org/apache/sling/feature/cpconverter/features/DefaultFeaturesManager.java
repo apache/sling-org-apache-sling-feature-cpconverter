@@ -107,7 +107,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
     private final Map<String, String> properties;
 
     private final List<String> targetAPIRegions = new ArrayList<>();
-    
+
     private final Map<String, String> namespaceUriByPrefix;
 
     private String exportsToAPIRegion;
@@ -119,7 +119,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
     private final Map<String, String> pidToPathMapping = new HashMap<>();
 
     private final Stack<String> packageIds = new Stack<>();
-    
+
     DefaultFeaturesManager() {
         this(new File(""));
     }
@@ -140,12 +140,12 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
     }
 
     public DefaultFeaturesManager(@NotNull ConfigurationHandling configurationHandling,
-                                    int bundlesStartOrder,
-                                    @NotNull File featureModelsOutputDirectory,
-                                    @Nullable String artifactIdOverride,
-                                    @Nullable String prefix,
-                                    @NotNull Map<String, String> properties,
-                                    @Nullable AclManager aclManager) {
+                                  int bundlesStartOrder,
+                                  @NotNull File featureModelsOutputDirectory,
+                                  @Nullable String artifactIdOverride,
+                                  @Nullable String prefix,
+                                  @NotNull Map<String, String> properties,
+                                  @Nullable AclManager aclManager) {
         this.configurationHandling = configurationHandling;
         this.bundlesStartOrder = bundlesStartOrder;
         this.featureModelsOutputDirectory = featureModelsOutputDirectory;
@@ -200,7 +200,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         Feature targetFeature = getRunMode(runMode);
         Artifacts artifacts;
 
-        if (ZIP_TYPE.equals(id.getType()) ) {
+        if (ZIP_TYPE.equals(id.getType())) {
             Extensions extensions = targetFeature.getExtensions();
             Extension extension = extensions.getByName(CONTENT_PACKAGES);
 
@@ -215,11 +215,11 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
             final int startOrderForBundle = startOrder != null ? startOrder.intValue() : bundlesStartOrder;
             artifact.setStartOrder(startOrderForBundle);
             // set origins
-            if ( !this.packageIds.isEmpty() ) {
+            if (!this.packageIds.isEmpty()) {
                 artifact.getMetadata().put(BUNDLE_ORIGINS, String.join("|", this.packageIds));
             }
 
-            artifacts = targetFeature.getBundles();        
+            artifacts = targetFeature.getBundles();
         }
 
         artifacts.add(artifact);
@@ -277,7 +277,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
             getAclManager().addRepoinitExtention(repoInitText, "seed", this);
             extractNamespaces(repoInitText, namespaceUriByPrefix);
         }
-        
+
     }
 
     static void extractNamespaces(String repoInitText, Map<String, String> namespaceUriByPrefix) {
@@ -297,7 +297,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
     }
 
     @Override
-    public@ NotNull Map<String, String> getNamespaceUriByPrefix() {
+    public @NotNull Map<String, String> getNamespaceUriByPrefix() {
         return namespaceUriByPrefix;
     }
 
@@ -309,18 +309,18 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         this.aclManager = aclManager;
     }
 
-    private boolean handleRepoinitAndMappings(String runMode, String pid, Dictionary<String, Object> configurationProperties, boolean enforceServiceMappingByPrincipal) 
-    throws IOException, ConverterException {
+    private boolean handleRepoinitAndMappings(String runMode, String pid, Dictionary<String, Object> configurationProperties, boolean enforceServiceMappingByPrincipal)
+            throws IOException, ConverterException {
         if (REPOINIT_FACTORY_PID.equals(pid)) {
             final String[] scripts = Converters.standardConverter().convert(configurationProperties.get("scripts")).to(String[].class);
-            if (scripts != null && scripts.length > 0 ) {
+            if (scripts != null && scripts.length > 0) {
                 for (final String text : scripts) {
                     getAclManager().addRepoinitExtention(text, runMode, this);
                 }
             }
             checkReferences(configurationProperties, pid);
             return true;
-        } else if ( REPOINIT_PID.equals(pid) ) {
+        } else if (REPOINIT_PID.equals(pid)) {
             checkReferences(configurationProperties, pid);
             return true;
         } else if (pid.startsWith(SERVICE_USER_MAPPING_PID)) {
@@ -351,11 +351,11 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
     }
 
     @Override
-    public void addConfiguration(@Nullable String runMode, 
-        @NotNull String pid, 
-        @NotNull String path,
-        @NotNull Dictionary<String, Object> configurationProperties) 
-    throws IOException, ConverterException {
+    public void addConfiguration(@Nullable String runMode,
+                                 @NotNull String pid,
+                                 @NotNull String path,
+                                 @NotNull Dictionary<String, Object> configurationProperties)
+            throws IOException, ConverterException {
         String factoryPid = null;
         int n = pid.indexOf('~');
         if (n > 0) {
@@ -373,22 +373,24 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
             feature.getConfigurations().add(configuration);
             this.pidToPathMapping.put(pid, path);
         } else {
-            switch ( this.configurationHandling ) {
-                case STRICT : throw new ConverterException("Configuration '"
-                               + pid
-                               + "' already defined in Feature Model '"
-                               + feature.getId().toMvnId()
-                               + "', set the 'mergeConfigurations' flag to 'true' if you want to merge multiple configurations with same PID");
-                case ORDERED : final String oldPath = this.pidToPathMapping.get(pid);
-                               if ( oldPath == null || oldPath.compareTo(path) > 0 ) {
-                                   this.pidToPathMapping.put(pid, path);
-                                   feature.getConfigurations().remove(configuration);
-                                   configuration = new Configuration(pid);
-                                   feature.getConfigurations().add(configuration);                       
-                               } else {
-                                   return;
-                               }
-                case MERGE : // nothing to do
+            switch (this.configurationHandling) {
+                case STRICT:
+                    throw new ConverterException("Configuration '"
+                            + pid
+                            + "' already defined in Feature Model '"
+                            + feature.getId().toMvnId()
+                            + "', set the 'mergeConfigurations' flag to 'true' if you want to merge multiple configurations with same PID");
+                case ORDERED:
+                    final String oldPath = this.pidToPathMapping.get(pid);
+                    if (oldPath == null || oldPath.compareTo(path) > 0) {
+                        this.pidToPathMapping.put(pid, path);
+                        feature.getConfigurations().remove(configuration);
+                        configuration = new Configuration(pid);
+                        feature.getConfigurations().add(configuration);
+                    } else {
+                        return;
+                    }
+                case MERGE: // nothing to do
             }
         }
 
@@ -409,12 +411,12 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         configuration.getProperties().remove("service.factoryPid");
 
         // set origins
-        if ( !this.packageIds.isEmpty() ) {
+        if (!this.packageIds.isEmpty()) {
             final List<String> origins = new ArrayList<>();
             final Object val = configuration.getProperties().get(CONFIGURATION_ORIGINS);
-            if ( val != null ) {
+            if (val != null) {
                 origins.addAll(Arrays.asList(val.toString().split(",")));
-            }    
+            }
             origins.add(String.join("|", this.packageIds));
             configuration.getProperties().put(CONFIGURATION_ORIGINS, String.join(",", origins));
         }
@@ -431,14 +433,14 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         if (exportsToAPIRegion != null) {
             ApiRegion ar = new ApiRegion(exportsToAPIRegion);
             exportedPackages
-                .stream()
-                .forEach(e -> ar.add(new ApiExport(e)));
+                    .stream()
+                    .forEach(e -> ar.add(new ApiExport(e)));
             regions.add(ar);
         }
 
         targetAPIRegions
-            .stream()
-            .forEach(r -> regions.add(new ApiRegion(r)));
+                .stream()
+                .forEach(r -> regions.add(new ApiRegion(r)));
 
         Extension apiRegions = new Extension(ExtensionType.JSON, "api-regions", ExtensionState.OPTIONAL);
         apiRegions.setJSONStructure(regions.toJSONArray());
@@ -465,8 +467,8 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         addAPIRegions(feature, apiRegionExports.get(runMode));
 
         StringBuilder fileNameBuilder = new StringBuilder()
-            .append((prefix != null) ? prefix : "")
-            .append(feature.getId().getArtifactId());
+                .append((prefix != null) ? prefix : "")
+                .append(feature.getId().getArtifactId());
 
         String classifier = feature.getId().getClassifier();
         if (classifier != null && !classifier.isEmpty()) {
@@ -516,7 +518,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
 
     @Override
     public void addOrAppendRepoInitExtension(@NotNull String text, @Nullable String runMode) {
-        if ( runMode == null ) {
+        if (runMode == null) {
             logger.info("Adding global repo-init");
         } else {
             logger.info("Adding repo-init for run mode: {}", runMode);
@@ -533,18 +535,17 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
     }
 
 
-
     private void checkReferences(@NotNull final Dictionary<String, Object> configurationProperties, @NotNull final String pid) throws ConverterException {
         final String[] references = Converters.standardConverter().convert(configurationProperties.get("references")).to(String[].class);
-        if ( references != null && references.length > 0 ) {
-            for(final String r  : references ) {
-                if ( r != null && !r.trim().isEmpty() ) {
+        if (references != null && references.length > 0) {
+            for (final String r : references) {
+                if (r != null && !r.trim().isEmpty()) {
                     throw new ConverterException("References are not supported for repoinit (configuration " + pid + ")");
                 }
             }
         }
     }
-    
+
     @Override
     public void start() {
         // nothing to do
