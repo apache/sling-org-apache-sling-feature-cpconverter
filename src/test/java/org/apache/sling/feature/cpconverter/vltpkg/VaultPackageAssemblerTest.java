@@ -75,11 +75,6 @@ public class VaultPackageAssemblerTest {
     }
     
     @Test
-    public void matchAll() {
-        assembler.matches(resourceLocation);
-    }
-
-    @Test
     public void packageResource() throws Exception {
         if (resourceLocation != null) {
             assembler.addEntry(resourceLocation, getClass().getResourceAsStream("../handlers" + resourceLocation));

@@ -29,12 +29,9 @@ import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
-import org.apache.jackrabbit.vault.util.Constants;
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryParser;
-import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -71,7 +68,7 @@ import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.getD
 import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.setDependencies;
 import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.toRepositoryPath;
 
-public class VaultPackageAssembler implements EntryHandler {
+public class VaultPackageAssembler {
 
     private static final Pattern OSGI_BUNDLE_PATTERN = Pattern.compile("(jcr_root)?/apps/[^/]+/install(\\.([^/]+))?/.+\\.jar");
     
@@ -87,18 +84,16 @@ public class VaultPackageAssembler implements EntryHandler {
     private final File storingDirectory;
     private final Properties properties;
     private final File tmpDir;
-    private final boolean removeInstallHooks;
     
     /**
      * This class can not be instantiated from outside
      */
     private VaultPackageAssembler(@NotNull File tempDir, @NotNull File storingDirectory, @NotNull Properties properties, 
-                                  @NotNull Set<Dependency> dependencies, boolean removeInstallHooks) {
+                                  @NotNull Set<Dependency> dependencies) {
         this.storingDirectory = storingDirectory;
         this.properties = properties;
         this.dependencies = dependencies;
         this.tmpDir = tempDir;
-        this.removeInstallHooks = removeInstallHooks;
     }
     
     /**
@@ -134,7 +129,7 @@ public class VaultPackageAssembler implements EntryHandler {
 
         Set<Dependency> dependencies = getDependencies(vaultPackage);
 
-        VaultPackageAssembler assembler = new VaultPackageAssembler(tempDir, storingDirectory, properties, dependencies, removeInstallHooks);
+        VaultPackageAssembler assembler = new VaultPackageAssembler(tempDir, storingDirectory, properties, dependencies);
         assembler.mergeFilters(Objects.requireNonNull(vaultPackage.getMetaInf().getFilter()));
         return assembler;
     }
@@ -157,7 +152,7 @@ public class VaultPackageAssembler implements EntryHandler {
         props.put(PackageProperties.NAME_VERSION, packageId.getVersionString() + VERSION_SUFFIX);
 
         props.put(PackageProperties.NAME_DESCRIPTION, description);
-        return new VaultPackageAssembler(tempDir, storingDirectory, props, new HashSet<>(), false);
+        return new VaultPackageAssembler(tempDir, storingDirectory, props, new HashSet<>());
     }
 
     private static @NotNull File initStoringDirectory(PackageId packageId, @NotNull File tempDir) {
@@ -180,21 +175,6 @@ public class VaultPackageAssembler implements EntryHandler {
 
     File getTempDir() {
         return this.tmpDir;
-    }
-
-    @Override
-    public boolean matches(@NotNull String path) {
-        return true;
-    }
-
-    @Override
-    public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter)
-            throws IOException, ConverterException {
-        if (removeInstallHooks && path.startsWith("/" + Constants.META_DIR + "/" + Constants.HOOKS_DIR)) {
-            log.info("Skipping install hook {} from original package", path);
-        } else {
-            addEntry(path, archive, entry);
-        }
     }
 
     public @NotNull Properties getPackageProperties() {
