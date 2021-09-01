@@ -87,12 +87,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class BundleEntryHandler extends AbstractRegexEntryHandler {
-
-    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private static final String NAME_GROUP_ID = "groupId";
 
