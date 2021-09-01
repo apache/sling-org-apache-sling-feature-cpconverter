@@ -20,7 +20,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.jetbrains.annotations.NotNull;
@@ -50,7 +49,7 @@ abstract class AbstractPolicyEntryHandler extends AbstractRegexEntryHandler {
 
     @Override
     public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Archive.Entry entry, @NotNull ContentPackage2FeatureModelConverter converter)
-            throws IOException, ConverterException {
+            throws IOException {
         String resourcePath;
         Matcher matcher = getPattern().matcher(path);
         // we are pretty sure it matches, here
@@ -75,12 +74,12 @@ abstract class AbstractPolicyEntryHandler extends AbstractRegexEntryHandler {
             AbstractPolicyParser policyParser = createPolicyParser(new RepoPath(PlatformNameFormat.getRepositoryPath(resourcePath)),
                     converter.getAclManager(),
                     handler);
-            boolean hasRejectedAcls;
+            boolean hasRejectedNodes;
             try (InputStream input = archive.openInputStream(entry)) {
-                hasRejectedAcls = policyParser.parse(input);
+                hasRejectedNodes = policyParser.parse(input);
             }
 
-            if (hasRejectedAcls) {
+            if (hasRejectedNodes) {
                 try (Reader reader = new StringReader(stringWriter.toString());
                     OutputStreamWriter writer = new OutputStreamWriter(converter.getMainPackageAssembler().createEntry(path))) {
                     IOUtils.copy(reader, writer);

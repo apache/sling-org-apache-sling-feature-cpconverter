@@ -26,8 +26,8 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import javax.xml.transform.sax.TransformerHandler;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Stack;
 
 import static org.apache.jackrabbit.JcrConstants.JCR_PRIMARYTYPE;
 
@@ -54,9 +54,9 @@ public final class RepPrincipalPolicyEntryHandler extends AbstractPolicyEntryHan
 
         private static final String REP_EFFECTIVE_PATH = "rep:effectivePath";
 
-        private final Stack<AccessControlEntry> aces = new Stack<>();
+        private final LinkedList<AccessControlEntry> aces = new LinkedList<>();
 
-        private boolean processCurrentAcl = false;
+        private boolean processCurrentAce = false;
 
         private String principalName = null;
 
@@ -83,15 +83,15 @@ public final class RepPrincipalPolicyEntryHandler extends AbstractPolicyEntryHan
                     RepoPath effectivePath = new RepoPath(extractEffectivePath(attributes.getValue(REP_EFFECTIVE_PATH)));
 
                     AccessControlEntry ace = new AccessControlEntry(true, privileges, effectivePath, true);
-                    // NOTE: nt-definition doesn't allow for jr2-stype restrictions defined right below the entry.
+                    // NOTE: nt-definition doesn't allow for jr2-type restrictions defined right below the entry.
                     // instead always requires rep:restrictions child node
-                    processCurrentAcl = aclManager.addAcl(principalName, ace);
-                    if (processCurrentAcl) {
+                    processCurrentAce = aclManager.addAcl(principalName, ace);
+                    if (processCurrentAce) {
                         aces.add(ace);
                     } else {
                         hasRejectedNodes = true;
                     }
-                } else if (REP_RESTRICTIONS.equals(primaryType) && !aces.isEmpty() && processCurrentAcl) {
+                } else if (REP_RESTRICTIONS.equals(primaryType) && !aces.isEmpty() && processCurrentAce) {
                     AccessControlEntry ace = aces.peek();
                     aces.add(ace);
                     addRestrictions(ace, attributes);
@@ -100,17 +100,17 @@ public final class RepPrincipalPolicyEntryHandler extends AbstractPolicyEntryHan
                 super.startElement(uri, localName, qName, attributes);
             }
 
-            if (!onRepAclNode || !processCurrentAcl) {
+            if (!onRepAclNode || !processCurrentAce) {
                 handler.startElement(uri, localName, qName, attributes);
             }
         }
 
         @Override
         public void endElement(String uri, String localName, String qName) throws SAXException {
-            if (onRepAclNode && processCurrentAcl && !aces.isEmpty()) {
+            if (onRepAclNode && processCurrentAce && !aces.isEmpty()) {
                 aces.pop();
             } else {
-                processCurrentAcl = false;
+                processCurrentAce = false;
                 principalName = null;
                 handler.endElement(uri, localName, qName);
             }

@@ -50,7 +50,7 @@ abstract class AbstractPolicyParser extends AbstractJcrNodeParser<Boolean> {
     // ACL processing result
     boolean hasRejectedNodes = false;
 
-    public AbstractPolicyParser(@NotNull String primaryType, @NotNull RepoPath repositoryPath, @NotNull AclManager aclManager, @NotNull TransformerHandler handler) {
+    AbstractPolicyParser(@NotNull String primaryType, @NotNull RepoPath repositoryPath, @NotNull AclManager aclManager, @NotNull TransformerHandler handler) {
         super(primaryType);
         this.handler = handler;
         this.repositoryPath = repositoryPath;
