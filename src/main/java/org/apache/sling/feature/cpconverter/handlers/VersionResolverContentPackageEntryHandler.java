@@ -26,13 +26,9 @@ import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.vltpkg.RecollectorVaultPackageScanner;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class VersionResolverContentPackageEntryHandler extends AbstractContentPackageHandler {
-
-    private final Logger logger = LoggerFactory.getLogger(getClass());
-
+    
     private final RecollectorVaultPackageScanner scanner;
 
     private final Map<PackageId, String> subContentPackages;
