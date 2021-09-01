@@ -52,7 +52,7 @@ public class SlingInitialContentBundleHandler extends BundleEntryHandler {
     @Override
     void finalizePackageAssembly(@NotNull String path, @NotNull Map<PackageType, VaultPackageAssembler> packageAssemblers, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws IOException, ConverterException {
         for (java.util.Map.Entry<PackageType, VaultPackageAssembler> entry : packageAssemblers.entrySet()) {
-            File packageFile = entry.getValue().createPackage(false);
+            File packageFile = entry.getValue().createPackage();
             handler.processSubPackage(path + "-" + entry.getKey(), runMode, converter.open(packageFile), converter, true);
         }
     }
