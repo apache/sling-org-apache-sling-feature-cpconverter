@@ -51,7 +51,7 @@ public class JcrNamespaceRegistry implements NamespaceRegistry, NamespaceResolve
     public void registerCnd(Reader reader, String systemId) throws ParseException, RepositoryException, IOException {
         throw new IllegalStateException("Not implemented");
         /*
-        TODO:
+        TODO: SLING-10770, implement CND support
             NodeTypeManager ntManager = null;
             ValueFactory valueFactory = null;
             CndImporter.registerNodeTypes(reader, systemId, ntManager, this, valueFactory, false);
