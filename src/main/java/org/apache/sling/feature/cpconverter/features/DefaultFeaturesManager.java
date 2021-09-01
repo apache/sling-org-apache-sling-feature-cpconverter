@@ -180,10 +180,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
 
         ArtifactId newId = appendRunmode(getTargetFeature().getId(), runMode);
 
-        return runModes.computeIfAbsent(runMode, k -> {
-            Feature f = new Feature(newId);
-            return f;
-        });
+        return runModes.computeIfAbsent(runMode, k -> new Feature(newId));
     }
 
     @Override
@@ -197,11 +194,11 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
 
         Artifact artifact = new Artifact(id);
 
-        Feature targetFeature = getRunMode(runMode);
+        Feature feature = getRunMode(runMode);
         Artifacts artifacts;
 
         if (ZIP_TYPE.equals(id.getType())) {
-            Extensions extensions = targetFeature.getExtensions();
+            Extensions extensions = feature.getExtensions();
             Extension extension = extensions.getByName(CONTENT_PACKAGES);
 
             if (extension == null) {
@@ -212,20 +209,20 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
             artifacts = extension.getArtifacts();
         } else {
             // set start order
-            final int startOrderForBundle = startOrder != null ? startOrder.intValue() : bundlesStartOrder;
+            final int startOrderForBundle = startOrder != null ? startOrder : bundlesStartOrder;
             artifact.setStartOrder(startOrderForBundle);
             // set origins
             if (!this.packageIds.isEmpty()) {
                 artifact.getMetadata().put(BUNDLE_ORIGINS, String.join("|", this.packageIds));
             }
 
-            artifacts = targetFeature.getBundles();
+            artifacts = feature.getBundles();
         }
 
         artifacts.add(artifact);
     }
 
-    private @NotNull ArtifactId appendRunmode(@NotNull ArtifactId id, @Nullable String runMode) {
+    private static @NotNull ArtifactId appendRunmode(@NotNull ArtifactId id, @Nullable String runMode) {
         ArtifactId newId;
         if (runMode == null) {
             newId = id;
@@ -244,9 +241,9 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
 
     @Override
     public void addAPIRegionExport(@Nullable String runMode, @NotNull String exportedPackage) {
-        if (exportsToAPIRegion == null)
+        if (exportsToAPIRegion == null) {
             return; // Ignore if we're not exporting to an API region
-
+        }
 
         getRunMode(runMode); // Trigger runmode initialization
 
@@ -268,7 +265,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         this.enforceServiceMappingByPrincipal = enforceServiceMappingByPrincipal;
     }
 
-    public void addSeed(Feature seed) throws IOException, ConverterException {
+    public void addSeed(@NotNull Feature seed) throws IOException, ConverterException {
         for (Configuration conf : seed.getConfigurations()) {
             handleRepoinitAndMappings("seed", conf.isFactoryConfiguration() ? conf.getFactoryPid() : conf.getPid(), conf.getConfigurationProperties(), false);
         }
@@ -280,7 +277,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
 
     }
 
-    static void extractNamespaces(String repoInitText, Map<String, String> namespaceUriByPrefix) {
+    private static void extractNamespaces(String repoInitText, Map<String, String> namespaceUriByPrefix) {
         try {
             List<Operation> ops = new RepoInitParserService().parse(new StringReader(repoInitText));
             for (Operation op : ops) {
@@ -325,29 +322,35 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
             return true;
         } else if (pid.startsWith(SERVICE_USER_MAPPING_PID)) {
             String[] mappings = Converters.standardConverter().convert(configurationProperties.get("user.mapping")).to(String[].class);
-            if (mappings != null) {
-                List<String> newMappings = new ArrayList<>();
-                for (String usermapping : mappings) {
-                    if (usermapping == null || usermapping.trim().isEmpty()) {
-                        logger.warn("ServiceUserMapping: Ignoring empty mapping in {}", pid);
-                        // invalid empty mapping => ignore
-                        continue;
-                    }
-                    try {
-                        Mapping mapping = new Mapping(usermapping, enforceServiceMappingByPrincipal);
-                        getAclManager().addMapping(mapping);
-                        newMappings.add(mapping.asString());
-                    } catch (IllegalArgumentException iae) {
-                        throw new ConverterException("ServiceUserMapping: Detected invalid mapping in " + pid);
-                    }
-                }
-                // replace 'user.mapping' property by the new mappings, which may have been refactored
-                if (!newMappings.isEmpty()) {
-                    configurationProperties.put("user.mapping", newMappings.toArray(new String[0]));
-                }
+            List<String> newMappings = convertMappings(mappings, pid, enforceServiceMappingByPrincipal);
+            // replace 'user.mapping' property by the new mappings, which may have been refactored
+            if (!newMappings.isEmpty()) {
+                configurationProperties.put("user.mapping", newMappings.toArray(new String[0]));
             }
         }
         return false;
+    }
+    
+    private List<String> convertMappings(@Nullable String[] mappings, @NotNull String pid, boolean enforceServiceMappingByPrincipal) throws ConverterException {
+        if (mappings == null) {
+            return Collections.emptyList();
+        }
+        List<String> newMappings = new ArrayList<>();
+        for (String usermapping : mappings) {
+            if (usermapping == null || usermapping.trim().isEmpty()) {
+                logger.warn("ServiceUserMapping: Ignoring empty mapping in {}", pid);
+                // invalid empty mapping => ignore
+                continue;
+            }
+            try {
+                Mapping mapping = new Mapping(usermapping, enforceServiceMappingByPrincipal);
+                getAclManager().addMapping(mapping);
+                newMappings.add(mapping.asString());
+            } catch (IllegalArgumentException iae) {
+                throw new ConverterException("ServiceUserMapping: Detected invalid mapping in " + pid);
+            }
+        }
+        return newMappings;
     }
 
     @Override
@@ -390,16 +393,22 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
                     } else {
                         return;
                     }
+                    break;
                 case MERGE: // nothing to do
             }
         }
 
+        adjustConfigurationProperties(configuration, configurationProperties);
+    }
+    
+    private void adjustConfigurationProperties(@NotNull Configuration configuration, 
+                                               @NotNull Dictionary<String, Object> configurationProperties) {
         Enumeration<String> keys = configurationProperties.keys();
         while (keys.hasMoreElements()) {
             String key = keys.nextElement();
             Object value = configurationProperties.get(key);
 
-            if (value != null && Collection.class.isInstance(value)) {
+            if (value instanceof Collection) {
                 value = ((Collection<?>) value).toArray();
             }
 
@@ -426,7 +435,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         if (exportedPackages == null)
             exportedPackages = Collections.emptyList();
 
-        if (exportedPackages.size() == 0 && targetAPIRegions.size() == 0)
+        if (exportedPackages.isEmpty() && targetAPIRegions.isEmpty())
             return; // Nothing to do.
 
         ApiRegions regions = new ApiRegions();
@@ -533,9 +542,8 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
             repoInitExtension.setText(repoInitExtension.getText().concat(System.lineSeparator()).concat(text));
         }
     }
-
-
-    private void checkReferences(@NotNull final Dictionary<String, Object> configurationProperties, @NotNull final String pid) throws ConverterException {
+    
+    private static void checkReferences(@NotNull final Dictionary<String, Object> configurationProperties, @NotNull final String pid) throws ConverterException {
         final String[] references = Converters.standardConverter().convert(configurationProperties.get("references")).to(String[].class);
         if (references != null && references.length > 0) {
             for (final String r : references) {
