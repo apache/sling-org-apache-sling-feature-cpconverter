@@ -20,13 +20,14 @@ import org.apache.sling.feature.cpconverter.accesscontrol.AccessControlEntry;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import javax.xml.transform.sax.TransformerHandler;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
-import java.util.Stack;
 
 import static org.apache.jackrabbit.JcrConstants.JCR_PRIMARYTYPE;
 
@@ -56,10 +57,10 @@ public class RepPolicyEntryHandler extends AbstractPolicyEntryHandler {
             operations.put(REP_DENY_ACE, false);
         }
 
-        private final Stack<AccessControlEntry> acls = new Stack<>();
+        private final LinkedList<AccessControlEntry> entries = new LinkedList<>();
 
         // just internal pointer for every iteration
-        private boolean processCurrentAcl = false;
+        private boolean processCurrentAce = false;
 
         public RepPolicyParser(RepoPath repositoryPath, AclManager aclManager, TransformerHandler handler) {
             super(REP_ACL, repositoryPath, aclManager, handler);
@@ -70,42 +71,44 @@ public class RepPolicyEntryHandler extends AbstractPolicyEntryHandler {
                 throws SAXException {
             if (onRepAclNode) {
                 String primaryType = attributes.getValue(JCR_PRIMARYTYPE);
-                if (REP_GRANT_ACE.equals(primaryType) || REP_DENY_ACE.equals(primaryType)) {
+                if (isAccessControlEntry(primaryType)) {
                     String principalName = attributes.getValue(REP_PRINCIPAL_NAME);
                     AccessControlEntry ace = createEntry(operations.get(primaryType), attributes);
                     // handle restrictions added in jr2 format (i.e. not located below rep:restrictions node)
                     addRestrictions(ace, attributes);
 
-                    processCurrentAcl = aclManager.addAcl(principalName, ace);
-                    if (processCurrentAcl) {
-                        acls.add(ace);
+                    processCurrentAce = aclManager.addAcl(principalName, ace);
+                    if (processCurrentAce) {
+                        entries.add(ace);
                     } else {
                         hasRejectedNodes = true;
                     }
-                } else if (REP_RESTRICTIONS.equals(primaryType) && !acls.isEmpty()) {
-                    if (processCurrentAcl) {
-                        AccessControlEntry ace = acls.peek();
-                        acls.add(ace);
-                        addRestrictions(ace, attributes);
-                    }
+                } else if (REP_RESTRICTIONS.equals(primaryType) && !entries.isEmpty() && processCurrentAce) {
+                    AccessControlEntry ace = entries.peek();
+                    entries.add(ace);
+                    addRestrictions(ace, attributes);
                 }
             } else {
                 super.startElement(uri, localName, qName, attributes);
             }
 
-            if (!onRepAclNode || !processCurrentAcl) {
+            if (!onRepAclNode || !processCurrentAce) {
                 handler.startElement(uri, localName, qName, attributes);
             }
         }
 
         @Override
         public void endElement(String uri, String localName, String qName) throws SAXException {
-            if (onRepAclNode && processCurrentAcl && !acls.isEmpty()) {
-                acls.pop();
+            if (onRepAclNode && processCurrentAce && !entries.isEmpty()) {
+                entries.pop();
             } else {
-                processCurrentAcl = false;
+                processCurrentAce = false;
                 handler.endElement(uri, localName, qName);
             }
+        }
+        
+        private static boolean isAccessControlEntry(@Nullable String primaryType) {
+            return REP_GRANT_ACE.equals(primaryType) || REP_DENY_ACE.equals(primaryType);
         }
     }
 }
