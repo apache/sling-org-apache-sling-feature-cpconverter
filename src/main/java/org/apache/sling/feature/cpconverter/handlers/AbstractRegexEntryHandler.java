@@ -28,11 +28,11 @@ abstract class AbstractRegexEntryHandler implements EntryHandler {
 
     private final Pattern pattern;
 
-    public AbstractRegexEntryHandler(@NotNull String regex) {
+    AbstractRegexEntryHandler(@NotNull String regex) {
         this(Pattern.compile(regex));
     }
 
-    public AbstractRegexEntryHandler(@NotNull Pattern pattern) {
+    AbstractRegexEntryHandler(@NotNull Pattern pattern) {
         this.pattern = pattern;
     }
 
