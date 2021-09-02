@@ -34,12 +34,12 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
 
     private boolean enforceConfigurationBelowConfigFolder;
     
-    // SLING-10469 - regexp to catch configs and poetential sibling .dir folders that would carry the node properties from an export that would need to be ignored as well
-    public AbstractConfigurationEntryHandler(@NotNull String extension) {
+    // SLING-10469 - regexp to catch configs and potential sibling .dir folders that would carry the node properties from an export that would need to be ignored as well
+    AbstractConfigurationEntryHandler(@NotNull String extension) {
         super("/jcr_root/(?:apps|libs)/.+/(?<foldername>config|install)(\\.(?<runmode>[^/]+))?(.*)/(?<pid>[^\\/]*)\\." + extension + ("(?<dir>.dir(/\\.content\\.xml)?)?$"));
     }
 
-    void setEnforceConfgurationBelowConfigFolder(boolean enforceConfigurationBelowConfigFolder) {
+    void setEnforceConfigurationBelowConfigFolder(boolean enforceConfigurationBelowConfigFolder) {
         this.enforceConfigurationBelowConfigFolder = enforceConfigurationBelowConfigFolder;
     }
 
@@ -55,25 +55,7 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
                 // SLING-10469  - preventing invalid results as the corresponding configuration will be stripped from the resulting package causing the constraints of nt:file not to be satisfied (missing binary)
                 logger.info("{} is only a dir folder next to config - removing.", path);
             } else {
-                String pid = matcher.group("pid");
-    
-                int idx = pid.lastIndexOf('/');
-                if (idx != -1) {
-                    pid = pid.substring(idx + 1);
-                }
-                String factoryPid = null;
-                String id;
-                int n = pid.indexOf('~');
-                if (n == -1) {
-                    n = pid.indexOf('-');
-                }
-                if (n > 0) {
-                    factoryPid = pid.substring(0, n);
-                    id = factoryPid.concat("~").concat(pid.substring(n + 1));
-                } else {
-                    id = pid;
-                }
-        
+                String id = extractId(matcher);
                 logger.info("Processing configuration '{}'.", id);
         
                 Dictionary<String, Object> configurationProperties;
@@ -104,6 +86,29 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
                                             + path
                                             + "' but it does not, currently");
         }
+    }
+
+    @NotNull
+    private static String extractId(@NotNull Matcher matcher) {
+        String pid = matcher.group("pid");
+
+        int idx = pid.lastIndexOf('/');
+        if (idx != -1) {
+            pid = pid.substring(idx + 1);
+        }
+        
+        String id;
+        int n = pid.indexOf('~');
+        if (n == -1) {
+            n = pid.indexOf('-');
+        }
+        if (n > 0) {
+            String factoryPid = pid.substring(0, n);
+            id = factoryPid.concat("~").concat(pid.substring(n + 1));
+        } else {
+            id = pid;
+        }
+        return id;
     }
 
     protected abstract @Nullable Dictionary<String, Object> parseConfiguration(@NotNull String name, @NotNull InputStream input) throws IOException, ConverterException;

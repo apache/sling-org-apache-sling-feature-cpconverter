@@ -43,7 +43,7 @@ public class DefaultEntryHandlersManager implements EntryHandlersManager {
                 entryHandler = entryHandler.withConfig(configs.get(entryHandler.getClass().getName()));
             }
             if (entryHandler instanceof AbstractConfigurationEntryHandler) {
-                ((AbstractConfigurationEntryHandler) entryHandler).setEnforceConfgurationBelowConfigFolder(enforceConfigurationsAndBundlesBelowProperFolder);
+                ((AbstractConfigurationEntryHandler) entryHandler).setEnforceConfigurationBelowConfigFolder(enforceConfigurationsAndBundlesBelowProperFolder);
             } else if (entryHandler instanceof BundleEntryHandler) {
                 ((BundleEntryHandler) entryHandler).setEnforceBundlesBelowInstallFolder(enforceConfigurationsAndBundlesBelowProperFolder);
                 ((BundleEntryHandler) entryHandler).setSlingInitialContentPolicy(slingInitialContentPolicy);

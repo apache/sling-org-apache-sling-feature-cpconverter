@@ -127,7 +127,7 @@ public class ConfigEntryHandlerTest {
     @Test
     public void testConfigPathBelowInstallFolder() throws Exception {
         ConfigurationEntryHandler handler = new ConfigurationEntryHandler();
-        handler.setEnforceConfgurationBelowConfigFolder(true);
+        handler.setEnforceConfigurationBelowConfigFolder(true);
         Archive archive = Mockito.mock(Archive.class);
         Entry entry = Mockito.mock(Entry.class);
         Mockito.when(archive.openInputStream(entry)).thenReturn(new ByteArrayInputStream(new byte[0]));
@@ -139,7 +139,7 @@ public class ConfigEntryHandlerTest {
     @Test
     public void testConfigPathNoneConfigBelowInstallFolder() throws Exception {
         XmlConfigurationEntryHandler handler = new XmlConfigurationEntryHandler();
-        handler.setEnforceConfgurationBelowConfigFolder(true);
+        handler.setEnforceConfigurationBelowConfigFolder(true);
         Archive archive = Mockito.mock(Archive.class);
         Entry entry = Mockito.mock(Entry.class);
         Mockito.when(archive.openInputStream(entry)).thenReturn(new ByteArrayInputStream(new byte[0]));
