@@ -20,7 +20,8 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Dictionary;
-import java.util.List;
+import java.util.Objects;
+import java.util.function.Function;
 
 import javax.jcr.PropertyType;
 
@@ -40,22 +41,21 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
 
     @Override
     protected @Nullable Dictionary<String, Object> parseConfiguration(@NotNull String name, @NotNull InputStream input) {
-        JcrConfigurationHandler configurationHandler = new JcrConfigurationHandler();
         try {
-            return configurationHandler.parse(input);
+            return new JcrConfigurationParser().parse(input);
         } catch (Exception e) {
             logger.warn("Current OSGi configuration does not represent a valid XML document, see nested exceptions", e);
             return null;
         }
     }
 
-    protected static final class JcrConfigurationHandler extends AbstractJcrNodeParser<Dictionary<String, Object>> {
+    private static final class JcrConfigurationParser extends AbstractJcrNodeParser<Dictionary<String, Object>> {
 
         private static final String SLING_OSGICONFIG = "sling:OsgiConfig";
 
         private Dictionary<String, Object> configuration;
 
-        public JcrConfigurationHandler() {
+        public JcrConfigurationParser() {
             super(SLING_OSGICONFIG);
         }
 
@@ -69,73 +69,71 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
                 // ignore jcr: and similar properties
                 if (attributeQName.indexOf(':') == -1) {
                     String attributeValue = attributes.getValue(i);
-
-                    if (attributeValue != null && !attributeValue.isEmpty()) {
+                    if (!isEmptyOrNull(attributeValue)) {
                         DocViewProperty property = DocViewProperty.parse(attributeQName, attributeValue);
-                        Object value = property.values;
-                        List<String> strValues = Arrays.asList(property.values);
-                        switch (property.type) {
-                            case PropertyType.DATE:
-                                // Date was never properly supported as osgi configs don't support dates so converting to millis 
-                                // Scenario should just be theoretical
-                                value = strValues.stream().map(s -> {
-                                    Long res = null;
-                                    if (s != null) {
-                                        Calendar cal = ISO8601.parse(s);
-                                        if (cal != null) {
-                                            res = cal.getTimeInMillis();
-                                        }
-                                    }
-                                    return res;
-                                }).toArray();
-                                break;
-                            case PropertyType.DOUBLE:
-                                value = strValues.stream().map(s -> {
-                                    Double res = null;
-                                    if (!s.isEmpty()) {
-                                        res = Double.parseDouble(s);
-                                    }
-                                    return res;
-                                }).toArray();
-                                break;
-                            case PropertyType.LONG:
-                                value = strValues.stream().map(s -> {
-                                    Long res = null;
-                                    if (!s.isEmpty()) {
-                                        res = Long.parseLong(s);
-                                    }
-                                    return res;
-                                }).toArray();
-                                break;
-                            case PropertyType.BOOLEAN:
-                                value = strValues.stream().map(s -> {
-                                    Boolean res = null;
-                                    if (s != null) {
-                                        res = Boolean.valueOf(s);
-                                    }
-                                    return res;
-                                }).toArray();
-                                break;
+                        Object[] values = getValues(property);
+                        if (values.length == 0) {
+                            // ignore empty values (either property.values were empty or value mapping resulted in null 
+                            // results that got filtered)
+                            continue;
                         }
                         if (!property.isMulti) {
-                            // first element to be used in case of singlevalue
-                            value = ((Object[])value)[0];
-                        }
-                         
-                        
-                        if (property.values.length > 0) {
-                            configuration.put(attributeQName, value);
+                            // first element to be used in case of single-value property
+                            configuration.put(attributeQName, values[0]);
+                        } else {
+                            configuration.put(attributeQName, values);
                         }
                     }
                 }
             }
         }
-
-        @Override
-        protected Dictionary<String, Object> getParsingResult() {
-            return configuration;
+        
+        private static boolean isEmptyOrNull(@Nullable String s) {
+            return s == null || s.isEmpty();
+        }
+        
+        @NotNull 
+        private static Object[] getValues(@NotNull DocViewProperty property) {
+            Object[] values;
+            switch (property.type) {
+                case PropertyType.DATE:
+                    // Date was never properly supported as osgi configs don't support dates so converting to millis 
+                    // Scenario should just be theoretical
+                    values = mapValues(property.values, s -> {
+                        Calendar cal = ISO8601.parse(s);
+                        return (cal != null) ? cal.getTimeInMillis() : null;
+                    });
+                    break;
+                case PropertyType.DOUBLE:
+                    values = mapValues(property.values, Double::parseDouble);
+                    break;
+                case PropertyType.LONG:
+                    values = mapValues(property.values, Long::parseLong);
+                    break;
+                case PropertyType.BOOLEAN:
+                    values = mapValues(property.values, Boolean::valueOf);
+                    break;
+                default:
+                    values = property.values;
+            }
+            return values;
+        }
+        
+        @NotNull 
+        private static Object[] mapValues(@NotNull String[] strValues, Function<String, Object> function) {
+            return Arrays.stream(strValues).map(s -> {
+                Object res = null;
+                if (!isEmptyOrNull(s)) {
+                    res = function.apply(s);
+                }
+                return res;
+            }).filter(Objects::nonNull).toArray();
         }
 
+        @Override
+        protected @NotNull Dictionary<String, Object> getParsingResult() {
+            return configuration;
+        }
     }
 
 }
