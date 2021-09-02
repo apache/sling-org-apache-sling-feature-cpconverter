@@ -422,10 +422,29 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     }
 
     protected @Nullable CreatePath getCreatePath(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
+        if (path.getParent() == null) {
+            log.debug("Omit create path statement for path '{}'", path);
+            return null;
+        }
+        
+        CreatePath cp = new CreatePath(null);
+        boolean foundType = processSegments(path, packageAssemblers, cp);
+        
+        if (!foundType && isBelowUserRoot(path)) {
+            // if no type information has been detected, don't issue a 'create path' statement for nodes below the 
+            // user-root 
+            log.warn("Failed to extract primary type information for node at path '{}'", path);
+            return null;
+        } else {
+            // assume that primary type information is present or can be extracted from default primary type definition 
+            // of the the top-level nodes (i.e. their effective node type definition).
+            return cp;
+        }
+    }
+    
+    private static boolean processSegments(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers, @NotNull CreatePath cp) {
         String platformPath = "";
         boolean foundType = false;
-
-        CreatePath cp = new CreatePath(null);
         for (String part : path.getSegments()) {
             String platformname = PlatformNameFormat.getPlatformName(part);
             platformPath += platformPath.isEmpty() ? platformname : "/" + platformname;
@@ -444,20 +463,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
                 cp.addSegment(part, null);
             }
         }
-        
-        if (!foundType && isBelowUserRoot(path)) {
-            // if no type information has been detected, don't issue a 'create path' statement for nodes below the 
-            // user-root 
-            log.warn("Failed to extract primary type information for node at path '{}'", path);
-            return null;
-        } else if (path.getParent() == null) {
-            log.debug("Omit create path statement for path '{}'", path);
-            return null;
-        } else {
-            // assume that primary type information is present or can be extracted from default primary type definition 
-            // of the the top-level nodes (i.e. their effective node type definition).
-            return cp;
-        }
+        return foundType;
     }
 
     private static boolean addSegment(@NotNull CreatePath cp, @NotNull String part, @NotNull File currentContent) {
