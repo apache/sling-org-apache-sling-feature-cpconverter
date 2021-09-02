@@ -79,8 +79,8 @@ public class AclManagerTest {
     public void makeSureAclsAreCreatedOnlyoutsideSytemUsersPaths() throws Exception {
         aclManager.addSystemUser(new SystemUser("acs-commons-package-replication-status-event-service", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
-        aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl(true, "jcr:read,rep:write,rep:indexDefinitionManagement", "/_sling_tests/not/system/user/path"));
-        aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl(true, "jcr:read,crx:replicate,jcr:removeNode", "/home/users/system"));
+        aclManager.addAccessControlEntry("acs-commons-package-replication-status-event-service", newAccessControlEntry(true, "jcr:read,rep:write,rep:indexDefinitionManagement", "/_sling_tests/not/system/user/path"));
+        aclManager.addAccessControlEntry("acs-commons-package-replication-status-event-service", newAccessControlEntry(true, "jcr:read,crx:replicate,jcr:removeNode", "/home/users/system"));
 
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
         when(assembler.getEntry(anyString())).thenReturn(tempDir.toFile());
@@ -123,7 +123,7 @@ public class AclManagerTest {
         aclManager.reset();
 
         aclManager.addSystemUser(new SystemUser("acs-commons-package-replication-status-event-service", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
-        aclManager.addAcl("acs-commons-package-replication-status-event-service", newAcl(true, "jcr:read,rep:write,rep:indexDefinitionManagement", "/_sling_tests/not/system/user/path"));
+        aclManager.addAccessControlEntry("acs-commons-package-replication-status-event-service", newAccessControlEntry(true, "jcr:read,rep:write,rep:indexDefinitionManagement", "/_sling_tests/not/system/user/path"));
 
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
         when(assembler.getEntry(anyString())).thenReturn(tempDir.toFile());
@@ -158,7 +158,7 @@ public class AclManagerTest {
     @Test
     public void testAddACLforUnknownUser() throws Exception {
         // we expect this acl to not show up because the user is unknown
-        aclManager.addAcl("acs-commons-on-deploy-scripts-service", newAcl(true, "jcr:read,crx:replicate,jcr:removeNode", "/home/users/system"));
+        aclManager.addAccessControlEntry("acs-commons-on-deploy-scripts-service", newAccessControlEntry(true, "jcr:read,crx:replicate,jcr:removeNode", "/home/users/system"));
 
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
         when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
@@ -177,8 +177,8 @@ public class AclManagerTest {
     @Test
     public void pathWithSpecialCharactersTest() throws Exception {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
-        aclManager.addAcl("sys-usr", newAcl(true, "jcr:read", "/content/_cq_tags"));
-        aclManager.addAcl("sys-usr", newAcl(true, "jcr:write", "/content/cq:tags"));
+        aclManager.addAccessControlEntry("sys-usr", newAccessControlEntry(true, "jcr:read", "/content/_cq_tags"));
+        aclManager.addAccessControlEntry("sys-usr", newAccessControlEntry(true, "jcr:write", "/content/cq:tags"));
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
         when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
@@ -212,7 +212,7 @@ public class AclManagerTest {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addGroup(new Group("test", new RepoPath("/home/groups/test"),  new RepoPath("/home/groups/test")));
-        aclManager.addAcl("sys-usr", newAcl(true, "jcr:read", "/home/groups/test"));
+        aclManager.addAccessControlEntry("sys-usr", newAccessControlEntry(true, "jcr:read", "/home/groups/test"));
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
         when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
@@ -230,7 +230,7 @@ public class AclManagerTest {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addGroup(new Group("test", new RepoPath("/home/groups/test"),  new RepoPath("/home/groups/test")));
-        aclManager.addAcl("sys-usr", newAcl(true, "jcr:read", "/content/test"));
+        aclManager.addAccessControlEntry("sys-usr", newAccessControlEntry(true, "jcr:read", "/content/test"));
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
         when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
@@ -260,7 +260,7 @@ public class AclManagerTest {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addGroup(new Group("test", new RepoPath("/home/groups/test"),  new RepoPath("/home/groups/test")));
-        aclManager.addAcl("sys-usr", newAcl(true, "jcr:read", "/home/groups/test/foo"));
+        aclManager.addAccessControlEntry("sys-usr", newAccessControlEntry(true, "jcr:read", "/home/groups/test/foo"));
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
         when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
@@ -275,7 +275,7 @@ public class AclManagerTest {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addUser(new User("test", new RepoPath("/home/users/test"),  new RepoPath("/home/users/test")));
-        aclManager.addAcl("sys-usr", newAcl(true, "jcr:read", "/home/users/test/foo"));
+        aclManager.addAccessControlEntry("sys-usr", newAccessControlEntry(true, "jcr:read", "/home/users/test/foo"));
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
         when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
@@ -290,7 +290,7 @@ public class AclManagerTest {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addUser(new User("test", new RepoPath("/home/users/test"),  new RepoPath("/home/users/test")));
-        aclManager.addAcl("sys-usr", newAcl(true, "jcr:read", "/content/test"));
+        aclManager.addAccessControlEntry("sys-usr", newAccessControlEntry(true, "jcr:read", "/content/test"));
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
         when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
@@ -319,7 +319,7 @@ public class AclManagerTest {
         aclManager.addSystemUser(new SystemUser("sys-usr", new RepoPath("/home/users/system/foo"), new RepoPath("/home/users/system")));
 
         aclManager.addUser(new User("test", new RepoPath("/home/users/test"),  new RepoPath("/home/users/test")));
-        aclManager.addAcl("sys-usr", newAcl(true, "jcr:read", "/home/users/notMatching"));
+        aclManager.addAccessControlEntry("sys-usr", newAccessControlEntry(true, "jcr:read", "/home/users/notMatching"));
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
         when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
@@ -375,7 +375,7 @@ public class AclManagerTest {
         verifyNoInteractions(fm);
     }
 
-    private static AccessControlEntry newAcl(boolean isAllow, String privileges, String path) {
+    private static AccessControlEntry newAccessControlEntry(boolean isAllow, String privileges, String path) {
         return new AccessControlEntry(isAllow, Arrays.asList(privileges.split(",")), new RepoPath(PlatformNameFormat.getRepositoryPath(path)));
     }
 

@@ -314,8 +314,8 @@ public class EnforcePrincipalBasedTest {
     private Extension getRepoInitExtension(@NotNull AclManager aclManager, @NotNull RepoPath accessControlledPath, @NotNull SystemUser systemUser, boolean isPrincipalBased) throws Exception {
         aclManager.addSystemUser(systemUser);
 
-        AccessControlEntry acl = new AccessControlEntry(true, Collections.singletonList("jcr:read"), accessControlledPath, isPrincipalBased);
-        aclManager.addAcl(systemUser.getId(), acl);
+        AccessControlEntry ace = new AccessControlEntry(true, Collections.singletonList("jcr:read"), accessControlledPath, isPrincipalBased);
+        aclManager.addAccessControlEntry(systemUser.getId(), ace);
 
         aclManager.addRepoinitExtension(Collections.singletonList(assembler), fm);
 
