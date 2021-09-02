@@ -69,7 +69,7 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
                 // ignore jcr: and similar properties
                 if (attributeQName.indexOf(':') == -1) {
                     String attributeValue = attributes.getValue(i);
-                    if (!isEmptyOrNull(attributeValue)) {
+                    if (isValid(attributeValue)) {
                         DocViewProperty property = DocViewProperty.parse(attributeQName, attributeValue);
                         Object[] values = getValues(property);
                         if (values.length == 0) {
@@ -88,8 +88,8 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
             }
         }
         
-        private static boolean isEmptyOrNull(@Nullable String s) {
-            return s == null || s.isEmpty();
+        private static boolean isValid(@Nullable String s) {
+            return !(s == null || s.isEmpty());
         }
         
         @NotNull 
@@ -121,13 +121,7 @@ public final class XmlConfigurationEntryHandler extends AbstractConfigurationEnt
         
         @NotNull 
         private static Object[] mapValues(@NotNull String[] strValues, Function<String, Object> function) {
-            return Arrays.stream(strValues).map(s -> {
-                Object res = null;
-                if (!isEmptyOrNull(s)) {
-                    res = function.apply(s);
-                }
-                return res;
-            }).filter(Objects::nonNull).toArray();
+            return Arrays.stream(strValues).filter(JcrConfigurationParser::isValid).map(function).filter(Objects::nonNull).toArray();
         }
 
         @Override
