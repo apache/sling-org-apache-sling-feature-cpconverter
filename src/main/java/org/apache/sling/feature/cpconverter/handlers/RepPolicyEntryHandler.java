@@ -77,7 +77,7 @@ public class RepPolicyEntryHandler extends AbstractPolicyEntryHandler {
                     // handle restrictions added in jr2 format (i.e. not located below rep:restrictions node)
                     addRestrictions(ace, attributes);
 
-                    processCurrentAce = aclManager.addAcl(principalName, ace);
+                    processCurrentAce = aclManager.addAccessControlEntry(principalName, ace);
                     if (processCurrentAce) {
                         entries.add(ace);
                     } else {

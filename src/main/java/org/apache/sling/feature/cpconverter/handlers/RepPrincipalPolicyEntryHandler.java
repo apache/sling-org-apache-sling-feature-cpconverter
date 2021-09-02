@@ -85,7 +85,7 @@ public final class RepPrincipalPolicyEntryHandler extends AbstractPolicyEntryHan
                     AccessControlEntry ace = new AccessControlEntry(true, privileges, effectivePath, true);
                     // NOTE: nt-definition doesn't allow for jr2-type restrictions defined right below the entry.
                     // instead always requires rep:restrictions child node
-                    processCurrentAce = aclManager.addAcl(principalName, ace);
+                    processCurrentAce = aclManager.addAccessControlEntry(principalName, ace);
                     if (processCurrentAce) {
                         aces.add(ace);
                     } else {

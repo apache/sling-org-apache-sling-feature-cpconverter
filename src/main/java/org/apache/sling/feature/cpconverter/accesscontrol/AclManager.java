@@ -39,7 +39,7 @@ public interface AclManager {
 
     void addMapping(@NotNull Mapping mapping);
 
-    boolean addAcl(@NotNull String systemUser, @NotNull AccessControlEntry acl);
+    boolean addAccessControlEntry(@NotNull String systemUser, @NotNull AccessControlEntry acl);
 
     void addRepoinitExtension(@NotNull List<VaultPackageAssembler> packageAssemblers, @NotNull FeaturesManager featureManager)
     throws IOException, ConverterException;

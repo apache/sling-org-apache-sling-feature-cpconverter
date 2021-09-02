@@ -144,7 +144,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     }
 
     @Override
-    public boolean addAcl(@NotNull String systemUser, @NotNull AccessControlEntry acl) {
+    public boolean addAccessControlEntry(@NotNull String systemUser, @NotNull AccessControlEntry acl) {
         if (getSystemUser(systemUser).isPresent()) {
             acls.computeIfAbsent(systemUser, k -> new LinkedList<>()).add(acl);
             return true;
