@@ -53,8 +53,6 @@ public class RepoInitTest {
     private static final String REPOINIT_PID = "org.apache.sling.jcr.repoinit.RepositoryInitializer";
     private static final String PATH_PREFIX = "/jcr_root/apps/asd/config.publish/" + REPOINIT_PID;
 
-    private static final String REPOINIT_CONVERSION_PATH = "/jcr_root/apps/asd/config.publish/" + REPOINIT_PID + "-conversion-test.config";
-
     private final AbstractConfigurationEntryHandler configurationEntryHandler;
     private final boolean enforcePrincipalBasedAcSetup;
     private final String enforcedPath;

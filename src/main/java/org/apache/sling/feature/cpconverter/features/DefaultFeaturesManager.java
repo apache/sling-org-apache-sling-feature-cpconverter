@@ -120,6 +120,8 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
 
     private final Stack<String> packageIds = new Stack<>();
 
+    private String lastRepoinitSource;
+
     DefaultFeaturesManager() {
         this(new File(""));
     }
@@ -267,7 +269,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
 
     public void addSeed(@NotNull Feature seed) throws IOException, ConverterException {
         for (Configuration conf : seed.getConfigurations()) {
-            handleRepoinitAndMappings("seed", conf.isFactoryConfiguration() ? conf.getFactoryPid() : conf.getPid(), conf.getConfigurationProperties(), false);
+            handleRepoinitAndMappings("seed", conf.isFactoryConfiguration() ? conf.getFactoryPid() : conf.getPid(), conf.getPid(), conf.getConfigurationProperties(), false);
         }
         if (seed.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT) != null) {
             String repoInitText = seed.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT).getText();
@@ -306,23 +308,23 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         this.aclManager = aclManager;
     }
 
-    private boolean handleRepoinitAndMappings(String runMode, String pid, Dictionary<String, Object> configurationProperties, boolean enforceServiceMappingByPrincipal)
+    private boolean handleRepoinitAndMappings(String runMode, String configId, final String pid, Dictionary<String, Object> configurationProperties, boolean enforceServiceMappingByPrincipal)
             throws IOException, ConverterException {
-        if (REPOINIT_FACTORY_PID.equals(pid)) {
+        if (REPOINIT_FACTORY_PID.equals(configId)) {
             final String[] scripts = Converters.standardConverter().convert(configurationProperties.get("scripts")).to(String[].class);
             if (scripts != null && scripts.length > 0) {
                 for (final String text : scripts) {
                     getAclManager().addRepoinitExtention(pid, text, runMode, this);
                 }
             }
-            checkReferences(configurationProperties, pid);
+            checkReferences(configurationProperties, configId);
             return true;
-        } else if (REPOINIT_PID.equals(pid)) {
-            checkReferences(configurationProperties, pid);
+        } else if (REPOINIT_PID.equals(configId)) {
+            checkReferences(configurationProperties, configId);
             return true;
-        } else if (pid.startsWith(SERVICE_USER_MAPPING_PID)) {
+        } else if (configId.startsWith(SERVICE_USER_MAPPING_PID)) {
             String[] mappings = Converters.standardConverter().convert(configurationProperties.get("user.mapping")).to(String[].class);
-            List<String> newMappings = convertMappings(mappings, pid, enforceServiceMappingByPrincipal);
+            List<String> newMappings = convertMappings(mappings, configId, enforceServiceMappingByPrincipal);
             // replace 'user.mapping' property by the new mappings, which may have been refactored
             if (!newMappings.isEmpty()) {
                 configurationProperties.put("user.mapping", newMappings.toArray(new String[0]));
@@ -364,7 +366,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         if (n > 0) {
             factoryPid = pid.substring(0, n);
         }
-        if (handleRepoinitAndMappings(runMode, factoryPid != null ? factoryPid : pid, configurationProperties, enforceServiceMappingByPrincipal)) {
+        if (handleRepoinitAndMappings(runMode, factoryPid != null ? factoryPid : pid, pid, configurationProperties, enforceServiceMappingByPrincipal)) {
             return;
         }
 
@@ -532,10 +534,15 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         } else {
             logger.info("Adding repo-init for run mode: {}", runMode);
         }
-        Extension repoInitExtension = getRunMode(runMode).getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
 
         // prepend source/origin
-        text = "# origin=".concat(String.join("|", this.packageIds)).concat(" source=").concat(source).concat(System.lineSeparator().concat(text));
+        final String newSource = "# origin=".concat(String.join("|", this.packageIds)).concat(" source=").concat(source);
+        if ( !newSource.equals(lastRepoinitSource) ) {
+            lastRepoinitSource = newSource;
+            text = newSource.concat(System.lineSeparator().concat(text));
+        }
+
+        Extension repoInitExtension = getRunMode(runMode).getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         if (repoInitExtension == null) {
             repoInitExtension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, ExtensionState.REQUIRED);
             getRunMode(runMode).getExtensions().add(repoInitExtension);
