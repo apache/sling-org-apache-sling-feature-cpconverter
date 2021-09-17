@@ -753,7 +753,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                 Extension repoinitExtension = feature.getExtensions().getByName("repoinit");
                 assertNotNull(repoinitExtension);
 
-                String expected = normalize("register nodetypes\n" +
+                String expected = "# origin=my_packages:test_a:1.0 source=content-package" + System.lineSeparator() + normalize("register nodetypes\n" +
                         "<<===\n" +
                         "<< <'sling'='http://sling.apache.org/jcr/sling/1.0'>\n" +
                         "<< <'nt'='http://www.jcp.org/jcr/nt/1.0'>\n" + 

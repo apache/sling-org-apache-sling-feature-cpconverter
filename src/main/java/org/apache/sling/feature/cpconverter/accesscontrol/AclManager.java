@@ -44,7 +44,7 @@ public interface AclManager {
     void addRepoinitExtension(@NotNull List<VaultPackageAssembler> packageAssemblers, @NotNull FeaturesManager featureManager)
     throws IOException, ConverterException;
 
-    void addRepoinitExtention(@Nullable String repoInitText, @Nullable String runMode, @NotNull FeaturesManager featuresManager)
+    void addRepoinitExtention(@NotNull String source, @Nullable String repoInitText, @Nullable String runMode, @NotNull FeaturesManager featuresManager)
     throws IOException, ConverterException;
 
     void addNodetypeRegistration(@NotNull String cndStatements);

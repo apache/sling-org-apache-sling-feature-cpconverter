@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.features;
 
+import org.apache.sling.feature.ArtifactId;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -74,7 +75,7 @@ public class FeaturesManagerTest {
     public void testExportsToAPIRegion() throws Exception {
         ((DefaultFeaturesManager) featuresManager).setExportToAPIRegion("global");
         ((DefaultFeaturesManager) featuresManager).setAPIRegions(Collections.singletonList("deprecated"));
-        featuresManager.init("g", "a", "1");
+        featuresManager.init(ArtifactId.parse("g:a:1"));
         featuresManager.addAPIRegionExport(null, "org.foo.a");
         featuresManager.addAPIRegionExport(null, "org.foo.b");
         featuresManager.addAPIRegionExport("rm1", "x.y");

@@ -177,13 +177,13 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
             String text = formatter.toString();
 
             if (!text.isEmpty()) {
-                featureManager.addOrAppendRepoInitExtension(text, null);
+                featureManager.addOrAppendRepoInitExtension("content-package", text, null);
             }
         }
     }
 
     @Override
-    public void addRepoinitExtention(@Nullable String repoInitText, @Nullable String runMode, @NotNull FeaturesManager featuresManager)
+    public void addRepoinitExtention(@NotNull String source, @Nullable String repoInitText, @Nullable String runMode, @NotNull FeaturesManager featuresManager)
     throws IOException, ConverterException {
         if (repoInitText == null || repoInitText.trim().isEmpty()) {
             return;
@@ -215,7 +215,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
 
             String text = formatter.toString().trim();
             if (!text.isEmpty()) {
-                featuresManager.addOrAppendRepoInitExtension(text, runMode);
+                featuresManager.addOrAppendRepoInitExtension(source, text, runMode);
             }
         } catch (RepoInitParsingException e) {
             throw new ConverterException(e.getMessage(), e);

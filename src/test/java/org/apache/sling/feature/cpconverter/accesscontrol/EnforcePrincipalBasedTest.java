@@ -116,7 +116,7 @@ public class EnforcePrincipalBasedTest {
         RepoPath accessControlledPath = new RepoPath("/content/feature");
         Extension repoinitExtension = getRepoInitExtension(acMgr, accessControlledPath, systemUser, false);
 
-        String expected = normalize(
+        String expected = "# origin= source=content-package" + System.lineSeparator() + normalize(
                 "create service user user1 with path " + relativeIntermediatePath + "\n" +
                         "create path /content/feature(sling:Folder)\n" +
                         "set ACL for user1\n" +
@@ -136,7 +136,7 @@ public class EnforcePrincipalBasedTest {
         RepoPath accessControlledPath = new RepoPath("/content/feature");
         Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, false);
 
-        String expected = normalize(
+        String expected = "# origin= source=content-package" + System.lineSeparator() + normalize(
                 "create service user user1 with forced path " + remappedIntermediatePath + "\n" +
                 "set principal ACL for user1\n" +
                 "    allow jcr:read on /content/feature\n" +
@@ -155,7 +155,7 @@ public class EnforcePrincipalBasedTest {
         RepoPath accessControlledPath = new RepoPath("/content/feature");
         Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, true);
 
-        String expected = normalize(
+        String expected = "# origin= source=content-package" + System.lineSeparator() + normalize(
                 "create service user user1 with forced path " + remappedIntermediatePath + "\n" +
                         "set principal ACL for user1\n" +
                         "    allow jcr:read on /content/feature\n" +
@@ -174,7 +174,7 @@ public class EnforcePrincipalBasedTest {
         RepoPath accessControlledPath = systemUser.getPath();
         Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, true);
 
-        String expected = normalize(
+        String expected = "# origin= source=content-package" + System.lineSeparator() + normalize(
                 "create service user user1 with forced path " + remappedIntermediatePath + "\n" +
                 "set principal ACL for user1\n" +
                 "    allow jcr:read on home(user1)\n" +
@@ -195,7 +195,7 @@ public class EnforcePrincipalBasedTest {
         RepoPath accessControlledPath = new RepoPath("/content/feature");
         Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, false);
 
-        String expected = normalize(
+        String expected = "# origin= source=content-package" + System.lineSeparator() + normalize(
                 "create service user user1 with path " +relativeIntermediatePath+ "\n" +
                 "create path /content/feature\n" +        
                 "set ACL for user1\n" +
@@ -213,7 +213,7 @@ public class EnforcePrincipalBasedTest {
         RepoPath accessControlledPath = new RepoPath("/content/feature");
         Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, false);
 
-        String expected = normalize(
+        String expected = "# origin= source=content-package" + System.lineSeparator() + normalize(
                 "create service user user1 with forced path " + remappedIntermediatePath + "\n" +
                 "set principal ACL for user1\n" +
                 "    allow jcr:read on /content/feature\n" +
@@ -238,7 +238,7 @@ public class EnforcePrincipalBasedTest {
         RepoPath accessControlledPath = new RepoPath("/content/feature");
         Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, false);
 
-        String expected = normalize(
+        String expected = "# origin= source=content-package" + System.lineSeparator() + normalize(
                 "create service user user1 with path " + relativeIntermediatePath + "\n" +
                         "create path /content/feature\n" +
                         "set ACL for user1\n" +
@@ -264,7 +264,7 @@ public class EnforcePrincipalBasedTest {
         RepoPath accessControlledPath = new RepoPath("/content/feature");
         Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, false);
 
-        String expected = normalize(
+        String expected = "# origin= source=content-package" + System.lineSeparator() + normalize(
                 "create service user user1 with forced path " + remappedIntermediatePath + "\n" +
                         "set principal ACL for user1\n" +
                         "    allow jcr:read on /content/feature\n" +
@@ -285,7 +285,7 @@ public class EnforcePrincipalBasedTest {
         props.put("user.mapping", new String[]{"serviceName:subservice=[user1]","     ","serviceName2:subservice2=[user2]"});
         seed.getConfigurations().add(foo);
 
-        fm.init("groupId", "artifactId", "version1.0");
+        fm.init(ArtifactId.parse("groupId:artifactId:version1.0"));
         fm.addConfiguration("author", foo.getPid(), "/path", props);
         
         // verify that invalid empty mapping has been stripped (without Exception)
@@ -302,7 +302,7 @@ public class EnforcePrincipalBasedTest {
         Dictionary<String, Object> props = foo.getProperties();
         props.put("user.mapping", new String[]{"serviceName:subservice=[user1]","","serviceName2:subservice2=[user2]"});
 
-        fm.init("groupId", "artifactId", "version1.0");
+        fm.init(ArtifactId.parse("groupId:artifactId:version1.0"));
         fm.addConfiguration("author", foo.getPid(), "/path", props);
 
         // verify that invalid empty mapping has been stripped (without Exception)

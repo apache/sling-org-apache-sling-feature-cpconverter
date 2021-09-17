@@ -28,7 +28,7 @@ import org.jetbrains.annotations.Nullable;
 
 public interface FeaturesManager {
 
-    void init(@NotNull String groupId, @NotNull String artifactId, @NotNull String version);
+    void init(@NotNull ArtifactId packageId);
 
     @Nullable Feature getTargetFeature();
 
@@ -48,7 +48,15 @@ public interface FeaturesManager {
 
     void serialize() throws IOException;
 
-    void addOrAppendRepoInitExtension(@NotNull String text, @Nullable String runMode)
+    /**
+     * Add repoinit instructions
+     * @param source An identifier for the source, for example the configuration pid
+     * @param text The repoinit instructions
+     * @param runMode Optional runmode
+     * @throws IOException if an error occurs
+     * @throws ConverterException if conversion fails
+     */
+    void addOrAppendRepoInitExtension(@NotNull String source, @NotNull String text, @Nullable String runMode)
             throws IOException, ConverterException;
 
     @NotNull

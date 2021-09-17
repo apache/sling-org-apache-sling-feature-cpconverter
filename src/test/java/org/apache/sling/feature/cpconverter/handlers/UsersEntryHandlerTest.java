@@ -45,7 +45,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class UsersEntryHandlerTest {
 
@@ -81,7 +80,8 @@ public class UsersEntryHandlerTest {
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
         assertTrue(repoinitExtension.isRequired());
 
-        String expected = normalize("create service user asd-share-commons-asd-index-definition-reader-service with path system/asd-share-commons\n");
+        String expected = "# origin= source=content-package" + System.lineSeparator() +
+            normalize("create service user asd-share-commons-asd-index-definition-reader-service with path system/asd-share-commons\n");
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
 
@@ -99,7 +99,8 @@ public class UsersEntryHandlerTest {
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
         assertTrue(repoinitExtension.isRequired());
 
-        String expected = normalize("create service user service1 with path system/services\ndisable service user service1 : \"a reason\"\n");
+        String expected = "# origin= source=content-package" + System.lineSeparator() +
+            normalize("create service user service1 with path system/services\ndisable service user service1 : \"a reason\"\n");
         String actual = repoinitExtension.getText();
         assertEquals(expected, actual);
 

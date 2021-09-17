@@ -157,8 +157,8 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
     }
 
     @Override
-    public void init(@NotNull String groupId, @NotNull String artifactId, @NotNull String version) {
-        targetFeature = new Feature(new ArtifactId(groupId, artifactId, version, null, SLING_OSGI_FEATURE_TILE_TYPE));
+    public void init(@NotNull ArtifactId packageId) {
+        targetFeature = new Feature(packageId.changeClassifier(null).changeType(SLING_OSGI_FEATURE_TILE_TYPE));
 
         runModes.clear();
     }
@@ -271,7 +271,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         }
         if (seed.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT) != null) {
             String repoInitText = seed.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT).getText();
-            getAclManager().addRepoinitExtention(repoInitText, "seed", this);
+            getAclManager().addRepoinitExtention("seed", repoInitText, "seed", this);
             extractNamespaces(repoInitText, namespaceUriByPrefix);
         }
 
@@ -312,7 +312,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
             final String[] scripts = Converters.standardConverter().convert(configurationProperties.get("scripts")).to(String[].class);
             if (scripts != null && scripts.length > 0) {
                 for (final String text : scripts) {
-                    getAclManager().addRepoinitExtention(text, runMode, this);
+                    getAclManager().addRepoinitExtention(pid, text, runMode, this);
                 }
             }
             checkReferences(configurationProperties, pid);
@@ -526,7 +526,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
     }
 
     @Override
-    public void addOrAppendRepoInitExtension(@NotNull String text, @Nullable String runMode) {
+    public void addOrAppendRepoInitExtension(@NotNull String source, @NotNull String text, @Nullable String runMode) {
         if (runMode == null) {
             logger.info("Adding global repo-init");
         } else {
@@ -534,6 +534,8 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         }
         Extension repoInitExtension = getRunMode(runMode).getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
 
+        // prepend source/origin
+        text = "# origin=".concat(String.join("|", this.packageIds)).concat(" source=").concat(source).concat(System.lineSeparator().concat(text));
         if (repoInitExtension == null) {
             repoInitExtension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, ExtensionState.REQUIRED);
             getRunMode(runMode).getExtensions().add(repoInitExtension);

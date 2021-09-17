@@ -288,7 +288,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
                 ArtifactId mvnPackageId = toArtifactId(vaultPackage.getId(), vaultPackage.getFile());
 
-                featuresManager.init(mvnPackageId.getGroupId(), mvnPackageId.getArtifactId(), mvnPackageId.getVersion());
+                featuresManager.init(mvnPackageId);
 
                 logger.info("Converting content-package '{}'...", vaultPackage.getId());
 

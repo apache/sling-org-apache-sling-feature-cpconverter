@@ -69,7 +69,7 @@ public final class RepPrincipalPolicyEntryHandlerTest {
     @Test
     public void parseSimplePolicy() throws Exception {
         Extension repoinitExtension = parseAndSetRepoinit("service1", "random1").getRepoinitExtension();
-        String expected = normalize(
+        String expected = "# origin= source=content-package" + System.lineSeparator() + normalize(
                 "create service user service1 with path system/services\n" +
                 "set principal ACL for service1\n" +
                 "    allow jcr:read,jcr:readAccessControl on /asd/public\n" +
@@ -86,7 +86,7 @@ public final class RepPrincipalPolicyEntryHandlerTest {
     @Test
     public void parseMvRestrictions() throws Exception {
         Extension repoinitExtension = parseAndSetRepoinit("service2", "random2").getRepoinitExtension();
-        String expected = normalize(
+        String expected = "# origin= source=content-package" + System.lineSeparator() + normalize(
                 "create service user service2 with path system/services\n" +
                         "set principal ACL for service2\n" +
                         "    allow jcr:read on /asd/public restriction(rep:ntNames,nt:folder,sling:Folder) restriction(sling:customRestriction,customRestrictionValue)\n" +
@@ -110,7 +110,7 @@ public final class RepPrincipalPolicyEntryHandlerTest {
         SystemUser systemUser4 = createSystemUser("service4", "random4");
 
         Extension repoinitExtension = parseAndSetRepoinit(getPolicyPath(systemUser4), systemUser4).getRepoinitExtension();
-        String expected = normalize(
+        String expected = "# origin= source=content-package" + System.lineSeparator() + normalize(
                 "create service user service4 with path system/services\n" +
                 "set principal ACL for service4\n" +
                 // since service3 is not known to the AclManager it treats the effective path as a regular node.
@@ -131,7 +131,7 @@ public final class RepPrincipalPolicyEntryHandlerTest {
         SystemUser systemUser4 = createSystemUser("service4", "random4");
 
         Extension repoinitExtension = parseAndSetRepoinit(getPolicyPath(systemUser4), systemUser4, systemUser3).getRepoinitExtension();
-        String expected = normalize(
+        String expected = "# origin= source=content-package" + System.lineSeparator() + normalize(
                 "create service user service4 with path system/services\n" +
                 "create service user service3 with path system/services\n" +
                 "set principal ACL for service4\n" +
@@ -149,7 +149,7 @@ public final class RepPrincipalPolicyEntryHandlerTest {
     @Test
     public void parsePolicyWithWrongTypeEffectivePath() throws Exception {
         Extension repoinitExtension = parseAndSetRepoinit("service4", "random5").getRepoinitExtension();
-        String expected = normalize(
+        String expected = "# origin= source=content-package" + System.lineSeparator() + normalize(
                 "create service user service4 with path system/services\n" +
                         "set principal ACL for service4\n" +
                         "    allow jcr:read on /effective/path/of/type/string\n" +

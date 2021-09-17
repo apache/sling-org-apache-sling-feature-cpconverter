@@ -99,7 +99,7 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         // acs-commons-on-deploy-scripts-service will be missed
-        String expected = Util.normalize(
+        String expected = "# origin= source=content-package" + System.lineSeparator() + Util.normalize(
                 "create service user acs-commons-package-replication-status-event-service with path system\n" +
                         "create path /sling:tests/not(nt:unstructured mixin rep:AccessControllable,mix:created)/system/user/path\n" +
                         "set ACL for acs-commons-package-replication-status-event-service\n" + 
@@ -141,7 +141,7 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         // aacs-commons-ensure-oak-index-service will be missed
-        String expected = Util.normalize(
+        String expected = "# origin= source=content-package" + System.lineSeparator() + Util.normalize(
                 "create service user acs-commons-package-replication-status-event-service with path system\n" +
                 "create path /sling:tests/not(nt:unstructured mixin rep:AccessControllable,mix:created)/system/user/path\n" +
                 "set ACL for acs-commons-package-replication-status-event-service\n" +
@@ -191,7 +191,7 @@ public class AclManagerTest {
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
 
-        String expected = Util.normalize(
+        String expected = "# origin= source=content-package" + System.lineSeparator() + Util.normalize(
                 "create service user sys-usr with path system\n" +
                 "create path /content/cq:tags\n"+
                 "set ACL for sys-usr\n" +
@@ -243,7 +243,7 @@ public class AclManagerTest {
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
 
-        String expected = Util.normalize(
+        String expected = "# origin= source=content-package" + System.lineSeparator() + Util.normalize(
                 "create service user sys-usr with path system\n" +
                         "create path /content/test\n" +
                         "set ACL for sys-usr\n" +
@@ -303,7 +303,7 @@ public class AclManagerTest {
         Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         assertNotNull(repoinitExtension);
 
-        String expected = Util.normalize(
+        String expected = "# origin= source=content-package" + System.lineSeparator() + Util.normalize(
                 "create service user sys-usr with path system\n" +
                         "create path /content/test\n" +
                         "set ACL for sys-usr\n" +
@@ -335,7 +335,7 @@ public class AclManagerTest {
         // in contrast to testUserHandlingWithMatchingUser in this test /home/users/test2 is not detected 
         // as user-home-path and thus is processed like a regular path (no 'home(uid)' repo-init statement and no exception).\
         // however, no attempt is made to create the path without any available node type information.
-        String expected = Util.normalize(
+        String expected = "# origin= source=content-package" + System.lineSeparator() + Util.normalize(
                 "create service user sys-usr with path system\n" +
                         "set ACL for sys-usr\n" +
                         "    allow jcr:read on /home/users/notMatching\n" +
@@ -354,14 +354,14 @@ public class AclManagerTest {
     @Test(expected = ConverterException.class)
     public void testAddRepoinitExtentionInvalidTxt() throws Exception {
         DefaultAclManager aclManager = new DefaultAclManager("/home/users/system/cq:services", "system");
-        aclManager.addRepoinitExtention("some invalid txt", null, mock(FeaturesManager.class));
+        aclManager.addRepoinitExtention("test", "some invalid txt", null, mock(FeaturesManager.class));
     }
 
     @Test
     public void testAddRepoinitExtentionEmptyTxt()throws Exception {
         FeaturesManager fm = mock(FeaturesManager.class);
         DefaultAclManager aclManager = new DefaultAclManager("/home/users/system/cq:services", "system");
-        aclManager.addRepoinitExtention("", null, fm);
+        aclManager.addRepoinitExtention("test", "", null, fm);
 
         verifyNoInteractions(fm);
     }
@@ -370,7 +370,7 @@ public class AclManagerTest {
     public void testAddRepoinitExtentionNullTxt() throws Exception {
         FeaturesManager fm = mock(FeaturesManager.class);
         DefaultAclManager aclManager = new DefaultAclManager("/home/users/system/cq:services", "system");
-        aclManager.addRepoinitExtention(null, null, fm);
+        aclManager.addRepoinitExtention("test", null, null, fm);
 
         verifyNoInteractions(fm);
     }
