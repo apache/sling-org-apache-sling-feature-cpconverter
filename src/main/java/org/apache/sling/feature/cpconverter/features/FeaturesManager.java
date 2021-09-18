@@ -21,6 +21,7 @@ import java.util.Dictionary;
 import java.util.Map;
 
 import org.apache.sling.feature.ArtifactId;
+import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ConverterException;
 import org.jetbrains.annotations.NotNull;
@@ -40,8 +41,17 @@ public interface FeaturesManager {
 
     void addAPIRegionExport(@Nullable String runMode, @NotNull String exportedPackage);
 
+    /**
+     * Add a configuration
+     * @param runMode Optional runmode
+     * @param cfg The configuration object for the pid and factory pid, name - no properties
+     * @param path The path for the configuration
+     * @param configurationProperties The configuration properties
+     * @throws IOException if an error occurs
+     * @throws ConverterException if conversion fails
+     */
     void addConfiguration(@Nullable String runMode,
-                          @NotNull String pid,
+                          @NotNull Configuration cfg,
                           @NotNull String path,
                           @NotNull Dictionary<String, Object> configurationProperties)
             throws IOException, ConverterException;

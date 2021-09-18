@@ -269,7 +269,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
 
     public void addSeed(@NotNull Feature seed) throws IOException, ConverterException {
         for (Configuration conf : seed.getConfigurations()) {
-            handleRepoinitAndMappings("seed", conf.isFactoryConfiguration() ? conf.getFactoryPid() : conf.getPid(), conf.getPid(), conf.getConfigurationProperties(), false);
+            handleRepoinitAndMappings("seed", conf, conf.getConfigurationProperties(), false);
         }
         if (seed.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT) != null) {
             String repoInitText = seed.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT).getText();
@@ -308,23 +308,23 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         this.aclManager = aclManager;
     }
 
-    private boolean handleRepoinitAndMappings(String runMode, String configId, final String pid, Dictionary<String, Object> configurationProperties, boolean enforceServiceMappingByPrincipal)
+    private boolean handleRepoinitAndMappings(String runMode, Configuration cfg, Dictionary<String, Object> configurationProperties, boolean enforceServiceMappingByPrincipal)
             throws IOException, ConverterException {
-        if (REPOINIT_FACTORY_PID.equals(configId)) {
+        if (REPOINIT_FACTORY_PID.equals(cfg.getFactoryPid())) {
             final String[] scripts = Converters.standardConverter().convert(configurationProperties.get("scripts")).to(String[].class);
             if (scripts != null && scripts.length > 0) {
                 for (final String text : scripts) {
-                    getAclManager().addRepoinitExtention(pid, text, runMode, this);
+                    getAclManager().addRepoinitExtention(cfg.getPid(), text, runMode, this);
                 }
             }
-            checkReferences(configurationProperties, configId);
+            checkReferences(configurationProperties, cfg.getPid());
             return true;
-        } else if (REPOINIT_PID.equals(configId)) {
-            checkReferences(configurationProperties, configId);
+        } else if (REPOINIT_PID.equals(cfg.getPid())) {
+            checkReferences(configurationProperties, cfg.getPid());
             return true;
-        } else if (configId.startsWith(SERVICE_USER_MAPPING_PID)) {
+        } else if (cfg.getPid().startsWith(SERVICE_USER_MAPPING_PID)) {
             String[] mappings = Converters.standardConverter().convert(configurationProperties.get("user.mapping")).to(String[].class);
-            List<String> newMappings = convertMappings(mappings, configId, enforceServiceMappingByPrincipal);
+            List<String> newMappings = convertMappings(mappings, cfg.getPid(), enforceServiceMappingByPrincipal);
             // replace 'user.mapping' property by the new mappings, which may have been refactored
             if (!newMappings.isEmpty()) {
                 configurationProperties.put("user.mapping", newMappings.toArray(new String[0]));
@@ -357,40 +357,35 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
 
     @Override
     public void addConfiguration(@Nullable String runMode,
-                                 @NotNull String pid,
+                                 @NotNull Configuration cfg,
                                  @NotNull String path,
                                  @NotNull Dictionary<String, Object> configurationProperties)
             throws IOException, ConverterException {
-        String factoryPid = null;
-        int n = pid.indexOf('~');
-        if (n > 0) {
-            factoryPid = pid.substring(0, n);
-        }
-        if (handleRepoinitAndMappings(runMode, factoryPid != null ? factoryPid : pid, pid, configurationProperties, enforceServiceMappingByPrincipal)) {
+        if (handleRepoinitAndMappings(runMode, cfg, configurationProperties, enforceServiceMappingByPrincipal)) {
             return;
         }
 
         Feature feature = getRunMode(runMode);
-        Configuration configuration = feature.getConfigurations().getConfiguration(pid);
+        Configuration configuration = feature.getConfigurations().getConfiguration(cfg.getPid());
 
         if (configuration == null) {
-            configuration = new Configuration(pid);
+            configuration = new Configuration(cfg.getPid());
             feature.getConfigurations().add(configuration);
-            this.pidToPathMapping.put(pid, path);
+            this.pidToPathMapping.put(cfg.getPid(), path);
         } else {
             switch (this.configurationHandling) {
                 case STRICT:
                     throw new ConverterException("Configuration '"
-                            + pid
+                            + cfg.getPid()
                             + "' already defined in Feature Model '"
                             + feature.getId().toMvnId()
                             + "', set the 'mergeConfigurations' flag to 'true' if you want to merge multiple configurations with same PID");
                 case ORDERED:
-                    final String oldPath = this.pidToPathMapping.get(pid);
+                    final String oldPath = this.pidToPathMapping.get(cfg.getPid());
                     if (oldPath == null || oldPath.compareTo(path) > 0) {
-                        this.pidToPathMapping.put(pid, path);
+                        this.pidToPathMapping.put(cfg.getPid(), path);
                         feature.getConfigurations().remove(configuration);
-                        configuration = new Configuration(pid);
+                        configuration = new Configuration(cfg.getPid());
                         feature.getConfigurations().add(configuration);
                     } else {
                         return;

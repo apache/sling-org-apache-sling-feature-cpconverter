@@ -20,7 +20,6 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
@@ -37,6 +36,7 @@ import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
 import org.apache.sling.feature.ArtifactId;
+import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.SlingInitialContentPolicy;
 import org.apache.sling.feature.cpconverter.artifacts.SimpleFolderArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
@@ -55,6 +55,9 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
     @Captor
     ArgumentCaptor<Dictionary<String, Object>> dictionaryCaptor;
+
+    @Captor
+    ArgumentCaptor<Configuration> cfgCaptor;
 
     @Test
     public void testSlingInitialContent() throws Exception {
@@ -122,8 +125,9 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         // modified bundle
         Mockito.verify(featuresManager).addArtifact(null, ArtifactId.fromMvnId("com.composum.nodes:composum-nodes-config:2.5.3-cp2fm-converted"), null);
         // need to use ArgumentCaptur to properly compare string arrays
-        Mockito.verify(featuresManager).addConfiguration(ArgumentMatchers.isNull(), ArgumentMatchers.eq("org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment~composum_core_v2"), ArgumentMatchers.eq("/jcr_root/libs/composum/nodes/install/org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment-composum_core_v2.config"), dictionaryCaptor.capture());
+        Mockito.verify(featuresManager).addConfiguration(ArgumentMatchers.isNull(), cfgCaptor.capture(), ArgumentMatchers.eq("/jcr_root/libs/composum/nodes/install/org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment-composum_core_v2.config"), dictionaryCaptor.capture());
         assertEquals("composum_core", dictionaryCaptor.getValue().get("whitelist.name"));
+        assertEquals("org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment~composum_core_v2", cfgCaptor.getValue().getPid());
         assertArrayEquals(new String[] {
                 "com.composum.nodes.commons",
                 "com.composum.nodes.pckgmgr",
@@ -148,8 +152,11 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         // original bundle
         Mockito.verify(featuresManager).addArtifact(null, ArtifactId.fromMvnId("com.composum.nodes:composum-nodes-config:2.5.3"), null);
         // need to use ArgumentCaptur to properly compare string arrays
-        Mockito.verify(featuresManager).addConfiguration(ArgumentMatchers.isNull(), ArgumentMatchers.eq("org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment~composum_core_v2"), ArgumentMatchers.eq("/jcr_root/libs/composum/nodes/install/org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment-composum_core_v2.config"), dictionaryCaptor.capture());
+        Mockito.verify(featuresManager).addConfiguration(ArgumentMatchers.isNull(),
+             cfgCaptor.capture(),
+             ArgumentMatchers.eq("/jcr_root/libs/composum/nodes/install/org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment-composum_core_v2.config"), dictionaryCaptor.capture());
         assertEquals("composum_core", dictionaryCaptor.getValue().get("whitelist.name"));
+        assertEquals("org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment~composum_core_v2", cfgCaptor.getValue().getPid());
         assertArrayEquals(new String[] {
                 "com.composum.nodes.commons",
                 "com.composum.nodes.pckgmgr",

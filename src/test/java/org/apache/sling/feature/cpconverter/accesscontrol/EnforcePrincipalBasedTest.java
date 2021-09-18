@@ -286,7 +286,7 @@ public class EnforcePrincipalBasedTest {
         seed.getConfigurations().add(foo);
 
         fm.init(ArtifactId.parse("groupId:artifactId:version1.0"));
-        fm.addConfiguration("author", foo.getPid(), "/path", props);
+        fm.addConfiguration("author", foo, "/path", props);
         
         // verify that invalid empty mapping has been stripped (without Exception)
         String[] result = (String[]) foo.getProperties().get("user.mapping");
@@ -303,7 +303,7 @@ public class EnforcePrincipalBasedTest {
         props.put("user.mapping", new String[]{"serviceName:subservice=[user1]","","serviceName2:subservice2=[user2]"});
 
         fm.init(ArtifactId.parse("groupId:artifactId:version1.0"));
-        fm.addConfiguration("author", foo.getPid(), "/path", props);
+        fm.addConfiguration("author", foo, "/path", props);
 
         // verify that invalid empty mapping has been stripped (without Exception)
         String[] result = (String[]) foo.getProperties().get("user.mapping");

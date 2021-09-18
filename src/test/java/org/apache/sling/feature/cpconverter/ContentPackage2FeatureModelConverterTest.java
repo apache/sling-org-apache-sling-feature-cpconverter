@@ -562,8 +562,8 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                      .convert(packageFile);
     
             String pid = "this.is.just.a.pid";
-            converter.getFeaturesManager().addConfiguration(runmodeA, pid, "/a", new Hashtable<>());
-            converter.getFeaturesManager().addConfiguration(runmodeB, pid, "/b", new Hashtable<>());
+            converter.getFeaturesManager().addConfiguration(runmodeA, new Configuration(pid), "/a", new Hashtable<>());
+            converter.getFeaturesManager().addConfiguration(runmodeB, new Configuration(pid), "/b", new Hashtable<>());
     
         } finally {
             deleteDirTree(outputDirectory);
@@ -583,8 +583,8 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                      .convert(packageFile);
     
             String pid = "this.is.just.a.pid";
-            converter.getFeaturesManager().addConfiguration(null, pid, "/apps/a/config/pid.json", new Hashtable<String, Object>(){{put("foo", "a");}});
-            converter.getFeaturesManager().addConfiguration(null, pid, "/apps/b/config/pid.json", new Hashtable<String, Object>(){{put("foo", "b");}});
+            converter.getFeaturesManager().addConfiguration(null, new Configuration(pid), "/apps/a/config/pid.json", new Hashtable<String, Object>(){{put("foo", "a");}});
+            converter.getFeaturesManager().addConfiguration(null, new Configuration(pid), "/apps/b/config/pid.json", new Hashtable<String, Object>(){{put("foo", "b");}});
     
             Configuration c = converter.getFeaturesManager().getTargetFeature().getConfigurations().getConfiguration(pid);
             assertNotNull(c);
@@ -607,9 +607,9 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                      .convert(packageFile);
     
             String pid = "this.is.just.a.pid";
-            converter.getFeaturesManager().addConfiguration(null, pid, "/apps/b/config/pid.json", new Hashtable<String, Object>(){{put("foo", "b");}});
-            converter.getFeaturesManager().addConfiguration(null, pid, "/apps/a/config/pid.json", new Hashtable<String, Object>(){{put("foo", "a");}});
-            converter.getFeaturesManager().addConfiguration(null, pid, "/apps/c/config/pid.json", new Hashtable<String, Object>(){{put("foo", "c");}});
+            converter.getFeaturesManager().addConfiguration(null, new Configuration(pid), "/apps/b/config/pid.json", new Hashtable<String, Object>(){{put("foo", "b");}});
+            converter.getFeaturesManager().addConfiguration(null, new Configuration(pid), "/apps/a/config/pid.json", new Hashtable<String, Object>(){{put("foo", "a");}});
+            converter.getFeaturesManager().addConfiguration(null, new Configuration(pid), "/apps/c/config/pid.json", new Hashtable<String, Object>(){{put("foo", "c");}});
     
             Configuration c = converter.getFeaturesManager().getTargetFeature().getConfigurations().getConfiguration(pid);
             assertNotNull(c);

@@ -163,7 +163,7 @@ public class RepoInitTest {
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
         FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);
         when(featuresManager.getTargetFeature()).thenReturn(feature);
-        doCallRealMethod().when(featuresManager).addConfiguration(anyString(), anyString(), anyString(), any());
+        doCallRealMethod().when(featuresManager).addConfiguration(anyString(), any(), anyString(), any());
         when(featuresManager.getRunMode(anyString())).thenReturn(feature);
 
         AclManager aclManager = spy(new DefaultAclManager((enforcePrincipalBasedAcSetup) ? enforcedPath : null, "system"));

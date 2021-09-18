@@ -24,6 +24,7 @@ import java.util.regex.Matcher;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
+import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
@@ -77,7 +78,8 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
                 runMode = matcher.group("runmode");
     
                 FeaturesManager featuresManager = Objects.requireNonNull(converter.getFeaturesManager());
-                featuresManager.addConfiguration(runMode, id, path, configurationProperties);
+                final Configuration cfg = new Configuration(id);
+                featuresManager.addConfiguration(runMode, cfg, path, configurationProperties);
             }
         } else {
             throw new IllegalStateException("Something went terribly wrong: pattern '"

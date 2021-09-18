@@ -156,7 +156,7 @@ public class ConfigurationEntryHandlerTest {
         FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);
         ((DefaultFeaturesManager) featuresManager).setEnforceServiceMappingByPrincipal(enforceServiceMappingByPrincipal);
         when(featuresManager.getTargetFeature()).thenReturn(feature);
-        doCallRealMethod().when(featuresManager).addConfiguration(anyString(), anyString(), anyString(), any());
+        doCallRealMethod().when(featuresManager).addConfiguration(anyString(), any(), anyString(), any());
         when(featuresManager.getRunMode(anyString())).thenReturn(feature);
         ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
         when(converter.getFeaturesManager()).thenReturn(featuresManager);
