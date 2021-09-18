@@ -76,11 +76,10 @@ public class RepoInitTest {
     @Test
     public void parseConversionRepoInit() throws Exception {
         String path = PATH_PREFIX + "-conversion-test.config";
-        String result = PATH_PREFIX + "-conversion-result.config";
 
         Extension expectedExtension;
         if (enforcePrincipalBasedAcSetup) {
-            expectedExtension = extractExtensions(result, false, false);
+            expectedExtension = extractExtensions(PATH_PREFIX + "-conversion-result.config", false, false);
         } else {
             expectedExtension = extractExtensions(path, false, false);
         }
@@ -88,7 +87,7 @@ public class RepoInitTest {
         assertNotNull(expectedExtension);
         assertNotNull(extension);
         String txt = normalize(extension.getText());
-        assertEquals(name, normalize(expectedExtension.getText()), txt);
+        assertEquals(txt, normalize(expectedExtension.getText()), txt);
 
         // verify that the generated repo-init is valid
         assertFalse(name, new RepoInitParserService().parse(new StringReader(txt)).isEmpty());

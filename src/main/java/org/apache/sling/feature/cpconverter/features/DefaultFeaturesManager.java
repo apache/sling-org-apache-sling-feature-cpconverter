@@ -313,9 +313,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         if (REPOINIT_FACTORY_PID.equals(cfg.getFactoryPid())) {
             final String[] scripts = Converters.standardConverter().convert(configurationProperties.get("scripts")).to(String[].class);
             if (scripts != null && scripts.length > 0) {
-                for (final String text : scripts) {
-                    getAclManager().addRepoinitExtention(cfg.getPid(), text, runMode, this);
-                }
+                getAclManager().addRepoinitExtention(cfg.getPid(), String.join(System.lineSeparator(), scripts), runMode, this);
             }
             checkReferences(configurationProperties, cfg.getPid());
             return true;
