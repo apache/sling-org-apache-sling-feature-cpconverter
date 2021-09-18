@@ -120,8 +120,6 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
 
     private final Stack<String> packageIds = new Stack<>();
 
-    private String lastRepoinitSource;
-
     DefaultFeaturesManager() {
         this(new File(""));
     }
@@ -529,11 +527,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         }
 
         // prepend source/origin
-        final String newSource = "# origin=".concat(String.join("|", this.packageIds)).concat(" source=").concat(source);
-        if ( !newSource.equals(lastRepoinitSource) ) {
-            lastRepoinitSource = newSource;
-            text = newSource.concat(System.lineSeparator().concat(text));
-        }
+        text = "# origin=".concat(String.join("|", this.packageIds)).concat(" source=").concat(source).concat(System.lineSeparator()).concat(text);
 
         Extension repoInitExtension = getRunMode(runMode).getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         if (repoInitExtension == null) {
