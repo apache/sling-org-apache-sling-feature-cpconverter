@@ -37,14 +37,12 @@ import java.util.Collection;
 
 /** Simple namespace registry backed by a map */
 public class JcrNamespaceRegistry implements NamespaceRegistry, NamespaceResolver {
-
-    protected final Logger logger = LoggerFactory.getLogger(getClass());
+    
     private final Collection<String> registeredCndSystemIds = new ArrayList<>();
     private final NodeTypeManagerProvider ntManagerProvider = new NodeTypeManagerProvider();
-    private final NodeTypeManager ntManager;
+    private final NodeTypeManager ntManager = ntManagerProvider.getNodeTypeManager();
 
     public JcrNamespaceRegistry() throws RepositoryException, ParseException, IOException {
-        ntManager = ntManagerProvider.getNodeTypeManager();
         ntManagerProvider.registerNamespace(PREFIX_XML, NAMESPACE_XML);
     }
 
@@ -68,14 +66,12 @@ public class JcrNamespaceRegistry implements NamespaceRegistry, NamespaceResolve
 
     @Override
     public String[] getPrefixes() throws RepositoryException {
-        String[] stringArray = getPrefixStringArray();
-        return ntManagerProvider.getRegisteredNamespaces().keySet().toArray(stringArray);
+        return ntManagerProvider.getRegisteredNamespaces().keySet().toArray(new String[0]);
     }
 
     @Override
     public String[] getURIs() throws RepositoryException {
-        String[] stringArray = getPrefixStringArray();
-        return ntManagerProvider.getRegisteredNamespaces().values().toArray(stringArray);
+        return ntManagerProvider.getRegisteredNamespaces().values().toArray(new String[0]);
     }
 
     @Override
@@ -100,8 +96,5 @@ public class JcrNamespaceRegistry implements NamespaceRegistry, NamespaceResolve
         return registeredCndSystemIds;
     }
 
-    @NotNull
-    private String[] getPrefixStringArray() throws RepositoryException {
-        return new String[ntManagerProvider.getRegisteredNamespaces().size()];
-    }
+
 }
