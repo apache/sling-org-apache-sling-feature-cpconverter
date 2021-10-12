@@ -16,89 +16,92 @@
  */
 package org.apache.sling.feature.cpconverter.vltpkg;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import org.apache.jackrabbit.commons.SimpleValueFactory;
+import org.apache.jackrabbit.commons.cnd.CndImporter;
+import org.apache.jackrabbit.commons.cnd.ParseException;
+import org.apache.jackrabbit.spi.commons.namespace.NamespaceResolver;
+import org.apache.jackrabbit.vault.validation.spi.impl.nodetype.NodeTypeManagerProvider;
+import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jcr.NamespaceException;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
-
-import org.apache.jackrabbit.commons.cnd.ParseException;
-import org.apache.jackrabbit.spi.commons.namespace.NamespaceResolver;
-import org.jetbrains.annotations.NotNull;
+import javax.jcr.ValueFactory;
+import javax.jcr.nodetype.NodeTypeManager;
+import java.io.IOException;
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /** Simple namespace registry backed by a map */
 public class JcrNamespaceRegistry implements NamespaceRegistry, NamespaceResolver {
 
-    private final Map<String, String> prefixUriMapping;
-    private final Collection<String> registeredCndSystemIds;
-    
-    public JcrNamespaceRegistry() {
-        prefixUriMapping = new HashMap<>();
-        prefixUriMapping.put(PREFIX_JCR, NAMESPACE_JCR);
-        prefixUriMapping.put(PREFIX_MIX, NAMESPACE_MIX);
-        prefixUriMapping.put(PREFIX_NT, NAMESPACE_NT);
-        prefixUriMapping.put(PREFIX_XML, NAMESPACE_XML);
-        // referencing from org.apache.sling.jcr.resource.api.JcrResourceConstants.SLING_NAMESPACE_URI would require an additional dependency
-        prefixUriMapping.put("sling", "http://sling.apache.org/jcr/sling/1.0");
-        registeredCndSystemIds = new ArrayList<>();
+    protected final Logger logger = LoggerFactory.getLogger(getClass());
+    private final Collection<String> registeredCndSystemIds = new ArrayList<>();
+    private final NodeTypeManagerProvider ntManagerProvider = new NodeTypeManagerProvider();
+    private final NodeTypeManager ntManager;
+
+    public JcrNamespaceRegistry() throws RepositoryException, ParseException, IOException {
+        ntManager = ntManagerProvider.getNodeTypeManager();
+        ntManagerProvider.registerNamespace(PREFIX_XML, NAMESPACE_XML);
     }
 
     public void registerCnd(Reader reader, String systemId) throws ParseException, RepositoryException, IOException {
-        throw new IllegalStateException("Not implemented");
-        /*
-        TODO: SLING-10770, implement CND support
-            NodeTypeManager ntManager = null;
-            ValueFactory valueFactory = null;
-            CndImporter.registerNodeTypes(reader, systemId, ntManager, this, valueFactory, false);
-            registeredCndSystemIds.add(systemId);
-         */
+        ValueFactory valueFactory = new SimpleValueFactory();
+        CndImporter.registerNodeTypes(reader, systemId, ntManager, this, valueFactory, false);
+        registeredCndSystemIds.add(systemId);
     }
 
     @Override
     public void registerNamespace(String prefix, String uri)
             throws RepositoryException {
-        String oldUri = prefixUriMapping.putIfAbsent(prefix, uri);
-        if (oldUri != null && !oldUri.equals(uri)) {
-            throw new RepositoryException("Prefix " + prefix + " already used for another uri!");
-        }
+        ntManagerProvider.registerNamespace(prefix, uri);
     }
 
     @Override
     public void unregisterNamespace(String prefix)
             throws RepositoryException {
-        throw new UnsupportedOperationException("Unregistering namespaces is unsupported");
+        ntManagerProvider.unregisterNamespace(prefix);
     }
 
     @Override
     public String[] getPrefixes() throws RepositoryException {
-        return prefixUriMapping.keySet().toArray(new String[0]);
+        String[] stringArray = getPrefixStringArray();
+        return ntManagerProvider.getRegisteredNamespaces().keySet().toArray(stringArray);
     }
 
     @Override
     public String[] getURIs() throws RepositoryException {
-        return prefixUriMapping.values().toArray(new String[0]);
+        String[] stringArray = getPrefixStringArray();
+        return ntManagerProvider.getRegisteredNamespaces().values().toArray(stringArray);
     }
 
     @Override
     public String getURI(String prefix) throws NamespaceException {
-        String uri = prefixUriMapping.get(prefix);
-        if (uri == null) {
-            throw new NamespaceException("No registered URI found for prefix " + prefix);
+        try {
+            return ntManagerProvider.getURI(prefix);
+        } catch (RepositoryException e) {
+            throw new NamespaceException(e);
         }
-        return uri;
     }
 
     @Override
     public String getPrefix(String uri) throws NamespaceException {
-        throw new UnsupportedOperationException("This lookup direction is unsupported");
+        try {
+            return ntManagerProvider.getPrefix(uri);
+        } catch (RepositoryException e) {
+            throw new NamespaceException(e);
+        }
     }
 
     public @NotNull Collection<String> getRegisteredCndSystemIds() {
         return registeredCndSystemIds;
+    }
+
+    @NotNull
+    private String[] getPrefixStringArray() throws RepositoryException {
+        return new String[ntManagerProvider.getRegisteredNamespaces().size()];
     }
 }
