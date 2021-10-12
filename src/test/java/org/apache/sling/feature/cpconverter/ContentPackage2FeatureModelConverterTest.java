@@ -146,7 +146,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
 
         try {
 
-            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
                     .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .convert(packageFile);
@@ -226,7 +226,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
 
         try {
 
-            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
                     .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .setContentTypePackagePolicy(PackagePolicy.DROP)
@@ -296,7 +296,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
 
         try {
 
-            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
                     .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .setContentTypePackagePolicy(PackagePolicy.PUT_IN_DEDICATED_FOLDER)
@@ -377,7 +377,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
         try {
-            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
                     .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .setRemoveInstallHooks(true)
@@ -405,7 +405,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
         try {
-            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
                     .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .convert(packageFile);
@@ -432,7 +432,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         File outDir = Files.createTempDirectory(getClass().getSimpleName()).toFile();
 
         try {
-            DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 5, outDir, null, null, null, new DefaultAclManager());
+            DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 5, outDir, null, null, new HashMap<>(), new DefaultAclManager());
             fm.setAPIRegions(Arrays.asList("global", "foo.bar"));
             converter.setFeaturesManager(fm)
                      .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outDir))
@@ -479,7 +479,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                     .setEntryHandlersManager(handlersManager)
                     .setAclManager(aclManager);
 
-            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, aclManager))
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), aclManager))
                     .setBundlesDeployer(new SimpleFolderArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .convert(packageFile);
@@ -502,7 +502,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
 
         try {
 
-            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
                     .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .convert(packageFile);
@@ -524,7 +524,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
 
         try {
 
-            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
                     .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .convert(packageFile);
@@ -557,7 +557,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             File packageFile = FileUtils.toFile(packageUrl);
     
             converter.setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
-                     .setFeaturesManager(new DefaultFeaturesManager(DefaultFeaturesManager.ConfigurationHandling.STRICT, 5, outputDirectory, null, null, null, new DefaultAclManager()))
+                     .setFeaturesManager(new DefaultFeaturesManager(DefaultFeaturesManager.ConfigurationHandling.STRICT, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
                      .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                      .convert(packageFile);
     
@@ -578,7 +578,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             File packageFile = FileUtils.toFile(packageUrl);
     
             converter.setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
-                     .setFeaturesManager(new DefaultFeaturesManager(false, 5, outputDirectory, null, null, null, new DefaultAclManager()))
+                     .setFeaturesManager(new DefaultFeaturesManager(false, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
                      .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                      .convert(packageFile);
     
@@ -602,7 +602,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             File packageFile = FileUtils.toFile(packageUrl);
     
             converter.setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
-                     .setFeaturesManager(new DefaultFeaturesManager(false, 5, outputDirectory, null, null, null, new DefaultAclManager()))
+                     .setFeaturesManager(new DefaultFeaturesManager(false, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
                      .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                      .convert(packageFile);
     
@@ -627,7 +627,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
 
         try {
             converter.setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outDir))
-            .setFeaturesManager(new DefaultFeaturesManager(false, 5, outDir, null, null, null, new DefaultAclManager())
+            .setFeaturesManager(new DefaultFeaturesManager(false, 5, outDir, null, null, new HashMap<>(), new DefaultAclManager())
                     .setAPIRegions(Collections.singletonList("a.b.c")))
             .setEmitter(DefaultPackagesEventsEmitter.open(outDir))
             .convert(cpFile);
@@ -668,7 +668,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         try {
 
             String overrideId = "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0:${project.version}";
-            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, overrideId, null, null, new DefaultAclManager()))
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, overrideId, null, new HashMap<>(), new DefaultAclManager()))
                     .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .convert(packageFile);
@@ -741,7 +741,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
 
         try {
 
-            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
                     .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .convert(contentPackages[0]);
@@ -786,7 +786,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
 
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
         try {
-            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
                     .setContentTypePackagePolicy(PackagePolicy.DROP)
                     .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
@@ -821,7 +821,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
 
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
         try {
-            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
                     .setContentTypePackagePolicy(PackagePolicy.DROP)
                     .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
@@ -858,7 +858,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
 
         File unrefOutputDir = new File(outputDirectory, "unref");
 
-        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
+        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
                 .setUnreferencedArtifactsDeployer(new LocalMavenRepositoryArtifactsDeployer(unrefOutputDir))
                 .setContentTypePackagePolicy(PackagePolicy.PUT_IN_DEDICATED_FOLDER)
                 .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
@@ -878,7 +878,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         File[] contentPackages = load("test_generated_package.zip");
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
         try {
-            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, new DefaultAclManager()))
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
                     .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .convert(contentPackages);

@@ -107,6 +107,55 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         Mockito.verify(featuresManager).addArtifact(null, ArtifactId.fromMvnId("io.wcm:io.wcm.handler.media:1.11.6-cp2fm-converted"), null);
     }
 
+
+    @Test
+    public void testSlingInitialContentWithNodeType() throws Exception {
+        setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite-slinginitialcontent-nodetype-def.jar");
+        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
+        converter.setEntryHandlersManager(handlersManager);
+        Map<String, String> namespaceRegistry = Collections.singletonMap("granite", "http://www.adobe.com/jcr/granite/1.0");
+        when(featuresManager.getNamespaceUriByPrefix()).thenReturn(namespaceRegistry);
+
+        File targetFolder = tmpFolder.newFolder();
+        when(converter.getArtifactsDeployer()).thenReturn(new SimpleFolderArtifactsDeployer(targetFolder));
+        when(converter.isSubContentPackageIncluded("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar-APPLICATION")).thenReturn(true);
+
+        VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
+        Properties props = new Properties();
+        props.setProperty(PackageProperties.NAME_GROUP, "com.mysite");
+        props.setProperty(PackageProperties.NAME_NAME, "mysite.core");
+        props.setProperty(PackageProperties.NAME_VERSION, "1.0.0-SNAPSHOT");
+        when(assembler.getPackageProperties()).thenReturn(props);
+        converter.setMainPackageAssembler(assembler);
+
+        handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
+        handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter);
+
+        converter.deployPackages();
+        // verify generated bundle
+        try (JarFile jarFile = new JarFile(new File(targetFolder, "mysite.core-1.0.0-SNAPSHOT-cp2fm-converted.jar"))) {
+            String bundleVersion = jarFile.getManifest().getMainAttributes().getValue(Constants.BUNDLE_VERSION);
+            assertNotNull(bundleVersion);
+            assertNull(jarFile.getManifest().getMainAttributes().getValue("Sling-Initial-Content"));
+            assertEquals("SNAPSHOT_cp2fm-converted", Version.parseVersion(bundleVersion).getQualifier());
+            // make sure the initial content is no longer contained
+            assertNull(jarFile.getEntry("SLING-INF/app-root/"));
+        }
+        // verify generated package
+        try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "mysite.core-apps-1.0.0-SNAPSHOT-cp2fm-converted.zip")); 
+            Archive archive = vaultPackage.getArchive()) {
+            archive.open(true);
+            PackageId targetId = PackageId.fromString("com.mysite:mysite.core-apps:1.0.0-SNAPSHOT-cp2fm-converted");
+            assertEquals(targetId, vaultPackage.getId());
+            Entry entry = archive.getEntry("jcr_root/apps/myinitialcontentest/my-first-node.xml");
+            assertNotNull("Archive does not contain expected item", entry);
+        }
+        // verify nothing else has been deployed
+        assertEquals(2, targetFolder.list().length);
+        // verify changed id
+        Mockito.verify(featuresManager).addArtifact(null, ArtifactId.fromMvnId("com.mysite:mysite.core:1.0.0-SNAPSHOT-cp2fm-converted"), null);
+    }
+
     @Test
     public void testSlingInitialContentContainingConfigurationExtractAndRemove() throws Exception {
         setUpArchive("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", "composum-nodes-config-2.5.3.jar");
