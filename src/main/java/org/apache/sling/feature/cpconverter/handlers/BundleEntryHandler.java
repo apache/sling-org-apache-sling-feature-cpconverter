@@ -304,9 +304,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
                 }
             }
     
-            // remap CND files to make sure they are picked up by NodeTypesEntryHandler
-            // TODO: SLING-10770, remove this warning when support for CND files is added - see JcrNamespaceRegistry#registerCnd
-            logger.warn("Unable to check for CND files for sling inital content - Not implemented!");
+            // remap CND files to make sure they are picked up by NodeTypesEntryHandler;
             if (nsRegistry.getRegisteredCndSystemIds().contains(jarEntry.getName())) {
                 contentPackageEntryPath = "/META-INF/vault/" + Text.getName(jarEntry.getName()) + ".cnd";
             }
