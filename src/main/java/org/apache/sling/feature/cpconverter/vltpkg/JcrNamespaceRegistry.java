@@ -22,8 +22,6 @@ import org.apache.jackrabbit.commons.cnd.ParseException;
 import org.apache.jackrabbit.spi.commons.namespace.NamespaceResolver;
 import org.apache.jackrabbit.vault.validation.spi.impl.nodetype.NodeTypeManagerProvider;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.jcr.NamespaceException;
 import javax.jcr.NamespaceRegistry;
@@ -44,6 +42,7 @@ public class JcrNamespaceRegistry implements NamespaceRegistry, NamespaceResolve
 
     public JcrNamespaceRegistry() throws RepositoryException, ParseException, IOException {
         ntManagerProvider.registerNamespace(PREFIX_XML, NAMESPACE_XML);
+        ntManagerProvider.registerNamespace("sling", "http://sling.apache.org/jcr/sling/1.0");
     }
 
     public void registerCnd(Reader reader, String systemId) throws ParseException, RepositoryException, IOException {
