@@ -23,11 +23,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 final class RunmodeMapper {
 
-    private static final String FILENAME = "runmode.mapping";
+    static final String FILENAME = "runmode.mapping";
 
     public static @NotNull RunmodeMapper open(@NotNull File featureModelsOutputDirectory) throws IOException {
         Properties properties = new Properties();
@@ -46,11 +50,15 @@ final class RunmodeMapper {
 
     private final File runmodeMappingFile;
 
-    private final Properties properties;
+    private final Map<String, Set<String>> properties = new HashMap<>();
 
     private RunmodeMapper(@NotNull File runmodeMappingFile, @NotNull Properties properties) {
         this.runmodeMappingFile = runmodeMappingFile;
-        this.properties = properties;
+        for(final String key : properties.stringPropertyNames()) {
+            for(final String name : properties.getProperty(key).split(",")) {
+                this.properties.computeIfAbsent(key, id -> new LinkedHashSet<>()).add(name);
+            }
+        }
     }
 
     public void addOrUpdate(@Nullable String runMode, @NotNull String jsonFileName) {
@@ -58,20 +66,16 @@ final class RunmodeMapper {
             runMode = DEFAULT;
         }
 
-        String value = properties.getProperty(runMode);
-
-        if (value != null && !value.contains(jsonFileName)) {
-            value += ',' + jsonFileName;
-        } else {
-            value = jsonFileName;
-        }
-
-        properties.setProperty(runMode, value);
+        this.properties.computeIfAbsent(runMode, id -> new LinkedHashSet<>()).add(jsonFileName);
     }
 
     public void save() throws IOException {
+        final Properties props = new Properties();
+        for(final Map.Entry<String, Set<String>> entry : this.properties.entrySet()) {
+            props.put(entry.getKey(), String.join(",", entry.getValue()));
+        }
         try (FileOutputStream output = new FileOutputStream(runmodeMappingFile)) {
-            properties.store(output, "File edited by the Apache Sling Content Package to Sling Feature converter");
+            props.store(output, "File edited by the Apache Sling Content Package to Sling Feature converter");
         }
     }
 
