@@ -72,6 +72,72 @@ public class FeaturesManagerTest {
     }
 
     @Test
+    public void testExportsToAPIRegionMultipleArtifacts() throws Exception {
+        ((DefaultFeaturesManager) featuresManager).setExportToAPIRegion("global");
+        ((DefaultFeaturesManager) featuresManager).setAPIRegions(Collections.singletonList("deprecated"));
+        featuresManager.init(ArtifactId.parse("g:a:1"));
+        featuresManager.addAPIRegionExport(null, "org.foo.a");
+        featuresManager.addAPIRegionExport(null, "org.foo.b");
+        featuresManager.addAPIRegionExport("rm1", "x.y");
+
+        featuresManager.serialize();
+
+        featuresManager.init(ArtifactId.parse("g:b:1"));
+
+        featuresManager.addAPIRegionExport(null, "org.foo.c");
+        featuresManager.addAPIRegionExport(null, "org.foo.d");
+        featuresManager.addAPIRegionExport("rm1", "x.y.z");
+
+        featuresManager.serialize();
+
+        try (InputStream in = new FileInputStream(new File(tempDir.toFile(), "b.json"))) {
+            JsonParser p = Json.createParser(in);
+            JsonObject jo = p.getObject();
+
+            assertEquals("g:b:slingosgifeature:1", jo.getString("id"));
+
+            JsonArray ja = jo.getJsonArray("api-regions:JSON|false");
+            assertEquals(2, ja.size());
+
+            JsonObject ar1 = ja.getJsonObject(0);
+            assertEquals("global", ar1.getString("name"));
+            JsonArray are1 = ar1.getJsonArray("exports");
+
+            assertEquals(Arrays.asList("org.foo.c", "org.foo.d"),
+                    are1.getValuesAs(JsonString::getString));
+
+            JsonObject ar2 = ja.getJsonObject(1);
+            assertEquals("deprecated", ar2.getString("name"));
+            JsonArray are2 = ar2.getJsonArray("exports");
+            assertTrue(are2 == null || are2.isEmpty());
+        }
+
+        // Runmode file:
+        try (InputStream in = new FileInputStream(new File(tempDir.toFile(), "b-rm1.json"))) {
+            JsonParser p = Json.createParser(in);
+            JsonObject jo = p.getObject();
+
+            assertEquals("g:b:slingosgifeature:rm1:1", jo.getString("id"));
+
+            JsonArray ja = jo.getJsonArray("api-regions:JSON|false");
+            assertEquals(2, ja.size());
+
+            JsonObject ar1 = ja.getJsonObject(0);
+            assertEquals("global", ar1.getString("name"));
+            JsonArray are1 = ar1.getJsonArray("exports");
+
+            assertEquals(Arrays.asList("x.y.z"),
+                    are1.getValuesAs(JsonString::getString));
+
+            JsonObject ar2 = ja.getJsonObject(1);
+            assertEquals("deprecated", ar2.getString("name"));
+            JsonArray are2 = ar2.getJsonArray("exports");
+            assertTrue(are2 == null || are2.isEmpty());
+        }
+
+    }
+
+    @Test
     public void testExportsToAPIRegion() throws Exception {
         ((DefaultFeaturesManager) featuresManager).setExportToAPIRegion("global");
         ((DefaultFeaturesManager) featuresManager).setAPIRegions(Collections.singletonList("deprecated"));

@@ -161,6 +161,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         targetFeature = new Feature(packageId.changeClassifier(null).changeType(SLING_OSGI_FEATURE_TILE_TYPE));
 
         runModes.clear();
+        apiRegionExports.clear();
     }
 
     @Override
