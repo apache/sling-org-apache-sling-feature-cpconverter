@@ -150,7 +150,7 @@ public class VaultPackageUtils {
         if (s.startsWith(ENTRY_ROOT_PATH)) {
             String path = PlatformNameFormat.getRepositoryPath(s.substring(ENTRY_ROOT_PATH.length()));
             if (path.endsWith(Constants.DOT_CONTENT_XML)) {
-                path = path.substring(0, path.lastIndexOf(Constants.DOT_CONTENT_XML)-1);
+                path = path.substring(0, path.lastIndexOf(Constants.DOT_CONTENT_XML));
             } else if (path.endsWith(".xml")) {
                 // remove .xml extension from policy-nodes
                 path = path.substring(0, path.lastIndexOf(".xml"));
