@@ -83,6 +83,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     private final OperationProcessor processor = new OperationProcessor();
 
     private final Set<SystemUser> systemUsers = new LinkedHashSet<>();
+    private final Set<SystemUser> globalSystemUsers = new LinkedHashSet<>();
     private final Set<String> systemUserIds = new LinkedHashSet<>();
 
     private final Set<Group> groups = new LinkedHashSet<>();
@@ -122,6 +123,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
 
     @Override
     public boolean addSystemUser(@NotNull SystemUser systemUser) {
+        globalSystemUsers.add(systemUser);
         if (systemUsers.add(systemUser)) {
             recordSystemUserIds(systemUser.getId());
             setUserRoot(systemUser.getPath());
@@ -135,7 +137,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     @Override
     public void addMapping(@NotNull Mapping mapping) {
         if (mappings.add(mapping)) {
-            for (SystemUser user : systemUsers) {
+            for (SystemUser user : globalSystemUsers) {
                 if (mapping.mapsUser(user.getId())) {
                     mappedById.add(user.getId());
                 }
@@ -145,7 +147,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
 
     @Override
     public boolean addAccessControlEntry(@NotNull String systemUser, @NotNull AccessControlEntry acl) {
-        if (getSystemUser(systemUser).isPresent()) {
+        if (globalSystemUsers.stream().filter(su ->  su.getId().equals(systemUser)).findFirst().isPresent()) {
             acls.computeIfAbsent(systemUser, k -> new LinkedList<>()).add(acl);
             return true;
         }
@@ -170,7 +172,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
 
             // add the acls
             acls.forEach((systemUserID, authorizations) ->
-                    getSystemUser(systemUserID).ifPresent(systemUser ->
+                    globalSystemUsers.stream().filter(su ->  su.getId().equals(systemUserID)).findFirst().ifPresent(systemUser ->
                             addStatements(systemUser, authorizations, formatter)
                     ));
 
@@ -197,8 +199,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
                         @Override
                         public void visitCreateServiceUser(CreateServiceUser createServiceUser) {
                             recordSystemUserIds(createServiceUser.getUsername());
-                        }
-                    });
+                        }});
                 }
             } catch (RepoInitParsingException e) {
                 throw new ConverterException(e.getMessage(), e);

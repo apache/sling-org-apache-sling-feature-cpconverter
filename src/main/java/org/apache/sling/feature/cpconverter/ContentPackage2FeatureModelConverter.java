@@ -264,6 +264,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             recollectorVaultPackageScanner.traverse(pack);
 
             logger.info("content-package '{}' successfully read!", contentPackage);
+
+            aclManager.reset();
         }
 
         logger.info("Ordering input content-package(s) {}...", idPackageMapping.keySet());
