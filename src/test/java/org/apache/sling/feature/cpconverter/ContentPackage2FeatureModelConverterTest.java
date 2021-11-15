@@ -92,7 +92,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                                                                 "test_b-1.0.zip",
                                                                 "test_e-1.0.zip" };
 
-    private static final String FORMAT = "mutable-content-packages/%1$s/%2$s/%3$s/%2$s-%3$s-cp2fm-converted.zip";
+    private static final String FORMAT = "%1$s/%2$s/%3$s/%2$s-%3$s-cp2fm-converted.zip";
 
     private ContentPackage2FeatureModelConverter converter;
     private EntryHandlersManager handlersManager;
@@ -169,12 +169,12 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             List<PackageId> allPackageIds = new ArrayList<>();
             List<Dependency> contentRefsDependencies = new ArrayList<>();
                     
-            getContentPackagesFromFeatureModel(feature,allPackageIds);
+            getContentPackagesFromFeatureModel(outputDirectory, feature,allPackageIds);
             getContentPackagesFromRefs(outputDirectory,allPackageIds,contentRefsDependencies);
             
 
             for(Dependency dependency : contentRefsDependencies){
-                boolean foundDep = allPackageIds.stream().anyMatch(dependency::matches);
+                boolean foundDep = allPackageIds.stream().filter(Objects::nonNull).anyMatch(dependency::matches);
                 assertTrue("Dependency " + dependency.getName() + " is not present in the feature model or content refs", foundDep);
             }
             
@@ -182,10 +182,57 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             deleteDirTree(outputDirectory);
         }
     }
-    
-  
-    
-    
+
+    private void getContentPackagesFromFeatureModel(File outputDirectory, Feature feature, List<PackageId> packageIds) throws IOException {
+
+        Artifacts artifacts = feature.getExtensions().getByName("content-packages").getArtifacts();
+        for(Artifact artifact : artifacts){
+            ArtifactId id = artifact.getId();
+
+            String target = getPathTarget(id);
+            File file = new File(outputDirectory, target);
+            ZipVaultPackage vaultPackage = new ZipVaultPackage(file, true);
+            //read the artifact from disk and compute the artifactId from here
+            packageIds.add( vaultPackage.getProperties().getId() );
+        };
+
+    }
+
+    private void getContentPackagesFromRefs(File outputDirectory, List<PackageId> packageIds, List<Dependency> dependencies) throws IOException {
+        File contentPackagesCSV = new File(outputDirectory, "content-packages.csv");
+
+        List<String> contentPackages = IOUtils.readLines(new FileInputStream(contentPackagesCSV), StandardCharsets.UTF_8);
+
+        for(String contentPackageLine: contentPackages) {
+
+            if (contentPackageLine.startsWith("#")) {
+                continue;
+            }
+
+            String[] contentPackageLineSplit = contentPackageLine.split(",");
+
+            String artifactIdUnparsed = contentPackageLineSplit[1];
+            ArtifactId artifact = ArtifactId.fromMvnId(artifactIdUnparsed);
+
+            String target = "mutable-content-packages/" + getPathTarget(artifact);
+
+            File contentPackageFile = new File(outputDirectory, target);
+            ZipVaultPackage vaultPackage = new ZipVaultPackage(contentPackageFile, true);
+            packageIds.add(vaultPackage.getProperties().getId());
+
+
+            dependencies.addAll(Arrays.asList(vaultPackage.getProperties().getDependencies()));
+
+        }
+    }
+
+    private String getPathTarget(ArtifactId artifact) {
+        String groupIdPath = StringUtils.replace(artifact.getGroupId(), ".", "/");
+
+        return String.format(FORMAT, groupIdPath, artifact.getArtifactId(), artifact.getVersion());
+    }
+
+
     @Test
     public void convertContentPackage() throws Exception {
         URL packageUrl = getClass().getResource("test-content-package.zip");
@@ -960,41 +1007,5 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         return loadedResources;
     }
 
-    private void getContentPackagesFromFeatureModel(Feature feature, List<PackageId> packageIds){
-
-        Artifacts artifacts = feature.getExtensions().getByName("content-packages").getArtifacts();
-        artifacts.stream().map((artifact) -> {
-            ArtifactId id = artifact.getId();
-            return new PackageId(id.getGroupId(),id.getArtifactId(), artifact.toString());
-        }).forEach(packageIds::add);
-
-    }
-
-    private void getContentPackagesFromRefs(File outputDirectory, List<PackageId> packageIds, List<Dependency> dependencies) throws IOException {
-        File contentPackagesCSV = new File(outputDirectory, "content-packages.csv");
-
-        List<String> contentPackages = IOUtils.readLines(new FileInputStream(contentPackagesCSV), StandardCharsets.UTF_8);
-
-        for(String contentPackageLine: contentPackages) {
-
-            if (contentPackageLine.startsWith("#")) {
-                continue;
-            }
-
-            String[] contentPackageLineSplit = contentPackageLine.split(",");
-
-            String artifactIdUnparsed = contentPackageLineSplit[1];
-            ArtifactId artifact = ArtifactId.fromMvnId(artifactIdUnparsed);
-            packageIds.add(new PackageId(artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion()));
-
-            String groupIdPath = StringUtils.replace(artifact.getGroupId(), ".", "/");
-
-            String target = String.format(FORMAT, groupIdPath, artifact.getArtifactId(), artifact.getVersion());
-
-            File contentPackageFile = new File(outputDirectory, target);
-            ZipVaultPackage vaultPackage = new ZipVaultPackage(contentPackageFile, true);
-            dependencies.addAll(Arrays.asList(vaultPackage.getProperties().getDependencies()));
-
-        }
-    }
+   
 }
