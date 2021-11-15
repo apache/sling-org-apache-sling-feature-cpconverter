@@ -183,43 +183,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         }
     }
     
-    private void getContentPackagesFromFeatureModel(Feature feature, List<PackageId> packageIds){
-
-        Artifacts artifacts = feature.getExtensions().getByName("content-packages").getArtifacts();
-        artifacts.stream().map((artifact) -> {
-            ArtifactId id = artifact.getId();
-            return new PackageId(id.getGroupId(),id.getArtifactId(), artifact.toString());
-        }).forEach(packageIds::add);
-
-    }
-    
-    private void getContentPackagesFromRefs(File outputDirectory, List<PackageId> packageIds, List<Dependency> dependencies) throws IOException {
-        File contentPackagesCSV = new File(outputDirectory, "content-packages.csv");
-
-        List<String> contentPackages = IOUtils.readLines(new FileInputStream(contentPackagesCSV), StandardCharsets.UTF_8);
-
-        for(String contentPackageLine: contentPackages) {
-
-            if (contentPackageLine.startsWith("#")) {
-                continue;
-            }
-            
-            String[] contentPackageLineSplit = contentPackageLine.split(",");
-
-            String artifactIdUnparsed = contentPackageLineSplit[1];
-            ArtifactId artifact = ArtifactId.fromMvnId(artifactIdUnparsed);
-            packageIds.add(new PackageId(artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion()));
-
-            String groupIdPath = StringUtils.replace(artifact.getGroupId(), ".", "/");
-
-            String target = String.format(FORMAT, groupIdPath, artifact.getArtifactId(), artifact.getVersion());
-
-            File contentPackageFile = new File(outputDirectory, target);
-            ZipVaultPackage vaultPackage = new ZipVaultPackage(contentPackageFile, true);
-            dependencies.addAll(Arrays.asList(vaultPackage.getProperties().getDependencies()));
-          
-        }
-    }
+  
     
     
     @Test
@@ -994,5 +958,43 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         }
 
         return loadedResources;
+    }
+
+    private void getContentPackagesFromFeatureModel(Feature feature, List<PackageId> packageIds){
+
+        Artifacts artifacts = feature.getExtensions().getByName("content-packages").getArtifacts();
+        artifacts.stream().map((artifact) -> {
+            ArtifactId id = artifact.getId();
+            return new PackageId(id.getGroupId(),id.getArtifactId(), artifact.toString());
+        }).forEach(packageIds::add);
+
+    }
+
+    private void getContentPackagesFromRefs(File outputDirectory, List<PackageId> packageIds, List<Dependency> dependencies) throws IOException {
+        File contentPackagesCSV = new File(outputDirectory, "content-packages.csv");
+
+        List<String> contentPackages = IOUtils.readLines(new FileInputStream(contentPackagesCSV), StandardCharsets.UTF_8);
+
+        for(String contentPackageLine: contentPackages) {
+
+            if (contentPackageLine.startsWith("#")) {
+                continue;
+            }
+
+            String[] contentPackageLineSplit = contentPackageLine.split(",");
+
+            String artifactIdUnparsed = contentPackageLineSplit[1];
+            ArtifactId artifact = ArtifactId.fromMvnId(artifactIdUnparsed);
+            packageIds.add(new PackageId(artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion()));
+
+            String groupIdPath = StringUtils.replace(artifact.getGroupId(), ".", "/");
+
+            String target = String.format(FORMAT, groupIdPath, artifact.getArtifactId(), artifact.getVersion());
+
+            File contentPackageFile = new File(outputDirectory, target);
+            ZipVaultPackage vaultPackage = new ZipVaultPackage(contentPackageFile, true);
+            dependencies.addAll(Arrays.asList(vaultPackage.getProperties().getDependencies()));
+
+        }
     }
 }
