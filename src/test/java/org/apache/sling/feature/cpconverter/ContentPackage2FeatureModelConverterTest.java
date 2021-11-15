@@ -162,29 +162,23 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                     .setUnreferencedArtifactsDeployer(new LocalMavenRepositoryArtifactsDeployer(unreferencedOutputDir))
                     .convert(packageFile);
             
-            List<Dependency> dependencies = gatherDependencies(outputDirectory);
-            
+             
             File featureModel = new File(outputDirectory, "playground.ui.content.json");
             Feature feature =  FeatureJSONReader.read(new FileReader(featureModel), "");
             
-            Artifacts artifacts = feature.getExtensions().getByName("content-packages").getArtifacts();
+            List<PackageId> allPackageIds = new ArrayList<>();
+            List<Dependency> contentRefsDependencies = new ArrayList<>();
+                    
+            getContentPackagesFromFeatureModel(feature,allPackageIds);
+            getContentPackagesFromRefs(outputDirectory,allPackageIds,contentRefsDependencies);
             
-
-            for(Dependency dependency : dependencies){
-
-                final String versionAndClassifier = dependency.getRange().getLow().toString();
-                final String version;
-                final String classifier = "cp2fm-converted";
-                
-                if(StringUtils.contains(versionAndClassifier, classifier)){
-                    version = StringUtils.substringBeforeLast(versionAndClassifier, "-" + classifier);
-                }else{
-                    version = versionAndClassifier;
-                }
-
-                String groupId = StringUtils.replace(dependency.getGroup(), "/", ".");
-                ArtifactId expectedDependencyArtifact = new ArtifactId(groupId, dependency.getName(), version,classifier, "zip");
-                assertTrue("Generated dependency " + expectedDependencyArtifact + "  should be amongst installed artifacts", artifacts.containsSame(expectedDependencyArtifact));
+            Collections.reverse(contentRefsDependencies);
+            
+            for(Dependency dependency : contentRefsDependencies){
+     
+                PackageId expectedPackage = new PackageId(dependency.getGroup(), dependency.getName(), dependency.getRange().getLow());
+                boolean foundDep = allPackageIds.contains(expectedPackage);
+                assertTrue("Package " + expectedPackage + " is not present in the feature model or content refs", foundDep);
                 
             }
             
@@ -193,37 +187,44 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         }
     }
     
-    private List<Dependency> gatherDependencies(File outputDirectory) throws IOException {
+    private void getContentPackagesFromFeatureModel(Feature feature, List<PackageId> packageIds){
 
+        Artifacts artifacts = feature.getExtensions().getByName("content-packages").getArtifacts();
+        artifacts.stream().map((artifact) -> {
+            ArtifactId id = artifact.getId();
+            return new PackageId(id.getGroupId(),id.getArtifactId(), artifact.toString());
+        }).forEach(packageIds::add);
+
+    }
+    
+    private void getContentPackagesFromRefs(File outputDirectory, List<PackageId> packageIds, List<Dependency> dependencies) throws IOException {
         File contentPackagesCSV = new File(outputDirectory, "content-packages.csv");
 
         List<String> contentPackages = IOUtils.readLines(new FileInputStream(contentPackagesCSV), StandardCharsets.UTF_8);
-        
-        List<Dependency> gatheredDependencies = new ArrayList<>();
 
-        for(String contentPackageLine: contentPackages){
+        for(String contentPackageLine: contentPackages) {
 
-            if(contentPackageLine.startsWith("#")){
+            if (contentPackageLine.startsWith("#")) {
                 continue;
             }
-
+            
             String[] contentPackageLineSplit = contentPackageLine.split(",");
 
             String artifactIdUnparsed = contentPackageLineSplit[1];
             ArtifactId artifact = ArtifactId.fromMvnId(artifactIdUnparsed);
+            packageIds.add(new PackageId(artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion()));
 
             String groupIdPath = StringUtils.replace(artifact.getGroupId(), ".", "/");
-
 
             String target = String.format(FORMAT, groupIdPath, artifact.getArtifactId(), artifact.getVersion());
 
             File contentPackageFile = new File(outputDirectory, target);
-            ZipVaultPackage vaultPackage = new ZipVaultPackage(contentPackageFile, true);
-            gatheredDependencies.addAll(Arrays.asList(vaultPackage.getProperties().getDependencies()));
+            ZipVaultPackage vaultPackage = null;
+           
+            vaultPackage = new ZipVaultPackage(contentPackageFile, true);
+            dependencies.addAll(Arrays.asList(vaultPackage.getProperties().getDependencies()));
           
         }
-
-        return gatheredDependencies;
     }
     
     
