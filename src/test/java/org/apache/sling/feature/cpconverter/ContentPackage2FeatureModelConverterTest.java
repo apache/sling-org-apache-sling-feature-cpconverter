@@ -172,14 +172,10 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             getContentPackagesFromFeatureModel(feature,allPackageIds);
             getContentPackagesFromRefs(outputDirectory,allPackageIds,contentRefsDependencies);
             
-            Collections.reverse(contentRefsDependencies);
-            
+
             for(Dependency dependency : contentRefsDependencies){
-     
-                PackageId expectedPackage = new PackageId(dependency.getGroup(), dependency.getName(), dependency.getRange().getLow());
-                boolean foundDep = allPackageIds.contains(expectedPackage);
-                assertTrue("Package " + expectedPackage + " is not present in the feature model or content refs", foundDep);
-                
+                boolean foundDep = allPackageIds.parallelStream().anyMatch(dependency::matches);
+                assertTrue("Dependency " + dependency.getName() + " is not present in the feature model or content refs", foundDep);
             }
             
         } finally {
@@ -219,9 +215,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             String target = String.format(FORMAT, groupIdPath, artifact.getArtifactId(), artifact.getVersion());
 
             File contentPackageFile = new File(outputDirectory, target);
-            ZipVaultPackage vaultPackage = null;
-           
-            vaultPackage = new ZipVaultPackage(contentPackageFile, true);
+            ZipVaultPackage vaultPackage = new ZipVaultPackage(contentPackageFile, true);
             dependencies.addAll(Arrays.asList(vaultPackage.getProperties().getDependencies()));
           
         }
