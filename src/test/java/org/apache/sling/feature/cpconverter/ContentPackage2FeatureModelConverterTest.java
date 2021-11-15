@@ -174,7 +174,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             
 
             for(Dependency dependency : contentRefsDependencies){
-                boolean foundDep = allPackageIds.parallelStream().anyMatch(dependency::matches);
+                boolean foundDep = allPackageIds.stream().anyMatch(dependency::matches);
                 assertTrue("Dependency " + dependency.getName() + " is not present in the feature model or content refs", foundDep);
             }
             
