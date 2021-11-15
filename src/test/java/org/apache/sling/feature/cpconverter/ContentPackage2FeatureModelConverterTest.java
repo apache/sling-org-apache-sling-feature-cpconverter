@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.zip.ZipFile;
@@ -44,13 +45,15 @@ import javax.json.JsonObject;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.vault.fs.spi.PrivilegeDefinitions;
-import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
+import org.apache.jackrabbit.vault.packaging.Dependency;
 import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
+import org.apache.jackrabbit.vault.packaging.impl.ZipVaultPackage;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Artifacts;
 import org.apache.sling.feature.Configuration;
@@ -88,6 +91,8 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                                                                 "test_a-1.0.zip",
                                                                 "test_b-1.0.zip",
                                                                 "test_e-1.0.zip" };
+
+    private static final String FORMAT = "mutable-content-packages/%1$s/%2$s/%3$s/%2$s-%3$s-cp2fm-converted.zip";
 
     private ContentPackage2FeatureModelConverter converter;
     private EntryHandlersManager handlersManager;
@@ -137,6 +142,91 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         converter.processSubPackage("", null, null, false);
     }
 
+    @Test
+    public void checkForGeneratedDependencyValidity() throws Exception {
+        URL packageUrl = getClass().getResource("build_playground.ui.content-1.0-SNAPSHOT.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+        File unreferencedOutputDir = new File(outputDirectory, "mutable-content-packages");
+        try {
+
+            converter = new ContentPackage2FeatureModelConverter(false, ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.EXTRACT_AND_REMOVE)
+                    .setEntryHandlersManager(handlersManager)
+                    .setAclManager(new DefaultAclManager());
+            
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
+                    .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
+                    .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                    .setContentTypePackagePolicy(PackagePolicy.PUT_IN_DEDICATED_FOLDER)
+                    .setUnreferencedArtifactsDeployer(new LocalMavenRepositoryArtifactsDeployer(unreferencedOutputDir))
+                    .convert(packageFile);
+            
+            List<Dependency> dependencies = gatherDependencies(outputDirectory);
+            
+            File featureModel = new File(outputDirectory, "playground.ui.content.json");
+            Feature feature =  FeatureJSONReader.read(new FileReader(featureModel), "");
+            
+            Artifacts artifacts = feature.getExtensions().getByName("content-packages").getArtifacts();
+            
+
+            for(Dependency dependency : dependencies){
+
+                final String versionAndClassifier = dependency.getRange().getLow().toString();
+                final String version;
+                final String classifier = "cp2fm-converted";
+                
+                if(StringUtils.contains(versionAndClassifier, classifier)){
+                    version = StringUtils.substringBeforeLast(versionAndClassifier, "-" + classifier);
+                }else{
+                    version = versionAndClassifier;
+                }
+
+                String groupId = StringUtils.replace(dependency.getGroup(), "/", ".");
+                ArtifactId expectedDependencyArtifact = new ArtifactId(groupId, dependency.getName(), version,classifier, "zip");
+                assertTrue("Generated dependency " + expectedDependencyArtifact + "  should be amongst installed artifacts", artifacts.containsSame(expectedDependencyArtifact));
+                
+            }
+            
+        } finally {
+            deleteDirTree(outputDirectory);
+        }
+    }
+    
+    private List<Dependency> gatherDependencies(File outputDirectory) throws IOException {
+
+        File contentPackagesCSV = new File(outputDirectory, "content-packages.csv");
+
+        List<String> contentPackages = IOUtils.readLines(new FileInputStream(contentPackagesCSV), StandardCharsets.UTF_8);
+        
+        List<Dependency> gatheredDependencies = new ArrayList<>();
+
+        for(String contentPackageLine: contentPackages){
+
+            if(contentPackageLine.startsWith("#")){
+                continue;
+            }
+
+            String[] contentPackageLineSplit = contentPackageLine.split(",");
+
+            String artifactIdUnparsed = contentPackageLineSplit[1];
+            ArtifactId artifact = ArtifactId.fromMvnId(artifactIdUnparsed);
+
+            String groupIdPath = StringUtils.replace(artifact.getGroupId(), ".", "/");
+
+
+            String target = String.format(FORMAT, groupIdPath, artifact.getArtifactId(), artifact.getVersion());
+
+            File contentPackageFile = new File(outputDirectory, target);
+            ZipVaultPackage vaultPackage = new ZipVaultPackage(contentPackageFile, true);
+            gatheredDependencies.addAll(Arrays.asList(vaultPackage.getProperties().getDependencies()));
+          
+        }
+
+        return gatheredDependencies;
+    }
+    
+    
     @Test
     public void convertContentPackage() throws Exception {
         URL packageUrl = getClass().getResource("test-content-package.zip");
