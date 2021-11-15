@@ -143,7 +143,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
     }
 
     @Test
-    public void checkForGeneratedDependencyValidity() throws Exception {
+    public void checkIfGeneratedDependenciesAreProvided() throws Exception {
         URL packageUrl = getClass().getResource("build_playground.ui.content-1.0-SNAPSHOT.zip");
         File packageFile = FileUtils.toFile(packageUrl);
 
