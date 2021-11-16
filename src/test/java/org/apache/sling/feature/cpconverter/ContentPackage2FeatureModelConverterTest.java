@@ -56,6 +56,7 @@ import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
 import org.apache.jackrabbit.vault.packaging.impl.ZipVaultPackage;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Artifacts;
+import org.apache.sling.feature.Artifact;
 import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.Configurations;
 import org.apache.sling.feature.Extension;
