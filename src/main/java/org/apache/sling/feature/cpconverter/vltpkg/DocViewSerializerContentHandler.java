@@ -84,7 +84,7 @@ public class DocViewSerializerContentHandler implements ContentHandler, AutoClos
                 if(StringUtils.isNotBlank(namespaceURI) && StringUtils.isNotBlank(nsRegistry.getPrefix(namespaceURI)) &&  StringUtils.isNotBlank(key)) {
                     //uri already registered in context, this method will do
                     writer.writeStartElement(namespaceURI, localName);
-                }else if(StringUtils.isNotBlank(namespaceURI) && StringUtils.isNotBlank(nsRegistry.getPrefix(namespaceURI)) &&  StringUtils.isNotBlank(key)) {
+                }else if(StringUtils.isNotBlank(namespaceURI) &&  StringUtils.isNotBlank(key)) {
                     //uri not registered in context, so writing it out completely
                     writer.writeStartElement(key, namespaceURI, localName);
                 }
