@@ -296,7 +296,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
                 try (OutputStream docViewOutput = Files.newOutputStream(tmpDocViewInputFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
                      DocViewSerializerContentHandler contentHandler = new DocViewSerializerContentHandler(docViewOutput, nsRegistry)) {
                     contentParserAndOptions.getKey().parse(contentHandler, bundleFileInputStream, contentParserAndOptions.getValue());
-                    contentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath) + ".xml";
+                    contentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath) + "/.content.xml";
                 } catch (IOException e) {
                     throw new IOException("Can not parse " + jarEntry, e);
                 } catch (DocViewSerializerContentHandlerException e) {

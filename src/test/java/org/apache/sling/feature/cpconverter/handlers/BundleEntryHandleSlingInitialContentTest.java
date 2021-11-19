@@ -25,10 +25,7 @@ import static org.mockito.Mockito.when;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.Dictionary;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.jar.JarFile;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
@@ -101,7 +98,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             archive.open(true);
             PackageId targetId = PackageId.fromString("io.wcm:io.wcm.handler.media-apps:1.11.6-cp2fm-converted");
             assertEquals(targetId, vaultPackage.getId());
-            Entry entry = archive.getEntry("jcr_root/apps/wcm-io/handler/media/components/global/include/responsiveImageSettings.xml");
+            Entry entry = archive.getEntry("jcr_root/apps/wcm-io/handler/media/components/global/include/responsiveImageSettings/.content.xml");
             assertNotNull("Archive does not contain expected item", entry);
         }
         // verify nothing else has been deployed
@@ -112,10 +109,15 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
     @Test
     public void testSlingInitialContentWithNodeTypeAndPageJson() throws Exception {
-        setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite.core-1.0.0-SNAPSHOT.jar");
+        setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite.core-1.0.0-SNAPSHOT3.jar");
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
         converter.setEntryHandlersManager(handlersManager);
-        Map<String, String> namespaceRegistry = Collections.singletonMap("granite", "http://www.adobe.com/jcr/granite/1.0");
+        Map<String, String> namespaceRegistry = new HashMap<>();
+
+        namespaceRegistry.put("cq","http://www.day.com/jcr/cq/1.0");
+        namespaceRegistry.put("granite", "http://www.adobe.com/jcr/granite/1.0");
+
+        
         when(featuresManager.getNamespaceUriByPrefix()).thenReturn(namespaceRegistry);
 
         File targetFolder = tmpFolder.newFolder();
