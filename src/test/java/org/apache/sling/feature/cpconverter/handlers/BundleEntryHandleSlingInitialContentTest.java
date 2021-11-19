@@ -152,11 +152,11 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             assertPageStructureFromEntry(archive, "jcr_root/apps/mysite/components/global", "xfpage","body.html");
             
             InputStream inputStream = archive.getInputSource(archive.getEntry("jcr_root/apps/mysite/components/global/homepage/.content.xml")).getByteStream();
-           
-            String actual = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
-            String expected = IOUtils.resourceToString("org/apache/sling/feature/cpconverter/mysite-json-xml-result.xml", StandardCharsets.UTF_8, getClass().getClassLoader());
-            assertXMLEqual(expected,actual);
+
+            String expectedXML = IOUtils.toString(getClass().getResource("mysite-json-xml-result.xml").openStream(), StandardCharsets.UTF_8);
+            String actualXML = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
             
+            assertXMLEqual(expectedXML,actualXML);
         }
 
     }

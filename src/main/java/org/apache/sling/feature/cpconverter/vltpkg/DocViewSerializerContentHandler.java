@@ -53,34 +53,7 @@ public class DocViewSerializerContentHandler implements ContentHandler, AutoClos
         try {
             writer = FormattingXmlStreamWriter.create(outputStream, new DocViewFormat().getXmlOutputFormat());
             writer.writeStartDocument();
-            writer.setNamespaceContext(new NamespaceContext() {
-                @Override
-                public String getNamespaceURI(String prefix) {
-                    try {
-                        return nsRegistry.getURI(prefix);
-                    } catch (NamespaceException e) {
-                        return "";
-                    }
-                }
-
-                @Override
-                public String getPrefix(String namespaceURI) {
-                    try {
-                        return nsRegistry.getPrefix(namespaceURI);
-                    } catch (NamespaceException e) {
-                        return "";
-                    }
-                }
-
-                @Override
-                public Iterator<String> getPrefixes(String namespaceURI) {
-                    try {
-                        return Arrays.asList(nsRegistry.getPrefixes()).iterator();
-                    } catch (RepositoryException e) {
-                        return Collections.emptyIterator();
-                    }
-                }
-            });
+            writer.setNamespaceContext(nsRegistry);
             
         } catch (XMLStreamException e) {
             throw new DocViewSerializerContentHandlerException("Can not start document", e);
@@ -108,8 +81,12 @@ public class DocViewSerializerContentHandler implements ContentHandler, AutoClos
             String localName = prefixAndQualifiedName.getValue().getLocalName();
 
             if(StringUtils.isNotBlank(localName)){
-                if(StringUtils.isNotBlank(key) && StringUtils.isNotBlank(namespaceURI)) {
+                if(StringUtils.isNotBlank(namespaceURI) && StringUtils.isNotBlank(nsRegistry.getPrefix(namespaceURI)) &&  StringUtils.isNotBlank(key)) {
+                    //uri already registered in context, this method will do
                     writer.writeStartElement(namespaceURI, localName);
+                }else if(StringUtils.isNotBlank(namespaceURI) && StringUtils.isNotBlank(nsRegistry.getPrefix(namespaceURI)) &&  StringUtils.isNotBlank(key)) {
+                    //uri not registered in context, so writing it out completely
+                    writer.writeStartElement(key, namespaceURI, localName);
                 }
                 else{
                     writer.writeStartElement(localName);

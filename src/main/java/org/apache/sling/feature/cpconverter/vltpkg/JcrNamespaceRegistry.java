@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.vltpkg;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.commons.SimpleValueFactory;
 import org.apache.jackrabbit.commons.cnd.CndImporter;
 import org.apache.jackrabbit.commons.cnd.ParseException;
@@ -28,13 +29,16 @@ import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
 import javax.jcr.ValueFactory;
 import javax.jcr.nodetype.NodeTypeManager;
+import javax.xml.namespace.NamespaceContext;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
 
 /** Simple namespace registry backed by a map */
-public class JcrNamespaceRegistry implements NamespaceRegistry, NamespaceResolver {
+public class JcrNamespaceRegistry implements NamespaceRegistry, NamespaceResolver, NamespaceContext {
     
     private final Collection<String> registeredCndSystemIds = new ArrayList<>();
     private final NodeTypeManagerProvider ntManagerProvider = new NodeTypeManagerProvider();
@@ -83,12 +87,26 @@ public class JcrNamespaceRegistry implements NamespaceRegistry, NamespaceResolve
     }
 
     @Override
-    public String getPrefix(String uri) throws NamespaceException {
+    public String getNamespaceURI(String prefix) {
+        try {
+            return ntManagerProvider.getURI(prefix);
+        } catch (RepositoryException e) {
+            return StringUtils.EMPTY;
+        }
+    }
+
+    @Override
+    public String getPrefix(String uri) {
         try {
             return ntManagerProvider.getPrefix(uri);
         } catch (RepositoryException e) {
-            throw new NamespaceException(e);
+           return null;
         }
+    }
+
+    @Override
+    public Iterator<String> getPrefixes(String namespaceURI) {
+        return Collections.singletonList(getPrefix(namespaceURI)).iterator();
     }
 
     public @NotNull Collection<String> getRegisteredCndSystemIds() {
