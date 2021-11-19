@@ -1,0 +1,9 @@
+{
+  "id":"foo:bar:slingosgifeature:1.0.0",
+  "repoinit:TEXT|true":[
+    "register namespace (granite) http://www.adobe.com/jcr/granite/1.0",
+    "register namespace (wcmio) http://wcm.io/ns",
+    "register namespace (crx) http://www.day.com/crx/1.0",
+    "register namespace (cq) http://www.day.com/jcr/cq/1.0"
+  ]
+}

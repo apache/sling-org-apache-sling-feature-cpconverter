@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import static org.custommonkey.xmlunit.XMLAssert.assertXMLEqual;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -25,9 +26,11 @@ import static org.mockito.Mockito.when;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.jar.JarFile;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.PackageId;
@@ -147,6 +150,13 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             assertPageStructureFromEntry(archive, "jcr_root/apps/mysite/components/global", "homepage");
             assertPageStructureFromEntry(archive, "jcr_root/apps/mysite/components/global", "page", "body.html");
             assertPageStructureFromEntry(archive, "jcr_root/apps/mysite/components/global", "xfpage","body.html");
+            
+            InputStream inputStream = archive.getInputSource(archive.getEntry("jcr_root/apps/mysite/components/global/homepage/.content.xml")).getByteStream();
+           
+            String actual = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+            String expected = IOUtils.resourceToString("org/apache/sling/feature/cpconverter/mysite-json-xml-result.xml", StandardCharsets.UTF_8, getClass().getClassLoader());
+            assertXMLEqual(expected,actual);
+            
         }
 
     }

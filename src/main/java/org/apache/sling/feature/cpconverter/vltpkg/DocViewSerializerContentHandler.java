@@ -18,14 +18,15 @@ package org.apache.sling.feature.cpconverter.vltpkg;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.AbstractMap;
-import java.util.Map;
+import java.util.*;
 
 import javax.jcr.NamespaceException;
 import javax.jcr.RepositoryException;
+import javax.xml.namespace.NamespaceContext;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.spi.Name;
 import org.apache.jackrabbit.spi.commons.conversion.IllegalNameException;
 import org.apache.jackrabbit.spi.commons.conversion.NameParser;
@@ -52,6 +53,34 @@ public class DocViewSerializerContentHandler implements ContentHandler, AutoClos
         try {
             writer = FormattingXmlStreamWriter.create(outputStream, new DocViewFormat().getXmlOutputFormat());
             writer.writeStartDocument();
+            writer.setNamespaceContext(new NamespaceContext() {
+                @Override
+                public String getNamespaceURI(String prefix) {
+                    try {
+                        return nsRegistry.getURI(prefix);
+                    } catch (NamespaceException e) {
+                        return "";
+                    }
+                }
+
+                @Override
+                public String getPrefix(String namespaceURI) {
+                    try {
+                        return nsRegistry.getPrefix(namespaceURI);
+                    } catch (NamespaceException e) {
+                        return "";
+                    }
+                }
+
+                @Override
+                public Iterator<String> getPrefixes(String namespaceURI) {
+                    try {
+                        return Arrays.asList(nsRegistry.getPrefixes()).iterator();
+                    } catch (RepositoryException e) {
+                        return Collections.emptyIterator();
+                    }
+                }
+            });
             
         } catch (XMLStreamException e) {
             throw new DocViewSerializerContentHandlerException("Can not start document", e);
@@ -74,7 +103,21 @@ public class DocViewSerializerContentHandler implements ContentHandler, AutoClos
         try {
             // now split by prefix and local name
             Map.Entry<String, Name> prefixAndQualifiedName = resolvePrefixedName(name);
-            writer.writeStartElement(prefixAndQualifiedName.getKey(), prefixAndQualifiedName.getValue().getNamespaceURI(), prefixAndQualifiedName.getValue().getLocalName());
+            String key = prefixAndQualifiedName.getKey();
+            String namespaceURI = prefixAndQualifiedName.getValue().getNamespaceURI();
+            String localName = prefixAndQualifiedName.getValue().getLocalName();
+
+            if(StringUtils.isNotBlank(localName)){
+                if(StringUtils.isNotBlank(key) && StringUtils.isNotBlank(namespaceURI)) {
+                    writer.writeStartElement(namespaceURI, localName);
+                }
+                else{
+                    writer.writeStartElement(localName);
+                }
+            }else{
+                return;
+            }
+           
             if (isFirstElement) {
                 for (String prefix : nsRegistry.getPrefixes()) {
                     writer.writeNamespace(prefix, nsRegistry.getURI(prefix));
