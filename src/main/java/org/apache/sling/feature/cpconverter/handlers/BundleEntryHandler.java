@@ -34,6 +34,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Map;
@@ -69,6 +70,7 @@ import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.commons.osgi.ManifestHeader;
 import org.apache.sling.contentparser.api.ContentParser;
 import org.apache.sling.contentparser.api.ParserOptions;
+import org.apache.sling.contentparser.json.JSONParserFeature;
 import org.apache.sling.contentparser.json.JSONParserOptions;
 import org.apache.sling.contentparser.json.internal.JSONContentParser;
 import org.apache.sling.feature.ArtifactId;
@@ -428,7 +430,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
 
     Map.Entry<ContentParser, ParserOptions> getContentParserForEntry(JarEntry entry, PathEntry pathEntry) {
         if (entry.getName().endsWith(".json") && !pathEntry.isIgnoredImportProvider("json")) {
-            return new AbstractMap.SimpleEntry<>(new JSONContentParser(), new JSONParserOptions().withFeatures(JSONParserOptions.DEFAULT_JSON_PARSER_FEATURES));
+            return new AbstractMap.SimpleEntry<>(new JSONContentParser(), new JSONParserOptions().withFeatures(EnumSet.of(JSONParserFeature.COMMENTS, JSONParserFeature.QUOTE_TICK)));
         } else {
             return null;
         }
