@@ -18,11 +18,11 @@ package org.apache.sling.feature.cpconverter.vltpkg;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.*;
+import java.util.AbstractMap;
+import java.util.Map;
 
 import javax.jcr.NamespaceException;
 import javax.jcr.RepositoryException;
-import javax.xml.namespace.NamespaceContext;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
