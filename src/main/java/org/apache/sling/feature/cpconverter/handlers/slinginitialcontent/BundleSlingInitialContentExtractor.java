@@ -1,0 +1,324 @@
+package org.apache.sling.feature.cpconverter.handlers.slinginitialcontent;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.jackrabbit.util.Text;
+import org.apache.jackrabbit.vault.fs.api.ImportMode;
+import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
+import org.apache.jackrabbit.vault.fs.config.DefaultWorkspaceFilter;
+import org.apache.jackrabbit.vault.fs.io.Archive;
+import org.apache.jackrabbit.vault.packaging.PackageId;
+import org.apache.jackrabbit.vault.packaging.PackageType;
+import org.apache.jackrabbit.vault.util.PlatformNameFormat;
+import org.apache.sling.feature.ArtifactId;
+import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.ConverterException;
+import org.apache.sling.feature.cpconverter.vltpkg.*;
+import org.apache.sling.jcr.contentloader.ContentReader;
+import org.apache.sling.jcr.contentloader.PathEntry;
+import org.apache.sling.jcr.contentloader.internal.readers.JsonReader;
+import org.apache.sling.jcr.contentloader.internal.readers.XmlReader;
+import org.apache.sling.jcr.contentloader.internal.readers.ZipReader;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.osgi.framework.Constants;
+import org.osgi.framework.Version;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.jcr.RepositoryException;
+import javax.xml.stream.XMLStreamException;
+import java.io.*;
+import java.net.URLDecoder;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.*;
+import java.util.jar.*;
+
+/**
+ * Extracts the sling initial content from a bundle to an java.io.InputStream.
+ */
+public class BundleSlingInitialContentExtractor {
+
+ 
+    private final static Logger logger = LoggerFactory.getLogger(BundleSlingInitialContentExtractor.class);
+    
+    private final ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy;
+    private final String path;
+    private final Map<PackageType, VaultPackageAssembler> packageAssemblers = new EnumMap<>(PackageType.class);
+
+    private final ArtifactId bundleArtifactId;
+    private final JarFile jarFile;
+    private final ContentPackage2FeatureModelConverter converter;
+    private final String runMode;
+    private final boolean isEmbeddedPackage;
+    private final JcrNamespaceRegistry namespaceRegistry;
+    private final Manifest manifest;
+    private Collection<PathEntry> pathEntryList = new ArrayList<>();
+    private Iterator<PathEntry> pathEntries;
+
+    public BundleSlingInitialContentExtractor(ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy, @NotNull String path, @NotNull ArtifactId bundleArtifactId, @NotNull JarFile jarFile, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws IOException {
+        this(slingInitialContentPolicy, path, bundleArtifactId, jarFile, converter, runMode, false);
+    }
+    
+    public BundleSlingInitialContentExtractor(ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy, @NotNull String path, @NotNull ArtifactId bundleArtifactId, @NotNull JarFile jarFile, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode, boolean isEmbeddedPackage) throws IOException {
+        this.slingInitialContentPolicy = slingInitialContentPolicy;
+        this.path = path;
+
+        this.bundleArtifactId = bundleArtifactId;
+        this.jarFile = jarFile;
+        this.converter = converter;
+        this.runMode = runMode;
+        this.isEmbeddedPackage = isEmbeddedPackage;
+        this.manifest = Objects.requireNonNull(jarFile.getManifest());
+        this.namespaceRegistry = new JcrNamespaceRegistryProvider(manifest, jarFile, converter.getFeaturesManager().getNamespaceUriByPrefix()).provideRegistryFromBundle();
+
+        pathEntries = PathEntry.getContentPaths(manifest, -1);
+        
+        if(pathEntries != null){
+            pathEntries.forEachRemaining(pathEntryList::add);
+        }
+    }
+    
+    static Version getModifiedOsgiVersion(Version originalVersion) {
+        return new Version(originalVersion.getMajor(), originalVersion.getMinor(), originalVersion.getMicro(), originalVersion.getQualifier() + "_" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);
+    }
+
+   
+    @Nullable public InputStream extract() throws IOException, ConverterException {
+
+        if (slingInitialContentPolicy == ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP) {
+            return null;
+        }
+        if(CollectionUtils.isEmpty(pathEntryList)){
+            return null;
+        }
+        
+        // remove header
+        manifest.getMainAttributes().remove(new Attributes.Name(PathEntry.CONTENT_HEADER));
+        // change version to have suffix
+        Version originalVersion = new Version(Objects.requireNonNull(manifest.getMainAttributes().getValue(Constants.BUNDLE_VERSION)));
+        manifest.getMainAttributes().putValue(Constants.BUNDLE_VERSION, getModifiedOsgiVersion(originalVersion).toString());
+        Path newBundleFile = Files.createTempFile(converter.getTempDirectory().toPath(), "newBundle", ".jar");
+
+        // create JAR file to prevent extracting it twice and for random access
+        try (OutputStream fileOutput = Files.newOutputStream(newBundleFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+             JarOutputStream bundleOutput = new JarOutputStream(fileOutput, manifest)) {
+
+            List<File> collectedFilesWithSlingInitialContent = new ArrayList<>();
+            
+            for (Enumeration<JarEntry> e = jarFile.entries(); e.hasMoreElements();) {
+                JarEntry jarEntry = e.nextElement();
+
+                if (jarEntry.getName().equals(JarFile.MANIFEST_NAME)) {
+                    continue;
+                }
+
+                if (!jarEntry.isDirectory()) {
+                    try (InputStream input = jarFile.getInputStream(jarEntry)) {
+                        if (containsSlingInitialContent(jarEntry)) {
+                            File targetFile = new File(converter.getTempDirectory(), jarEntry.getName());
+                            FileUtils.copyInputStreamToFile(input, targetFile);
+                            collectedFilesWithSlingInitialContent.add(targetFile);
+
+                        } else {
+                            bundleOutput.putNextEntry(jarEntry);
+                            IOUtils.copy(input, bundleOutput);
+                            bundleOutput.closeEntry();
+                        }
+                    }
+                }
+
+            }
+
+            for(File file : collectedFilesWithSlingInitialContent){
+                extractSlingInitialContentForJarEntry(file,converter.getTempDirectory().getPath());
+            }
+            
+            
+      
+        }
+        // add additional content packages to feature model
+        finalizePackageAssembly(path, runMode);
+
+        // return stripped bundle's inputstream which must be deleted on close
+        return Files.newInputStream(newBundleFile, StandardOpenOption.READ, StandardOpenOption.DELETE_ON_CLOSE);
+    }
+
+    /**
+     * Returns whether the jarEntry is initial content
+     * @param jarEntry
+     * @return
+     */
+    boolean containsSlingInitialContent(@NotNull JarEntry jarEntry){
+        final String entryName = jarEntry.getName();
+        return  pathEntryList.stream().anyMatch(p -> entryName.startsWith(p.getPath()));
+    }
+    
+    /**
+     *
+     * @param file
+     * @return {@code true} in case the given entry was part of the initial content otherwise {@code false}
+     * @throws Exception
+     */
+    void extractSlingInitialContentForJarEntry(@NotNull File file, String basePath) throws IOException, ConverterException {
+        final String entryName = StringUtils.substringAfter( file.getPath(),basePath + "/");
+        
+        final PathEntry pathEntryValue = pathEntryList.stream().filter(p -> entryName.startsWith( p.getPath())).findFirst().orElseThrow(NullPointerException::new);
+        final String target = pathEntryValue.getTarget();
+        // https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html#file-name-escaping
+
+    
+        String repositoryPath = (target != null ? target : "/") + URLDecoder.decode(entryName.substring(pathEntryValue.getPath().length()), "UTF-8");
+        repositoryPath = FilenameUtils.removeExtension(repositoryPath);
+        // all entry paths used by entry handlers start with "/"
+        String contentPackageEntryPath = "/" + org.apache.jackrabbit.vault.util.Constants.ROOT_DIR + PlatformNameFormat.getPlatformPath(repositoryPath);
+
+        Path tmpDocViewInputFile = null;
+        
+        try(InputStream bundleFileInputStream = new FileInputStream(file)) {
+            VaultPackageAssembler packageAssembler = initPackageAssemblerForPath(repositoryPath, pathEntryValue);
+            
+            final ContentReader contentReader = getContentReaderForEntry(file, pathEntryValue);
+            if (contentReader != null) {
+                // convert to docview xml
+                tmpDocViewInputFile = Files.createTempFile(converter.getTempDirectory().toPath(), "docview", ".xml");
+                try (OutputStream docViewOutput = Files.newOutputStream(tmpDocViewInputFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
+
+                    VaultContentXMLContentCreator contentCreator = new VaultContentXMLContentCreator(StringUtils.substringBeforeLast(repositoryPath, "/"), docViewOutput, namespaceRegistry, packageAssembler);
+                  
+                    if(file.getName().endsWith(".xml")){
+                        contentCreator.setIsXmlProcessed();
+                    }
+
+                    contentReader.parse(file.toURI().toURL(), contentCreator);
+                    contentCreator.finish();
+
+                    contentPackageEntryPath = recomputeContentPackageEntryPath(contentPackageEntryPath, contentCreator);
+
+                } catch (IOException | XMLStreamException e) {
+                    throw new IOException("Can not parse " + file, e);
+                } catch (DocViewSerializerContentHandlerException | RepositoryException e) {
+                    throw new IOException("Can not convert " + file + " to enhanced DocView format", e);
+                }
+
+                // remap CND files to make sure they are picked up by NodeTypesEntryHandler;
+                if (namespaceRegistry.getRegisteredCndSystemIds().contains(file.getName())) {
+                    contentPackageEntryPath = "/META-INF/vault/" + Text.getName(file.getName()) + ".cnd";
+                }
+                try (Archive virtualArchive = SingleFileArchive.fromPathOrInputStream(tmpDocViewInputFile, bundleFileInputStream,
+                        () -> Files.createTempFile(converter.getTempDirectory().toPath(), "initial-content", Text.getName(file.getName())), contentPackageEntryPath)) {
+                    // in which content package should this end up?
+
+                    if (tmpDocViewInputFile != null) {
+                        packageAssembler.addEntry(contentPackageEntryPath, tmpDocViewInputFile.toFile());
+                    } else {
+                        packageAssembler.addEntry(contentPackageEntryPath, bundleFileInputStream);
+                    }
+
+                }
+            }
+ 
+        } finally {
+            if (tmpDocViewInputFile != null) {
+                Files.delete(tmpDocViewInputFile);
+            }
+        }
+    }
+
+    @NotNull
+    private String recomputeContentPackageEntryPath(String contentPackageEntryPath, VaultContentXMLContentCreator contentCreator) {
+        contentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath);
+
+        if(StringUtils.isNotBlank(contentCreator.getPrimaryNodeName())){
+            //custom node name
+            contentPackageEntryPath = StringUtils.substringBeforeLast(contentPackageEntryPath, "/") ;
+            contentPackageEntryPath = contentPackageEntryPath + "/" + contentCreator.getPrimaryNodeName();
+            
+        }
+        contentPackageEntryPath = contentPackageEntryPath + "/.content.xml";
+        return contentPackageEntryPath;
+    }
+
+
+    /**
+     * Lazily initializes the cache with the necessary VaultPackageAssemblers
+     * @param repositoryPath
+     * @return the VaultPackageAssembler from the cache to use for the given repository path
+     */
+    public VaultPackageAssembler initPackageAssemblerForPath( @NotNull String repositoryPath, @NotNull PathEntry pathEntry)
+            throws ConverterException {
+        PackageType packageType = VaultPackageUtils.detectPackageType(repositoryPath);
+        VaultPackageAssembler assembler = packageAssemblers.get(packageType);
+        if (assembler == null) {
+            final String packageNameSuffix;
+            switch (packageType) {
+                case APPLICATION:
+                    packageNameSuffix = "-apps";
+                    break;
+                case CONTENT:
+                    packageNameSuffix = "-content";
+                    break;
+                default:
+                    throw new ConverterException("Unexpected package type " + packageType + " detected for path " + repositoryPath);
+            }
+            final PackageId packageId = new PackageId(bundleArtifactId.getGroupId(), bundleArtifactId.getArtifactId()+packageNameSuffix, bundleArtifactId.getVersion());
+            assembler = VaultPackageAssembler.create(converter.getTempDirectory(), packageId, "Generated out of Sling Initial Content from bundle " + bundleArtifactId + " by cp2fm");
+            packageAssemblers.put(packageType, assembler);
+            logger.info("Created package {} out of Sling-Initial-Content from '{}'", packageId, bundleArtifactId);
+        }
+        DefaultWorkspaceFilter filter = assembler.getFilter();
+        if (!filter.covers(repositoryPath)) {
+            PathFilterSet pathFilterSet = new PathFilterSet(pathEntry.getTarget() != null ? pathEntry.getTarget() : "/");
+            ImportMode importMode;
+            if (pathEntry.isOverwrite()) {
+                importMode = ImportMode.REPLACE;
+            } else {
+                importMode = ImportMode.MERGE;
+            }
+            // TODO: add handling for merge, mergeProperties and overwriteProperties (https://issues.apache.org/jira/browse/SLING-10318)
+            pathFilterSet.setImportMode(importMode);
+            filter.add(pathFilterSet);
+        }
+        return assembler;
+    }
+
+    void finalizePackageAssembly(@NotNull String path, @Nullable String runMode) throws IOException, ConverterException {
+        for (java.util.Map.Entry<PackageType, VaultPackageAssembler> entry : packageAssemblers.entrySet()) {
+            File packageFile = entry.getValue().createPackage();
+            converter.processSubPackage(path + "-" + entry.getKey(), runMode, converter.open(packageFile), isEmbeddedPackage);
+        }
+    }
+    
+    static class MyXmlReader extends XmlReader{
+        public MyXmlReader(){
+            this.activate();
+        }
+    }
+    
+    static final JsonReader jsonReader = new JsonReader();
+    static final MyXmlReader xmlReader = new MyXmlReader();
+    static final ZipReader zipReader   = new ZipReader();
+    
+    
+    ContentReader getContentReaderForEntry(File entry, PathEntry pathEntry){
+        String entryName = entry.getName();
+        if (entryName.endsWith(".json") && !pathEntry.isIgnoredImportProvider("json")) {
+            return jsonReader;
+        } else if(entryName.endsWith(".xml") && !pathEntry.isIgnoredImportProvider("xml")) {
+            return xmlReader;
+        } else if(
+                (entryName.endsWith(".zip") && !pathEntry.isIgnoredImportProvider("zip")) ||
+                (entryName.endsWith(".jar") && !pathEntry.isIgnoredImportProvider("jar"))
+        ) {
+            return zipReader;
+        } else {
+            return null;
+        }
+    }
+
+}

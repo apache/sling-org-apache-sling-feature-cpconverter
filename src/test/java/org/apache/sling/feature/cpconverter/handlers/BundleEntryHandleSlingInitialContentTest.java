@@ -52,6 +52,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
+import org.xml.sax.SAXException;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntryHandlerTest {
@@ -112,7 +113,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
     @Test
     public void testSlingInitialContentWithNodeTypeAndPageJson() throws Exception {
-        setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite.core-1.0.0-SNAPSHOT3.jar");
+        setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite.core-1.0.0-SNAPSHOT-pagejson.jar");
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
         converter.setEntryHandlersManager(handlersManager);
         Map<String, String> namespaceRegistry = new HashMap<>();
@@ -154,13 +155,72 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             InputStream inputStream = archive.getInputSource(archive.getEntry("jcr_root/apps/mysite/components/global/homepage/.content.xml")).getByteStream();
 
             String expectedXML = IOUtils.toString(getClass().getResource("mysite-json-xml-result.xml").openStream(), StandardCharsets.UTF_8);
-            String actualXML = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+            String actualXML   = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
             
             assertXMLEqual(expectedXML,actualXML);
         }
 
     }
-    
+
+
+    @Test
+    public void testSlingInitialContentWithSpecialCharacters() throws Exception {
+        setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite.core-1.0.0-SNAPSHOT-specialchars-json-inputstream.jar");
+        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
+        converter.setEntryHandlersManager(handlersManager);
+        Map<String, String> namespaceRegistry = new HashMap<>();
+
+        namespaceRegistry.put("cq","http://www.day.com/jcr/cq/1.0");
+        namespaceRegistry.put("granite", "http://www.adobe.com/jcr/granite/1.0");
+
+
+        when(featuresManager.getNamespaceUriByPrefix()).thenReturn(namespaceRegistry);
+
+        File targetFolder = tmpFolder.newFolder();
+        when(converter.getArtifactsDeployer()).thenReturn(new SimpleFolderArtifactsDeployer(targetFolder));
+        when(converter.isSubContentPackageIncluded("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar-APPLICATION")).thenReturn(true);
+
+        VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
+        Properties props = new Properties();
+        props.setProperty(PackageProperties.NAME_GROUP, "com.mysite");
+        props.setProperty(PackageProperties.NAME_NAME, "mysite.core");
+        props.setProperty(PackageProperties.NAME_VERSION, "1.0.0-SNAPSHOT");
+        when(assembler.getPackageProperties()).thenReturn(props);
+        converter.setMainPackageAssembler(assembler);
+
+        handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
+        handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter);
+
+        converter.deployPackages();
+
+       
+                
+                
+        // verify generated package
+        try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "mysite.core-apps-1.0.0-SNAPSHOT-cp2fm-converted.zip"));
+             Archive archive = vaultPackage.getArchive()) {
+            archive.open(true);
+            PackageId targetId = PackageId.fromString("com.mysite:mysite.core-apps:1.0.0-SNAPSHOT-cp2fm-converted");
+            assertEquals(targetId, vaultPackage.getId());
+
+            assertPageStructureFromEntry(archive, "jcr_root/apps/mysite/components/global", "xyz");
+            assertPageStructureFromEntry(archive,"jcr_root/apps/mysite/components/global", "homepage" );
+            assertPageStructureFromEntry(archive,"jcr_root/apps/mysite/components/global", "11mumbojumbo" );
+            assertPageStructureFromEntry(archive,"jcr_root/apps/mysite/components/global", "nodeName", "testfile.txt" );
+
+            assertResultingEntry(archive, "%3c%22&%3e", "fancy-json-file.xml");
+           
+        }
+
+    }
+
+    private void assertResultingEntry(Archive archive, String entryKey, String expectedXmlFileName) throws IOException, SAXException {
+        InputStream fancyCharJsonFile = archive.getInputSource(archive.getEntry("jcr_root/apps/mysite/components/global/" + entryKey  +"/.content.xml")).getByteStream();
+        String fancyCharFileContents = IOUtils.toString(fancyCharJsonFile, StandardCharsets.UTF_8);
+        String expectedFancyCharFileContentsXml = IOUtils.toString(getClass().getResourceAsStream(expectedXmlFileName), StandardCharsets.UTF_8);
+        assertXMLEqual(expectedFancyCharFileContentsXml, fancyCharFileContents);
+    }
+
     private void assertPageStructureFromEntry(Archive archive, String basePath, String pageName, String... files) throws IOException {
         Entry contentXml = archive.getEntry( basePath + "/" + pageName + "/.content.xml");
         assertNotNull(contentXml);
