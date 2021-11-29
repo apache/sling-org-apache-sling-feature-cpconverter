@@ -210,17 +210,19 @@ public class BundleSlingInitialContentExtractor {
                 if (namespaceRegistry.getRegisteredCndSystemIds().contains(file.getName())) {
                     contentPackageEntryPath = "/META-INF/vault/" + Text.getName(file.getName()) + ".cnd";
                 }
-                try (Archive virtualArchive = SingleFileArchive.fromPathOrInputStream(tmpDocViewInputFile, bundleFileInputStream,
-                        () -> Files.createTempFile(converter.getTempDirectory().toPath(), "initial-content", Text.getName(file.getName())), contentPackageEntryPath)) {
-                    // in which content package should this end up?
+                
+            }
 
-                    if (tmpDocViewInputFile != null) {
-                        packageAssembler.addEntry(contentPackageEntryPath, tmpDocViewInputFile.toFile());
-                    } else {
-                        packageAssembler.addEntry(contentPackageEntryPath, bundleFileInputStream);
-                    }
+            try (Archive virtualArchive = SingleFileArchive.fromPathOrInputStream(tmpDocViewInputFile, bundleFileInputStream,
+                    () -> Files.createTempFile(converter.getTempDirectory().toPath(), "initial-content", Text.getName(file.getName())), contentPackageEntryPath)) {
+                // in which content package should this end up?
 
+                if (tmpDocViewInputFile != null) {
+                    packageAssembler.addEntry(contentPackageEntryPath, tmpDocViewInputFile.toFile());
+                } else {
+                    packageAssembler.addEntry(contentPackageEntryPath, bundleFileInputStream);
                 }
+
             }
  
         } finally {
