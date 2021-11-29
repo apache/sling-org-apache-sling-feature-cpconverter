@@ -208,29 +208,12 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             assertPageStructureFromEntry(archive,"jcr_root/apps/mysite/components/global", "11mumbojumbo" );
             assertPageStructureFromEntry(archive,"jcr_root/apps/mysite/components/global", "nodeName", "testfile.txt" );
 
-            assertResultingEntry(archive, "%3c%22&%3e", "fancy-json-file.xml");
-           
+            assertResultingEntry(archive, "xyz");
+            assertResultingEntry(archive, "homepage");
+            assertResultingEntry(archive, "nodeName");
+            assertResultingEntry(archive, "11mumbojumbo");
         }
 
-    }
-
-    private void assertResultingEntry(Archive archive, String entryKey, String expectedXmlFileName) throws IOException, SAXException {
-        InputStream fancyCharJsonFile = archive.getInputSource(archive.getEntry("jcr_root/apps/mysite/components/global/" + entryKey  +"/.content.xml")).getByteStream();
-        String fancyCharFileContents = IOUtils.toString(fancyCharJsonFile, StandardCharsets.UTF_8);
-        String expectedFancyCharFileContentsXml = IOUtils.toString(getClass().getResourceAsStream(expectedXmlFileName), StandardCharsets.UTF_8);
-        assertXMLEqual(expectedFancyCharFileContentsXml, fancyCharFileContents);
-    }
-
-    private void assertPageStructureFromEntry(Archive archive, String basePath, String pageName, String... files) throws IOException {
-        Entry contentXml = archive.getEntry( basePath + "/" + pageName + "/.content.xml");
-        assertNotNull(contentXml);
-        Entry pageXml = archive.getEntry( basePath + "/" + pageName + ".xml");
-        assertNull(pageXml);
-        
-        for(String file: files){
-            Entry expectedEntry = archive.getEntry( basePath + "/" + pageName + "/" + file);
-            assertNotNull(expectedEntry);
-        }
     }
 
     @Test
@@ -336,4 +319,24 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
                 "com.composum.nodes.pckgmgr",
                 "com.composum.nodes.pckginstall" }, (String[])dictionaryCaptor.getValue().get("whitelist.bundles"));
     }
+
+    private void assertResultingEntry(Archive archive, String entryKey) throws IOException, SAXException {
+        InputStream xmlFile = archive.getInputSource(archive.getEntry("jcr_root/apps/mysite/components/global/" + entryKey  +"/.content.xml")).getByteStream();
+        String xmlFileContents  = IOUtils.toString(xmlFile, StandardCharsets.UTF_8);
+        String expectedFancyCharFileContentsXml = IOUtils.toString(getClass().getResourceAsStream("bundle-entry-xmls/" + entryKey + ".xml"), StandardCharsets.UTF_8);
+        assertXMLEqual(expectedFancyCharFileContentsXml, xmlFileContents);
+    }
+
+    private void assertPageStructureFromEntry(Archive archive, String basePath, String pageName, String... files) throws IOException {
+        Entry contentXml = archive.getEntry( basePath + "/" + pageName + "/.content.xml");
+        assertNotNull(contentXml);
+        Entry pageXml = archive.getEntry( basePath + "/" + pageName + ".xml");
+        assertNull(pageXml);
+
+        for(String file: files){
+            Entry expectedEntry = archive.getEntry( basePath + "/" + pageName + "/" + file);
+            assertNotNull(expectedEntry);
+        }
+    }
+
 }
