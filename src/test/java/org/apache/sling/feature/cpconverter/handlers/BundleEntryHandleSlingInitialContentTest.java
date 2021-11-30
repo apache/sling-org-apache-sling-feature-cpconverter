@@ -255,7 +255,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             archive.open(true);
             PackageId targetId = PackageId.fromString("com.mysite:mysite.core-apps:1.0.0-SNAPSHOT-cp2fm-converted");
             assertEquals(targetId, vaultPackage.getId());
-            Entry entry = archive.getEntry("jcr_root/apps/myinitialcontentest/my-first-node.xml");
+            Entry entry = archive.getEntry("jcr_root/apps/myinitialcontentest/my-first-node/.content.xml");
             assertNotNull("Archive does not contain expected item", entry);
         }
         // verify nothing else has been deployed
