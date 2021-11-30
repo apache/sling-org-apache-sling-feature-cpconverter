@@ -174,7 +174,7 @@ public class BundleSlingInitialContentExtractor {
 
     
         String repositoryPath = (target != null ? target : "/") + URLDecoder.decode(entryName.substring(pathEntryValue.getPath().length()), "UTF-8");
-        repositoryPath = FilenameUtils.removeExtension(repositoryPath);
+   
         // all entry paths used by entry handlers start with "/"
         String contentPackageEntryPath = "/" + org.apache.jackrabbit.vault.util.Constants.ROOT_DIR + PlatformNameFormat.getPlatformPath(repositoryPath);
 
@@ -189,6 +189,7 @@ public class BundleSlingInitialContentExtractor {
                 tmpDocViewInputFile = Files.createTempFile(converter.getTempDirectory().toPath(), "docview", ".xml");
                 try (OutputStream docViewOutput = Files.newOutputStream(tmpDocViewInputFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
 
+                    repositoryPath = FilenameUtils.removeExtension(repositoryPath);
                     VaultContentXMLContentCreator contentCreator = new VaultContentXMLContentCreator(StringUtils.substringBeforeLast(repositoryPath, "/"), docViewOutput, namespaceRegistry, packageAssembler);
                   
                     if(file.getName().endsWith(".xml")){
