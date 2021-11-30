@@ -145,9 +145,9 @@ public class VaultContentXMLContentCreator implements ContentCreator {
 
         try {
             if(propertyType > 0){
-                writer.writeAttribute(name, String.format(FORMAT_MULTI_VALUE_TYPED, propertyTypeName, "[" + String.join(",", values) + "]"));
+                writer.writeAttribute(name, String.format(FORMAT_MULTI_VALUE_TYPED, propertyTypeName,  String.join(",", values)));
             }else{
-                writer.writeAttribute(name, String.format(FORMAT_MULTI_VALUE, "[" + String.join(",", values) + "]"));
+                writer.writeAttribute(name, String.format(FORMAT_MULTI_VALUE,  String.join(",", values)));
             }
         } catch (XMLStreamException e) {
             throw new RepositoryException(e);

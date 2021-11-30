@@ -154,7 +154,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             
             InputStream inputStream = archive.getInputSource(archive.getEntry("jcr_root/apps/mysite/components/global/homepage/.content.xml")).getByteStream();
 
-            String expectedXML = IOUtils.toString(getClass().getResource("mysite-json-xml-result.xml").openStream(), StandardCharsets.UTF_8);
+            String expectedXML = IOUtils.toString(getClass().getResource("mysite-nodetype-and-page-json-xml-result.xml").openStream(), StandardCharsets.UTF_8);
             String actualXML   = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
             
             assertXMLEqual(expectedXML,actualXML);
