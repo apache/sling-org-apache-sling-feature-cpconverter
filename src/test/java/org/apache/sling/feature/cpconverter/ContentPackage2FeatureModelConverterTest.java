@@ -97,6 +97,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         handlersManager = new DefaultEntryHandlersManager();
         converter = new ContentPackage2FeatureModelConverter()
                     .setEntryHandlersManager(handlersManager)
+                    .setFeaturesManager(new DefaultFeaturesManager(new File("")))
                     .setAclManager(new DefaultAclManager());
     }
 
