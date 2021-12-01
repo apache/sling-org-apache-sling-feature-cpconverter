@@ -29,7 +29,6 @@ import javax.xml.stream.XMLStreamException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * ContentCreator substitute to create valid XML files to be packaged into a VaultPackage to be installed later
@@ -38,7 +37,6 @@ public class VaultContentXMLContentCreator implements ContentCreator {
 
     private final String repositoryPath;
     private final OutputStream targetOutputStream;
-    private final Map<String,InputStream> extraFiles = new HashMap<>();
     private final VaultPackageAssembler packageAssembler;
     private final LinkedList<XMLNode> parentNodePathStack = new LinkedList<>();
     private final JcrNamespaceRegistry namespaceRegistry;
@@ -196,9 +194,5 @@ public class VaultContentXMLContentCreator implements ContentCreator {
     public void createAce(String principal, String[] grantedPrivileges, String[] deniedPrivileges, String order) throws RepositoryException {
         //we need to use repoinit 
         throw new UnsupportedOperationException();
-    }
-
-    public Map<String, InputStream> getExtraFiles() {
-        return extraFiles;
     }
 }
