@@ -16,21 +16,20 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
-import static org.custommonkey.xmlunit.XMLAssert.assertXMLEqual;
+
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.when;
+import static org.xmlunit.assertj.XmlAssert.assertThat;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.jar.JarFile;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.PackageId;
@@ -52,6 +51,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -154,10 +154,15 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             
             InputStream inputStream = archive.getInputSource(archive.getEntry("jcr_root/apps/mysite/components/global/homepage/.content.xml")).getByteStream();
 
-            String expectedXML = IOUtils.toString(getClass().getResource("mysite-nodetype-and-page-json-xml-result.xml").openStream(), StandardCharsets.UTF_8);
-            String actualXML   = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+            //String expectedXML = IOUtils.toString(, StandardCharsets.UTF_8);
+            //String actualXML   = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+
+            InputSource expectedXML = new InputSource(getClass().getResource("mysite-nodetype-and-page-json-xml-result.xml").openStream());
+            InputSource actualXML = new InputSource(inputStream);
+
             
-            assertXMLEqual(expectedXML,actualXML);
+            assertThat(expectedXML).and(actualXML).areSimilar();
+         
         }
 
     }
@@ -203,15 +208,21 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             PackageId targetId = PackageId.fromString("com.mysite:mysite.core-apps:1.0.0-SNAPSHOT-cp2fm-converted");
             assertEquals(targetId, vaultPackage.getId());
 
-            assertPageStructureFromEntry(archive, "jcr_root/apps/mysite/components/global", "xyz");
+            //json containing a property: "fancyCharacters": "<&\"'>"
             assertPageStructureFromEntry(archive,"jcr_root/apps/mysite/components/global", "homepage" );
-            assertPageStructureFromEntry(archive,"jcr_root/apps/mysite/components/global", "11mumbojumbo" );
-            assertPageStructureFromEntry(archive,"jcr_root/apps/mysite/components/global", "nodeName", "testfile.txt" );
-
-            assertResultingEntry(archive, "xyz");
             assertResultingEntry(archive, "homepage");
+            
+            //xml with custom name element: nodeName and containing a textfile
+            assertPageStructureFromEntry(archive,"jcr_root/apps/mysite/components/global", "nodeName", "testfile.txt" );
             assertResultingEntry(archive, "nodeName");
+            
+            //xml with custom "name" element "xyz"
+            assertPageStructureFromEntry(archive, "jcr_root/apps/mysite/components/global", "xyz");
+            assertResultingEntry(archive, "xyz");
+            
+            //xml with custom name element: 11&quot;&quot;&gt;&lt;mumbojumbo
             assertResultingEntry(archive, "11mumbojumbo");
+            assertPageStructureFromEntry(archive,"jcr_root/apps/mysite/components/global", "11mumbojumbo" );
         }
 
     }
@@ -322,9 +333,10 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
     private void assertResultingEntry(Archive archive, String entryKey) throws IOException, SAXException {
         InputStream xmlFile = archive.getInputSource(archive.getEntry("jcr_root/apps/mysite/components/global/" + entryKey  +"/.content.xml")).getByteStream();
-        String xmlFileContents  = IOUtils.toString(xmlFile, StandardCharsets.UTF_8);
-        String expectedFancyCharFileContentsXml = IOUtils.toString(getClass().getResourceAsStream("bundle-entry-xmls/" + entryKey + ".xml"), StandardCharsets.UTF_8);
-        assertXMLEqual(expectedFancyCharFileContentsXml, xmlFileContents);
+        InputSource expectedXML = new InputSource(getClass().getResourceAsStream("bundle-entry-xmls/" + entryKey + ".xml"));
+        InputSource actualXML = new InputSource(xmlFile);
+
+        assertThat(expectedXML).and(actualXML).areSimilar();
     }
 
     private void assertPageStructureFromEntry(Archive archive, String basePath, String pageName, String... files) throws IOException {

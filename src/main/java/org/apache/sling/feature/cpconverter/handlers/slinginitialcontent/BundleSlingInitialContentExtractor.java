@@ -182,6 +182,8 @@ public class BundleSlingInitialContentExtractor {
         
         try(InputStream bundleFileInputStream = new FileInputStream(file)) {
             VaultPackageAssembler packageAssembler = initPackageAssemblerForPath(repositoryPath, pathEntryValue);
+
+            VaultContentXMLContentCreator contentCreator = null;
             
             final ContentReader contentReader = getContentReaderForEntry(file, pathEntryValue);
             if (contentReader != null) {
@@ -190,16 +192,16 @@ public class BundleSlingInitialContentExtractor {
                 try (OutputStream docViewOutput = Files.newOutputStream(tmpDocViewInputFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
 
                     repositoryPath = FilenameUtils.removeExtension(repositoryPath);
-                    VaultContentXMLContentCreator contentCreator = new VaultContentXMLContentCreator(StringUtils.substringBeforeLast(repositoryPath, "/"), docViewOutput, namespaceRegistry, packageAssembler);
+                    contentCreator = new VaultContentXMLContentCreator(StringUtils.substringBeforeLast(repositoryPath, "/"), docViewOutput, namespaceRegistry, packageAssembler);
                   
                     if(file.getName().endsWith(".xml")){
                         contentCreator.setIsXmlProcessed();
                     }
 
                     contentReader.parse(file.toURI().toURL(), contentCreator);
-                    contentCreator.finish();
-
                     contentPackageEntryPath = recomputeContentPackageEntryPath(contentPackageEntryPath, contentCreator);
+                    
+                    contentCreator.finish();
 
                 } catch (IOException | XMLStreamException e) {
                     throw new IOException("Can not parse " + file, e);
@@ -223,7 +225,6 @@ public class BundleSlingInitialContentExtractor {
                 } else {
                     packageAssembler.addEntry(contentPackageEntryPath, bundleFileInputStream);
                 }
-
             }
  
         } finally {

@@ -3,48 +3,40 @@ package org.apache.sling.feature.cpconverter.handlers.slinginitialcontent;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
+import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.xmlbuffer.XMLNode;
 import org.apache.sling.feature.cpconverter.vltpkg.JcrNamespaceRegistry;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.jcr.contentloader.ContentCreator;
- 
-import javax.jcr.PropertyType;
+
 import javax.jcr.RepositoryException;
-import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * ContentCreator substitute to create valid XML files to be packaged into a VaultPackage to be installed later
  */
 public class VaultContentXMLContentCreator implements ContentCreator {
-    
-    String FORMAT_SINGLE_VALUE = "%s";
-    String FORMAT_SINGLE_VALUE_TYPED = "{%s}%s";
-    String FORMAT_MULTI_VALUE = "[%s]";
-    String FORMAT_MULTI_VALUE_TYPED = "{%s}[%s]";
-    
+
     private final String repositoryPath;
-    private final XMLStreamWriter writer;
+    private final OutputStream targetOutputStream;
+    private final Map<String,InputStream> extraFiles = new HashMap<>();
     private final VaultPackageAssembler packageAssembler;
-    private final LinkedList<String> parentNodePathStack = new LinkedList<>();
+    private final LinkedList<XMLNode> parentNodePathStack = new LinkedList<>();
     private final JcrNamespaceRegistry namespaceRegistry;
     private boolean isFirstElement = true;
     private boolean finished = false;
     private boolean xmlProcessed = false;
     private String primaryNodeName;
+    private XMLNode currentNode;
 
     public VaultContentXMLContentCreator(String repositoryPath, OutputStream targetOutputStream, JcrNamespaceRegistry namespaceRegistry, VaultPackageAssembler packageAssembler) throws XMLStreamException {
         this.repositoryPath = repositoryPath;
-        this.writer = XMLOutputFactory.newInstance().createXMLStreamWriter(targetOutputStream, StandardCharsets.UTF_8.name());
+        this.targetOutputStream = targetOutputStream;
         this.packageAssembler = packageAssembler;
-        this.writer.writeStartDocument();
         this.namespaceRegistry = namespaceRegistry;
-        this.writer.setNamespaceContext(this.namespaceRegistry);
     } 
     
     public void setIsXmlProcessed(){
@@ -55,37 +47,51 @@ public class VaultContentXMLContentCreator implements ContentCreator {
     public void createNode(String name, String primaryNodeType, String[] mixinNodeTypes) throws RepositoryException {
 
         final String elementName;
-        
+        final String jcrNodeName; 
         if(xmlProcessed && isFirstElement){
             elementName = "jcr:root";
             primaryNodeName = name;
+            jcrNodeName = name;
+            isFirstElement = false;
         }else if(StringUtils.isNotBlank(name)){
             elementName = name;
+            jcrNodeName = name;
         }else{
             elementName = "jcr:root";
+            jcrNodeName = null;
         }
         
-        
-        try {
-          
-            parentNodePathStack.push(elementName);
-            writer.writeStartElement(elementName);
-            
-            if (isFirstElement) {
-                for (String prefix : namespaceRegistry.getPrefixes()) {
-                    writer.writeNamespace(prefix, namespaceRegistry.getURI(prefix));
+        final String basePath;
+        if(parentNodePathStack.isEmpty()){
+            basePath = repositoryPath;
+        }else{
+            StringBuilder basePathBuilder = new StringBuilder(repositoryPath);
+            for(Iterator<XMLNode> xmlNodeIterator =  parentNodePathStack.descendingIterator();xmlNodeIterator.hasNext();){
+                XMLNode parent = xmlNodeIterator.next();
+                String parentJcrNodeName = parent.getJcrNodeName();
+                if(StringUtils.isNotBlank(parentJcrNodeName)){
+                    basePathBuilder.append("/");
+                    basePathBuilder.append(parentJcrNodeName);
                 }
-                isFirstElement = false;
             }
-            
-            writer.writeAttribute(JcrConstants.JCR_PRIMARYTYPE, StringUtils.isNotBlank(primaryNodeType) ? primaryNodeType : JcrConstants.NT_UNSTRUCTURED);
-            if(ArrayUtils.isNotEmpty(mixinNodeTypes)){
-                writer.writeAttribute(JcrConstants.JCR_MIXINTYPES, "[" + String.join(",", mixinNodeTypes) + "]");
-            }
-            
-        } catch (XMLStreamException e) {
-            throw new RepositoryException(e);
+            basePath = basePathBuilder.toString();
         }
+       
+        XMLNode intermediateNode = new XMLNode(packageAssembler,basePath,elementName,jcrNodeName, primaryNodeType, mixinNodeTypes);
+        //add the created node to the correct parent if present
+        if(currentNode != null){
+            currentNode.addChildNode(elementName, intermediateNode);
+        }
+        //switch the current node 
+        currentNode = intermediateNode;
+        
+        currentNode.addProperty(JcrConstants.JCR_PRIMARYTYPE, StringUtils.isNotBlank(primaryNodeType) ? primaryNodeType : JcrConstants.NT_UNSTRUCTURED);
+        
+        if(ArrayUtils.isNotEmpty(mixinNodeTypes)){
+            currentNode.addProperty(JcrConstants.JCR_MIXINTYPES, "[" + String.join(",", mixinNodeTypes) + "]");
+        }
+
+        parentNodePathStack.push(currentNode);
     }
 
     public String getPrimaryNodeName() {
@@ -94,12 +100,10 @@ public class VaultContentXMLContentCreator implements ContentCreator {
 
     @Override
     public void finishNode() throws RepositoryException {
-        try {
+        if(parentNodePathStack.size() > 1){
             this.parentNodePathStack.pop();
-            writer.writeEndElement();
-        } catch (XMLStreamException e) {
-            throw new RepositoryException(e);
         }
+        this.currentNode = this.parentNodePathStack.peek();
     }
 
     @Override
@@ -109,103 +113,51 @@ public class VaultContentXMLContentCreator implements ContentCreator {
             return;
         }
         try {
-            writer.writeEndDocument();
-            writer.flush();
-            writer.close();
-            this.finished = true;
+            XMLNodeToXMLFileWriter writer = new XMLNodeToXMLFileWriter(currentNode, targetOutputStream, namespaceRegistry);
+            writer.write();
+            finished = true;
         } catch (XMLStreamException e) {
             throw new RepositoryException(e);
         }
-       
     }
 
   
 
     @Override
     public void createProperty(String name, int propertyType, String value) throws RepositoryException {
-        
-        String propertyTypeName = PropertyType.nameFromValue(propertyType);
-
-        try {
-            if(propertyType > 0){
-                writer.writeAttribute(name, String.format(FORMAT_SINGLE_VALUE_TYPED, propertyTypeName, value));
-            }else{
-                writer.writeAttribute(name, String.format(FORMAT_SINGLE_VALUE, value));
-            }
-           
-        } catch (XMLStreamException e) {
-            throw new RepositoryException(e);
-        }
+        currentNode.addProperty(name,propertyType,value);
     }
 
    
     @Override
     public void createProperty(String name, int propertyType, String[] values) throws RepositoryException {
-        String propertyTypeName = PropertyType.nameFromValue(propertyType);
-
-        try {
-            if(propertyType > 0){
-                writer.writeAttribute(name, String.format(FORMAT_MULTI_VALUE_TYPED, propertyTypeName,  String.join(",", values)));
-            }else{
-                writer.writeAttribute(name, String.format(FORMAT_MULTI_VALUE,  String.join(",", values)));
-            }
-        } catch (XMLStreamException e) {
-            throw new RepositoryException(e);
-        }
+        currentNode.addProperty(name, propertyType, values);
     }
     
    
     @Override
     public void createProperty(String name, Object value)  throws RepositoryException {
-        if (value == null) {
-            return;
-        }
-        
-        try{
-
-            if (value instanceof Long) {
-                writer.writeAttribute(name, String.format(FORMAT_SINGLE_VALUE_TYPED, "Long", value.toString()));
-            } else if (value instanceof Date) {
-                writer.writeAttribute(name, String.format(FORMAT_SINGLE_VALUE_TYPED, "Date", ((Date) value).toGMTString()));
-            } else if (value instanceof Calendar) {
-                writer.writeAttribute(name, String.format(FORMAT_SINGLE_VALUE_TYPED, "Date", ((Calendar) value).getTime().toGMTString()));
-            } else if (value instanceof Double) {
-                writer.writeAttribute(name, String.format(FORMAT_SINGLE_VALUE_TYPED, "Double", value));
-            } else if (value instanceof Boolean) {
-                boolean theBoolValue = Boolean.parseBoolean(value.toString());
-                writer.writeAttribute(name, String.format(FORMAT_SINGLE_VALUE_TYPED, "Boolean", theBoolValue));
-            } else if (value instanceof InputStream) {
-                writer.writeAttribute(name, "{Binary}");
-                String path = "/jcr_root" + this.repositoryPath + "/" + this.primaryNodeName + "/" + parentNodePathStack.get(parentNodePathStack.size() - 2);
-                packageAssembler.addEntry(path, (InputStream) value);
-                
-            } else {
-                writer.writeAttribute(name, String.format(FORMAT_SINGLE_VALUE, value));
-            }
-
-        } catch (XMLStreamException | IOException e) {
-            throw new RepositoryException(e);
-        }
+        currentNode.addProperty(name, value);
     }
     
     
     @Override
     public void createProperty(String name, Object[] values) throws RepositoryException {
-        throw new UnsupportedOperationException();
+        currentNode.addProperty(name, values);
     }
 
     @Override
     public void createFileAndResourceNode(String name, InputStream data, String mimeType, long lastModified) throws RepositoryException {
-        this.createNode(name, "nt:file", null);
-        this.createNode("jcr:content", "nt:resource", null);
+        this.createNode(name, JcrConstants.NT_FILE, null);
+        this.createNode(JcrConstants.JCR_CONTENT, JcrConstants.NT_RESOURCE, null);
 
         // ensure sensible last modification date
         if (lastModified <= 0) {
             lastModified = System.currentTimeMillis();
         }
-        this.createProperty("jcr:mimeType", mimeType);
-        this.createProperty("jcr:lastModified", lastModified);
-        this.createProperty("jcr:data", data);
+        this.createProperty(JcrConstants.JCR_MIMETYPE, mimeType);
+        this.createProperty(JcrConstants.JCR_LASTMODIFIED, lastModified);
+        this.createProperty(JcrConstants.JCR_DATA, data);
     }
     
 
@@ -230,5 +182,7 @@ public class VaultContentXMLContentCreator implements ContentCreator {
         throw new UnsupportedOperationException();
     }
 
-   
+    public Map<String, InputStream> getExtraFiles() {
+        return extraFiles;
+    }
 }
