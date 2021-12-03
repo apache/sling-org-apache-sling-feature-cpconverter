@@ -71,7 +71,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static org.apache.sling.feature.cpconverter.repoinit.Util.normalize;
+import static org.apache.sling.feature.cpconverter.Util.normalize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;

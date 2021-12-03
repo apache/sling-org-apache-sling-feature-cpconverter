@@ -36,7 +36,7 @@ import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static org.apache.sling.feature.cpconverter.repoinit.Util.normalize;
+import static org.apache.sling.feature.cpconverter.Util.normalize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
