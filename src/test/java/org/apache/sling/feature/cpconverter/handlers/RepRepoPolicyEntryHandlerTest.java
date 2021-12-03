@@ -33,7 +33,7 @@ import java.io.OutputStream;
 import java.io.StringReader;
 import java.util.List;
 
-import static org.apache.sling.feature.cpconverter.Util.normalize;
+import static org.apache.sling.feature.cpconverter.repoinit.Util.normalize;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

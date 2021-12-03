@@ -16,7 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter;
 
-import static org.apache.sling.feature.cpconverter.Util.normalize;
+import static org.apache.sling.feature.cpconverter.repoinit.Util.normalize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -45,7 +45,6 @@ import javax.json.JsonObject;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.spi.PrivilegeDefinitions;
-import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
 import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.PackageType;

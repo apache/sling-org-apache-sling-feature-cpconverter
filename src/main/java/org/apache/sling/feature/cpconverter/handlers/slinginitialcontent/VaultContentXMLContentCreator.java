@@ -19,17 +19,31 @@ package org.apache.sling.feature.cpconverter.handlers.slinginitialcontent;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
+import org.apache.sling.feature.cpconverter.ConverterException;
+import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
+import org.apache.sling.feature.cpconverter.accesscontrol.Group;
+import org.apache.sling.feature.cpconverter.accesscontrol.User;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.xmlbuffer.XMLNode;
+import org.apache.sling.feature.cpconverter.repoinit.Util;
+import org.apache.sling.feature.cpconverter.shared.CheckedConsumer;
+import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.apache.sling.feature.cpconverter.vltpkg.JcrNamespaceRegistry;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.jcr.contentloader.ContentCreator;
+import org.apache.sling.repoinit.parser.RepoInitParsingException;
+import org.apache.sling.testing.mock.jcr.MockJcr;
+import org.jetbrains.annotations.NotNull;
 
+import javax.jcr.Node;
 import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+import javax.jcr.Value;
 import javax.xml.stream.XMLStreamException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
-
+import org.apache.sling.testing.mock.jcr.MockQueryResult;
 /**
  * ContentCreator substitute to create valid XML files to be packaged into a VaultPackage to be installed later
  */
@@ -40,17 +54,22 @@ public class VaultContentXMLContentCreator implements ContentCreator {
     private final VaultPackageAssembler packageAssembler;
     private final LinkedList<XMLNode> parentNodePathStack = new LinkedList<>();
     private final JcrNamespaceRegistry namespaceRegistry;
+    private final CheckedConsumer<String> repoInitTextExtensionConsumer;
     private boolean isFirstElement = true;
     private boolean finished = false;
     private boolean xmlProcessed = false;
     private String primaryNodeName;
     private XMLNode currentNode;
 
-    public VaultContentXMLContentCreator(String repositoryPath, OutputStream targetOutputStream, JcrNamespaceRegistry namespaceRegistry, VaultPackageAssembler packageAssembler) throws XMLStreamException {
+    //private final Session session = MockJcr.newSession();
+    //private final Node rootNode = session.getNode("/");
+    private Node currentJcrNode;
+    public VaultContentXMLContentCreator(String repositoryPath, OutputStream targetOutputStream, JcrNamespaceRegistry namespaceRegistry, VaultPackageAssembler packageAssembler, CheckedConsumer<String> repoInitTextExtensionConsumer) throws XMLStreamException, RepositoryException {
         this.repositoryPath = repositoryPath;
         this.targetOutputStream = targetOutputStream;
         this.packageAssembler = packageAssembler;
         this.namespaceRegistry = namespaceRegistry;
+        this.repoInitTextExtensionConsumer = repoInitTextExtensionConsumer;
     } 
     
     public void setIsXmlProcessed(){
@@ -59,7 +78,7 @@ public class VaultContentXMLContentCreator implements ContentCreator {
     
     @Override
     public void createNode(String name, String primaryNodeType, String[] mixinNodeTypes) throws RepositoryException {
-
+        
         final String elementName;
         final String jcrNodeName; 
         if(xmlProcessed && isFirstElement){
@@ -74,6 +93,8 @@ public class VaultContentXMLContentCreator implements ContentCreator {
             elementName = "jcr:root";
             jcrNodeName = null;
         }
+
+        this.currentJcrNode = currentJcrNode.addNode(jcrNodeName, primaryNodeName);
         
         final String basePath;
         if(parentNodePathStack.isEmpty()){
@@ -182,17 +203,52 @@ public class VaultContentXMLContentCreator implements ContentCreator {
 
     @Override
     public void createUser(String name, String password, Map<String, Object> extraProperties) throws RepositoryException {
-        throw new UnsupportedOperationException();
+        
+        try {
+            StringBuilder repoInitTextSB = new StringBuilder();
+            repoInitTextSB  .append("create user " + name + " with password " + password + " \n")
+                            .append("create path /content/cq:tags\n")
+                            .append("set properties on authorizable(" + name + ")\n");
+            for(Map.Entry<String,Object> propSet: extraProperties.entrySet()){
+                String type = "{String}";
+                String value = propSet.getValue().toString();
+                repoInitTextSB.append("    " + propSet.getKey() + type + " to " +  value);
+            }
+            repoInitTextSB.append("end\n");
+            String repoInitText = "# origin= source=content-package" + System.lineSeparator() + Util.normalize(repoInitTextSB.toString());
+            
+            repoInitTextExtensionConsumer.accept(repoInitText);
+        } catch (IOException | ConverterException | RepoInitParsingException e) {
+            throw new RepositoryException(e);
+        }
     }
 
     @Override
     public void createGroup(String name, String[] members, Map<String, Object> extraProperties) throws RepositoryException {
-        throw new UnsupportedOperationException();
+        try {
+            repoInitTextExtensionConsumer.accept("");
+        } catch (IOException | ConverterException e) {
+            throw new RepositoryException(e);
+        }
     }
 
     @Override
     public void createAce(String principal, String[] grantedPrivileges, String[] deniedPrivileges, String order) throws RepositoryException {
-        //we need to use repoinit 
-        throw new UnsupportedOperationException();
+        try {
+            repoInitTextExtensionConsumer.accept("");
+        } catch (IOException | ConverterException e) {
+            throw new RepositoryException(e);
+        }
     }
+
+    @Override
+    public void createAce(String principal, String[] grantedPrivileges, String[] deniedPrivileges, String order, Map<String, Value> restrictions, Map<String, Value[]> mvRestrictions, Set<String> removedRestrictionNames) throws RepositoryException {
+        try {
+            repoInitTextExtensionConsumer.accept("");
+        } catch (IOException | ConverterException e) {
+            throw new RepositoryException(e);
+        }
+    }
+
+   
 }

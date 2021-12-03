@@ -16,8 +16,8 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
-import static org.apache.sling.feature.cpconverter.Util.normalize;
-import static org.apache.sling.feature.cpconverter.Util.normalizeUnchecked;
+import static org.apache.sling.feature.cpconverter.repoinit.Util.normalize;
+import static org.apache.sling.feature.cpconverter.repoinit.Util.normalizeUnchecked;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
