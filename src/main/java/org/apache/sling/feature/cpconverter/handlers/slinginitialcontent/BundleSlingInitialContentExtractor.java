@@ -54,6 +54,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.jar.*;
 
 /**
@@ -61,7 +63,9 @@ import java.util.jar.*;
  */
 public class BundleSlingInitialContentExtractor {
 
- 
+    private static final int BUFFER = 512;
+    private static final long TOOBIG = 0x6400000; // Max size of unzipped data, 100MB
+    private static final int TOOMANY = 1024;      // Max number of files
     private final static Logger logger = LoggerFactory.getLogger(BundleSlingInitialContentExtractor.class);
     
     private final ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy;
@@ -132,7 +136,10 @@ public class BundleSlingInitialContentExtractor {
              JarOutputStream bundleOutput = new JarOutputStream(fileOutput, manifest)) {
 
             List<File> collectedFilesWithSlingInitialContent = new ArrayList<>();
-            
+
+            AtomicInteger entries = new AtomicInteger(0);
+            AtomicLong total = new AtomicLong(0);
+    
             for (Enumeration<JarEntry> e = jarFile.entries(); e.hasMoreElements();) {
                 JarEntry jarEntry = e.nextElement();
 
@@ -140,23 +147,30 @@ public class BundleSlingInitialContentExtractor {
                     continue;
                 }
 
+         
+                byte data[] = new byte[BUFFER];
+
                 if (!jarEntry.isDirectory()) {
-                    try (InputStream input = jarFile.getInputStream(jarEntry)) {
+                    try (InputStream input = new BufferedInputStream(jarFile.getInputStream(jarEntry))) {
                         if (containsSlingInitialContent(jarEntry)) {
                             
                             File targetFile = new File(converter.getTempDirectory(), jarEntry.getName());
-
+                            targetFile.getParentFile().mkdirs();
+                            targetFile.createNewFile();
+                            
                             String canonicalDestinationPath = targetFile.getCanonicalPath();
 
                             if (!canonicalDestinationPath.startsWith(converter.getTempDirectory().getCanonicalPath())) {
                                 throw new IOException("Entry is outside of the target directory");
                             }
-                            
-                            FileUtils.copyInputStreamToFile(input, targetFile);
+                            FileOutputStream fos = new FileOutputStream(targetFile);
+                            safelyWriteOutputStream(entries, total, data, input, fos, true);
+
                             collectedFilesWithSlingInitialContent.add(targetFile);
 
                         } else {
                             bundleOutput.putNextEntry(jarEntry);
+                            safelyWriteOutputStream(entries, total, data, input, bundleOutput, false);
                             IOUtils.copy(input, bundleOutput);
                             bundleOutput.closeEntry();
                         }
@@ -177,6 +191,28 @@ public class BundleSlingInitialContentExtractor {
 
         // return stripped bundle's inputstream which must be deleted on close
         return Files.newInputStream(newBundleFile, StandardOpenOption.READ, StandardOpenOption.DELETE_ON_CLOSE);
+    }
+
+    private void safelyWriteOutputStream(AtomicInteger entries, AtomicLong total, byte[] data, InputStream input, OutputStream fos, boolean shouldClose) throws IOException {
+        int count;
+        BufferedOutputStream dest = new BufferedOutputStream(fos, BUFFER);
+        while (total.get() + BUFFER <= TOOBIG && (count = input.read(data, 0, BUFFER)) != -1) {
+            dest.write(data, 0, count);
+            total.addAndGet(count);
+        }
+        dest.flush();
+        
+        if(shouldClose){
+            dest.close();
+        }
+        
+        if (entries.get() > TOOMANY) {
+            throw new IllegalStateException("Too many files to unzip.");
+        }
+        if (total.get() + BUFFER > TOOBIG) {
+            throw new IllegalStateException("File being unzipped is too big.");
+        }
+        entries.incrementAndGet();
     }
 
     /**
