@@ -143,7 +143,15 @@ public class BundleSlingInitialContentExtractor {
                 if (!jarEntry.isDirectory()) {
                     try (InputStream input = jarFile.getInputStream(jarEntry)) {
                         if (containsSlingInitialContent(jarEntry)) {
+                            
                             File targetFile = new File(converter.getTempDirectory(), jarEntry.getName());
+
+                            String canonicalDestinationPath = targetFile.getCanonicalPath();
+
+                            if (!canonicalDestinationPath.startsWith(converter.getTempDirectory().getCanonicalPath())) {
+                                throw new IOException("Entry is outside of the target directory");
+                            }
+                            
                             FileUtils.copyInputStreamToFile(input, targetFile);
                             collectedFilesWithSlingInitialContent.add(targetFile);
 

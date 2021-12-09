@@ -40,7 +40,7 @@ public class  JsonReader extends org.apache.sling.jcr.contentloader.internal.rea
         if (SECURITY_PRINCIPLES.equals(n)) {
             this.createPrincipals(o, contentCreator);
         } else if (SECURITY_ACL.equals(n)) {
-            this.createAcl(o, contentCreator);
+            this.createAclOverride(o, contentCreator);
         } else {
             return false;
         }
@@ -48,17 +48,17 @@ public class  JsonReader extends org.apache.sling.jcr.contentloader.internal.rea
         
     }
 
-    private void createAcl(Object obj, ContentCreator contentCreator) throws RepositoryException {
+    private void createAclOverride(Object obj, ContentCreator contentCreator) throws RepositoryException {
         if (obj instanceof JsonObject) {
             // single ace
-            createAce((JsonObject) obj, contentCreator);
+            createAceOverride((JsonObject) obj, contentCreator);
         } else if (obj instanceof JsonArray) {
             // array of aces
             JsonArray jsonArray = (JsonArray) obj;
             for (int i = 0; i < jsonArray.size(); i++) {
                 Object object = jsonArray.get(i);
                 if (object instanceof JsonObject) {
-                    createAce((JsonObject) object, contentCreator);
+                    createAceOverride((JsonObject) object, contentCreator);
                 } else {
                     throw new JsonException("Unexpected data type in acl array: " + object.getClass().getName());
                 }
@@ -71,7 +71,7 @@ public class  JsonReader extends org.apache.sling.jcr.contentloader.internal.rea
     /**
      * Create or update an access control entry
      */
-    private void createAce(JsonObject ace, ContentCreator contentCreator) throws RepositoryException {
+    private void createAceOverride(JsonObject ace, ContentCreator contentCreator) throws RepositoryException {
 
         String principalID = ace.getString("principal");
 
@@ -127,11 +127,11 @@ public class  JsonReader extends org.apache.sling.jcr.contentloader.internal.rea
                             int size = jsonArray.size();
                             Value[] values = new Value[size];
                             for (int i = 0; i < size; i++) {
-                                values[i] = toValue(factory, jsonArray.get(i), restrictionType);
+                                values[i] = toValueOverride(factory, jsonArray.get(i), restrictionType);
                             }
                             mvRestrictionsMap.put(rname, values);
                         } else {
-                            Value v = toValue(factory, jsonValue, restrictionType);
+                            Value v = toValueOverride(factory, jsonValue, restrictionType);
                             mvRestrictionsMap.put(rname, new Value[]{v});
                         }
                     } else {
@@ -139,13 +139,13 @@ public class  JsonReader extends org.apache.sling.jcr.contentloader.internal.rea
                             JsonArray jsonArray = (JsonArray) jsonValue;
                             int size = jsonArray.size();
                             if (size == 1) {
-                                Value v = toValue(factory, jsonArray.get(0), restrictionType);
+                                Value v = toValueOverride(factory, jsonArray.get(0), restrictionType);
                                 restrictionsMap.put(rname, v);
                             } else if (size > 1) {
                                 throw new JsonException("Unexpected multi value array data found for single-value restriction value for name: " + rname);
                             }
                         } else {
-                            Value v = toValue(factory, jsonValue, restrictionType);
+                            Value v = toValueOverride(factory, jsonValue, restrictionType);
                             restrictionsMap.put(rname, v);
                         }
                     }
@@ -172,7 +172,7 @@ public class  JsonReader extends org.apache.sling.jcr.contentloader.internal.rea
      * @return the Value if converted or null otherwise
      * @throws ValueFormatException
      */
-    private Value toValue(ValueFactory factory, JsonValue jsonValue, int restrictionType) throws ValueFormatException {
+    private Value toValueOverride(ValueFactory factory, JsonValue jsonValue, int restrictionType) throws ValueFormatException {
         Value value = null;
         JsonValue.ValueType valueType = jsonValue.getValueType();
         switch (valueType) {
