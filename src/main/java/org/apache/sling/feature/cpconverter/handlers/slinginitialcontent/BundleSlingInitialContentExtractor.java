@@ -32,11 +32,12 @@ import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.ConverterException;
+import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.readers.JsonReader;
+import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.readers.XMLReader;
+import org.apache.sling.feature.cpconverter.shared.CheckedConsumer;
 import org.apache.sling.feature.cpconverter.vltpkg.*;
 import org.apache.sling.jcr.contentloader.ContentReader;
 import org.apache.sling.jcr.contentloader.PathEntry;
-import org.apache.sling.jcr.contentloader.internal.readers.JsonReader;
-import org.apache.sling.jcr.contentloader.internal.readers.XmlReader;
 import org.apache.sling.jcr.contentloader.internal.readers.ZipReader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -74,6 +75,7 @@ public class BundleSlingInitialContentExtractor {
     private final boolean isEmbeddedPackage;
     private final JcrNamespaceRegistry namespaceRegistry;
     private final Manifest manifest;
+    private final CheckedConsumer<String> repoInitTextExtensionConsumer;
     private Collection<PathEntry> pathEntryList = new ArrayList<>();
     private Iterator<PathEntry> pathEntries;
 
@@ -98,6 +100,10 @@ public class BundleSlingInitialContentExtractor {
         if(pathEntries != null){
             pathEntries.forEachRemaining(pathEntryList::add);
         }
+
+        repoInitTextExtensionConsumer = (String repoInitText) -> {
+            converter.getAclManager().addRepoinitExtention("content-package", repoInitText, null, converter.getFeaturesManager());
+        };
     }
     
     static Version getModifiedOsgiVersion(Version originalVersion) {
@@ -208,7 +214,7 @@ public class BundleSlingInitialContentExtractor {
                 try (OutputStream docViewOutput = Files.newOutputStream(tmpDocViewInputFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
 
                     repositoryPath = FilenameUtils.removeExtension(repositoryPath);
-                    contentCreator = new VaultContentXMLContentCreator(StringUtils.substringBeforeLast(repositoryPath, "/"), docViewOutput, namespaceRegistry, packageAssembler);
+                    contentCreator = new VaultContentXMLContentCreator(StringUtils.substringBeforeLast(repositoryPath, "/"), docViewOutput, namespaceRegistry, packageAssembler, repoInitTextExtensionConsumer);
                   
                     if(file.getName().endsWith(".xml")){
                         contentCreator.setIsXmlProcessed();
@@ -314,14 +320,8 @@ public class BundleSlingInitialContentExtractor {
         }
     }
     
-    static class MyXmlReader extends XmlReader{
-        public MyXmlReader(){
-            this.activate();
-        }
-    }
-    
     static final JsonReader jsonReader = new JsonReader();
-    static final MyXmlReader xmlReader = new MyXmlReader();
+    static final XMLReader xmlReader = new XMLReader();
     static final ZipReader zipReader   = new ZipReader();
     
     

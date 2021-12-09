@@ -21,12 +21,14 @@ import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
+import org.apache.sling.feature.cpconverter.shared.CheckedConsumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.function.Consumer;
 import java.util.jar.JarFile;
 
 public class SlingInitialContentBundleHandler extends BundleEntryHandler {
@@ -36,13 +38,13 @@ public class SlingInitialContentBundleHandler extends BundleEntryHandler {
         this.handler = handler;
         setSlingInitialContentPolicy(slingInitialContentPolicy);
     }
-
+    
     @Override
     void processBundleInputStream(@NotNull String path, @NotNull Path originalBundleFile, @NotNull String bundleName, @Nullable String runMode, @Nullable Integer startLevel, @NotNull ContentPackage2FeatureModelConverter converter) throws IOException, ConverterException {
         try (JarFile jarFile = new JarFile(originalBundleFile.toFile())) {
             // first extract bundle metadata from JAR input stream
             ArtifactId id = extractArtifactId(bundleName, jarFile);
-
+         
             try (InputStream ignored = new BundleSlingInitialContentExtractor(slingInitialContentPolicy, path, id, jarFile, converter, runMode, true).extract()) {}
         }
     }

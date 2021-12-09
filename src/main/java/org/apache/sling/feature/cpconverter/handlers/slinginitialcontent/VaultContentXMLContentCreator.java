@@ -16,38 +16,37 @@
  */
 package org.apache.sling.feature.cpconverter.handlers.slinginitialcontent;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.sling.feature.cpconverter.ConverterException;
-import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
-import org.apache.sling.feature.cpconverter.accesscontrol.Group;
-import org.apache.sling.feature.cpconverter.accesscontrol.User;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.xmlbuffer.XMLNode;
-import org.apache.sling.feature.cpconverter.repoinit.Util;
 import org.apache.sling.feature.cpconverter.shared.CheckedConsumer;
-import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.apache.sling.feature.cpconverter.vltpkg.JcrNamespaceRegistry;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.jcr.contentloader.ContentCreator;
-import org.apache.sling.repoinit.parser.RepoInitParsingException;
-import org.apache.sling.testing.mock.jcr.MockJcr;
-import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 import javax.jcr.Value;
 import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
-import org.apache.sling.testing.mock.jcr.MockQueryResult;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 /**
  * ContentCreator substitute to create valid XML files to be packaged into a VaultPackage to be installed later
  */
 public class VaultContentXMLContentCreator implements ContentCreator {
+    
+    private final static Pattern DATE_PATTERN = Pattern.compile("[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}(.*)");
+    private final static Logger logger = LoggerFactory.getLogger(BundleSlingInitialContentExtractor.class);
 
     private final String repositoryPath;
     private final OutputStream targetOutputStream;
@@ -61,9 +60,6 @@ public class VaultContentXMLContentCreator implements ContentCreator {
     private String primaryNodeName;
     private XMLNode currentNode;
 
-    //private final Session session = MockJcr.newSession();
-    //private final Node rootNode = session.getNode("/");
-    private Node currentJcrNode;
     public VaultContentXMLContentCreator(String repositoryPath, OutputStream targetOutputStream, JcrNamespaceRegistry namespaceRegistry, VaultPackageAssembler packageAssembler, CheckedConsumer<String> repoInitTextExtensionConsumer) throws XMLStreamException, RepositoryException {
         this.repositoryPath = repositoryPath;
         this.targetOutputStream = targetOutputStream;
@@ -94,7 +90,6 @@ public class VaultContentXMLContentCreator implements ContentCreator {
             jcrNodeName = null;
         }
 
-        this.currentJcrNode = currentJcrNode.addNode(jcrNodeName, primaryNodeName);
         
         final String basePath;
         if(parentNodePathStack.isEmpty()){
@@ -203,22 +198,15 @@ public class VaultContentXMLContentCreator implements ContentCreator {
 
     @Override
     public void createUser(String name, String password, Map<String, Object> extraProperties) throws RepositoryException {
-        
         try {
             StringBuilder repoInitTextSB = new StringBuilder();
-            repoInitTextSB  .append("create user " + name + " with password " + password + " \n")
-                            .append("create path /content/cq:tags\n")
+            repoInitTextSB  .append("create user " + name + " with password " + password + " \n\n")
                             .append("set properties on authorizable(" + name + ")\n");
-            for(Map.Entry<String,Object> propSet: extraProperties.entrySet()){
-                String type = "{String}";
-                String value = propSet.getValue().toString();
-                repoInitTextSB.append("    " + propSet.getKey() + type + " to " +  value);
-            }
-            repoInitTextSB.append("end\n");
-            String repoInitText = "# origin= source=content-package" + System.lineSeparator() + Util.normalize(repoInitTextSB.toString());
+            extraProperties.entrySet().stream().map(this::getSetPropertyString).forEach(repoInitTextSB::append);
+            repoInitTextSB.append("end");
             
-            repoInitTextExtensionConsumer.accept(repoInitText);
-        } catch (IOException | ConverterException | RepoInitParsingException e) {
+            repoInitTextExtensionConsumer.accept(repoInitTextSB.toString());
+        } catch (IOException | ConverterException e) {
             throw new RepositoryException(e);
         }
     }
@@ -226,7 +214,13 @@ public class VaultContentXMLContentCreator implements ContentCreator {
     @Override
     public void createGroup(String name, String[] members, Map<String, Object> extraProperties) throws RepositoryException {
         try {
-            repoInitTextExtensionConsumer.accept("");
+            StringBuilder repoInitTextSB = new StringBuilder();
+            repoInitTextSB  .append("create group " + name + " \n\n")
+                            .append("add " + String.join(",", members) + " to group " + name)
+                            .append("set properties on authorizable(" + name + ")\n");
+            extraProperties.entrySet().stream().map(this::getSetPropertyString).forEach(repoInitTextSB::append);
+            repoInitTextSB.append("end");
+            repoInitTextExtensionConsumer.accept(repoInitTextSB.toString());
         } catch (IOException | ConverterException e) {
             throw new RepositoryException(e);
         }
@@ -235,20 +229,138 @@ public class VaultContentXMLContentCreator implements ContentCreator {
     @Override
     public void createAce(String principal, String[] grantedPrivileges, String[] deniedPrivileges, String order) throws RepositoryException {
         try {
-            repoInitTextExtensionConsumer.accept("");
+            //set principal ACL for principal1,principal2
+            //allow jcr:read
+            StringBuilder repoInitTextSB = new StringBuilder();
+            String path = this.currentNode.getPath();
+            
+            repoInitTextSB.append("set ACL for " + principal +"\n\n");
+         
+            for(String privilege: grantedPrivileges){
+                repoInitTextSB.append("allow " + privilege + " on " + path + "\n");
+            }
+            for(String privilege: deniedPrivileges){
+                repoInitTextSB.append("deny " + privilege + " on " + path + "\n");
+            }
+            repoInitTextSB.append("end");
+            
+            repoInitTextExtensionConsumer.accept(repoInitTextSB.toString());
         } catch (IOException | ConverterException e) {
             throw new RepositoryException(e);
         }
     }
 
     @Override
-    public void createAce(String principal, String[] grantedPrivileges, String[] deniedPrivileges, String order, Map<String, Value> restrictions, Map<String, Value[]> mvRestrictions, Set<String> removedRestrictionNames) throws RepositoryException {
+    public void createAce(String principalId, String[] grantedPrivilegeNames, String[] deniedPrivilegeNames,
+                          String order, Map<String, Value> restrictions, Map<String, Value[]> mvRestrictions,
+                          Set<String> removedRestrictionNames) throws RepositoryException {
         try {
-            repoInitTextExtensionConsumer.accept("");
+            //set principal ACL for principal1,principal2
+            //allow jcr:read
+            StringBuilder repoInitTextSB = new StringBuilder();
+            repoInitTextSB.append("set principal ACL for " + principalId +"\n\n");
+            String path = this.currentNode.getPath();
+            if(grantedPrivilegeNames != null){
+                for(String privilege: grantedPrivilegeNames){
+                    repoInitTextSB.append("allow " + privilege + " on " + path);
+                }
+            }else if(deniedPrivilegeNames != null){
+                for(String privilege: deniedPrivilegeNames){
+                    repoInitTextSB.append("deny " + privilege + " on " + path);
+                }
+            }
+           
+
+            
+            if (((grantedPrivilegeNames != null) || (deniedPrivilegeNames != null)) && (MapUtils.isNotEmpty(restrictions) || MapUtils.isNotEmpty(mvRestrictions))) {
+              
+                if(MapUtils.isNotEmpty(mvRestrictions)){
+                   
+                    Iterator<Map.Entry<String,Value[]>> iterator = mvRestrictions.entrySet().iterator();
+                    while(iterator.hasNext()){
+                        Map.Entry<String,Value[]> entry = iterator.next();
+                        repoInitTextSB.append(appendRestrictionString(entry.getKey(), entry.getValue()));
+                    }
+                    
+                    
+                }else{
+                    Iterator<Map.Entry<String,Value>> iterator = restrictions.entrySet().iterator();
+                    while(iterator.hasNext()){
+                        Map.Entry<String,Value> entry = iterator.next();
+                        repoInitTextSB.append(appendRestrictionString(entry.getKey(), entry.getValue()));
+                    }
+                }
+                
+            }
+            repoInitTextSB.append("\nend");
+
+            repoInitTextExtensionConsumer.accept(repoInitTextSB.toString());
         } catch (IOException | ConverterException e) {
             throw new RepositoryException(e);
         }
     }
 
-   
+    private String appendRestrictionString(String key, Value[] values){
+        Collection<String> stringValues = new ArrayList<>();
+        stringValues.add(key);
+        for(Value value: values){
+            try {
+                String valueAsString = value.getString();
+                stringValues.add(valueAsString);
+            } catch (RepositoryException e) {
+                logger.error("error appending restriction", e);
+            }
+        }
+
+        return " restriction(" +
+                stringValues.stream()
+                .map( Object::toString )
+                .collect( Collectors.joining( "," ) )
+        + ")";
+    }
+
+    private String appendRestrictionString(String key, Value value){
+        Collection<String> stringValues = new ArrayList<>();
+        try {
+            String valueString = value.getString();
+            stringValues.add(key);
+            stringValues.add(valueString);
+        } catch (RepositoryException e) {
+            logger.error("error appending restriction", e);
+        }
+
+        return " restriction(" +
+                stringValues.stream()
+                        .map( Object::toString )
+                        .collect( Collectors.joining( "," ) )
+                + ") ";
+    }
+
+    private String getSetPropertyString(Map.Entry<String,Object> entry) {
+        String key = entry.getKey();
+        Object value = entry.getValue();
+        String stringValue = value.toString();
+
+        final String setPropertyString;
+        if (value instanceof String) {
+
+            if(DATE_PATTERN.matcher(stringValue).matches()){
+                setPropertyString = "set " + key + "{Date} to " + stringValue;
+            }else{
+                setPropertyString = "set " + key + "{String} to " + stringValue;
+            }
+
+        } else if (value instanceof Double) {
+            setPropertyString = "set " + key + "{Double} to " + stringValue;
+        } else if (value instanceof Long) {
+            setPropertyString = "set " + key + "{Long} to " + stringValue;
+        } else if (value instanceof Boolean) {
+            setPropertyString = "set " + key + "{Boolean} to " + stringValue;
+        } else {
+            throw new RuntimeException("Unable to convert " + value + " to jcr Value");
+        }
+        return setPropertyString + "\n";
+    }
+
+
 }

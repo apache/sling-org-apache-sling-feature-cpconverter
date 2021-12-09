@@ -110,6 +110,9 @@ public class XMLNode {
         
     }
 
+    public String getPath(){
+        return this.basePath + "/" + this.jcrNodeName;
+    }
  
     public String getXmlElementName() {
         return xmlElementName;
