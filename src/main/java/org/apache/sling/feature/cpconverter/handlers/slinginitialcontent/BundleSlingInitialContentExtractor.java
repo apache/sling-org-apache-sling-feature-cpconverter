@@ -218,7 +218,7 @@ public class BundleSlingInitialContentExtractor {
             dest.write(data, 0, count);
             total.addAndGet(count);
 
-            double compressionRatio = count / compressedSize;
+            double compressionRatio = (double) count / compressedSize;
             if(compressionRatio > THRESHOLD_RATIO) {
                 // ratio between compressed and uncompressed data is highly suspicious, looks like a Zip Bomb Attack
                 break;
