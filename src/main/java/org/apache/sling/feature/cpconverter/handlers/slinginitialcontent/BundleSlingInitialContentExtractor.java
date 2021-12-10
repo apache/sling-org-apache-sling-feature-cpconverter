@@ -66,7 +66,7 @@ public class BundleSlingInitialContentExtractor {
     private static final int BUFFER = 512;
     private static final long TOOBIG = 0x6400000; // Max size of unzipped data, 100MB
     private static final int TOOMANY = 1024;      // Max number of files
-    private final static Logger logger = LoggerFactory.getLogger(BundleSlingInitialContentExtractor.class);
+    private static final Logger logger = LoggerFactory.getLogger(BundleSlingInitialContentExtractor.class);
     
     private final ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy;
     private final String path;
@@ -156,18 +156,24 @@ public class BundleSlingInitialContentExtractor {
                         if (containsSlingInitialContent(jarEntry)) {
                             
                             File targetFile = new File(converter.getTempDirectory(), jarEntry.getName());
-                            targetFile.getParentFile().mkdirs();
-                            targetFile.createNewFile();
-                            
                             String canonicalDestinationPath = targetFile.getCanonicalPath();
 
                             if (!canonicalDestinationPath.startsWith(converter.getTempDirectory().getCanonicalPath())) {
                                 throw new IOException("Entry is outside of the target directory");
                             }
-                            FileOutputStream fos = new FileOutputStream(targetFile);
-                            safelyWriteOutputStream(total, data, input, fos, true);
 
-                            collectedFilesWithSlingInitialContent.add(targetFile);
+                            targetFile.getParentFile().mkdirs();
+                            
+                            if(targetFile.createNewFile()){
+                                FileOutputStream fos = new FileOutputStream(targetFile);
+                                safelyWriteOutputStream(total, data, input, fos, true);
+
+                                collectedFilesWithSlingInitialContent.add(targetFile);
+                            }else{
+                                throw new IOException("could not create temporary file " + targetFile.getAbsolutePath());
+                            }
+                            
+                           
 
                         } else {
                             bundleOutput.putNextEntry(jarEntry);
