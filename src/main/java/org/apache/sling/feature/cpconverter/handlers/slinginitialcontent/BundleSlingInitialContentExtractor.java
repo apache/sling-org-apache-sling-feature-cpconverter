@@ -115,7 +115,7 @@ public class BundleSlingInitialContentExtractor {
         return new Version(originalVersion.getMajor(), originalVersion.getMinor(), originalVersion.getMicro(), originalVersion.getQualifier() + "_" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);
     }
 
-    @SuppressWarnings("S5042") // we already addressed this
+    @SuppressWarnings("java:S5042") // we already addressed this
     @Nullable public InputStream extract() throws IOException, ConverterException {
 
         if (slingInitialContentPolicy == ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP) {
