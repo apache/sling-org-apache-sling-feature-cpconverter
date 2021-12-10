@@ -137,11 +137,12 @@ public class BundleSlingInitialContentExtractor {
 
             List<File> collectedFilesWithSlingInitialContent = new ArrayList<>();
 
-            AtomicInteger entries = new AtomicInteger(0);
+            int entryCount = 0;
             AtomicLong total = new AtomicLong(0);
-    
-            for (Enumeration<JarEntry> e = jarFile.entries(); e.hasMoreElements();) {
-                JarEntry jarEntry = e.nextElement();
+            Enumeration<? extends JarEntry> entries = jarFile.entries();
+
+            while(entries.hasMoreElements()){
+                JarEntry jarEntry = entries.nextElement();
 
                 if (jarEntry.getName().equals(JarFile.MANIFEST_NAME)) {
                     continue;
@@ -164,18 +165,26 @@ public class BundleSlingInitialContentExtractor {
                                 throw new IOException("Entry is outside of the target directory");
                             }
                             FileOutputStream fos = new FileOutputStream(targetFile);
-                            safelyWriteOutputStream(entries, total, data, input, fos, true);
+                            safelyWriteOutputStream(total, data, input, fos, true);
 
                             collectedFilesWithSlingInitialContent.add(targetFile);
 
                         } else {
                             bundleOutput.putNextEntry(jarEntry);
-                            safelyWriteOutputStream(entries, total, data, input, bundleOutput, false);
+                            safelyWriteOutputStream( total, data, input, bundleOutput, false);
                             IOUtils.copy(input, bundleOutput);
                             bundleOutput.closeEntry();
                         }
                     }
                 }
+
+                if (entryCount > TOOMANY) {
+                    throw new IllegalStateException("Too many files to unzip.");
+                }
+                if (total.get() + BUFFER > TOOBIG) {
+                    throw new IllegalStateException("File being unzipped is too big.");
+                }
+                entryCount++;
 
             }
 
@@ -193,7 +202,7 @@ public class BundleSlingInitialContentExtractor {
         return Files.newInputStream(newBundleFile, StandardOpenOption.READ, StandardOpenOption.DELETE_ON_CLOSE);
     }
 
-    private void safelyWriteOutputStream(AtomicInteger entries, AtomicLong total, byte[] data, InputStream input, OutputStream fos, boolean shouldClose) throws IOException {
+    private void safelyWriteOutputStream(AtomicLong total, byte[] data, InputStream input, OutputStream fos, boolean shouldClose) throws IOException {
         int count;
         BufferedOutputStream dest = new BufferedOutputStream(fos, BUFFER);
         while (total.get() + BUFFER <= TOOBIG && (count = input.read(data, 0, BUFFER)) != -1) {
@@ -206,13 +215,6 @@ public class BundleSlingInitialContentExtractor {
             dest.close();
         }
         
-        if (entries.get() > TOOMANY) {
-            throw new IllegalStateException("Too many files to unzip.");
-        }
-        if (total.get() + BUFFER > TOOBIG) {
-            throw new IllegalStateException("File being unzipped is too big.");
-        }
-        entries.incrementAndGet();
     }
 
     /**
