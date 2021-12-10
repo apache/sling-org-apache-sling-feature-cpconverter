@@ -115,7 +115,7 @@ public class BundleSlingInitialContentExtractor {
         return new Version(originalVersion.getMajor(), originalVersion.getMinor(), originalVersion.getMicro(), originalVersion.getQualifier() + "_" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);
     }
 
-   
+    @SuppressWarnings("S5042") // we already addressed this
     @Nullable public InputStream extract() throws IOException, ConverterException {
 
         if (slingInitialContentPolicy == ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP) {
@@ -140,7 +140,7 @@ public class BundleSlingInitialContentExtractor {
 
             int entryCount = 0;
             AtomicLong total = new AtomicLong(0);
-            @SuppressWarnings("S5042") // we already addressed this
+          
             Enumeration<? extends JarEntry> entries = jarFile.entries();
 
             while(entries.hasMoreElements()){
