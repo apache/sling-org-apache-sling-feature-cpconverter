@@ -63,6 +63,7 @@ import java.util.jar.*;
  */
 public class BundleSlingInitialContentExtractor {
 
+    private static final double THRESHOLD_RATIO = 10;
     private static final int BUFFER = 512;
     private static final long TOOBIG = 0x6400000; // Max size of unzipped data, 100MB
     private static final int TOOMANY = 1024;      // Max number of files
@@ -147,13 +148,16 @@ public class BundleSlingInitialContentExtractor {
                 if (jarEntry.getName().equals(JarFile.MANIFEST_NAME)) {
                     continue;
                 }
-
-         
-                byte data[] = new byte[BUFFER];
+                byte[] data = new byte[BUFFER];
+                
+                long compressedSize = jarEntry.getCompressedSize();
+                
 
                 if (!jarEntry.isDirectory()) {
                     try (InputStream input = new BufferedInputStream(jarFile.getInputStream(jarEntry))) {
                         if (containsSlingInitialContent(jarEntry)) {
+
+                            
                             
                             File targetFile = new File(converter.getTempDirectory(), jarEntry.getName());
                             String canonicalDestinationPath = targetFile.getCanonicalPath();
@@ -161,23 +165,21 @@ public class BundleSlingInitialContentExtractor {
                             if (!canonicalDestinationPath.startsWith(converter.getTempDirectory().getCanonicalPath())) {
                                 throw new IOException("Entry is outside of the target directory");
                             }
-
+                            
                             targetFile.getParentFile().mkdirs();
                             
                             if(targetFile.createNewFile()){
                                 FileOutputStream fos = new FileOutputStream(targetFile);
-                                safelyWriteOutputStream(total, data, input, fos, true);
+                                safelyWriteOutputStream(compressedSize, total, data, input, fos, true);
 
                                 collectedFilesWithSlingInitialContent.add(targetFile);
                             }else{
                                 throw new IOException("could not create temporary file " + targetFile.getAbsolutePath());
                             }
-                            
-                           
 
                         } else {
                             bundleOutput.putNextEntry(jarEntry);
-                            safelyWriteOutputStream( total, data, input, bundleOutput, false);
+                            safelyWriteOutputStream(compressedSize, total, data, input, bundleOutput, false);
                             IOUtils.copy(input, bundleOutput);
                             bundleOutput.closeEntry();
                         }
@@ -208,12 +210,18 @@ public class BundleSlingInitialContentExtractor {
         return Files.newInputStream(newBundleFile, StandardOpenOption.READ, StandardOpenOption.DELETE_ON_CLOSE);
     }
 
-    private void safelyWriteOutputStream(AtomicLong total, byte[] data, InputStream input, OutputStream fos, boolean shouldClose) throws IOException {
+    private void safelyWriteOutputStream(long compressedSize, AtomicLong total, byte[] data, InputStream input, OutputStream fos, boolean shouldClose) throws IOException {
         int count;
         BufferedOutputStream dest = new BufferedOutputStream(fos, BUFFER);
         while (total.get() + BUFFER <= TOOBIG && (count = input.read(data, 0, BUFFER)) != -1) {
             dest.write(data, 0, count);
             total.addAndGet(count);
+
+            double compressionRatio = count / compressedSize;
+            if(compressionRatio > THRESHOLD_RATIO) {
+                // ratio between compressed and uncompressed data is highly suspicious, looks like a Zip Bomb Attack
+                break;
+            }
         }
         dest.flush();
         
