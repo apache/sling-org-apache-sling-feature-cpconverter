@@ -140,6 +140,7 @@ public class BundleSlingInitialContentExtractor {
 
             int entryCount = 0;
             AtomicLong total = new AtomicLong(0);
+            @SuppressWarnings("S5042") // we already addressed this
             Enumeration<? extends JarEntry> entries = jarFile.entries();
 
             while(entries.hasMoreElements()){
