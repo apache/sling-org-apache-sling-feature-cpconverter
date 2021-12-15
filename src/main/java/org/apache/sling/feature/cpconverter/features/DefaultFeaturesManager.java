@@ -186,19 +186,18 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
 
     @Override
     public void addArtifact(@Nullable String runMode, @NotNull ArtifactId id) {
-        addArtifact(runMode, id, null);
+        requireNonNull(id, "Artifact can not be attached to a feature without specifying a valid ArtifactId.");
+        addArtifact(runMode, new Artifact(id), null);
     }
 
     @Override
-    public void addArtifact(@Nullable String runMode, @NotNull ArtifactId id, @Nullable Integer startOrder) {
-        requireNonNull(id, "Artifact can not be attached to a feature without specifying a valid ArtifactId.");
-
-        Artifact artifact = new Artifact(id);
+    public void addArtifact(@Nullable String runMode, @NotNull Artifact artifact, @Nullable Integer startOrder) {
+        requireNonNull(artifact, "Null artifact can not be attached to a feature.");
 
         Feature feature = getRunMode(runMode);
         Artifacts artifacts;
 
-        if (ZIP_TYPE.equals(id.getType())) {
+        if (ZIP_TYPE.equals(artifact.getId().getType())) {
             Extensions extensions = feature.getExtensions();
             Extension extension = extensions.getByName(CONTENT_PACKAGES);
 

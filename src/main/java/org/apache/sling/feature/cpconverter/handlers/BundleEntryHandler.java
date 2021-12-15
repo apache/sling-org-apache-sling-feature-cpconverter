@@ -73,6 +73,7 @@ import org.apache.sling.contentparser.api.ParserOptions;
 import org.apache.sling.contentparser.json.JSONParserFeature;
 import org.apache.sling.contentparser.json.JSONParserOptions;
 import org.apache.sling.contentparser.json.internal.JSONContentParser;
+import org.apache.sling.feature.Artifact;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.ConverterException;
@@ -188,9 +189,10 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
         throws ConverterException, IOException {
         try (JarFile jarFile = new JarFile(originalBundleFile.toFile())) {
             // first extract bundle metadata from JAR input stream
-            ArtifactId id = extractArtifactId(bundleName, jarFile);
+            Artifact artifact = extractFeatureArtifact(bundleName, jarFile);
+            ArtifactId id = artifact.getId();
 
-            try (InputStream strippedBundleInput = extractSlingInitialContent(path, originalBundleFile, id, jarFile, converter, runMode)) {
+            try (InputStream strippedBundleInput = extractSlingInitialContent(path, originalBundleFile, artifact, jarFile, converter, runMode)) {
                 if (strippedBundleInput != null && slingInitialContentPolicy == SlingInitialContentPolicy.EXTRACT_AND_REMOVE) {
                     id = id.changeVersion(id.getVersion() + "-" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);
                     Objects.requireNonNull(converter.getArtifactsDeployer()).deploy(new InputStreamArtifactWriter(strippedBundleInput), id);
@@ -200,7 +202,8 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
                     }
                 }
             }
-            Objects.requireNonNull(converter.getFeaturesManager()).addArtifact(runMode, id, startLevel);
+            artifact = artifact.copy(id);
+            Objects.requireNonNull(converter.getFeaturesManager()).addArtifact(runMode, artifact, startLevel);
             String exportHeader = Objects.requireNonNull(jarFile.getManifest()).getMainAttributes().getValue(Constants.EXPORT_PACKAGE);
             if (exportHeader != null) {
                 for (Clause clause : Parser.parseHeader(exportHeader)) {
@@ -214,7 +217,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
         return new Version(originalVersion.getMajor(), originalVersion.getMinor(), originalVersion.getMicro(), originalVersion.getQualifier() + "_" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);
     }
 
-    @Nullable InputStream extractSlingInitialContent(@NotNull String path, @NotNull Path bundlePath, @NotNull ArtifactId bundleArtifactId, @NotNull JarFile jarFile, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws IOException, ConverterException {
+    @Nullable InputStream extractSlingInitialContent(@NotNull String path, @NotNull Path bundlePath, @NotNull Artifact bundleArtifact, @NotNull JarFile jarFile, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws IOException, ConverterException {
         if (slingInitialContentPolicy == SlingInitialContentPolicy.KEEP) {
             return null;
         }
@@ -224,7 +227,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
         if (pathEntries == null) {
             return null;
         }
-        logger.info("Extracting Sling-Initial-Content from '{}'", bundleArtifactId);
+        logger.info("Extracting Sling-Initial-Content from '{}'", bundleArtifact.getId());
         Collection<PathEntry> pathEntryList = new ArrayList<>();
         pathEntries.forEachRemaining(pathEntryList::add);
 
@@ -246,7 +249,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
                 JarEntry jarEntry = e.nextElement();
                 if (!jarEntry.isDirectory()) {
                     try (InputStream input = jarFile.getInputStream(jarEntry)) {
-                        if (!extractSlingInitialContent(jarEntry, input, bundleArtifactId, pathEntryList, packageAssemblers, namespaceRegistry, converter)) {
+                        if (!extractSlingInitialContent(jarEntry, input, bundleArtifact, pathEntryList, packageAssemblers, namespaceRegistry, converter)) {
                             // skip manifest, as already written in the constructor (as first entry)
                             if (jarEntry.getName().equals(JarFile.MANIFEST_NAME)) {
                                 continue;
@@ -276,7 +279,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
      * @return {@code true} in case the given entry was part of the initial content otherwise {@code false}
      * @throws Exception 
      */
-    boolean extractSlingInitialContent(@NotNull JarEntry jarEntry, @NotNull InputStream bundleFileInputStream, @NotNull ArtifactId bundleArtifactId, @NotNull Collection<PathEntry> pathEntries, @NotNull Map<PackageType, VaultPackageAssembler> packageAssemblers, @NotNull JcrNamespaceRegistry nsRegistry, @NotNull ContentPackage2FeatureModelConverter converter) throws IOException, ConverterException {
+    boolean extractSlingInitialContent(@NotNull JarEntry jarEntry, @NotNull InputStream bundleFileInputStream, @NotNull Artifact bundleArtifact, @NotNull Collection<PathEntry> pathEntries, @NotNull Map<PackageType, VaultPackageAssembler> packageAssemblers, @NotNull JcrNamespaceRegistry nsRegistry, @NotNull ContentPackage2FeatureModelConverter converter) throws IOException, ConverterException {
         final String entryName = jarEntry.getName();
         // check if current JAR entry is initial content
         Optional<PathEntry> pathEntry = pathEntries.stream().filter(p -> entryName.startsWith(p.getPath())).findFirst();
@@ -313,7 +316,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
             try (Archive virtualArchive = SingleFileArchive.fromPathOrInputStream(tmpDocViewInputFile, bundleFileInputStream, 
                     () -> Files.createTempFile(converter.getTempDirectory().toPath(), "initial-content", Text.getName(jarEntry.getName())), contentPackageEntryPath)) {
                 // in which content package should this end up?
-                VaultPackageAssembler packageAssembler = initPackageAssemblerForPath(bundleArtifactId, repositoryPath, pathEntry.get(), packageAssemblers, converter);
+                VaultPackageAssembler packageAssembler = initPackageAssemblerForPath(bundleArtifact.getId(), repositoryPath, pathEntry.get(), packageAssemblers, converter);
                 if (tmpDocViewInputFile != null) {
                     packageAssembler.addEntry(contentPackageEntryPath, tmpDocViewInputFile.toFile());
                 } else {
@@ -436,7 +439,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
         }
     }
 
-    protected @NotNull ArtifactId extractArtifactId(@NotNull String bundleName, @NotNull JarFile jarFile) throws IOException {
+    protected @NotNull Artifact extractFeatureArtifact(@NotNull String bundleName, @NotNull JarFile jarFile) throws IOException {
         String artifactId = null;
         String version = null;
         String groupId = null;
@@ -514,7 +517,19 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
             version = osgiVersion.getMajor() + "." + osgiVersion.getMinor() + "." + osgiVersion.getMicro() + (osgiVersion.getQualifier().isEmpty() ? "" : "-" + osgiVersion.getQualifier());
         }
 
-        return new ArtifactId(groupId, artifactId, version, classifier, JAR_TYPE);
+        // create artifact and store symbolic name and version in metadata
+        final Artifact result = new Artifact(new ArtifactId(groupId, artifactId, version, classifier, JAR_TYPE));
+        setMetadataFromManifest(jarFile.getManifest(), Constants.BUNDLE_VERSION, result);
+        setMetadataFromManifest(jarFile.getManifest(), Constants.BUNDLE_SYMBOLICNAME, result);
+
+        return result;
+    }
+
+    private static void setMetadataFromManifest(@NotNull Manifest manifest, @NotNull String name, @NotNull Artifact artifact) {
+        String value = manifest.getMainAttributes().getValue(name);
+        if (value != null) {
+            artifact.getMetadata().put(name, value);
+        }
     }
 
     private static @NotNull String getCheckedProperty(@NotNull Manifest manifest, @NotNull String name) {
