@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.zip.ZipFile;
@@ -44,15 +45,18 @@ import javax.json.JsonObject;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.vault.fs.spi.PrivilegeDefinitions;
-import org.apache.jackrabbit.vault.packaging.CyclicDependencyException;
+import org.apache.jackrabbit.vault.packaging.Dependency;
 import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
+import org.apache.jackrabbit.vault.packaging.impl.ZipVaultPackage;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Artifacts;
+import org.apache.sling.feature.Artifact;
 import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.Configurations;
 import org.apache.sling.feature.Extension;
@@ -88,6 +92,8 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                                                                 "test_a-1.0.zip",
                                                                 "test_b-1.0.zip",
                                                                 "test_e-1.0.zip" };
+
+    private static final String FORMAT = "%1$s/%2$s/%3$s/%2$s-%3$s-cp2fm-converted.zip";
 
     private ContentPackage2FeatureModelConverter converter;
     private EntryHandlersManager handlersManager;
@@ -136,6 +142,97 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
     public void processRequiresNotNullPackage() throws Exception {
         converter.processSubPackage("", null, null, false);
     }
+
+    @Test
+    public void checkIfGeneratedDependenciesAreProvided() throws Exception {
+        URL packageUrl = getClass().getResource("build_playground.ui.content-1.0-SNAPSHOT.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+        File unreferencedOutputDir = new File(outputDirectory, "mutable-content-packages");
+        try {
+
+            converter = new ContentPackage2FeatureModelConverter(false, ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.EXTRACT_AND_REMOVE)
+                    .setEntryHandlersManager(handlersManager)
+                    .setAclManager(new DefaultAclManager());
+            
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
+                    .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
+                    .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                    .setContentTypePackagePolicy(PackagePolicy.PUT_IN_DEDICATED_FOLDER)
+                    .setUnreferencedArtifactsDeployer(new LocalMavenRepositoryArtifactsDeployer(unreferencedOutputDir))
+                    .convert(packageFile);
+            
+             
+            File featureModel = new File(outputDirectory, "playground.ui.content.json");
+            Feature feature =  FeatureJSONReader.read(new FileReader(featureModel), "");
+            
+            List<PackageId> allPackageIds = new ArrayList<>();
+            List<Dependency> contentRefsDependencies = new ArrayList<>();
+                    
+            getContentPackagesFromFeatureModel(outputDirectory, feature,allPackageIds);
+            getContentPackagesFromRefs(outputDirectory,allPackageIds,contentRefsDependencies);
+            
+
+            for(Dependency dependency : contentRefsDependencies){
+                boolean foundDep = allPackageIds.stream().filter(Objects::nonNull).anyMatch(dependency::matches);
+                assertTrue("Dependency " + dependency.getName() + " is not present in the feature model or content refs", foundDep);
+            }
+            
+        } finally {
+            deleteDirTree(outputDirectory);
+        }
+    }
+
+    private void getContentPackagesFromFeatureModel(File outputDirectory, Feature feature, List<PackageId> packageIds) throws IOException {
+
+        Artifacts artifacts = feature.getExtensions().getByName("content-packages").getArtifacts();
+        for(Artifact artifact : artifacts){
+            ArtifactId id = artifact.getId();
+
+            String target = getPathTarget(id);
+            File file = new File(outputDirectory, target);
+            ZipVaultPackage vaultPackage = new ZipVaultPackage(file, true);
+            //read the artifact from disk and compute the artifactId from here
+            packageIds.add( vaultPackage.getProperties().getId() );
+        };
+
+    }
+
+    private void getContentPackagesFromRefs(File outputDirectory, List<PackageId> packageIds, List<Dependency> dependencies) throws IOException {
+        File contentPackagesCSV = new File(outputDirectory, "content-packages.csv");
+
+        List<String> contentPackages = IOUtils.readLines(new FileInputStream(contentPackagesCSV), StandardCharsets.UTF_8);
+
+        for(String contentPackageLine: contentPackages) {
+
+            if (contentPackageLine.startsWith("#")) {
+                continue;
+            }
+
+            String[] contentPackageLineSplit = contentPackageLine.split(",");
+
+            String artifactIdUnparsed = contentPackageLineSplit[1];
+            ArtifactId artifact = ArtifactId.fromMvnId(artifactIdUnparsed);
+
+            String target = "mutable-content-packages/" + getPathTarget(artifact);
+
+            File contentPackageFile = new File(outputDirectory, target);
+            ZipVaultPackage vaultPackage = new ZipVaultPackage(contentPackageFile, true);
+            packageIds.add(vaultPackage.getProperties().getId());
+
+
+            dependencies.addAll(Arrays.asList(vaultPackage.getProperties().getDependencies()));
+
+        }
+    }
+
+    private String getPathTarget(ArtifactId artifact) {
+        String groupIdPath = StringUtils.replace(artifact.getGroupId(), ".", "/");
+
+        return String.format(FORMAT, groupIdPath, artifact.getArtifactId(), artifact.getVersion());
+    }
+
 
     @Test
     public void convertContentPackage() throws Exception {
@@ -910,4 +1007,6 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
 
         return loadedResources;
     }
+
+   
 }
