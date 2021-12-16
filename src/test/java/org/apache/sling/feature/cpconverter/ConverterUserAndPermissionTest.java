@@ -36,6 +36,7 @@ import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
 import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
+import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.apache.sling.repoinit.parser.RepoInitParsingException;
 import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
 import org.apache.sling.repoinit.parser.operations.CreatePath;
@@ -54,6 +55,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -69,6 +71,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import static org.apache.sling.feature.cpconverter.Util.normalize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -141,7 +144,8 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
     public void setUp() throws IOException {
         converter = new ContentPackage2FeatureModelConverter()
                 .setEntryHandlersManager(handlersManager)
-                .setAclManager(aclManager);
+                .setAclManager(aclManager)
+                .setContentTypePackagePolicy(PackagePolicy.REFERENCE);
 
         outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
         featuresManager = new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, aclManager);
@@ -175,6 +179,103 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
         assertExpectedPolicies(converted);
         verifyWorkspaceFilter(converted, false);
         verifyRepoInit();
+    }
+
+    @Test
+    public void testMutlipePackagesWithServiceUsersAndAcls() throws Exception {
+        URL packageUrl1 = getClass().getResource("test-serviceuser-acl.zip");
+        URL packageUrl2 = getClass().getResource("test-serviceuser-acl2.zip");
+        File packageFile1 = FileUtils.toFile(packageUrl1);
+        File packageFile2 = FileUtils.toFile(packageUrl2);
+        converter.convert(packageFile1, packageFile2);
+        File converted1 = new File(outputDirectory, "a/content2/1.0/content2-1.0-cp2fm-converted.zip");
+        File converted2 = new File(outputDirectory, "b/content/1.0/content-1.0-cp2fm-converted.zip");
+
+        Set<String> notExpected1 = new HashSet<>();
+        notExpected1.add("jcr_root/home/");
+                notExpected1.add("jcr_root/home/users/");
+                        notExpected1.add("jcr_root/home/users/system/");
+                                notExpected1.add("jcr_root/home/users/system/eventproxy/");
+                                        notExpected1.add("jcr_root/home/users/system/eventproxy/.content.xml");
+                                                notExpected1.add("jcr_root/home/users/system/eventproxy/eventproxy-service2/");
+                                                        notExpected1.add("jcr_root/home/users/system/eventproxy/eventproxy-service2/.content.xml");
+                                                                notExpected1.add("jcr_root/home/users/system/eventproxy/eventproxy-service2/_rep_policy.xml");
+
+        Set<String> expected1 = new HashSet<>();
+        expected1.add("META-INF/MANIFEST.MF");
+        expected1.add("META-INF/vault/settings.xml");
+                expected1.add("META-INF/vault/properties.xml");
+                        expected1.add("META-INF/vault/config.xml");
+                                expected1.add("META-INF/vault/filter.xml");
+                                        expected1.add("jcr_root");
+        verifyContentPackage(converted1, notExpected1, expected1);
+
+        Set<String> notExpected2 = new HashSet<>();
+        notExpected1.add("jcr_root/content/_rep_policy.xml");
+                notExpected1.add("jcr_root/var/eventproxy/_rep_policy.xml");
+                        notExpected1.add("jcr_root/content/");
+                                notExpected1.add("jcr_root/var/");
+                                        notExpected1.add("jcr_root/var/eventproxy/");
+                                                notExpected1.add("jcr_root/var/eventproxy/.content.xml");
+                                                        notExpected1.add("jcr_root/home/");
+                                                                notExpected1.add("jcr_root/home/users/");
+                                                                        notExpected1.add("jcr_root/home/users/system/");
+                                                                                notExpected1.add("jcr_root/home/users/system/eventproxy/");
+                                                                                        notExpected1.add("jcr_root/home/users/system/eventproxy/eventproxy-service/");
+                                                                                                notExpected1.add("jcr_root/home/users/system/eventproxy/eventproxy-service/.content.xml");
+                                                                                                        notExpected1.add("jcr_root/home/users/system/eventproxy/eventproxy-service/_rep_policy.xml");
+                                                                                                                notExpected1.add("jcr_root/home/users/system/eventproxy/.content.xml");
+
+        Set<String> expected2 = new HashSet<>();
+        expected1.add("META-INF/MANIFEST.MF");
+        expected1.add("META-INF/vault/settings.xml");
+        expected1.add("META-INF/vault/properties.xml");
+        expected1.add("META-INF/vault/config.xml");
+        expected1.add("META-INF/vault/filter.xml");
+        expected1.add("jcr_root/var/eventproxy/.content.xml");
+        verifyContentPackage(converted2, notExpected2, expected2);
+
+        try (FileReader reader = new FileReader(new File(outputDirectory, "content.json"))) {
+            Feature feature = FeatureJSONReader.read(reader, "content1");
+            Extension repoinit = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+            if (enforcePrincipalBased) {
+                assertEquals(normalize(
+                        "create service user eventproxy-service with forced path system/cq:services/eventproxy\n" +
+                                "    set principal ACL for eventproxy-service\n" +
+                                "        allow jcr:read on /content\n" +
+                                "        allow jcr:read,rep:write on /var/eventproxy\n" +
+                                "        allow jcr:read,rep:write on home(eventproxy-service)\n" +
+                                "    end\n"), normalize(repoinit.getText()));
+            } else {
+                assertEquals(normalize(
+                        "create service user eventproxy-service with path system/eventproxy\n" +
+                                "    create path /content\n" +
+                                "    create path /var/eventproxy\n" +
+                                "    set ACL for eventproxy-service\n" +
+                                "        allow jcr:read on /content\n" +
+                                "        allow jcr:read,rep:write on /var/eventproxy\n" +
+                                "        allow jcr:read,rep:write on home(eventproxy-service)\n" +
+                                "    end\n"), normalize(repoinit.getText()));
+            }
+        }
+
+        try (FileReader reader = new FileReader(new File(outputDirectory, "content2.json"))) {
+            Feature feature = FeatureJSONReader.read(reader, "content2");
+            Extension repoinit = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+            if (enforcePrincipalBased) {
+                assertEquals(normalize(
+                        "    create service user eventproxy-service2 with forced path system/cq:services/eventproxy\n" +
+                                "    set principal ACL for eventproxy-service2\n" +
+                                "        allow jcr:read,rep:write on home(eventproxy-service2)\n" +
+                                "    end\n"), normalize(repoinit.getText()));
+            } else {
+                assertEquals(normalize(
+                        "    create service user eventproxy-service2 with path system/eventproxy\n" +
+                                "    set ACL for eventproxy-service2\n" +
+                                "        allow jcr:read,rep:write on home(eventproxy-service2)\n" +
+                                "    end\n"), normalize(repoinit.getText()));
+            }
+        }
     }
 
     /**
