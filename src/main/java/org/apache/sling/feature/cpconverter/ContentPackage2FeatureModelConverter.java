@@ -498,9 +498,9 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     protected void onFile(@NotNull String entryPath, @NotNull Archive archive, @NotNull Entry entry) throws IOException, ConverterException {
         try {
             process(entryPath, archive, entry);
-        }catch (ConverterException ex){
+        } catch (ConverterException ex) {
             throw new ConverterException("ConverterException occured on path " + entryPath + " with message: " + ex.getMessage(), ex);
-        }catch(IOException ex){
+        } catch (IOException ex) {
             throw new IOException("IOException occured on path " + entryPath + " with message: " + ex.getMessage(), ex);
         }
     }
