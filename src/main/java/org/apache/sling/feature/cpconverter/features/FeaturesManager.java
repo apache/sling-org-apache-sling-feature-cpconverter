@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.Dictionary;
 import java.util.Map;
 
-import org.apache.sling.feature.Artifact;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.Feature;
@@ -38,7 +37,7 @@ public interface FeaturesManager {
 
     void addArtifact(@Nullable String runMode, @NotNull ArtifactId id);
 
-    void addArtifact(@Nullable String runMode, @NotNull Artifact artifact, @Nullable Integer startOrder);
+    void addArtifact(@Nullable String runMode, @NotNull ArtifactId id, @Nullable Integer startOrder);
 
     void addAPIRegionExport(@Nullable String runMode, @NotNull String exportedPackage);
 

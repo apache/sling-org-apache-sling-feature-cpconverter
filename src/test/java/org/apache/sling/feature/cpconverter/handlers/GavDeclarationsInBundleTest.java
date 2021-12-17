@@ -56,7 +56,7 @@ public class GavDeclarationsInBundleTest {
         BundleEntryHandler bundleEntryHandler = new BundleEntryHandler();
 
         try (JarFile jarFile = new JarFile(new File(getClass().getResource(resourceName).toURI()))) {
-            ArtifactId artifactId = bundleEntryHandler.extractFeatureArtifact(bundleName, jarFile).getId();
+            ArtifactId artifactId = bundleEntryHandler.extractArtifactId(bundleName, jarFile);
             assertEquals(new ArtifactId(expectedGroupId, expectedArtifactId, expectedVersion, expectedClassifier, "jar"), artifactId);
         }
     }

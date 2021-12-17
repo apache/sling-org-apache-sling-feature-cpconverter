@@ -16,20 +16,15 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.when;
 
-import org.apache.sling.feature.Artifact;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ConverterException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.osgi.framework.Constants;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BundleEntryHandlerGAVTest extends AbstractBundleEntryHandlerTest {
@@ -38,39 +33,21 @@ public class BundleEntryHandlerGAVTest extends AbstractBundleEntryHandlerTest {
     public void testGAV() throws Exception {
         setUpArchive("/jcr_root/apps/gav/install/core-1.0.0-SNAPSHOT.jar", "core-1.0.0-SNAPSHOT.jar");
         handler.handle("/jcr_root/apps/gav/install/core-1.0.0-SNAPSHOT.jar", archive, entry, converter);
-        ArgumentCaptor<Artifact> captor = ArgumentCaptor.forClass(Artifact.class);
-        Mockito.verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
-        final Artifact result = captor.getValue();
-        assertNotNull(result);
-        assertEquals(ArtifactId.fromMvnId("com.madplanet.sling.cp2sf:core:1.0.0-SNAPSHOT"), result.getId());
-        assertEquals("com.madplanet.sling.cp2sf.core", result.getMetadata().get(Constants.BUNDLE_SYMBOLICNAME));
-        assertEquals("1.0.0.SNAPSHOT", result.getMetadata().get(Constants.BUNDLE_VERSION));
+        Mockito.verify(featuresManager).addArtifact(null, ArtifactId.fromMvnId("com.madplanet.sling.cp2sf:core:1.0.0-SNAPSHOT"), null);
     }
 
     @Test
     public void testGAVwithPom() throws Exception{
         setUpArchive("/jcr_root/apps/gav/install/org.osgi.service.jdbc-1.0.0.jar", "org.osgi.service.jdbc-1.0.0.jar");
         handler.handle("/jcr_root/apps/gav/install/org.osgi.service.jdbc-1.0.0.jar", archive, entry, converter);
-        ArgumentCaptor<Artifact> captor = ArgumentCaptor.forClass(Artifact.class);
-        Mockito.verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
-        final Artifact result = captor.getValue();
-        assertNotNull(result);
-        assertEquals(ArtifactId.fromMvnId("org.osgi:org.osgi.service.jdbc:1.0.0"), result.getId());
-        assertEquals("org.osgi.service.jdbc", result.getMetadata().get(Constants.BUNDLE_SYMBOLICNAME));
-        assertEquals("1.0.0.201505202023", result.getMetadata().get(Constants.BUNDLE_VERSION));
+        Mockito.verify(featuresManager).addArtifact(null, ArtifactId.fromMvnId("org.osgi:org.osgi.service.jdbc:1.0.0"), null);
     }
 
     @Test
     public void testNoGAV() throws Exception {
         setUpArchive("/jcr_root/apps/gav/install/org.osgi.service.jdbc-1.0.0-nogav.jar", "org.osgi.service.jdbc-1.0.0-nogav.jar");
         handler.handle("/jcr_root/apps/gav/install/org.osgi.service.jdbc-1.0.0-nogav.jar", archive, entry, converter);
-        ArgumentCaptor<Artifact> captor = ArgumentCaptor.forClass(Artifact.class);
-        Mockito.verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
-        final Artifact result = captor.getValue();
-        assertNotNull(result);
-        assertEquals(ArtifactId.fromMvnId("org.osgi.service:jdbc:1.0.0-201505202023"), result.getId());
-        assertEquals("org.osgi.service.jdbc", result.getMetadata().get(Constants.BUNDLE_SYMBOLICNAME));
-        assertEquals("1.0.0.201505202023", result.getMetadata().get(Constants.BUNDLE_VERSION));
+        Mockito.verify(featuresManager).addArtifact(null, ArtifactId.fromMvnId("org.osgi.service:jdbc:1.0.0-201505202023"), null);
     }
 
     @Test

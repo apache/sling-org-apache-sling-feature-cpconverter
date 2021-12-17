@@ -16,30 +16,37 @@
  */
 package org.apache.sling.feature.cpconverter.vltpkg;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.commons.SimpleValueFactory;
 import org.apache.jackrabbit.commons.cnd.CndImporter;
 import org.apache.jackrabbit.commons.cnd.ParseException;
 import org.apache.jackrabbit.spi.commons.namespace.NamespaceResolver;
 import org.apache.jackrabbit.vault.validation.spi.impl.nodetype.NodeTypeManagerProvider;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jcr.NamespaceException;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
 import javax.jcr.ValueFactory;
 import javax.jcr.nodetype.NodeTypeManager;
+import javax.xml.namespace.NamespaceContext;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
 
 /** Simple namespace registry backed by a map */
-public class JcrNamespaceRegistry implements NamespaceRegistry, NamespaceResolver {
+public class JcrNamespaceRegistry implements NamespaceRegistry, NamespaceResolver, NamespaceContext {
     
     private final Collection<String> registeredCndSystemIds = new ArrayList<>();
     private final NodeTypeManagerProvider ntManagerProvider = new NodeTypeManagerProvider();
     private final NodeTypeManager ntManager = ntManagerProvider.getNodeTypeManager();
-
+    private final Logger logger = LoggerFactory.getLogger(JcrNamespaceRegistry.class);
+    
     public JcrNamespaceRegistry() throws RepositoryException, ParseException, IOException {
         ntManagerProvider.registerNamespace(PREFIX_XML, NAMESPACE_XML);
         ntManagerProvider.registerNamespace("sling", "http://sling.apache.org/jcr/sling/1.0");
@@ -83,12 +90,28 @@ public class JcrNamespaceRegistry implements NamespaceRegistry, NamespaceResolve
     }
 
     @Override
-    public String getPrefix(String uri) throws NamespaceException {
+    public String getNamespaceURI(String prefix) {
+        try {
+            return ntManagerProvider.getURI(prefix);
+        } catch (RepositoryException e) {
+            logger.info("Could not find prefix " + prefix + " in registered namespaces");
+            return StringUtils.EMPTY;
+        }
+    }
+
+    @Override
+    public String getPrefix(String uri) {
         try {
             return ntManagerProvider.getPrefix(uri);
         } catch (RepositoryException e) {
-            throw new NamespaceException(e);
+            logger.info("Could not find uri " + uri + " in registered namespaces");
+            return null;
         }
+    }
+
+    @Override
+    public Iterator<String> getPrefixes(String namespaceURI) {
+        return Collections.singletonList(getPrefix(namespaceURI)).iterator();
     }
 
     public @NotNull Collection<String> getRegisteredCndSystemIds() {

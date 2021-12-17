@@ -26,6 +26,7 @@ import javax.jcr.RepositoryException;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.spi.Name;
 import org.apache.jackrabbit.spi.commons.conversion.IllegalNameException;
 import org.apache.jackrabbit.spi.commons.conversion.NameParser;
@@ -35,6 +36,9 @@ import org.apache.jackrabbit.vault.fs.impl.io.DocViewSAXFormatter;
 import org.apache.jackrabbit.vault.fs.io.DocViewFormat;
 import org.apache.jackrabbit.vault.util.xml.serialize.FormattingXmlStreamWriter;
 import org.apache.sling.contentparser.api.ContentHandler;
+import org.jetbrains.annotations.NotNull;
+
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
  * Similar to {@link DocViewSAXFormatter} but works outside a repository-based context on the input generated through {@link ContentHandler} callbacks.
@@ -52,6 +56,7 @@ public class DocViewSerializerContentHandler implements ContentHandler, AutoClos
         try {
             writer = FormattingXmlStreamWriter.create(outputStream, new DocViewFormat().getXmlOutputFormat());
             writer.writeStartDocument();
+            writer.setNamespaceContext(nsRegistry);
             
         } catch (XMLStreamException e) {
             throw new DocViewSerializerContentHandlerException("Can not start document", e);
@@ -74,7 +79,8 @@ public class DocViewSerializerContentHandler implements ContentHandler, AutoClos
         try {
             // now split by prefix and local name
             Map.Entry<String, Name> prefixAndQualifiedName = resolvePrefixedName(name);
-            writer.writeStartElement(prefixAndQualifiedName.getKey(), prefixAndQualifiedName.getValue().getNamespaceURI(), prefixAndQualifiedName.getValue().getLocalName());
+            writeElement(prefixAndQualifiedName);
+           
             if (isFirstElement) {
                 for (String prefix : nsRegistry.getPrefixes()) {
                     writer.writeNamespace(prefix, nsRegistry.getURI(prefix));
@@ -84,13 +90,54 @@ public class DocViewSerializerContentHandler implements ContentHandler, AutoClos
             for (Map.Entry<String, Object> property : properties.entrySet()) {
                 // now split by prefix and local name
                 prefixAndQualifiedName = resolvePrefixedName(property.getKey());
-                writer.writeAttribute(prefixAndQualifiedName.getKey(), prefixAndQualifiedName.getValue().getNamespaceURI(), prefixAndQualifiedName.getValue().getLocalName(), ValueConverter.toString(property.getKey(), property.getValue()));
+                writer.writeAttribute(
+                        prefixAndQualifiedName.getKey(), 
+                        prefixAndQualifiedName.getValue().getNamespaceURI(), 
+                        prefixAndQualifiedName.getValue().getLocalName(), 
+                        ValueConverter.toString(property.getKey(), property.getValue())
+                );
             }
         } catch (XMLStreamException e) {
             throw new DocViewSerializerContentHandlerException("Can not start element", e);
         } catch (RepositoryException e) {
             throw new DocViewSerializerContentHandlerException("Can not emit namespace declarations", e);
         }
+    }
+
+    private boolean writeElement(Map.Entry<String, Name> prefixAndQualifiedName) throws XMLStreamException {
+       
+        String key = prefixAndQualifiedName.getKey();
+        String namespaceURI = prefixAndQualifiedName.getValue().getNamespaceURI();
+        String localName = getValidLocalName(prefixAndQualifiedName);
+        
+        if(isNotBlank(localName)){
+            if(isNotBlank(namespaceURI) && isNotBlank(nsRegistry.getPrefix(namespaceURI)) &&  isNotBlank(key)) {
+                //uri already registered in context, this method will do
+                writer.writeStartElement(namespaceURI, localName);
+            }else if(isNotBlank(namespaceURI) &&  isNotBlank(key)) {
+                //uri not registered in context, so writing it out completely
+                writer.writeStartElement(key, namespaceURI, localName);
+            }
+            else{
+                writer.writeStartElement(localName);
+            }
+        }else{
+            return false;
+        }
+        
+        return true;
+    }
+
+    @NotNull
+    private String getValidLocalName(Map.Entry<String, Name> prefixAndQualifiedName) {
+        String localName = prefixAndQualifiedName.getValue().getLocalName();
+
+        String firstCharacter = localName.substring(0, 1);
+        if(StringUtils.isNumeric(firstCharacter)){
+            //fix localName starting out with numbers as this is illegal.
+            localName = "_x003" + firstCharacter + "_" + StringUtils.substring(localName, 1);
+        }
+        return localName;
     }
 
     public void closeParents(String stopAtParent) {
