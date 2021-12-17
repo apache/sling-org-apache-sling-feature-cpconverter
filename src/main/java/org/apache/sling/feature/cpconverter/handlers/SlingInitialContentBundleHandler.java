@@ -17,6 +17,7 @@
 package org.apache.sling.feature.cpconverter.handlers;
 
 
+import org.apache.sling.feature.Artifact;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.ConverterException;
@@ -43,9 +44,9 @@ public class SlingInitialContentBundleHandler extends BundleEntryHandler {
     void processBundleInputStream(@NotNull String path, @NotNull Path originalBundleFile, @NotNull String bundleName, @Nullable String runMode, @Nullable Integer startLevel, @NotNull ContentPackage2FeatureModelConverter converter) throws IOException, ConverterException {
         try (JarFile jarFile = new JarFile(originalBundleFile.toFile())) {
             // first extract bundle metadata from JAR input stream
-            ArtifactId id = extractArtifactId(bundleName, jarFile);
-         
-            try (InputStream ignored = new BundleSlingInitialContentExtractor(slingInitialContentPolicy, path, id, jarFile, converter, runMode, true).extract()) {}
+            Artifact artifact = extractFeatureArtifact(bundleName, jarFile);
+            
+            try (InputStream ignored = new BundleSlingInitialContentExtractor(slingInitialContentPolicy, path, artifact.getId(), jarFile, converter, runMode, true).extract()) {}
         }
     }
 }

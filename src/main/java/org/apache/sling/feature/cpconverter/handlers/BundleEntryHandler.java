@@ -39,6 +39,7 @@ import org.apache.felix.utils.manifest.Parser;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
+import org.apache.sling.feature.Artifact;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.ConverterException;
@@ -144,7 +145,8 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
             throws ConverterException, IOException {
         try (JarFile jarFile = new JarFile(originalBundleFile.toFile())) {
             // first extract bundle metadata from JAR input stream
-            ArtifactId id = extractArtifactId(bundleName, jarFile);
+            Artifact artifact = extractFeatureArtifact(bundleName, jarFile);
+            ArtifactId id = artifact.getId();
 
             try (InputStream strippedBundleInput = new BundleSlingInitialContentExtractor(slingInitialContentPolicy, path, id, jarFile, converter, runMode).extract()) {
                 if (strippedBundleInput != null && slingInitialContentPolicy == ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.EXTRACT_AND_REMOVE) {
@@ -156,7 +158,8 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
                     }
                 }
             }
-            Objects.requireNonNull(converter.getFeaturesManager()).addArtifact(runMode, id, startLevel);
+            artifact = artifact.copy(id);
+            Objects.requireNonNull(converter.getFeaturesManager()).addArtifact(runMode, artifact, startLevel);
             String exportHeader = Objects.requireNonNull(jarFile.getManifest()).getMainAttributes().getValue(Constants.EXPORT_PACKAGE);
             if (exportHeader != null) {
                 for (Clause clause : Parser.parseHeader(exportHeader)) {
@@ -165,8 +168,8 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
             }
         }
     }
-    
-    protected @NotNull ArtifactId extractArtifactId(@NotNull String bundleName, @NotNull JarFile jarFile) throws IOException {
+
+    protected @NotNull Artifact extractFeatureArtifact(@NotNull String bundleName, @NotNull JarFile jarFile) throws IOException {
         String artifactId = null;
         String version = null;
         String groupId = null;
@@ -227,7 +230,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
             }
         }
 
-        
+
         if (groupId == null) {
             // maybe the included jar is just an OSGi bundle but not a valid Maven artifact
             groupId = getCheckedProperty(jarFile.getManifest(), Constants.BUNDLE_SYMBOLICNAME);
@@ -244,7 +247,19 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
             version = osgiVersion.getMajor() + "." + osgiVersion.getMinor() + "." + osgiVersion.getMicro() + (osgiVersion.getQualifier().isEmpty() ? "" : "-" + osgiVersion.getQualifier());
         }
 
-        return new ArtifactId(groupId, artifactId, version, classifier, JAR_TYPE);
+        // create artifact and store symbolic name and version in metadata
+        final Artifact result = new Artifact(new ArtifactId(groupId, artifactId, version, classifier, JAR_TYPE));
+        setMetadataFromManifest(jarFile.getManifest(), Constants.BUNDLE_VERSION, result);
+        setMetadataFromManifest(jarFile.getManifest(), Constants.BUNDLE_SYMBOLICNAME, result);
+
+        return result;
+    }
+
+    private static void setMetadataFromManifest(@NotNull Manifest manifest, @NotNull String name, @NotNull Artifact artifact) {
+        String value = manifest.getMainAttributes().getValue(name);
+        if (value != null) {
+            artifact.getMetadata().put(name, value);
+        }
     }
 
     private static @NotNull String getCheckedProperty(@NotNull Manifest manifest, @NotNull String name) {
@@ -253,8 +268,8 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
             property = property.trim();
         }
         return requireNonNull(property, "Jar file can not be defined as a valid OSGi bundle without specifying a valid '"
-                                         + name
-                                         + "' property.");
+                + name
+                + "' property.");
     }
 
 }

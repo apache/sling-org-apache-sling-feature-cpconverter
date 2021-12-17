@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import java.io.File;
 import java.util.jar.JarFile;
 
+import org.apache.sling.feature.Artifact;
 import org.apache.sling.feature.ArtifactId;
 import org.junit.Test;
 
@@ -56,7 +57,7 @@ public class GavDeclarationsInBundleTest {
         BundleEntryHandler bundleEntryHandler = new BundleEntryHandler();
 
         try (JarFile jarFile = new JarFile(new File(getClass().getResource(resourceName).toURI()))) {
-            ArtifactId artifactId = bundleEntryHandler.extractArtifactId(bundleName, jarFile);
+            ArtifactId artifactId = bundleEntryHandler.extractFeatureArtifact(bundleName, jarFile).getId();
             assertEquals(new ArtifactId(expectedGroupId, expectedArtifactId, expectedVersion, expectedClassifier, "jar"), artifactId);
         }
     }

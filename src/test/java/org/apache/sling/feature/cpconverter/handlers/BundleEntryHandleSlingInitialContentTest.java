@@ -36,10 +36,10 @@ import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageProperties;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
+import org.apache.sling.feature.Artifact;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.SlingInitialContentPolicy;
-import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.SimpleFolderArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
@@ -107,9 +107,13 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             assertNotNull("Archive does not contain expected item", entry);
         }
         // verify nothing else has been deployed
-        assertEquals(2, targetFolder.list().length);
-        // verify changed id
-        Mockito.verify(featuresManager).addArtifact(null, ArtifactId.fromMvnId("io.wcm:io.wcm.handler.media:1.11.6-cp2fm-converted"), null);
+        ArgumentCaptor<Artifact> captor = ArgumentCaptor.forClass(Artifact.class);
+        Mockito.verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
+        final Artifact result = captor.getValue();
+        assertNotNull(result);
+        assertEquals(ArtifactId.fromMvnId("io.wcm:io.wcm.handler.media:1.11.6-cp2fm-converted"), result.getId());
+        assertEquals("io.wcm.handler.media", result.getMetadata().get(Constants.BUNDLE_SYMBOLICNAME));
+        assertEquals("1.11.6", result.getMetadata().get(Constants.BUNDLE_VERSION));
     }
 
     @Test
@@ -272,7 +276,13 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         // verify nothing else has been deployed
         assertEquals(2, targetFolder.list().length);
         // verify changed id
-        Mockito.verify(featuresManager).addArtifact(null, ArtifactId.fromMvnId("com.mysite:mysite.core:1.0.0-SNAPSHOT-cp2fm-converted"), null);
+        ArgumentCaptor<Artifact> captor = ArgumentCaptor.forClass(Artifact.class);
+        Mockito.verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
+        final Artifact result = captor.getValue();
+        assertNotNull(result);
+        assertEquals(ArtifactId.fromMvnId("com.mysite:mysite.core:1.0.0-SNAPSHOT-cp2fm-converted"), result.getId());
+        assertEquals("mysite.core", result.getMetadata().get(Constants.BUNDLE_SYMBOLICNAME));
+        assertEquals("1.0.0.SNAPSHOT", result.getMetadata().get(Constants.BUNDLE_VERSION));
     }
 
     @Test
@@ -291,7 +301,14 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
         handler.handle("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", archive, entry, converter);
         // modified bundle
-        Mockito.verify(featuresManager).addArtifact(null, ArtifactId.fromMvnId("com.composum.nodes:composum-nodes-config:2.5.3-cp2fm-converted"), null);
+        ArgumentCaptor<Artifact> captor = ArgumentCaptor.forClass(Artifact.class);
+        Mockito.verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
+        final Artifact result = captor.getValue();
+        assertNotNull(result);
+        assertEquals(ArtifactId.fromMvnId("com.composum.nodes:composum-nodes-config:2.5.3-cp2fm-converted"), result.getId());
+        assertEquals("com.composum.nodes.config", result.getMetadata().get(Constants.BUNDLE_SYMBOLICNAME));
+        assertEquals("2.5.3", result.getMetadata().get(Constants.BUNDLE_VERSION));
+
         // need to use ArgumentCaptur to properly compare string arrays
         Mockito.verify(featuresManager).addConfiguration(ArgumentMatchers.isNull(), cfgCaptor.capture(), ArgumentMatchers.eq("/jcr_root/libs/composum/nodes/install/org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment-composum_core_v2.config"), dictionaryCaptor.capture());
         assertEquals("composum_core", dictionaryCaptor.getValue().get("whitelist.name"));
@@ -318,11 +335,17 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_KEEP);
         handler.handle("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", archive, entry, converter);
         // original bundle
-        Mockito.verify(featuresManager).addArtifact(null, ArtifactId.fromMvnId("com.composum.nodes:composum-nodes-config:2.5.3"), null);
+        ArgumentCaptor<Artifact> captor = ArgumentCaptor.forClass(Artifact.class);
+        Mockito.verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
+        final Artifact result = captor.getValue();
+        assertNotNull(result);
+        assertEquals(ArtifactId.fromMvnId("com.composum.nodes:composum-nodes-config:2.5.3"), result.getId());
+        assertEquals("com.composum.nodes.config", result.getMetadata().get(Constants.BUNDLE_SYMBOLICNAME));
+        assertEquals("2.5.3", result.getMetadata().get(Constants.BUNDLE_VERSION));
         // need to use ArgumentCaptur to properly compare string arrays
         Mockito.verify(featuresManager).addConfiguration(ArgumentMatchers.isNull(),
-             cfgCaptor.capture(),
-             ArgumentMatchers.eq("/jcr_root/libs/composum/nodes/install/org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment-composum_core_v2.config"), dictionaryCaptor.capture());
+                cfgCaptor.capture(),
+                ArgumentMatchers.eq("/jcr_root/libs/composum/nodes/install/org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment-composum_core_v2.config"), dictionaryCaptor.capture());
         assertEquals("composum_core", dictionaryCaptor.getValue().get("whitelist.name"));
         assertEquals("org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment~composum_core_v2", cfgCaptor.getValue().getPid());
         assertArrayEquals(new String[] {
