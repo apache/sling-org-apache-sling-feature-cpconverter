@@ -27,7 +27,11 @@ import static org.xmlunit.assertj.XmlAssert.assertThat;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.Collections;
+import java.util.Dictionary;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 import java.util.jar.JarFile;
 
 import org.apache.jackrabbit.vault.fs.io.Archive;
