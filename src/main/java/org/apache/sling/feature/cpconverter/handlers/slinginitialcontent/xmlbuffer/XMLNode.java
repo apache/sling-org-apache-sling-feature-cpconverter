@@ -22,7 +22,11 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Represents an XML node in the buffer to be written in a sling initial content package

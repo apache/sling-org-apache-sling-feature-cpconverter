@@ -111,6 +111,8 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             assertNotNull("Archive does not contain expected item", entry);
         }
         // verify nothing else has been deployed
+        assertEquals(2, targetFolder.list().length);
+        // verify changed id
         ArgumentCaptor<Artifact> captor = ArgumentCaptor.forClass(Artifact.class);
         Mockito.verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
         final Artifact result = captor.getValue();

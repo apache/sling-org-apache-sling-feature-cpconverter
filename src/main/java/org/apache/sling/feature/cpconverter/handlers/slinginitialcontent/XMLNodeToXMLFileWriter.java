@@ -30,7 +30,9 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-import static org.apache.jackrabbit.JcrConstants.*;
+import static org.apache.jackrabbit.vault.util.JcrConstants.JCR_MIXINTYPES;
+import static org.apache.jackrabbit.vault.util.JcrConstants.JCR_PRIMARYTYPE;
+import static org.apache.jackrabbit.vault.util.JcrConstants.NT_UNSTRUCTURED;
 
 public class XMLNodeToXMLFileWriter {
 

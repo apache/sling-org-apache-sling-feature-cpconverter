@@ -16,11 +16,9 @@
  */
 package org.apache.sling.feature.cpconverter.handlers.slinginitialcontent;
 
-import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
-import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.xmlbuffer.XMLNode;
 import org.apache.sling.feature.cpconverter.shared.CheckedConsumer;
 import org.apache.sling.feature.cpconverter.vltpkg.JcrNamespaceRegistry;
@@ -28,17 +26,16 @@ import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.jcr.contentloader.ContentCreator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.xml.stream.XMLStreamException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * ContentCreator substitute to create valid XML files to be packaged into a VaultPackage to be installed later
@@ -96,7 +93,7 @@ public class VaultContentXMLContentCreator implements ContentCreator {
             basePath = repositoryPath;
         }else{
             StringBuilder basePathBuilder = new StringBuilder(repositoryPath);
-            for(Iterator<XMLNode> xmlNodeIterator =  parentNodePathStack.descendingIterator();xmlNodeIterator.hasNext();){
+            for(Iterator<XMLNode> xmlNodeIterator = parentNodePathStack.descendingIterator(); xmlNodeIterator.hasNext();){
                 XMLNode parent = xmlNodeIterator.next();
                 String parentJcrNodeName = parent.getJcrNodeName();
                 if(StringUtils.isNotBlank(parentJcrNodeName)){
