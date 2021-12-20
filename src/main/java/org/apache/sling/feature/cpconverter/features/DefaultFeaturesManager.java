@@ -328,7 +328,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         }
         return false;
     }
-
+    
     private List<String> convertMappings(@Nullable String[] mappings, @NotNull String pid, boolean enforceServiceMappingByPrincipal) throws ConverterException {
         if (mappings == null) {
             return Collections.emptyList();
@@ -393,8 +393,8 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
 
         adjustConfigurationProperties(configuration, configurationProperties);
     }
-
-    private void adjustConfigurationProperties(@NotNull Configuration configuration,
+    
+    private void adjustConfigurationProperties(@NotNull Configuration configuration, 
                                                @NotNull Dictionary<String, Object> configurationProperties) {
         Enumeration<String> keys = configurationProperties.keys();
         while (keys.hasMoreElements()) {
@@ -538,7 +538,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
             repoInitExtension.setText(repoInitExtension.getText().concat(System.lineSeparator()).concat(text));
         }
     }
-
+    
     private static void checkReferences(@NotNull final Dictionary<String, Object> configurationProperties, @NotNull final String pid) throws ConverterException {
         final String[] references = Converters.standardConverter().convert(configurationProperties.get("references")).to(String[].class);
         if (references != null && references.length > 0) {
