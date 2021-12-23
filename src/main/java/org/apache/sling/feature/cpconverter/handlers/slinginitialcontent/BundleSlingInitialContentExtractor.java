@@ -161,10 +161,11 @@ public class BundleSlingInitialContentExtractor {
                                 throw new IOException("Entry is outside of the target directory");
                             }
                             
-                            targetFile.getParentFile().mkdirs();
-                            if(!targetFile.createNewFile()) {
-                                logger.error("Temp file {} already exists!", targetFile.getAbsolutePath());
+                            if(!targetFile.exists()){
+                                targetFile.getParentFile().mkdirs();
+                                targetFile.createNewFile();
                             }
+                            
                           
                             FileOutputStream fos = new FileOutputStream(targetFile);
                             safelyWriteOutputStream(compressedSize, total, data, input, fos, true);
@@ -307,14 +308,20 @@ public class BundleSlingInitialContentExtractor {
 
     @NotNull
     private String recomputeContentPackageEntryPath(String contentPackageEntryPath, VaultContentXMLContentCreator contentCreator) {
+        
+        //sometimes we are dealing with double extensions (.json.xml)
         contentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath);
-
+        
         if(StringUtils.isNotBlank(contentCreator.getPrimaryNodeName())){
             //custom node name
             contentPackageEntryPath = StringUtils.substringBeforeLast(contentPackageEntryPath, "/") ;
             contentPackageEntryPath = contentPackageEntryPath + "/" + contentCreator.getPrimaryNodeName();
-            
         }
+        
+        //we have some rare cases where a) have a double extension to remove or b) have an extension come from the contentCreator due to the double extension.
+        contentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath);
+
+        
         contentPackageEntryPath = contentPackageEntryPath + "/.content.xml";
         return contentPackageEntryPath;
     }
