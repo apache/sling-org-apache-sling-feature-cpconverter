@@ -17,6 +17,7 @@
 package org.apache.sling.feature.cpconverter.handlers;
 
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -27,6 +28,7 @@ import static org.xmlunit.assertj.XmlAssert.assertThat;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Dictionary;
 import java.util.HashMap;
@@ -34,6 +36,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.jar.JarFile;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.PackageId;
@@ -237,6 +240,52 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
     }
 
+
+
+    @Test
+    public void testSlingInitialContentWithNumberedEntries() throws Exception {
+        setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "io.wcm.handler.link-1.7.02.jar");
+        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
+        converter.setEntryHandlersManager(handlersManager);
+        Map<String, String> namespaceRegistry = new HashMap<>();
+
+        namespaceRegistry.put("cq","http://www.day.com/jcr/cq/1.0");
+        namespaceRegistry.put("granite", "http://www.adobe.com/jcr/granite/1.0");
+
+
+        when(featuresManager.getNamespaceUriByPrefix()).thenReturn(namespaceRegistry);
+
+        File targetFolder = tmpFolder.newFolder();
+        when(converter.getArtifactsDeployer()).thenReturn(new SimpleFolderArtifactsDeployer(targetFolder));
+        when(converter.isSubContentPackageIncluded("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar-APPLICATION")).thenReturn(true);
+
+        VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
+        Properties props = new Properties();
+        props.setProperty(PackageProperties.NAME_GROUP, "com.mysite");
+        props.setProperty(PackageProperties.NAME_NAME, "mysite.core");
+        props.setProperty(PackageProperties.NAME_VERSION, "1.0.0-SNAPSHOT");
+        when(assembler.getPackageProperties()).thenReturn(props);
+        converter.setMainPackageAssembler(assembler);
+
+        handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
+        handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter);
+
+        converter.deployPackages();
+        
+        // verify generated package
+        try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "io.wcm.handler.link-apps-1.7.0-cp2fm-converted.zip"));
+             Archive archive = vaultPackage.getArchive()) {
+            archive.open(true);
+
+            InputStream xmlFile = archive.getInputSource(archive.getEntry("jcr_root/apps/wcm-io/handler/link/components/global/include/redirectStatus/.content.xml")).getByteStream();
+            String expectedXML = IOUtils.toString(getClass().getResourceAsStream("bundle-entry-xmls/include-redirectStatus.xml"), UTF_8);
+            String actualXML = IOUtils.toString(xmlFile, UTF_8);
+
+            assertThat(expectedXML).and(actualXML).areSimilar();
+        }
+
+    }
+
     @Test
     public void testSlingInitialContentWithNodeType() throws Exception {
         setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite-slinginitialcontent-nodetype-def.jar");
@@ -362,8 +411,8 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
     private void assertResultingEntry(Archive archive, String entryKey) throws IOException, SAXException {
         InputStream xmlFile = archive.getInputSource(archive.getEntry("jcr_root/apps/mysite/components/global/" + entryKey  +"/.content.xml")).getByteStream();
-        InputSource expectedXML = new InputSource(getClass().getResourceAsStream("bundle-entry-xmls/" + entryKey + ".xml"));
-        InputSource actualXML = new InputSource(xmlFile);
+        String expectedXML = IOUtils.toString(getClass().getResourceAsStream("bundle-entry-xmls/" + entryKey + ".xml"), UTF_8);
+        String actualXML = IOUtils.toString(xmlFile, UTF_8);
 
         assertThat(expectedXML).and(actualXML).areSimilar();
     }
