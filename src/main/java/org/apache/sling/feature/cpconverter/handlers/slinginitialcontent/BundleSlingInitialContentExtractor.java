@@ -32,6 +32,7 @@ import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.ConverterException;
+import org.apache.sling.feature.cpconverter.handlers.AbstractContentPackageHandler;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.readers.XMLReader;
 import org.apache.sling.feature.cpconverter.shared.CheckedConsumer;
 import org.apache.sling.feature.cpconverter.vltpkg.*;
@@ -66,29 +67,24 @@ public class BundleSlingInitialContentExtractor {
     private static final double THRESHOLD_RATIO = 10;
     private static final int BUFFER = 512;
     private static final long TOOBIG = 0x6400000; // Max size of unzipped data, 100MB
-    private static final int TOOMANY = 1024;      // Max number of files
     private static final Logger logger = LoggerFactory.getLogger(BundleSlingInitialContentExtractor.class);
-    
+
+    protected final ContentPackage2FeatureModelConverter converter;
+    protected final Map<PackageType, VaultPackageAssembler> packageAssemblers = new EnumMap<>(PackageType.class);
+   
     private final ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy;
     private final String path;
-    private final Map<PackageType, VaultPackageAssembler> packageAssemblers = new EnumMap<>(PackageType.class);
 
     private final ArtifactId bundleArtifactId;
     private final JarFile jarFile;
-    private final ContentPackage2FeatureModelConverter converter;
     private final String runMode;
-    private final boolean isEmbeddedPackage;
     private final JcrNamespaceRegistry namespaceRegistry;
     private final Manifest manifest;
     private final CheckedConsumer<String> repoInitTextExtensionConsumer;
     private Collection<PathEntry> pathEntryList = new ArrayList<>();
     private Iterator<PathEntry> pathEntries;
-
-    public BundleSlingInitialContentExtractor(ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy, @NotNull String path, @NotNull ArtifactId bundleArtifactId, @NotNull JarFile jarFile, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws IOException {
-        this(slingInitialContentPolicy, path, bundleArtifactId, jarFile, converter, runMode, false);
-    }
     
-    public BundleSlingInitialContentExtractor(ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy, @NotNull String path, @NotNull ArtifactId bundleArtifactId, @NotNull JarFile jarFile, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode, boolean isEmbeddedPackage) throws IOException {
+    public BundleSlingInitialContentExtractor(ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy, @NotNull String path, @NotNull ArtifactId bundleArtifactId, @NotNull JarFile jarFile, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws IOException {
         this.slingInitialContentPolicy = slingInitialContentPolicy;
         this.path = path;
 
@@ -96,10 +92,9 @@ public class BundleSlingInitialContentExtractor {
         this.jarFile = jarFile;
         this.converter = converter;
         this.runMode = runMode;
-        this.isEmbeddedPackage = isEmbeddedPackage;
         this.manifest = Objects.requireNonNull(jarFile.getManifest());
         this.namespaceRegistry = new JcrNamespaceRegistryProvider(manifest, jarFile, converter.getFeaturesManager().getNamespaceUriByPrefix()).provideRegistryFromBundle();
-
+        
         pathEntries = PathEntry.getContentPaths(manifest, -1);
         
         if(pathEntries != null){
@@ -137,8 +132,7 @@ public class BundleSlingInitialContentExtractor {
              JarOutputStream bundleOutput = new JarOutputStream(fileOutput, manifest)) {
 
             List<File> collectedFilesWithSlingInitialContent = new ArrayList<>();
-
-            int entryCount = 0;
+            
             AtomicLong total = new AtomicLong(0);
           
             Enumeration<? extends JarEntry> entries = jarFile.entries();
@@ -168,15 +162,13 @@ public class BundleSlingInitialContentExtractor {
                             }
                             
                             targetFile.getParentFile().mkdirs();
-                            
-                            if(targetFile.createNewFile()){
-                                FileOutputStream fos = new FileOutputStream(targetFile);
-                                safelyWriteOutputStream(compressedSize, total, data, input, fos, true);
-
-                                collectedFilesWithSlingInitialContent.add(targetFile);
-                            }else{
-                                throw new IOException("could not create temporary file " + targetFile.getAbsolutePath());
+                            if(!targetFile.createNewFile()) {
+                                logger.error("Temp file {} already exists!", targetFile.getAbsolutePath());
                             }
+                          
+                            FileOutputStream fos = new FileOutputStream(targetFile);
+                            safelyWriteOutputStream(compressedSize, total, data, input, fos, true);
+                            collectedFilesWithSlingInitialContent.add(targetFile);
 
                         } else {
                             bundleOutput.putNextEntry(jarEntry);
@@ -186,14 +178,10 @@ public class BundleSlingInitialContentExtractor {
                         }
                     }
                 }
-
-                if (entryCount > TOOMANY) {
-                    throw new IllegalStateException("Too many files to unzip.");
-                }
+                
                 if (total.get() + BUFFER > TOOBIG) {
                     throw new IllegalStateException("File being unzipped is too big.");
                 }
-                entryCount++;
 
             }
 
@@ -374,10 +362,10 @@ public class BundleSlingInitialContentExtractor {
         return assembler;
     }
 
-    void finalizePackageAssembly(@NotNull String path, @Nullable String runMode) throws IOException, ConverterException {
+    protected void finalizePackageAssembly(@NotNull String path, @Nullable String runMode) throws IOException, ConverterException {
         for (java.util.Map.Entry<PackageType, VaultPackageAssembler> entry : packageAssemblers.entrySet()) {
             File packageFile = entry.getValue().createPackage();
-            converter.processSubPackage(path + "-" + entry.getKey(), runMode, converter.open(packageFile), isEmbeddedPackage);
+            converter.processSubPackage(path + "-" + entry.getKey(), runMode, converter.open(packageFile), false);
         }
     }
     
