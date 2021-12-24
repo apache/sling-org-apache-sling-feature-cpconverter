@@ -19,6 +19,7 @@ package org.apache.sling.feature.cpconverter.handlers.slinginitialcontent;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
+import org.apache.jackrabbit.vault.validation.spi.util.NameUtil;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.xmlbuffer.XMLNode;
 import org.apache.sling.feature.cpconverter.shared.CheckedConsumer;
 import org.apache.sling.feature.cpconverter.vltpkg.JcrNamespaceRegistry;
@@ -80,7 +81,7 @@ public class VaultContentXMLContentCreator implements ContentCreator {
             jcrNodeName = name;
             isFirstElement = false;
         }else if(StringUtils.isNotBlank(name)){
-            elementName = name;
+            elementName = getValidElementName(name);
             jcrNodeName = name;
         }else{
             elementName = "jcr:root";
@@ -119,6 +120,13 @@ public class VaultContentXMLContentCreator implements ContentCreator {
         }
 
         parentNodePathStack.push(currentNode);
+    }
+
+    private String getValidElementName(String name) {
+        if(StringUtils.isNumeric(name.substring(0,1))){
+            return "_" + name; 
+        }
+        return name;
     }
 
     public String getPrimaryNodeName() {

@@ -28,7 +28,6 @@ import static org.xmlunit.assertj.XmlAssert.assertThat;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Dictionary;
 import java.util.HashMap;
@@ -37,6 +36,7 @@ import java.util.Properties;
 import java.util.jar.JarFile;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.PackageId;
@@ -50,6 +50,7 @@ import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter
 import org.apache.sling.feature.cpconverter.artifacts.SimpleFolderArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -61,6 +62,17 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xmlunit.builder.DiffBuilder;
+import org.xmlunit.builder.Input;
+import org.xmlunit.diff.Comparison;
+import org.xmlunit.diff.ComparisonListener;
+import org.xmlunit.diff.ComparisonResult;
+import org.xmlunit.diff.ComparisonType;
+import org.xmlunit.diff.DOMDifferenceEngine;
+import org.xmlunit.diff.DifferenceEngine;
+import org.xmlunit.matchers.CompareMatcher;
+
+import javax.xml.transform.Source;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntryHandlerTest {
@@ -411,10 +423,29 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
     private void assertResultingEntry(Archive archive, String entryKey) throws IOException, SAXException {
         InputStream xmlFile = archive.getInputSource(archive.getEntry("jcr_root/apps/mysite/components/global/" + entryKey  +"/.content.xml")).getByteStream();
-        String expectedXML = IOUtils.toString(getClass().getResourceAsStream("bundle-entry-xmls/" + entryKey + ".xml"), UTF_8);
+        InputStream expectedXmlFileStream = getClass().getResourceAsStream("bundle-entry-xmls/" + entryKey + ".xml");
+        String expectedXML = IOUtils.toString(expectedXmlFileStream, UTF_8);
         String actualXML = IOUtils.toString(xmlFile, UTF_8);
 
-        assertThat(expectedXML).and(actualXML).areSimilar();
+  
+        Source control = Input.fromString(expectedXML).build();
+        Source test = Input.fromString(actualXML).build();
+        
+        DifferenceEngine diff = new DOMDifferenceEngine();
+        diff.addDifferenceListener((comparison, outcome) -> {
+            
+            if(comparison.getType() == ComparisonType.CHILD_NODELIST_LENGTH){
+                //this comparison is buggy so we can't use it.
+                return;
+            }
+            
+            String actualString = comparison.getTestDetails().getValue().toString();
+            String expectedString = comparison.getControlDetails().getValue().toString();
+            if(!actualString.trim().equals(expectedString.trim())){
+                Assert.fail("difference found in XML: " + actualString + " vs " + expectedString);
+            }
+        });
+        diff.compare(control, test);
     }
 
     private void assertPageStructureFromEntry(Archive archive, String basePath, String pageName, String... files) throws IOException {
