@@ -17,7 +17,6 @@
 package org.apache.sling.feature.cpconverter.handlers.slinginitialcontent;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -32,14 +31,16 @@ import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.ConverterException;
-import org.apache.sling.feature.cpconverter.handlers.AbstractContentPackageHandler;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.readers.XMLReader;
+import org.apache.sling.feature.cpconverter.repoinit.createpath.CreatePathSegmentProcessor;
 import org.apache.sling.feature.cpconverter.shared.CheckedConsumer;
+import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.apache.sling.feature.cpconverter.vltpkg.*;
 import org.apache.sling.jcr.contentloader.ContentReader;
 import org.apache.sling.jcr.contentloader.PathEntry;
 import org.apache.sling.jcr.contentloader.internal.readers.JsonReader;
 import org.apache.sling.jcr.contentloader.internal.readers.ZipReader;
+import org.apache.sling.repoinit.parser.operations.CreatePath;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Constants;
@@ -55,9 +56,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.jar.*;
+
+import static org.apache.jackrabbit.vault.util.Constants.DOT_CONTENT_XML;
 
 /**
  * Extracts the sling initial content from a bundle to an java.io.InputStream.
@@ -81,9 +83,10 @@ public class BundleSlingInitialContentExtractor {
     private final JcrNamespaceRegistry namespaceRegistry;
     private final Manifest manifest;
     private final CheckedConsumer<String> repoInitTextExtensionConsumer;
+    private final Set<RepoPath> parentFolderAssemblers = new HashSet<>();
     private Collection<PathEntry> pathEntryList = new ArrayList<>();
     private Iterator<PathEntry> pathEntries;
-    
+
     public BundleSlingInitialContentExtractor(ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy, @NotNull String path, @NotNull ArtifactId bundleArtifactId, @NotNull JarFile jarFile, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws IOException {
         this.slingInitialContentPolicy = slingInitialContentPolicy;
         this.path = path;
@@ -160,17 +163,13 @@ public class BundleSlingInitialContentExtractor {
                             if (!canonicalDestinationPath.startsWith(converter.getTempDirectory().getCanonicalPath())) {
                                 throw new IOException("Entry is outside of the target directory");
                             }
-                            
-                            if(!targetFile.exists()){
-                                targetFile.getParentFile().mkdirs();
-                                targetFile.createNewFile();
-                            }
-                            
-                          
+
+                            targetFile.getParentFile().mkdirs();
+                            targetFile.createNewFile();
+                           
                             FileOutputStream fos = new FileOutputStream(targetFile);
                             safelyWriteOutputStream(compressedSize, total, data, input, fos, true);
                             collectedFilesWithSlingInitialContent.add(targetFile);
-
                         } else {
                             bundleOutput.putNextEntry(jarEntry);
                             safelyWriteOutputStream(compressedSize, total, data, input, bundleOutput, false);
@@ -193,12 +192,59 @@ public class BundleSlingInitialContentExtractor {
             
       
         }
+
+        addRepoInitExtension();
+        
         // add additional content packages to feature model
         finalizePackageAssembly(path, runMode);
 
         // return stripped bundle's inputstream which must be deleted on close
         return Files.newInputStream(newBundleFile, StandardOpenOption.READ, StandardOpenOption.DELETE_ON_CLOSE);
     }
+    
+    private void addRepoInitExtension() throws IOException, ConverterException {
+        try (Formatter formatter = new Formatter()) {
+            addPaths(formatter);
+            String text = formatter.toString();
+            if (!text.isEmpty()) {
+                repoInitTextExtensionConsumer.accept(text);
+            }
+        }
+    }
+
+
+    private void addPaths(@NotNull Formatter formatter) {
+        
+        parentFolderAssemblers.stream()
+                .filter( entry -> parentFolderAssemblers.stream()
+                            .noneMatch(other -> !other.equals(
+                                    entry) && 
+                                    other.startsWith(entry)
+                            )
+                )
+                .filter( entry -> 
+                    !entry.isRepositoryPath()
+                ).map( entry -> 
+                    getCreatePath(entry, packageAssemblers.values())
+                ) 
+                .filter(Objects::nonNull)
+                .forEach(
+                    createPath -> formatter.format("%s", createPath.asRepoInitString())
+                );
+       
+    }
+
+    protected @Nullable CreatePath getCreatePath(@NotNull RepoPath path, @NotNull Collection<VaultPackageAssembler> packageAssemblers) {
+        if (path.getParent() == null) {
+            logger.debug("Omit create path statement for path '{}'", path);
+            return null;
+        }
+
+        CreatePath cp = new CreatePath(null);
+        CreatePathSegmentProcessor.processSegments(path, packageAssemblers, cp);
+        return cp;
+    }
+    
 
     private void safelyWriteOutputStream(long compressedSize, AtomicLong total, byte[] data, InputStream input, OutputStream fos, boolean shouldClose) throws IOException {
         int count;
@@ -297,6 +343,8 @@ public class BundleSlingInitialContentExtractor {
                 } else {
                     packageAssembler.addEntry(contentPackageEntryPath, bundleFileInputStream);
                 }
+                
+                copyInSlingFolderToParentsIfNeeded(pathEntryValue, contentPackageEntryPath);
             }
  
         } finally {
@@ -306,6 +354,38 @@ public class BundleSlingInitialContentExtractor {
         }
     }
 
+    private void copyInSlingFolderToParentsIfNeeded(PathEntry pathEntryValue, String contentPackageEntryPath) throws IOException {
+        List<String> parents = getParentPaths(contentPackageEntryPath, pathEntryValue);
+        parents.forEach((parentFolder) -> parentFolderAssemblers.add(new RepoPath(parentFolder)));
+    }
+
+    /**
+     * Get the parent paths up to the app root of the PathEntry.
+     * @param contentPackageEntryPath
+     * @param pathEntryValue
+     * @return
+     */
+    private List<String> getParentPaths(final String contentPackageEntryPath, PathEntry pathEntryValue){
+
+        List<String> parentPaths = new ArrayList<>();
+        //we ignore the source file, start at parents
+        String intermediate = StringUtils.substringBeforeLast(contentPackageEntryPath,"/");
+        
+        while(StringUtils.contains(intermediate, "/")){
+            String extracted = StringUtils.substringAfterLast(intermediate, "/");
+            intermediate = StringUtils.substringBeforeLast(intermediate, "/");
+            String parentPath = intermediate + "/" + extracted;
+            
+            if(parentPath.equals("/jcr_root" + pathEntryValue.getTarget())){
+                //create up to the app root.
+                break;
+            }
+            parentPaths.add(parentPath);
+        }
+        
+        return parentPaths;
+    }
+    
     @NotNull
     private String recomputeContentPackageEntryPath(String contentPackageEntryPath, VaultContentXMLContentCreator contentCreator) {
         
@@ -319,10 +399,11 @@ public class BundleSlingInitialContentExtractor {
         }
         
         //we have some rare cases where a) have a double extension to remove or b) have an extension come from the contentCreator due to the double extension.
-        contentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath);
-
+//        if(contentPackageEntryPath.endsWith(".xml") || contentPackageEntryPath.endsWith(".json")){
+//            contentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath);
+//        }
         
-        contentPackageEntryPath = contentPackageEntryPath + "/.content.xml";
+        contentPackageEntryPath = contentPackageEntryPath + "/" + DOT_CONTENT_XML;
         return contentPackageEntryPath;
     }
 

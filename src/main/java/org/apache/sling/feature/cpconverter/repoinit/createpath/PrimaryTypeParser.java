@@ -14,22 +14,20 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.sling.feature.cpconverter.accesscontrol;
+package org.apache.sling.feature.cpconverter.repoinit.createpath;
 
-import org.apache.jackrabbit.JcrConstants;
 import org.apache.sling.feature.cpconverter.shared.AbstractJcrNodeParser;
 import org.xml.sax.Attributes;
 
-final class MixinParser extends AbstractJcrNodeParser<String> {
-    private String mixins;
+public final class PrimaryTypeParser extends AbstractJcrNodeParser<String> {
 
-    public MixinParser() {
+    public PrimaryTypeParser() {
         super();
     }
 
     @Override
     protected void onJcrRootNode(String uri, String localName, String qName, Attributes attributes, String primaryType) {
-        mixins = attributes.getValue(JcrConstants.JCR_MIXINTYPES);
+        detectedPrimaryType = primaryType;
     }
 
     @Override
@@ -39,7 +37,7 @@ final class MixinParser extends AbstractJcrNodeParser<String> {
 
     @Override
     protected String getParsingResult() {
-        return mixins;
+        return detectedPrimaryType;
     }
 
 }

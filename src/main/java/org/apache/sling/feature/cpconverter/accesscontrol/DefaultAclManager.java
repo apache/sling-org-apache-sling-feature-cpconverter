@@ -22,11 +22,11 @@ import org.apache.jackrabbit.spi.commons.conversion.DefaultNamePathResolver;
 import org.apache.jackrabbit.spi.commons.conversion.NameResolver;
 import org.apache.jackrabbit.util.Text;
 import org.apache.jackrabbit.vault.fs.spi.PrivilegeDefinitions;
-import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.repoinit.NoOpVisitor;
 import org.apache.sling.feature.cpconverter.repoinit.OperationProcessor;
+import org.apache.sling.feature.cpconverter.repoinit.createpath.CreatePathSegmentProcessor;
 import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
@@ -48,8 +48,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jcr.NamespaceException;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -70,8 +68,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static org.apache.jackrabbit.vault.util.Constants.DOT_CONTENT_XML;
 
 public class DefaultAclManager implements AclManager, EnforceInfo {
 
@@ -429,7 +425,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
         }
         
         CreatePath cp = new CreatePath(null);
-        boolean foundType = processSegments(path, packageAssemblers, cp);
+        boolean foundType = CreatePathSegmentProcessor.processSegments(path, packageAssemblers, cp);
         
         if (!foundType && isBelowUserRoot(path)) {
             // if no type information has been detected, don't issue a 'create path' statement for nodes below the 
@@ -441,61 +437,6 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
             // of the the top-level nodes (i.e. their effective node type definition).
             return cp;
         }
-    }
-    
-    private static boolean processSegments(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers, @NotNull CreatePath cp) {
-        String platformPath = "";
-        boolean foundType = false;
-        for (String part : path.getSegments()) {
-            String platformname = PlatformNameFormat.getPlatformName(part);
-            platformPath += platformPath.isEmpty() ? platformname : "/" + platformname;
-            boolean segmentAdded = false;
-            for (VaultPackageAssembler packageAssembler : packageAssemblers) {
-                File currentContent = packageAssembler.getEntry(platformPath + "/" + DOT_CONTENT_XML);
-                if (currentContent.isFile()) {
-                    segmentAdded =  addSegment(cp, part, currentContent);
-                    if (segmentAdded) {
-                        foundType = true;
-                        break;
-                    }
-                }
-            }
-            if (!segmentAdded) {
-                cp.addSegment(part, null);
-            }
-        }
-        return foundType;
-    }
-
-    private static boolean addSegment(@NotNull CreatePath cp, @NotNull String part, @NotNull File currentContent) {
-        try (FileInputStream input = new FileInputStream(currentContent);
-             FileInputStream input2 = new FileInputStream(currentContent)) {
-            String primary = new PrimaryTypeParser().parse(input);
-            if (primary != null) {
-                List<String> mixins = new ArrayList<>();
-                String mixin = new MixinParser().parse(input2);
-                if (mixin != null) {
-                    mixin = mixin.trim();
-                    if (mixin.startsWith("[")) {
-                        mixin = mixin.substring(1, mixin.length() - 1);
-                    }
-                    for (String m : mixin.split(",")) {
-                        String mixinName = m.trim();
-                        if (!mixinName.isEmpty()) {
-                            mixins.add(mixinName);
-                        }
-                    }
-                }
-                cp.addSegment(part, primary, mixins);
-                return true;
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("A fatal error occurred while parsing the '"
-                    + currentContent
-                    + "' file, see nested exceptions: "
-                    + e);
-        }
-        return false;
     }
 
     @NotNull

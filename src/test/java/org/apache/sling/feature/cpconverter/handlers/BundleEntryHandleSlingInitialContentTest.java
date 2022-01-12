@@ -22,6 +22,9 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.xmlunit.assertj.XmlAssert.assertThat;
 
@@ -36,7 +39,6 @@ import java.util.Properties;
 import java.util.jar.JarFile;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.PackageId;
@@ -47,6 +49,7 @@ import org.apache.sling.feature.Artifact;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.SlingInitialContentPolicy;
+import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.SimpleFolderArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
@@ -62,15 +65,10 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.xmlunit.builder.DiffBuilder;
 import org.xmlunit.builder.Input;
-import org.xmlunit.diff.Comparison;
-import org.xmlunit.diff.ComparisonListener;
-import org.xmlunit.diff.ComparisonResult;
 import org.xmlunit.diff.ComparisonType;
 import org.xmlunit.diff.DOMDifferenceEngine;
 import org.xmlunit.diff.DifferenceEngine;
-import org.xmlunit.matchers.CompareMatcher;
 
 import javax.xml.transform.Source;
 
@@ -102,7 +100,8 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         props.setProperty(PackageProperties.NAME_VERSION, "1.11.6");
         when(assembler.getPackageProperties()).thenReturn(props);
         converter.setMainPackageAssembler(assembler);
-
+        converter.setAclManager(new DefaultAclManager());
+        
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
         handler.handle("/jcr_root/apps/gav/install/io.wcm.handler.media-1.11.6.jar", archive, entry, converter);
 
@@ -124,18 +123,104 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             assertEquals(targetId, vaultPackage.getId());
             Entry entry = archive.getEntry("jcr_root/apps/wcm-io/handler/media/components/global/include/responsiveImageSettings/.content.xml");
             assertNotNull("Archive does not contain expected item", entry);
+
+
+            String repoinitText =
+                    "create path /jcr_root/apps/wcm-io/handler/media/components/placeholder\n" +
+                    "create path /jcr_root/apps/wcm-io/handler/media/clientlibs/authoring/dialog(cq:ClientLibraryFolder)/js\n" +
+                    "create path /jcr_root/apps/wcm-io/handler/media/i18n/en(nt:folder mixin mix:language)\n" +
+                    "create path /jcr_root/apps/wcm-io/handler/media/components/granite/form/fileupload(cq:Component)\n" +
+                    "create path /jcr_root/apps/wcm-io/handler/media/components/global/include/mediaFormatSelection(nt:unstructured)\n" +
+                    "create path /jcr_root/apps/wcm-io/handler/media/docroot/resources/img\n" +
+                    "create path /jcr_root/apps/wcm-io/handler/media/components/dummyImage(cq:Component)\n" +
+                    "create path /jcr_root/apps/wcm-io/handler/media/components/granite/form/pathfield(cq:Component)\n" +
+                    "create path /jcr_root/apps/wcm-io/handler/media/clientlibs/authoring/dialog(cq:ClientLibraryFolder)/css\n" +
+                    "create path /jcr_root/apps/wcm-io/handler/media/components/global/include/responsiveImageSettings(nt:unstructured)\n" +
+                    "create path /jcr_root/apps/wcm-io/handler/media/components/granite/global\n" +
+                    "create path /jcr_root/apps/wcm-io/handler/media/components/granite/form/mediaformatselect(cq:Component)\n" +
+                    "create path /jcr_root/apps/wcm-io/handler/media/components/granite/datasources/mediaformats\n" +
+                    "create path /jcr_root/apps/wcm-io/handler/media/content/dummyImage(nt:unstructured)\n" +
+                    "create path /jcr_root/apps/wcm-io/handler/media/i18n/de(nt:folder mixin mix:language)";
+
+            verify(featuresManager, times(1)).addOrAppendRepoInitExtension(eq("content-package"), eq(repoinitText), Mockito.isNull());
+
         }
         // verify nothing else has been deployed
         assertEquals(2, targetFolder.list().length);
         // verify changed id
         ArgumentCaptor<Artifact> captor = ArgumentCaptor.forClass(Artifact.class);
-        Mockito.verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
+        verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
         final Artifact result = captor.getValue();
         assertNotNull(result);
         assertEquals(ArtifactId.fromMvnId("io.wcm:io.wcm.handler.media:1.11.6-cp2fm-converted"), result.getId());
         assertEquals("io.wcm.handler.media", result.getMetadata().get(Constants.BUNDLE_SYMBOLICNAME));
         assertEquals("1.11.6", result.getMetadata().get(Constants.BUNDLE_VERSION));
     }
+
+
+    @Test
+    public void testSlingInitialContentWithNodeTypeAndNoDefinedParent() throws Exception {
+        setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite.core-1.0.0-SNAPSHOT-slinginitialcontent-test.jar");
+
+        //setUpArchive("/jcr_root/apps/schindler/install/schindler-aem.core-1.0.0-SNAPSHOT.jar", "jar-file2.jar");
+        
+        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
+        converter.setEntryHandlersManager(handlersManager);
+        Map<String, String> namespaceRegistry = new HashMap<>();
+
+        namespaceRegistry.put("cq","http://www.day.com/jcr/cq/1.0");
+        namespaceRegistry.put("granite", "http://www.adobe.com/jcr/granite/1.0");
+    
+
+        when(featuresManager.getNamespaceUriByPrefix()).thenReturn(namespaceRegistry);
+
+        File targetFolder = tmpFolder.newFolder();
+        when(converter.getArtifactsDeployer()).thenReturn(new SimpleFolderArtifactsDeployer(targetFolder));
+        when(converter.isSubContentPackageIncluded("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar-APPLICATION")).thenReturn(true);
+
+        VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
+        Properties props = new Properties();
+        props.setProperty(PackageProperties.NAME_GROUP, "com.mysite");
+        props.setProperty(PackageProperties.NAME_NAME, "mysite.core");
+        props.setProperty(PackageProperties.NAME_VERSION, "1.0.0-SNAPSHOT");
+        when(assembler.getPackageProperties()).thenReturn(props);
+        converter.setMainPackageAssembler(assembler);
+        
+        DefaultAclManager aclManager = new DefaultAclManager();
+        converter.setAclManager(aclManager);
+        
+        handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
+        handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter);
+
+        converter.deployPackages();
+
+        try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "mysite.core-apps-1.0.0-SNAPSHOT-cp2fm-converted.zip"));
+             Archive archive = vaultPackage.getArchive()) {
+            archive.open(true);
+            PackageId targetId = PackageId.fromString("com.mysite:mysite.core-apps:1.0.0-SNAPSHOT-cp2fm-converted");
+            assertEquals(targetId, vaultPackage.getId());
+            
+            InputStream inputStream = archive.getInputSource(archive.getEntry("jcr_root/apps/myinitialcontentest/test/parent-with-definition/.content.xml")).getByteStream();
+            assertNotNull(inputStream);
+
+            //this needs to be defined by repoinit, not the package itself
+            Archive.Entry parentWithoutDefinitionEntry = archive.getEntry("jcr_root/apps/myinitialcontentest/test/parent-with-definition/parent-without-definition/.content.xml");
+            assertNull(parentWithoutDefinitionEntry);
+
+            InputStream someUnstructuredNode = archive.getInputSource(archive.getEntry("jcr_root/apps/myinitialcontentest/test/parent-with-definition/parent-without-definition/someUnstructuredNode/.content.xml")).getByteStream();
+            assertNotNull(someUnstructuredNode);
+            
+            String repoinitText = 
+                    "create path /jcr_root/apps/myinitialcontentest/test/my-first-node(nt:unstructured)\n" +
+                    "create path /jcr_root/content/test/myinitialcontentest2/my-second-node(my:node)\n" +
+                    "create path /jcr_root/apps/myinitialcontentest/test/parent-with-definition(my:parent)/parent-without-definition/someUnstructuredNode(nt:unstructured)";
+            
+            verify(featuresManager, times(1)).addOrAppendRepoInitExtension(eq("content-package"), eq(repoinitText), Mockito.isNull());
+            
+        }
+
+    }
+    
 
     @Test
     public void testSlingInitialContentWithNodeTypeAndPageJson() throws Exception {
@@ -161,7 +246,8 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         props.setProperty(PackageProperties.NAME_VERSION, "1.0.0-SNAPSHOT");
         when(assembler.getPackageProperties()).thenReturn(props);
         converter.setMainPackageAssembler(assembler);
-
+        converter.setAclManager(new DefaultAclManager());
+        
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
         handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter);
 
@@ -179,10 +265,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             assertPageStructureFromEntry(archive, "jcr_root/apps/mysite/components/global", "xfpage","body.html");
             
             InputStream inputStream = archive.getInputSource(archive.getEntry("jcr_root/apps/mysite/components/global/homepage/.content.xml")).getByteStream();
-
-            //String expectedXML = IOUtils.toString(, StandardCharsets.UTF_8);
-            //String actualXML   = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
-
+            
             InputSource expectedXML = new InputSource(getClass().getResource("mysite-nodetype-and-page-json-xml-result.xml").openStream());
             InputSource actualXML = new InputSource(inputStream);
 
@@ -217,7 +300,8 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         props.setProperty(PackageProperties.NAME_VERSION, "1.0.0-SNAPSHOT");
         when(assembler.getPackageProperties()).thenReturn(props);
         converter.setMainPackageAssembler(assembler);
-
+        converter.setAclManager(new DefaultAclManager());
+        
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
         handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter);
 
@@ -278,7 +362,8 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         props.setProperty(PackageProperties.NAME_VERSION, "1.0.0-SNAPSHOT");
         when(assembler.getPackageProperties()).thenReturn(props);
         converter.setMainPackageAssembler(assembler);
-
+        converter.setAclManager(new DefaultAclManager());
+        
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
         handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter);
 
@@ -303,6 +388,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite-slinginitialcontent-nodetype-def.jar");
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
         converter.setEntryHandlersManager(handlersManager);
+        converter.setAclManager(new DefaultAclManager());
         Map<String, String> namespaceRegistry = Collections.singletonMap("granite", "http://www.adobe.com/jcr/granite/1.0");
         when(featuresManager.getNamespaceUriByPrefix()).thenReturn(namespaceRegistry);
 
@@ -344,7 +430,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         assertEquals(2, targetFolder.list().length);
         // verify changed id
         ArgumentCaptor<Artifact> captor = ArgumentCaptor.forClass(Artifact.class);
-        Mockito.verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
+        verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
         final Artifact result = captor.getValue();
         assertNotNull(result);
         assertEquals(ArtifactId.fromMvnId("com.mysite:mysite.core:1.0.0-SNAPSHOT-cp2fm-converted"), result.getId());
@@ -369,7 +455,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         handler.handle("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", archive, entry, converter);
         // modified bundle
         ArgumentCaptor<Artifact> captor = ArgumentCaptor.forClass(Artifact.class);
-        Mockito.verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
+        verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
         final Artifact result = captor.getValue();
         assertNotNull(result);
         assertEquals(ArtifactId.fromMvnId("com.composum.nodes:composum-nodes-config:2.5.3-cp2fm-converted"), result.getId());
@@ -377,7 +463,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         assertEquals("2.5.3", result.getMetadata().get(Constants.BUNDLE_VERSION));
 
         // need to use ArgumentCaptur to properly compare string arrays
-        Mockito.verify(featuresManager).addConfiguration(ArgumentMatchers.isNull(), cfgCaptor.capture(), ArgumentMatchers.eq("/jcr_root/libs/composum/nodes/install/org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment-composum_core_v2.config"), dictionaryCaptor.capture());
+        verify(featuresManager).addConfiguration(ArgumentMatchers.isNull(), cfgCaptor.capture(), eq("/jcr_root/libs/composum/nodes/install/org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment-composum_core_v2.config"), dictionaryCaptor.capture());
         assertEquals("composum_core", dictionaryCaptor.getValue().get("whitelist.name"));
         assertEquals("org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment~composum_core_v2", cfgCaptor.getValue().getPid());
         assertArrayEquals(new String[] {
@@ -403,16 +489,16 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         handler.handle("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", archive, entry, converter);
         // original bundle
         ArgumentCaptor<Artifact> captor = ArgumentCaptor.forClass(Artifact.class);
-        Mockito.verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
+        verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
         final Artifact result = captor.getValue();
         assertNotNull(result);
         assertEquals(ArtifactId.fromMvnId("com.composum.nodes:composum-nodes-config:2.5.3"), result.getId());
         assertEquals("com.composum.nodes.config", result.getMetadata().get(Constants.BUNDLE_SYMBOLICNAME));
         assertEquals("2.5.3", result.getMetadata().get(Constants.BUNDLE_VERSION));
         // need to use ArgumentCaptur to properly compare string arrays
-        Mockito.verify(featuresManager).addConfiguration(ArgumentMatchers.isNull(),
+        verify(featuresManager).addConfiguration(ArgumentMatchers.isNull(),
                 cfgCaptor.capture(),
-                ArgumentMatchers.eq("/jcr_root/libs/composum/nodes/install/org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment-composum_core_v2.config"), dictionaryCaptor.capture());
+                eq("/jcr_root/libs/composum/nodes/install/org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment-composum_core_v2.config"), dictionaryCaptor.capture());
         assertEquals("composum_core", dictionaryCaptor.getValue().get("whitelist.name"));
         assertEquals("org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment~composum_core_v2", cfgCaptor.getValue().getPid());
         assertArrayEquals(new String[] {

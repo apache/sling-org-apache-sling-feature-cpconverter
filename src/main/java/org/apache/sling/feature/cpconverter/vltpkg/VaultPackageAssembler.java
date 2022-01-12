@@ -358,7 +358,7 @@ public class VaultPackageAssembler {
             }
         }
     }
-
+    
     private static final class RemoveInstallHooksPredicate implements Predicate<Map.Entry<Object, Object>> {
         @Override
         public boolean test(java.util.Map.Entry<Object, Object> entry) {
