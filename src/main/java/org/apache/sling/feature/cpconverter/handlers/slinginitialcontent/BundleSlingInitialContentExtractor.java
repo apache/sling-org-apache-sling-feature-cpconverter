@@ -344,7 +344,8 @@ public class BundleSlingInitialContentExtractor {
                     packageAssembler.addEntry(contentPackageEntryPath, bundleFileInputStream);
                 }
                 
-                copyInSlingFolderToParentsIfNeeded(pathEntryValue, contentPackageEntryPath);
+                
+                copyInSlingFolderToParentsIfNeeded(contentPackageEntryPath);
             }
  
         } finally {
@@ -354,37 +355,16 @@ public class BundleSlingInitialContentExtractor {
         }
     }
 
-    private void copyInSlingFolderToParentsIfNeeded(PathEntry pathEntryValue, String contentPackageEntryPath) throws IOException {
-        List<String> parents = getParentPaths(contentPackageEntryPath, pathEntryValue);
-        parents.forEach((parentFolder) -> parentFolderAssemblers.add(new RepoPath(parentFolder)));
-    }
-
-    /**
-     * Get the parent paths up to the app root of the PathEntry.
-     * @param contentPackageEntryPath
-     * @param pathEntryValue
-     * @return
-     */
-    private List<String> getParentPaths(final String contentPackageEntryPath, PathEntry pathEntryValue){
-
-        List<String> parentPaths = new ArrayList<>();
-        //we ignore the source file, start at parents
-        String intermediate = StringUtils.substringBeforeLast(contentPackageEntryPath,"/");
+    private void copyInSlingFolderToParentsIfNeeded(String contentPackageEntryPath) throws IOException {
         
-        while(StringUtils.contains(intermediate, "/")){
-            String extracted = StringUtils.substringAfterLast(intermediate, "/");
-            intermediate = StringUtils.substringBeforeLast(intermediate, "/");
-            String parentPath = intermediate + "/" + extracted;
-            
-            if(parentPath.equals("/jcr_root" + pathEntryValue.getTarget())){
-                //create up to the app root.
-                break;
-            }
-            parentPaths.add(parentPath);
+        String parentFolder = contentPackageEntryPath;
+        if(StringUtils.endsWith(contentPackageEntryPath, DOT_CONTENT_XML)){
+            parentFolder = StringUtils.substringBeforeLast(parentFolder, "/" + DOT_CONTENT_XML);
         }
-        
-        return parentPaths;
+        parentFolder = StringUtils.substringBeforeLast(parentFolder, "/");
+        parentFolderAssemblers.add(new RepoPath(parentFolder));
     }
+    
     
     @NotNull
     private String recomputeContentPackageEntryPath(String contentPackageEntryPath, VaultContentXMLContentCreator contentCreator) {

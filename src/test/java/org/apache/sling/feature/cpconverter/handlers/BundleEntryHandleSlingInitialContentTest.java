@@ -128,19 +128,16 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             String repoinitText =
                     "create path /jcr_root/apps/wcm-io/handler/media/components/placeholder\n" +
                     "create path /jcr_root/apps/wcm-io/handler/media/clientlibs/authoring/dialog(cq:ClientLibraryFolder)/js\n" +
-                    "create path /jcr_root/apps/wcm-io/handler/media/i18n/en(nt:folder mixin mix:language)\n" +
+                    "create path /jcr_root/apps/wcm-io/handler/media/content\n" +
                     "create path /jcr_root/apps/wcm-io/handler/media/components/granite/form/fileupload(cq:Component)\n" +
-                    "create path /jcr_root/apps/wcm-io/handler/media/components/global/include/mediaFormatSelection(nt:unstructured)\n" +
-                    "create path /jcr_root/apps/wcm-io/handler/media/docroot/resources/img\n" +
-                    "create path /jcr_root/apps/wcm-io/handler/media/components/dummyImage(cq:Component)\n" +
-                    "create path /jcr_root/apps/wcm-io/handler/media/components/granite/form/pathfield(cq:Component)\n" +
-                    "create path /jcr_root/apps/wcm-io/handler/media/clientlibs/authoring/dialog(cq:ClientLibraryFolder)/css\n" +
-                    "create path /jcr_root/apps/wcm-io/handler/media/components/global/include/responsiveImageSettings(nt:unstructured)\n" +
                     "create path /jcr_root/apps/wcm-io/handler/media/components/granite/global\n" +
+                    "create path /jcr_root/apps/wcm-io/handler/media/components/global/include\n" +
                     "create path /jcr_root/apps/wcm-io/handler/media/components/granite/form/mediaformatselect(cq:Component)\n" +
+                    "create path /jcr_root/apps/wcm-io/handler/media/docroot/resources/img\n" +
+                    "create path /jcr_root/apps/wcm-io/handler/media/i18n\n" +
+                    "create path /jcr_root/apps/wcm-io/handler/media/components/granite/form/pathfield(cq:Component)\n" +
                     "create path /jcr_root/apps/wcm-io/handler/media/components/granite/datasources/mediaformats\n" +
-                    "create path /jcr_root/apps/wcm-io/handler/media/content/dummyImage(nt:unstructured)\n" +
-                    "create path /jcr_root/apps/wcm-io/handler/media/i18n/de(nt:folder mixin mix:language)";
+                    "create path /jcr_root/apps/wcm-io/handler/media/clientlibs/authoring/dialog(cq:ClientLibraryFolder)/css";
 
             verify(featuresManager, times(1)).addOrAppendRepoInitExtension(eq("content-package"), eq(repoinitText), Mockito.isNull());
 
@@ -211,9 +208,8 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             assertNotNull(someUnstructuredNode);
             
             String repoinitText = 
-                    "create path /jcr_root/apps/myinitialcontentest/test/my-first-node(nt:unstructured)\n" +
-                    "create path /jcr_root/content/test/myinitialcontentest2/my-second-node(my:node)\n" +
-                    "create path /jcr_root/apps/myinitialcontentest/test/parent-with-definition(my:parent)/parent-without-definition/someUnstructuredNode(nt:unstructured)";
+                    "create path /jcr_root/content/test/myinitialcontentest2\n" +
+                    "create path /jcr_root/apps/myinitialcontentest/test/parent-with-definition(my:parent)/parent-without-definition";
             
             verify(featuresManager, times(1)).addOrAppendRepoInitExtension(eq("content-package"), eq(repoinitText), Mockito.isNull());
             
@@ -451,6 +447,8 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         props.setProperty(PackageProperties.NAME_VERSION, "1.11.6");
         when(assembler.getPackageProperties()).thenReturn(props);
         converter.setMainPackageAssembler(assembler);
+        converter.setAclManager(new DefaultAclManager());
+        
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
         handler.handle("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", archive, entry, converter);
         // modified bundle
@@ -485,6 +483,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         props.setProperty(PackageProperties.NAME_VERSION, "1.11.6");
         when(assembler.getPackageProperties()).thenReturn(props);
         converter.setMainPackageAssembler(assembler);
+        converter.setAclManager(new DefaultAclManager());
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_KEEP);
         handler.handle("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", archive, entry, converter);
         // original bundle
