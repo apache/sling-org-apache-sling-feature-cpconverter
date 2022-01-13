@@ -366,7 +366,7 @@ public class BundleSlingInitialContentExtractor {
             PathFilterSet pathFilterSet = new PathFilterSet(pathEntry.getTarget() != null ? pathEntry.getTarget() : "/");
             ImportMode importMode;
             if (pathEntry.isOverwrite()) {
-                importMode = ImportMode.REPLACE;
+                importMode = ImportMode.UPDATE;
             } else {
                 importMode = ImportMode.MERGE;
             }
