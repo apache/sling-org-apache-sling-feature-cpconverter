@@ -361,15 +361,18 @@ public class BundleSlingInitialContentExtractor {
             packageAssemblers.put(packageType, assembler);
             logger.info("Created package {} out of Sling-Initial-Content from '{}'", packageId, bundleArtifactId);
         }
+
+        ImportMode importMode;
+        if (pathEntry.isOverwrite()) {
+            importMode = ImportMode.UPDATE;
+        } else {
+            importMode = ImportMode.MERGE;
+        }
+        
         DefaultWorkspaceFilter filter = assembler.getFilter();
-        if (!filter.covers(repositoryPath)) {
+        if (filter.getFilterSets().stream().noneMatch(set -> set.getRoot().equals(pathEntry.getTarget() != null ? pathEntry.getTarget() : "/") &&
+                set.getImportMode() == importMode)) {
             PathFilterSet pathFilterSet = new PathFilterSet(pathEntry.getTarget() != null ? pathEntry.getTarget() : "/");
-            ImportMode importMode;
-            if (pathEntry.isOverwrite()) {
-                importMode = ImportMode.UPDATE;
-            } else {
-                importMode = ImportMode.MERGE;
-            }
             // TODO: add handling for merge, mergeProperties and overwriteProperties (https://issues.apache.org/jira/browse/SLING-10318)
             pathFilterSet.setImportMode(importMode);
             filter.add(pathFilterSet);
