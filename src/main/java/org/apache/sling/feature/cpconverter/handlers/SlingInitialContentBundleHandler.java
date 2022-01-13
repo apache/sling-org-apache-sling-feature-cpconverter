@@ -23,7 +23,7 @@ import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
-import org.apache.sling.feature.cpconverter.shared.CheckedConsumer;
+import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractorContext;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,8 +32,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
-import java.util.Map;
-import java.util.function.Consumer;
 import java.util.jar.JarFile;
 
 public class SlingInitialContentBundleHandler extends BundleEntryHandler {
@@ -51,23 +49,20 @@ public class SlingInitialContentBundleHandler extends BundleEntryHandler {
             Artifact artifact = extractFeatureArtifact(bundleName, jarFile);
             ArtifactId id = artifact.getId();
             
-            try (InputStream ignored = new BundleSlingInitialContentExtractorOverride(slingInitialContentPolicy, path, id, jarFile, converter, runMode).extract()) {
+            BundleSlingInitialContentExtractorContext context = new BundleSlingInitialContentExtractorContext(slingInitialContentPolicy, path, id, jarFile, converter, runMode);
+            try (InputStream ignored = new BundleSlingInitialContentExtractorOverride().extract(context)) {
                 logger.info("Ignoring inputstream {} with id {}", path, id);
             }
         }
     }
     
     class BundleSlingInitialContentExtractorOverride extends BundleSlingInitialContentExtractor{
-
-        public BundleSlingInitialContentExtractorOverride(ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy, @NotNull String path, @NotNull ArtifactId bundleArtifactId, @NotNull JarFile jarFile, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws IOException {
-            super(slingInitialContentPolicy, path, bundleArtifactId, jarFile, converter, runMode);
-        }
-
         @Override
-        protected void finalizePackageAssembly(@NotNull String path, @Nullable String runMode) throws IOException, ConverterException {
+        protected void finalizePackageAssembly(@NotNull BundleSlingInitialContentExtractorContext context) throws IOException, ConverterException {
             for (java.util.Map.Entry<PackageType, VaultPackageAssembler> entry : packageAssemblers.entrySet()) {
                 File packageFile = entry.getValue().createPackage();
-                handler.processSubPackage(path + "-" + entry.getKey(), runMode, converter.open(packageFile), converter, true);
+                ContentPackage2FeatureModelConverter converter = context.getConverter();
+                handler.processSubPackage(context.getPath() + "-" + entry.getKey(), context.getRunMode(), converter.open(packageFile), converter, true);
             }
         }
     }

@@ -34,6 +34,7 @@ import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
+import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
 import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
@@ -135,7 +136,7 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
     public ConverterUserAndPermissionTest(@NotNull String systemUserRelPath, @Nullable String enforcePrincipalBasedSupportedPath, @NotNull String name) throws Exception {
         this.aclManager = new DefaultAclManager(enforcePrincipalBasedSupportedPath, systemUserRelPath);
         this.handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, 
-                ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP, systemUserRelPath);
+                ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(), systemUserRelPath);
         this.enforcePrincipalBased = (enforcePrincipalBasedSupportedPath != null);
         this.withRelPath = (enforcePrincipalBased) ? enforcePrincipalBasedSupportedPath.substring(enforcePrincipalBasedSupportedPath.indexOf(systemUserRelPath)) : systemUserRelPath;
     }
@@ -250,7 +251,7 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
                 assertEquals(normalize(
                         "create service user eventproxy-service with path system/eventproxy\n" +
                                 "    create path /content\n" +
-                                "    create path /var/eventproxy\n" +
+                                "    create path /var/eventproxy(nt:unstructured mixin rep:AccessControllable)\n" +
                                 "    set ACL for eventproxy-service\n" +
                                 "        allow jcr:read on /content\n" +
                                 "        allow jcr:read,rep:write on /var/eventproxy\n" +

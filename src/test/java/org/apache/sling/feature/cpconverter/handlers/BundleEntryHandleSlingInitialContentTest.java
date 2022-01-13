@@ -51,6 +51,7 @@ import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.SlingInitialContentPolicy;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.SimpleFolderArtifactsDeployer;
+import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
 import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.junit.Assert;
@@ -102,9 +103,14 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         converter.setMainPackageAssembler(assembler);
         converter.setAclManager(new DefaultAclManager());
         
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
+        
+        handler.setBundleSlingInitialContentExtractor(extractor);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
         handler.handle("/jcr_root/apps/gav/install/io.wcm.handler.media-1.11.6.jar", archive, entry, converter);
-
+        
+        extractor.addRepoinitExtension(converter.getAssemblers(), featuresManager);
+        
         converter.deployPackages();
         // verify generated bundle
         try (JarFile jarFile = new JarFile(new File(targetFolder, "io.wcm.handler.media-1.11.6-cp2fm-converted.jar"))) {
@@ -126,18 +132,18 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
 
             String repoinitText =
-                    "create path /jcr_root/apps/wcm-io/handler/media/components/placeholder\n" +
-                    "create path /jcr_root/apps/wcm-io/handler/media/clientlibs/authoring/dialog(cq:ClientLibraryFolder)/js\n" +
-                    "create path /jcr_root/apps/wcm-io/handler/media/content\n" +
-                    "create path /jcr_root/apps/wcm-io/handler/media/components/granite/form/fileupload(cq:Component)\n" +
-                    "create path /jcr_root/apps/wcm-io/handler/media/components/granite/global\n" +
-                    "create path /jcr_root/apps/wcm-io/handler/media/components/global/include\n" +
-                    "create path /jcr_root/apps/wcm-io/handler/media/components/granite/form/mediaformatselect(cq:Component)\n" +
-                    "create path /jcr_root/apps/wcm-io/handler/media/docroot/resources/img\n" +
-                    "create path /jcr_root/apps/wcm-io/handler/media/i18n\n" +
-                    "create path /jcr_root/apps/wcm-io/handler/media/components/granite/form/pathfield(cq:Component)\n" +
-                    "create path /jcr_root/apps/wcm-io/handler/media/components/granite/datasources/mediaformats\n" +
-                    "create path /jcr_root/apps/wcm-io/handler/media/clientlibs/authoring/dialog(cq:ClientLibraryFolder)/css";
+                    "create path (sling:Folder) /apps/wcm-io/handler/media/content\n" +
+                    "create path (sling:Folder) /apps/wcm-io/handler/media/components/granite/form/mediaformatselect(cq:Component)\n" +
+                    "create path (sling:Folder) /apps/wcm-io/handler/media/i18n\n" +
+                    "create path (sling:Folder) /apps/wcm-io/handler/media/components/global/include\n" +
+                    "create path (sling:Folder) /apps/wcm-io/handler/media/components/placeholder\n" +
+                    "create path (sling:Folder) /apps/wcm-io/handler/media/clientlibs/authoring/dialog(cq:ClientLibraryFolder)/css\n" +
+                    "create path (sling:Folder) /apps/wcm-io/handler/media/components/granite/form/fileupload(cq:Component)\n" +
+                    "create path (sling:Folder) /apps/wcm-io/handler/media/clientlibs/authoring/dialog(cq:ClientLibraryFolder)/js\n" +
+                    "create path (sling:Folder) /apps/wcm-io/handler/media/components/granite/datasources/mediaformats\n" +
+                    "create path (sling:Folder) /apps/wcm-io/handler/media/docroot/resources/img\n" +
+                    "create path (sling:Folder) /apps/wcm-io/handler/media/components/granite/global\n" +
+                    "create path (sling:Folder) /apps/wcm-io/handler/media/components/granite/form/pathfield(cq:Component)\n";
 
             verify(featuresManager, times(1)).addOrAppendRepoInitExtension(eq("content-package"), eq(repoinitText), Mockito.isNull());
 
@@ -161,7 +167,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
         //setUpArchive("/jcr_root/apps/schindler/install/schindler-aem.core-1.0.0-SNAPSHOT.jar", "jar-file2.jar");
         
-        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
+        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
         converter.setEntryHandlersManager(handlersManager);
         Map<String, String> namespaceRegistry = new HashMap<>();
 
@@ -185,11 +191,14 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         
         DefaultAclManager aclManager = new DefaultAclManager();
         converter.setAclManager(aclManager);
-        
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
+
+        handler.setBundleSlingInitialContentExtractor(extractor);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
         handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter);
 
         converter.deployPackages();
+        extractor.addRepoinitExtension(converter.getAssemblers(), featuresManager);
 
         try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "mysite.core-apps-1.0.0-SNAPSHOT-cp2fm-converted.zip"));
              Archive archive = vaultPackage.getArchive()) {
@@ -208,8 +217,8 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             assertNotNull(someUnstructuredNode);
             
             String repoinitText = 
-                    "create path /jcr_root/content/test/myinitialcontentest2\n" +
-                    "create path /jcr_root/apps/myinitialcontentest/test/parent-with-definition(my:parent)/parent-without-definition";
+                    "create path (sling:Folder) /content/test/myinitialcontentest2\n" +
+                    "create path (sling:Folder) /apps/myinitialcontentest/test/parent-with-definition(my:parent)/parent-without-definition\n";
             
             verify(featuresManager, times(1)).addOrAppendRepoInitExtension(eq("content-package"), eq(repoinitText), Mockito.isNull());
             
@@ -221,7 +230,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
     @Test
     public void testSlingInitialContentWithNodeTypeAndPageJson() throws Exception {
         setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite.core-1.0.0-SNAPSHOT-pagejson.jar");
-        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
+        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
         converter.setEntryHandlersManager(handlersManager);
         Map<String, String> namespaceRegistry = new HashMap<>();
 
@@ -243,7 +252,9 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         when(assembler.getPackageProperties()).thenReturn(props);
         converter.setMainPackageAssembler(assembler);
         converter.setAclManager(new DefaultAclManager());
-        
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
+
+        handler.setBundleSlingInitialContentExtractor(extractor);        
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
         handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter);
 
@@ -275,7 +286,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
     @Test
     public void testSlingInitialContentWithSpecialCharacters() throws Exception {
         setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite.core-1.0.0-SNAPSHOT-specialchars-json-inputstream.jar");
-        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
+        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
         converter.setEntryHandlersManager(handlersManager);
         Map<String, String> namespaceRegistry = new HashMap<>();
 
@@ -297,7 +308,9 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         when(assembler.getPackageProperties()).thenReturn(props);
         converter.setMainPackageAssembler(assembler);
         converter.setAclManager(new DefaultAclManager());
-        
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
+
+        handler.setBundleSlingInitialContentExtractor(extractor);        
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
         handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter);
 
@@ -337,7 +350,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
     @Test
     public void testSlingInitialContentWithNumberedEntries() throws Exception {
         setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "io.wcm.handler.link-1.7.02.jar");
-        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
+        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
         converter.setEntryHandlersManager(handlersManager);
         Map<String, String> namespaceRegistry = new HashMap<>();
 
@@ -359,7 +372,9 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         when(assembler.getPackageProperties()).thenReturn(props);
         converter.setMainPackageAssembler(assembler);
         converter.setAclManager(new DefaultAclManager());
-        
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
+
+        handler.setBundleSlingInitialContentExtractor(extractor);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
         handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter);
 
@@ -399,7 +414,9 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         props.setProperty(PackageProperties.NAME_VERSION, "1.0.0-SNAPSHOT");
         when(assembler.getPackageProperties()).thenReturn(props);
         converter.setMainPackageAssembler(assembler);
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
 
+        handler.setBundleSlingInitialContentExtractor(extractor);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
         handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter);
 
@@ -448,7 +465,9 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         when(assembler.getPackageProperties()).thenReturn(props);
         converter.setMainPackageAssembler(assembler);
         converter.setAclManager(new DefaultAclManager());
-        
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
+
+        handler.setBundleSlingInitialContentExtractor(extractor);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
         handler.handle("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", archive, entry, converter);
         // modified bundle
@@ -484,6 +503,9 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         when(assembler.getPackageProperties()).thenReturn(props);
         converter.setMainPackageAssembler(assembler);
         converter.setAclManager(new DefaultAclManager());
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
+
+        handler.setBundleSlingInitialContentExtractor(extractor);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_KEEP);
         handler.handle("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", archive, entry, converter);
         // original bundle

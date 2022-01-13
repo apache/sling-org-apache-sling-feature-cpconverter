@@ -26,6 +26,7 @@ import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
+import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
 import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
 import org.jetbrains.annotations.NotNull;
@@ -50,7 +51,7 @@ public class AdjustedFilterTest extends AbstractConverterTest {
     private ContentPackage2FeatureModelConverter converter;
     private File outputDirectory;
     
-    private final EntryHandlersManager handlersManager = spy(new DefaultEntryHandlersManager(Collections.emptyMap(), false, ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP, ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT));
+    private final EntryHandlersManager handlersManager = spy(new DefaultEntryHandlersManager(Collections.emptyMap(), false, ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP,new BundleSlingInitialContentExtractor(),  ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT));
 
     @Before
     public void setUp() throws Exception {

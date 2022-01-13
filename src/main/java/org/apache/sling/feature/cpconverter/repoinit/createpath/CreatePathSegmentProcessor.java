@@ -49,7 +49,7 @@ public class CreatePathSegmentProcessor {
             //loop all package assemblers and check if .content.xml is defined
             for (VaultPackageAssembler packageAssembler : packageAssemblers) {
                 File currentContent = packageAssembler.getEntry(platformPath + "/" + DOT_CONTENT_XML);
-                if (currentContent.isFile()) {
+                if (currentContent != null && currentContent.isFile()) {
                     //add segment if jcr:primaryType is defined.
                     segmentAdded =  addSegment(cp, part, currentContent);
                     if (segmentAdded) {

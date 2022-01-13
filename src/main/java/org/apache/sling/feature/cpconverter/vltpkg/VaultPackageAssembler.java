@@ -233,8 +233,13 @@ public class VaultPackageAssembler {
     }
 
     public @NotNull File getEntry(@NotNull String path) {
-        if (!path.startsWith(ROOT_DIR)) {
-            path = ROOT_DIR + path;
+        if (!path.startsWith(ROOT_DIR + "/")) {
+            if(path.startsWith("/")){
+                path = ROOT_DIR + path;
+            }else{
+                path = ROOT_DIR + "/" + path;
+            }
+           
         }
 
         return new File(storingDirectory, path);

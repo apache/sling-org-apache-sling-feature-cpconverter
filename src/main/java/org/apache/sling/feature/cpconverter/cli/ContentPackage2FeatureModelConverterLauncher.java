@@ -37,6 +37,7 @@ import org.apache.sling.feature.cpconverter.artifacts.LocalMavenRepositoryArtifa
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
+import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
 import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
@@ -207,9 +208,11 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                 }
 
                 try (ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation, slingInitialContentPolicy)) {
+                    BundleSlingInitialContentExtractor bundleSlingInitialContentExtractor = new BundleSlingInitialContentExtractor();
                     converter.setFeaturesManager(featuresManager)
                              .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(artifactsOutputDirectory))
-                             .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap, !disableInstallerPolicy, slingInitialContentPolicy, systemUserRelPath))
+                             .setBundleSlingInitialContentExtractor(bundleSlingInitialContentExtractor)
+                             .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap, !disableInstallerPolicy, slingInitialContentPolicy, bundleSlingInitialContentExtractor, systemUserRelPath))
                              .setAclManager(aclManager)
                              .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
                              .setFailOnMixedPackages(failOnMixedPackages)

@@ -31,6 +31,8 @@ import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.ConverterException;
+import org.apache.sling.feature.cpconverter.accesscontrol.AccessControlEntry;
+import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.readers.XMLReader;
 import org.apache.sling.feature.cpconverter.repoinit.createpath.CreatePathSegmentProcessor;
 import org.apache.sling.feature.cpconverter.shared.CheckedConsumer;
@@ -71,64 +73,38 @@ public class BundleSlingInitialContentExtractor {
     private static final long TOOBIG = 0x6400000; // Max size of unzipped data, 100MB
     private static final Logger logger = LoggerFactory.getLogger(BundleSlingInitialContentExtractor.class);
 
-    protected final ContentPackage2FeatureModelConverter converter;
+
     protected final Map<PackageType, VaultPackageAssembler> packageAssemblers = new EnumMap<>(PackageType.class);
-   
-    private final ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy;
-    private final String path;
-
-    private final ArtifactId bundleArtifactId;
-    private final JarFile jarFile;
-    private final String runMode;
-    private final JcrNamespaceRegistry namespaceRegistry;
-    private final Manifest manifest;
-    private final CheckedConsumer<String> repoInitTextExtensionConsumer;
-    private final Set<RepoPath> parentFolderAssemblers = new HashSet<>();
-    private Collection<PathEntry> pathEntryList = new ArrayList<>();
-    private Iterator<PathEntry> pathEntries;
-
-    public BundleSlingInitialContentExtractor(ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy, @NotNull String path, @NotNull ArtifactId bundleArtifactId, @NotNull JarFile jarFile, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws IOException {
-        this.slingInitialContentPolicy = slingInitialContentPolicy;
-        this.path = path;
-
-        this.bundleArtifactId = bundleArtifactId;
-        this.jarFile = jarFile;
-        this.converter = converter;
-        this.runMode = runMode;
-        this.manifest = Objects.requireNonNull(jarFile.getManifest());
-        this.namespaceRegistry = new JcrNamespaceRegistryProvider(manifest, jarFile, converter.getFeaturesManager().getNamespaceUriByPrefix()).provideRegistryFromBundle();
-        
-        pathEntries = PathEntry.getContentPaths(manifest, -1);
-        
-        if(pathEntries != null){
-            pathEntries.forEachRemaining(pathEntryList::add);
-        }
-
-        repoInitTextExtensionConsumer = (String repoInitText) -> {
-            converter.getAclManager().addRepoinitExtention("content-package", repoInitText, null, converter.getFeaturesManager());
-        };
-    }
+    private CheckedConsumer<String> repoInitTextExtensionConsumer;
+    private final Set<RepoPath> parentFolderPaths = new HashSet<>();
+ 
     
     static Version getModifiedOsgiVersion(Version originalVersion) {
         return new Version(originalVersion.getMajor(), originalVersion.getMinor(), originalVersion.getMicro(), originalVersion.getQualifier() + "_" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);
     }
 
     @SuppressWarnings("java:S5042") // we already addressed this
-    @Nullable public InputStream extract() throws IOException, ConverterException {
+    @Nullable public InputStream extract(BundleSlingInitialContentExtractorContext context) throws IOException, ConverterException {
 
-        if (slingInitialContentPolicy == ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP) {
+        ContentPackage2FeatureModelConverter contentPackage2FeatureModelConverter = context.getConverter();
+        repoInitTextExtensionConsumer = (String repoInitText) -> {
+            contentPackage2FeatureModelConverter.getAclManager().addRepoinitExtention("content-package", repoInitText, null, contentPackage2FeatureModelConverter.getFeaturesManager());
+        };
+        
+        if (context.getSlingInitialContentPolicy() == ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP) {
             return null;
         }
-        if(CollectionUtils.isEmpty(pathEntryList)){
+        if(CollectionUtils.isEmpty(context.getPathEntryList())){
             return null;
         }
         
         // remove header
+        final Manifest manifest = context.getManifest();
         manifest.getMainAttributes().remove(new Attributes.Name(PathEntry.CONTENT_HEADER));
         // change version to have suffix
         Version originalVersion = new Version(Objects.requireNonNull(manifest.getMainAttributes().getValue(Constants.BUNDLE_VERSION)));
         manifest.getMainAttributes().putValue(Constants.BUNDLE_VERSION, getModifiedOsgiVersion(originalVersion).toString());
-        Path newBundleFile = Files.createTempFile(converter.getTempDirectory().toPath(), "newBundle", ".jar");
+        Path newBundleFile = Files.createTempFile(contentPackage2FeatureModelConverter.getTempDirectory().toPath(), "newBundle", ".jar");
 
         // create JAR file to prevent extracting it twice and for random access
         try (OutputStream fileOutput = Files.newOutputStream(newBundleFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
@@ -137,7 +113,8 @@ public class BundleSlingInitialContentExtractor {
             List<File> collectedFilesWithSlingInitialContent = new ArrayList<>();
             
             AtomicLong total = new AtomicLong(0);
-          
+
+            final JarFile jarFile = context.getJarFile();
             Enumeration<? extends JarEntry> entries = jarFile.entries();
 
             while(entries.hasMoreElements()){
@@ -153,14 +130,14 @@ public class BundleSlingInitialContentExtractor {
 
                 if (!jarEntry.isDirectory()) {
                     try (InputStream input = new BufferedInputStream(jarFile.getInputStream(jarEntry))) {
-                        if (containsSlingInitialContent(jarEntry)) {
+                        if (containsSlingInitialContent(context, jarEntry)) {
 
                             
                             
-                            File targetFile = new File(converter.getTempDirectory(), jarEntry.getName());
+                            File targetFile = new File(contentPackage2FeatureModelConverter.getTempDirectory(), jarEntry.getName());
                             String canonicalDestinationPath = targetFile.getCanonicalPath();
 
-                            if (!canonicalDestinationPath.startsWith(converter.getTempDirectory().getCanonicalPath())) {
+                            if (!canonicalDestinationPath.startsWith(contentPackage2FeatureModelConverter.getTempDirectory().getCanonicalPath())) {
                                 throw new IOException("Entry is outside of the target directory");
                             }
 
@@ -186,52 +163,18 @@ public class BundleSlingInitialContentExtractor {
             }
 
             for(File file : collectedFilesWithSlingInitialContent){
-                extractSlingInitialContentForJarEntry(file,converter.getTempDirectory().getPath());
+                extractSlingInitialContentForJarEntry(context, file, contentPackage2FeatureModelConverter.getTempDirectory().getPath());
             }
             
             
       
         }
-
-        addRepoInitExtension();
         
         // add additional content packages to feature model
-        finalizePackageAssembly(path, runMode);
+        finalizePackageAssembly(context);
 
         // return stripped bundle's inputstream which must be deleted on close
         return Files.newInputStream(newBundleFile, StandardOpenOption.READ, StandardOpenOption.DELETE_ON_CLOSE);
-    }
-    
-    private void addRepoInitExtension() throws IOException, ConverterException {
-        try (Formatter formatter = new Formatter()) {
-            addPaths(formatter);
-            String text = formatter.toString();
-            if (!text.isEmpty()) {
-                repoInitTextExtensionConsumer.accept(text);
-            }
-        }
-    }
-
-
-    private void addPaths(@NotNull Formatter formatter) {
-        
-        parentFolderAssemblers.stream()
-                .filter( entry -> parentFolderAssemblers.stream()
-                            .noneMatch(other -> !other.equals(
-                                    entry) && 
-                                    other.startsWith(entry)
-                            )
-                )
-                .filter( entry -> 
-                    !entry.isRepositoryPath()
-                ).map( entry -> 
-                    getCreatePath(entry, packageAssemblers.values())
-                ) 
-                .filter(Objects::nonNull)
-                .forEach(
-                    createPath -> formatter.format("%s", createPath.asRepoInitString())
-                );
-       
     }
 
     protected @Nullable CreatePath getCreatePath(@NotNull RepoPath path, @NotNull Collection<VaultPackageAssembler> packageAssemblers) {
@@ -240,7 +183,7 @@ public class BundleSlingInitialContentExtractor {
             return null;
         }
 
-        CreatePath cp = new CreatePath(null);
+        CreatePath cp = new CreatePath("sling:Folder");
         CreatePathSegmentProcessor.processSegments(path, packageAssemblers, cp);
         return cp;
     }
@@ -272,9 +215,9 @@ public class BundleSlingInitialContentExtractor {
      * @param jarEntry
      * @return
      */
-    boolean containsSlingInitialContent(@NotNull JarEntry jarEntry){
+    boolean containsSlingInitialContent( @NotNull BundleSlingInitialContentExtractorContext context, @NotNull JarEntry jarEntry){
         final String entryName = jarEntry.getName();
-        return  pathEntryList.stream().anyMatch(p -> entryName.startsWith(p.getPath()));
+        return  context.getPathEntryList().stream().anyMatch(p -> entryName.startsWith(p.getPath()));
     }
     
     /**
@@ -283,10 +226,10 @@ public class BundleSlingInitialContentExtractor {
      * @return {@code true} in case the given entry was part of the initial content otherwise {@code false}
      * @throws Exception
      */
-    void extractSlingInitialContentForJarEntry(@NotNull File file, String basePath) throws IOException, ConverterException {
+    void extractSlingInitialContentForJarEntry(@NotNull BundleSlingInitialContentExtractorContext context, @NotNull File file, String basePath) throws IOException, ConverterException {
         final String entryName = StringUtils.substringAfter( file.getPath(),basePath + "/");
         
-        final PathEntry pathEntryValue = pathEntryList.stream().filter(p -> entryName.startsWith( p.getPath())).findFirst().orElseThrow(NullPointerException::new);
+        final PathEntry pathEntryValue = context.getPathEntryList().stream().filter(p -> entryName.startsWith( p.getPath())).findFirst().orElseThrow(NullPointerException::new);
         final String target = pathEntryValue.getTarget();
         // https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html#file-name-escaping
 
@@ -299,18 +242,18 @@ public class BundleSlingInitialContentExtractor {
         Path tmpDocViewInputFile = null;
         
         try(InputStream bundleFileInputStream = new FileInputStream(file)) {
-            VaultPackageAssembler packageAssembler = initPackageAssemblerForPath(repositoryPath, pathEntryValue);
+            VaultPackageAssembler packageAssembler = initPackageAssemblerForPath(context, repositoryPath, pathEntryValue);
 
             VaultContentXMLContentCreator contentCreator = null;
             
             final ContentReader contentReader = getContentReaderForEntry(file, pathEntryValue);
             if (contentReader != null) {
                 // convert to docview xml
-                tmpDocViewInputFile = Files.createTempFile(converter.getTempDirectory().toPath(), "docview", ".xml");
+                tmpDocViewInputFile = Files.createTempFile(context.getConverter().getTempDirectory().toPath(), "docview", ".xml");
                 try (OutputStream docViewOutput = Files.newOutputStream(tmpDocViewInputFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
 
                     repositoryPath = FilenameUtils.removeExtension(repositoryPath);
-                    contentCreator = new VaultContentXMLContentCreator(StringUtils.substringBeforeLast(repositoryPath, "/"), docViewOutput, namespaceRegistry, packageAssembler, repoInitTextExtensionConsumer);
+                    contentCreator = new VaultContentXMLContentCreator(StringUtils.substringBeforeLast(repositoryPath, "/"), docViewOutput, context.getNamespaceRegistry(), packageAssembler, repoInitTextExtensionConsumer);
                   
                     if(file.getName().endsWith(".xml")){
                         contentCreator.setIsXmlProcessed();
@@ -328,14 +271,14 @@ public class BundleSlingInitialContentExtractor {
                 }
 
                 // remap CND files to make sure they are picked up by NodeTypesEntryHandler;
-                if (namespaceRegistry.getRegisteredCndSystemIds().contains(file.getName())) {
+                if (context.getNamespaceRegistry().getRegisteredCndSystemIds().contains(file.getName())) {
                     contentPackageEntryPath = "/META-INF/vault/" + Text.getName(file.getName()) + ".cnd";
                 }
                 
             }
 
             try (Archive virtualArchive = SingleFileArchive.fromPathOrInputStream(tmpDocViewInputFile, bundleFileInputStream,
-                    () -> Files.createTempFile(converter.getTempDirectory().toPath(), "initial-content", Text.getName(file.getName())), contentPackageEntryPath)) {
+                    () -> Files.createTempFile(context.getConverter().getTempDirectory().toPath(), "initial-content", Text.getName(file.getName())), contentPackageEntryPath)) {
                 // in which content package should this end up?
 
                 if (tmpDocViewInputFile != null) {
@@ -362,7 +305,9 @@ public class BundleSlingInitialContentExtractor {
             parentFolder = StringUtils.substringBeforeLast(parentFolder, "/" + DOT_CONTENT_XML);
         }
         parentFolder = StringUtils.substringBeforeLast(parentFolder, "/");
-        parentFolderAssemblers.add(new RepoPath(parentFolder));
+        parentFolder = StringUtils.substringAfter(parentFolder, "/jcr_root");
+        
+        parentFolderPaths.add(new RepoPath(parentFolder));
     }
     
     
@@ -379,9 +324,9 @@ public class BundleSlingInitialContentExtractor {
         }
         
         //we have some rare cases where a) have a double extension to remove or b) have an extension come from the contentCreator due to the double extension.
-//        if(contentPackageEntryPath.endsWith(".xml") || contentPackageEntryPath.endsWith(".json")){
-//            contentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath);
-//        }
+        if(contentPackageEntryPath.endsWith(".xml") || contentPackageEntryPath.endsWith(".json")){
+            contentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath);
+        }
         
         contentPackageEntryPath = contentPackageEntryPath + "/" + DOT_CONTENT_XML;
         return contentPackageEntryPath;
@@ -393,8 +338,10 @@ public class BundleSlingInitialContentExtractor {
      * @param repositoryPath
      * @return the VaultPackageAssembler from the cache to use for the given repository path
      */
-    public VaultPackageAssembler initPackageAssemblerForPath( @NotNull String repositoryPath, @NotNull PathEntry pathEntry)
+    public VaultPackageAssembler initPackageAssemblerForPath( @NotNull BundleSlingInitialContentExtractorContext context, @NotNull String repositoryPath, @NotNull PathEntry pathEntry)
             throws ConverterException {
+        
+        ArtifactId bundleArtifactId = context.getBundleArtifactId();
         PackageType packageType = VaultPackageUtils.detectPackageType(repositoryPath);
         VaultPackageAssembler assembler = packageAssemblers.get(packageType);
         if (assembler == null) {
@@ -410,7 +357,7 @@ public class BundleSlingInitialContentExtractor {
                     throw new ConverterException("Unexpected package type " + packageType + " detected for path " + repositoryPath);
             }
             final PackageId packageId = new PackageId(bundleArtifactId.getGroupId(), bundleArtifactId.getArtifactId()+packageNameSuffix, bundleArtifactId.getVersion());
-            assembler = VaultPackageAssembler.create(converter.getTempDirectory(), packageId, "Generated out of Sling Initial Content from bundle " + bundleArtifactId + " by cp2fm");
+            assembler = VaultPackageAssembler.create(context.getConverter().getTempDirectory(), packageId, "Generated out of Sling Initial Content from bundle " + bundleArtifactId + " by cp2fm");
             packageAssemblers.put(packageType, assembler);
             logger.info("Created package {} out of Sling-Initial-Content from '{}'", packageId, bundleArtifactId);
         }
@@ -430,11 +377,13 @@ public class BundleSlingInitialContentExtractor {
         return assembler;
     }
 
-    protected void finalizePackageAssembly(@NotNull String path, @Nullable String runMode) throws IOException, ConverterException {
+    protected void finalizePackageAssembly(BundleSlingInitialContentExtractorContext context) throws IOException, ConverterException {
         for (java.util.Map.Entry<PackageType, VaultPackageAssembler> entry : packageAssemblers.entrySet()) {
             File packageFile = entry.getValue().createPackage();
-            converter.processSubPackage(path + "-" + entry.getKey(), runMode, converter.open(packageFile), false);
+            ContentPackage2FeatureModelConverter converter = context.getConverter();
+            converter.processSubPackage(context.getPath() + "-" + entry.getKey(), context.getRunMode(), converter.open(packageFile), false);
         }
+        packageAssemblers.clear();
     }
     
     static final JsonReader jsonReader = new JsonReader();
@@ -458,4 +407,40 @@ public class BundleSlingInitialContentExtractor {
         }
     }
 
+    public void reset() {
+        parentFolderPaths.clear();
+    }
+
+    public void addRepoinitExtension(List<VaultPackageAssembler> assemblers, FeaturesManager featureManager) throws IOException, ConverterException {
+
+        try (Formatter formatter = new Formatter()) {
+            parentFolderPaths.stream()
+                    .filter( entry -> parentFolderPaths.stream()
+                            .noneMatch(other -> !other.equals(
+                                    entry) &&
+                                    other.startsWith(entry)
+                            )
+                    )
+                    .filter( entry ->
+                            !entry.isRepositoryPath()
+                    )
+                    .map( entry ->
+                        getCreatePath(entry, assemblers)
+                    )
+                    .filter(Objects::nonNull)
+                   
+                    .forEach(
+                            createPath -> formatter.format("%s", createPath.asRepoInitString())
+                    );
+
+            String text = formatter.toString();
+
+            if (!text.isEmpty()) {
+                featureManager.addOrAppendRepoInitExtension("content-package", text, null);
+            }
+        }
+        
+        
+        
+    }
 }
