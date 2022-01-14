@@ -52,22 +52,29 @@ public class VaultContentXMLContentCreator implements ContentCreator {
     private final LinkedList<XMLNode> parentNodePathStack = new LinkedList<>();
     private final JcrNamespaceRegistry namespaceRegistry;
     private final CheckedConsumer<String> repoInitTextExtensionConsumer;
+
+    private SlingInitialContentPackageEntryMetaData slingInitialContentPackageEntryMetaData;
+
     private boolean isFirstElement = true;
     private boolean finished = false;
     private boolean xmlProcessed = false;
     private String primaryNodeName;
     private XMLNode currentNode;
-
-    public VaultContentXMLContentCreator(String repositoryPath, OutputStream targetOutputStream, JcrNamespaceRegistry namespaceRegistry, VaultPackageAssembler packageAssembler, CheckedConsumer<String> repoInitTextExtensionConsumer) throws XMLStreamException, RepositoryException {
+    public VaultContentXMLContentCreator(String repositoryPath, OutputStream targetOutputStream, JcrNamespaceRegistry namespaceRegistry, VaultPackageAssembler packageAssembler, CheckedConsumer<String> repoInitTextExtensionConsumer, SlingInitialContentPackageEntryMetaData slingInitialContentPackageEntryMetaData) throws XMLStreamException, RepositoryException {
         this.repositoryPath = repositoryPath;
         this.targetOutputStream = targetOutputStream;
         this.packageAssembler = packageAssembler;
         this.namespaceRegistry = namespaceRegistry;
         this.repoInitTextExtensionConsumer = repoInitTextExtensionConsumer;
-    } 
-    
+        this.slingInitialContentPackageEntryMetaData = slingInitialContentPackageEntryMetaData;
+    }
+
     public void setIsXmlProcessed(){
         this.xmlProcessed = true;
+    }
+
+    public void setSlingInitialContentPackageEntryMetaData(SlingInitialContentPackageEntryMetaData slingInitialContentPackageEntryMetaData) {
+        this.slingInitialContentPackageEntryMetaData = slingInitialContentPackageEntryMetaData;
     }
     
     @Override
@@ -104,17 +111,19 @@ public class VaultContentXMLContentCreator implements ContentCreator {
             }
             basePath = basePathBuilder.toString();
         }
-       
-        XMLNode intermediateNode = new XMLNode(packageAssembler,basePath,elementName,jcrNodeName, primaryNodeType, mixinNodeTypes);
+
+        //if we are dealing with a descriptor file, we should use nt:file as default primaryType. 
+
+        String defaultNtType = slingInitialContentPackageEntryMetaData.isFileDescriptorEntry() ? JcrConstants.NT_FILE : JcrConstants.NT_UNSTRUCTURED;
+        String toUsePrimaryNodeType = StringUtils.isNotBlank(primaryNodeType) ? primaryNodeType : defaultNtType;
+        XMLNode intermediateNode = new XMLNode(packageAssembler,basePath,elementName,jcrNodeName, toUsePrimaryNodeType, mixinNodeTypes);
         //add the created node to the correct parent if present
         if(currentNode != null){
             currentNode.addChildNode(elementName, intermediateNode);
         }
         //switch the current node 
         currentNode = intermediateNode;
-        
-        currentNode.addProperty(JcrConstants.JCR_PRIMARYTYPE, StringUtils.isNotBlank(primaryNodeType) ? primaryNodeType : JcrConstants.NT_UNSTRUCTURED);
-        
+
         if(ArrayUtils.isNotEmpty(mixinNodeTypes)){
             currentNode.addProperty(JcrConstants.JCR_MIXINTYPES, "[" + String.join(",", mixinNodeTypes) + "]");
         }

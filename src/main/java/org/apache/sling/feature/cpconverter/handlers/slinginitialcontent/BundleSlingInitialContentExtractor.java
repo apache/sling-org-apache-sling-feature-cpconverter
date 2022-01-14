@@ -31,7 +31,6 @@ import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.ConverterException;
-import org.apache.sling.feature.cpconverter.accesscontrol.AccessControlEntry;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.readers.XMLReader;
 import org.apache.sling.feature.cpconverter.repoinit.createpath.CreatePathSegmentProcessor;
@@ -105,12 +104,13 @@ public class BundleSlingInitialContentExtractor {
         Version originalVersion = new Version(Objects.requireNonNull(manifest.getMainAttributes().getValue(Constants.BUNDLE_VERSION)));
         manifest.getMainAttributes().putValue(Constants.BUNDLE_VERSION, getModifiedOsgiVersion(originalVersion).toString());
         Path newBundleFile = Files.createTempFile(contentPackage2FeatureModelConverter.getTempDirectory().toPath(), "newBundle", ".jar");
+        String basePath = contentPackage2FeatureModelConverter.getTempDirectory().getPath();
 
         // create JAR file to prevent extracting it twice and for random access
         try (OutputStream fileOutput = Files.newOutputStream(newBundleFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
              JarOutputStream bundleOutput = new JarOutputStream(fileOutput, manifest)) {
 
-            List<File> collectedFilesWithSlingInitialContent = new ArrayList<>();
+            Set<SlingInitialContentBundleEntry> collectedSlingInitialContentBundleEntries = new HashSet<>();
             
             AtomicLong total = new AtomicLong(0);
 
@@ -126,8 +126,6 @@ public class BundleSlingInitialContentExtractor {
                 byte[] data = new byte[BUFFER];
                 
                 long compressedSize = jarEntry.getCompressedSize();
-                
-
                 if (!jarEntry.isDirectory()) {
                     try (InputStream input = new BufferedInputStream(jarFile.getInputStream(jarEntry))) {
                         if (containsSlingInitialContent(context, jarEntry)) {
@@ -146,7 +144,15 @@ public class BundleSlingInitialContentExtractor {
                            
                             FileOutputStream fos = new FileOutputStream(targetFile);
                             safelyWriteOutputStream(compressedSize, total, data, input, fos, true);
-                            collectedFilesWithSlingInitialContent.add(targetFile);
+                            
+                            final String entryName = StringUtils.substringAfter( targetFile.getPath(),basePath + "/");
+                            final PathEntry pathEntryValue = context.getPathEntryList().stream().filter(p -> entryName.startsWith( p.getPath())).findFirst().orElseThrow(NullPointerException::new);
+                            final String target = pathEntryValue.getTarget();
+                            // https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html#file-name-escaping
+                            String repositoryPath = (target != null ? target : "/") + URLDecoder.decode(entryName.substring(pathEntryValue.getPath().length()), "UTF-8");
+                            SlingInitialContentBundleEntry bundleEntry = new SlingInitialContentBundleEntry(jarEntry, targetFile, pathEntryValue, repositoryPath);
+                            
+                            collectedSlingInitialContentBundleEntries.add(bundleEntry);
                         } else {
                             bundleOutput.putNextEntry(jarEntry);
                             safelyWriteOutputStream(compressedSize, total, data, input, bundleOutput, false);
@@ -161,12 +167,12 @@ public class BundleSlingInitialContentExtractor {
                 }
 
             }
-
-            for(File file : collectedFilesWithSlingInitialContent){
-                extractSlingInitialContentForJarEntry(context, file, contentPackage2FeatureModelConverter.getTempDirectory().getPath());
+           
+     
+  
+            for(SlingInitialContentBundleEntry slingInitialContentBundleEntry : collectedSlingInitialContentBundleEntries){
+                extractSlingInitialContentForJarEntry(context, slingInitialContentBundleEntry, collectedSlingInitialContentBundleEntries, basePath);
             }
-            
-            
       
         }
         
@@ -222,20 +228,14 @@ public class BundleSlingInitialContentExtractor {
     
     /**
      *
-     * @param file
      * @return {@code true} in case the given entry was part of the initial content otherwise {@code false}
      * @throws Exception
      */
-    void extractSlingInitialContentForJarEntry(@NotNull BundleSlingInitialContentExtractorContext context, @NotNull File file, String basePath) throws IOException, ConverterException {
-        final String entryName = StringUtils.substringAfter( file.getPath(),basePath + "/");
+    void extractSlingInitialContentForJarEntry(@NotNull BundleSlingInitialContentExtractorContext context, @NotNull SlingInitialContentBundleEntry slingInitialContentBundleEntry, @NotNull  Set<SlingInitialContentBundleEntry> collectedSlingInitialContentBundleEntries, @NotNull String basePath) throws IOException, ConverterException {
         
-        final PathEntry pathEntryValue = context.getPathEntryList().stream().filter(p -> entryName.startsWith( p.getPath())).findFirst().orElseThrow(NullPointerException::new);
-        final String target = pathEntryValue.getTarget();
-        // https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html#file-name-escaping
-
-    
-        String repositoryPath = (target != null ? target : "/") + URLDecoder.decode(entryName.substring(pathEntryValue.getPath().length()), "UTF-8");
-   
+        String repositoryPath = slingInitialContentBundleEntry.getRepositoryPath();
+        File file = slingInitialContentBundleEntry.getTargetFile();
+        PathEntry pathEntryValue = slingInitialContentBundleEntry.getPathEntry();
         // all entry paths used by entry handlers start with "/"
         String contentPackageEntryPath = "/" + org.apache.jackrabbit.vault.util.Constants.ROOT_DIR + PlatformNameFormat.getPlatformPath(repositoryPath);
 
@@ -243,26 +243,29 @@ public class BundleSlingInitialContentExtractor {
         
         try(InputStream bundleFileInputStream = new FileInputStream(file)) {
             VaultPackageAssembler packageAssembler = initPackageAssemblerForPath(context, repositoryPath, pathEntryValue);
-
-            VaultContentXMLContentCreator contentCreator = null;
             
             final ContentReader contentReader = getContentReaderForEntry(file, pathEntryValue);
             if (contentReader != null) {
+                SlingInitialContentPackageEntryMetaData slingInitialContentPackageEntryMetaData;
+                
                 // convert to docview xml
                 tmpDocViewInputFile = Files.createTempFile(context.getConverter().getTempDirectory().toPath(), "docview", ".xml");
                 try (OutputStream docViewOutput = Files.newOutputStream(tmpDocViewInputFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
+                    
+                    slingInitialContentPackageEntryMetaData = computePackeEntryMetaData(collectedSlingInitialContentBundleEntries, contentPackageEntryPath);
 
-                    repositoryPath = FilenameUtils.removeExtension(repositoryPath);
-                    contentCreator = new VaultContentXMLContentCreator(StringUtils.substringBeforeLast(repositoryPath, "/"), docViewOutput, context.getNamespaceRegistry(), packageAssembler, repoInitTextExtensionConsumer);
-                  
+                    repositoryPath = StringUtils.substringBeforeLast(slingInitialContentPackageEntryMetaData.getRecomputedPackageEntryPath(), "/");
+                    VaultContentXMLContentCreator contentCreator = new VaultContentXMLContentCreator(repositoryPath, docViewOutput, context.getNamespaceRegistry(), packageAssembler, repoInitTextExtensionConsumer,slingInitialContentPackageEntryMetaData);
+                    
+                    contentCreator.setSlingInitialContentPackageEntryMetaData(slingInitialContentPackageEntryMetaData);
+
                     if(file.getName().endsWith(".xml")){
                         contentCreator.setIsXmlProcessed();
                     }
 
                     contentReader.parse(file.toURI().toURL(), contentCreator);
-                    contentPackageEntryPath = recomputeContentPackageEntryPath(contentPackageEntryPath, contentCreator);
-                    
                     contentCreator.finish();
+                    contentPackageEntryPath = slingInitialContentPackageEntryMetaData.getRecomputedPackageEntryPath();
 
                 } catch (IOException | XMLStreamException e) {
                     throw new IOException("Can not parse " + file, e);
@@ -275,8 +278,9 @@ public class BundleSlingInitialContentExtractor {
                     contentPackageEntryPath = "/META-INF/vault/" + Text.getName(file.getName()) + ".cnd";
                 }
                 
+                
             }
-
+            
             try (Archive virtualArchive = SingleFileArchive.fromPathOrInputStream(tmpDocViewInputFile, bundleFileInputStream,
                     () -> Files.createTempFile(context.getConverter().getTempDirectory().toPath(), "initial-content", Text.getName(file.getName())), contentPackageEntryPath)) {
                 // in which content package should this end up?
@@ -311,25 +315,35 @@ public class BundleSlingInitialContentExtractor {
     }
     
     
+    
     @NotNull
-    private String recomputeContentPackageEntryPath(String contentPackageEntryPath, VaultContentXMLContentCreator contentCreator) {
+    private SlingInitialContentPackageEntryMetaData computePackeEntryMetaData(@NotNull Set<SlingInitialContentBundleEntry> bundleEntries, final String contentPackageEntryPath) {
         
         //sometimes we are dealing with double extensions (.json.xml)
-        contentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath);
+        String recomputedContentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath);
         
-        if(StringUtils.isNotBlank(contentCreator.getPrimaryNodeName())){
-            //custom node name
-            contentPackageEntryPath = StringUtils.substringBeforeLast(contentPackageEntryPath, "/") ;
-            contentPackageEntryPath = contentPackageEntryPath + "/" + contentCreator.getPrimaryNodeName();
+//        if(StringUtils.isNotBlank(primaryNodeName)){
+//            //custom node name
+//            recomputedContentPackageEntryPath = StringUtils.substringBeforeLast(recomputedContentPackageEntryPath, "/") ;
+//            recomputedContentPackageEntryPath = recomputedContentPackageEntryPath + "/" + primaryNodeName;
+//        }
+        
+        final String checkIfRecomputedPathCandidate = StringUtils.removeStart(recomputedContentPackageEntryPath, "/jcr_root");
+        //  check if the resulting candidate matches one of the repositoryPaths in the bundle entries we have.
+        //  for example        /apps/test.json.xml (descriptor entry)
+        //  will match         /apps/test.json (file entry)
+        final boolean isFileDescriptor;
+        if(bundleEntries.stream().anyMatch(bundleEntry -> StringUtils.equals(checkIfRecomputedPathCandidate,bundleEntry.getRepositoryPath()))){
+            //we are dealing with a folder descriptor here
+            recomputedContentPackageEntryPath = recomputedContentPackageEntryPath + ".dir/" + DOT_CONTENT_XML;
+            isFileDescriptor = true;
+        }else{
+            recomputedContentPackageEntryPath = recomputedContentPackageEntryPath + "/" + DOT_CONTENT_XML;
+            isFileDescriptor = false;
         }
+
+        return new SlingInitialContentPackageEntryMetaData(isFileDescriptor,recomputedContentPackageEntryPath);
         
-        //we have some rare cases where a) have a double extension to remove or b) have an extension come from the contentCreator due to the double extension.
-        if(contentPackageEntryPath.endsWith(".xml") || contentPackageEntryPath.endsWith(".json")){
-            contentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath);
-        }
-        
-        contentPackageEntryPath = contentPackageEntryPath + "/" + DOT_CONTENT_XML;
-        return contentPackageEntryPath;
     }
 
 

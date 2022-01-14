@@ -22,6 +22,8 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -32,16 +34,23 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Dictionary;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.jar.JarFile;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.PackageId;
@@ -84,9 +93,10 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
     @Captor
     ArgumentCaptor<Configuration> cfgCaptor;
-    
-    private static final Gson GSON =  new GsonBuilder().create();
 
+    @Captor
+    ArgumentCaptor<String> repoinitTextCaptor;
+    
     @Test
     public void testSlingInitialContent() throws Exception {
         setUpArchive("/jcr_root/apps/gav/install/io.wcm.handler.media-1.11.6.jar", "io.wcm.handler.media-1.11.6.jar");
@@ -136,22 +146,28 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             assertNotNull("Archive does not contain expected item", entry);
 
 
-            String repoinitText =
-                    "create path (sling:Folder) /apps/wcm-io/handler/media/content\n" +
-                    "create path (sling:Folder) /apps/wcm-io/handler/media/components/granite/form/mediaformatselect(cq:Component)\n" +
-                    "create path (sling:Folder) /apps/wcm-io/handler/media/i18n\n" +
-                    "create path (sling:Folder) /apps/wcm-io/handler/media/components/global/include\n" +
-                    "create path (sling:Folder) /apps/wcm-io/handler/media/components/placeholder\n" +
-                    "create path (sling:Folder) /apps/wcm-io/handler/media/clientlibs/authoring/dialog(cq:ClientLibraryFolder)/css\n" +
-                    "create path (sling:Folder) /apps/wcm-io/handler/media/components/granite/form/fileupload(cq:Component)\n" +
-                    "create path (sling:Folder) /apps/wcm-io/handler/media/clientlibs/authoring/dialog(cq:ClientLibraryFolder)/js\n" +
-                    "create path (sling:Folder) /apps/wcm-io/handler/media/components/granite/datasources/mediaformats\n" +
-                    "create path (sling:Folder) /apps/wcm-io/handler/media/docroot/resources/img\n" +
-                    "create path (sling:Folder) /apps/wcm-io/handler/media/components/granite/global\n" +
-                    "create path (sling:Folder) /apps/wcm-io/handler/media/components/granite/form/pathfield(cq:Component)\n";
+            Set<String> expectedCreatePathStatements = new HashSet<>();
+            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/content");
+            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/components/granite/form/mediaformatselect(cq:Component)");
+            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/i18n");
+            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/components/global/include");
+            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/components/placeholder");
+            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/clientlibs/authoring/dialog(cq:ClientLibraryFolder)/css");
+            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/components/granite/form/fileupload(cq:Component)");
+            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/clientlibs/authoring/dialog(cq:ClientLibraryFolder)/js");
+            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/components/granite/datasources/mediaformats");
+            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/docroot/resources/img");
+            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/components/granite/global");
+            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/components/granite/form/pathfield(cq:Component)");
 
-            verify(featuresManager, times(1)).addOrAppendRepoInitExtension(eq("content-package"), eq(repoinitText), Mockito.isNull());
+       
+           
+            verify(featuresManager, times(1)).addOrAppendRepoInitExtension(eq("content-package"), repoinitTextCaptor.capture(), Mockito.isNull());
 
+            for(String expectedCreatePathStatement: expectedCreatePathStatements){
+                assertTrue("Repoinit text does not contain desired create path statement!",StringUtils.contains(repoinitTextCaptor.getValue(), expectedCreatePathStatement));
+            }
+            
         }
         // verify nothing else has been deployed
         assertEquals(2, targetFolder.list().length);
@@ -199,7 +215,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
         converter.deployPackages();
 
-        class TypedMap extends HashMap<String,String> {}
+        Type typeOfHashMap = new TypeToken<Map<String, String>>() { }.getType();
         // verify generated package
         try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "mysite.core-apps-1.0.0-SNAPSHOT-cp2fm-converted.zip"));
              Archive archive = vaultPackage.getArchive()) {
@@ -211,21 +227,24 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             assertNotNull(jsonFileEntry);
             
             //compare JSON
+            Reader actualJsonFileContents = new InputStreamReader(archive.getInputSource(jsonFileEntry).getByteStream(), UTF_8);
+            Reader expectedJsonFileContents = new InputStreamReader(getClass().getResourceAsStream("i18n-jsonfile-xml-descriptor-test/en.json"), UTF_8);
+            
+            Gson GSON =  new GsonBuilder().create();
 
-            InputStream byteStream = archive.getInputSource(jsonFileEntry).getByteStream();
-            TypedMap actualJson = GSON.fromJson(new InputStreamReader(byteStream), TypedMap.class);
-            TypedMap expectedJson = GSON.fromJson(new InputStreamReader(getClass().getResourceAsStream("i18n-jsonfile-xml-descriptor-test/en.json")), TypedMap.class);
+            Map<String,String> actualJson = GSON.fromJson(actualJsonFileContents, typeOfHashMap);
+            Map<String,String> expectedJson = GSON.fromJson(expectedJsonFileContents, typeOfHashMap);
             
             assertEquals(expectedJson, actualJson);
             //compare XML
             
-            Entry jsonFileDescriptorEntry = archive.getEntry("/jcr_root/apps/myinitialcontentest/test/i18n/en.json.xml");
+            Entry jsonFileDescriptorEntry = archive.getEntry("/jcr_root/apps/myinitialcontentest/test/i18n/en.json.dir/.content.xml");
             assertNotNull(jsonFileDescriptorEntry);
 
-            String expectedXML = IOUtils.toString(getClass().getResourceAsStream("i18n-jsonfile-xml-descriptor-test/en.json.xml"), UTF_8);
+            String expectedXML = IOUtils.toString(getClass().getResourceAsStream("i18n-jsonfile-xml-descriptor-test/en.json.dir/.content.xml"), UTF_8);
             String actualXML = IOUtils.toString(archive.getInputSource(jsonFileDescriptorEntry).getByteStream(), UTF_8);
     
-            assertThat(expectedXML).and(actualXML).areSimilar();
+            assertThat(actualXML).and(expectedXML).areSimilar();
 
         }
     }
@@ -234,8 +253,6 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
     @Test
     public void testSlingInitialContentWithNodeTypeAndNoDefinedParent() throws Exception {
         setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite.core-1.0.0-SNAPSHOT-slinginitialcontent-test.jar");
-
-        //setUpArchive("/jcr_root/apps/schindler/install/schindler-aem.core-1.0.0-SNAPSHOT.jar", "jar-file2.jar");
         
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
         converter.setEntryHandlersManager(handlersManager);
