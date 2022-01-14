@@ -288,36 +288,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             deleteDirTree(outputDirectory);
         }
     }
-
-    @Test
-    public void convertContentPackagePutInDedicatedFolderContentTypePackagePolicy2() throws Exception {
-        URL packageUrl = getClass().getResource("build_cloud.aem-author.all2.zip");
-        File packageFile = FileUtils.toFile(packageUrl);
-
-        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
-        File outputDirectoryUnreferencedArtifacts = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + "_unreferenced_" + System.currentTimeMillis());
-
-        try {
-            DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, EXTRACT_AND_REMOVE, new BundleSlingInitialContentExtractor(), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
-
-            converter = new ContentPackage2FeatureModelConverter(true, EXTRACT_AND_REMOVE);
-            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
-                    .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
-                    .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
-                    .setEntryHandlersManager(handlersManager)
-                    .setAclManager(new DefaultAclManager())
-                    .setContentTypePackagePolicy(PackagePolicy.PUT_IN_DEDICATED_FOLDER)
-                    .setUnreferencedArtifactsDeployer(new SimpleFolderArtifactsDeployer(outputDirectoryUnreferencedArtifacts))
-                    .convert(packageFile);
-
-            System.out.println(outputDirectory.getPath());
-            System.out.println(outputDirectoryUnreferencedArtifacts.getPath());
-        } finally {
-            deleteDirTree(outputDirectory);
-            deleteDirTree(outputDirectoryUnreferencedArtifacts);
-        }
-    }
-
+    
     @Test
     public void convertContentPackagePutInDedicatedFolderContentTypePackagePolicy() throws Exception {
         URL packageUrl = getClass().getResource("test-content-package.zip");
