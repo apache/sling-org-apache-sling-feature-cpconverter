@@ -14,7 +14,7 @@
  * License for the specific language governing permissions and limitations under
  * the License.
  */
-package org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.assembler;
+package org.apache.sling.feature.cpconverter.handlers.slinginitialcontent;
 
 import org.apache.jackrabbit.vault.fs.api.ImportMode;
 import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
@@ -23,8 +23,6 @@ import org.apache.jackrabbit.vault.packaging.PackageId;
 import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ConverterException;
-import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
-import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractorContext;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils;
 import org.apache.sling.jcr.contentloader.PathEntry;
@@ -36,6 +34,9 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Encapsulates the VaultPackage assembler logic for the sling initial content extraction
+ */
 public class AssemblerProvider {
     
     private static final Logger logger = LoggerFactory.getLogger(AssemblerProvider.class);
