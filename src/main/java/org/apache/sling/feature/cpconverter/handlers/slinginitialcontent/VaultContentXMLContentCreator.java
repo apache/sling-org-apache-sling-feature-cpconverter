@@ -19,7 +19,6 @@ package org.apache.sling.feature.cpconverter.handlers.slinginitialcontent;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
-import org.apache.jackrabbit.vault.validation.spi.util.NameUtil;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.xmlbuffer.XMLNode;
 import org.apache.sling.feature.cpconverter.shared.CheckedConsumer;
 import org.apache.sling.feature.cpconverter.vltpkg.JcrNamespaceRegistry;
@@ -53,28 +52,24 @@ public class VaultContentXMLContentCreator implements ContentCreator {
     private final JcrNamespaceRegistry namespaceRegistry;
     private final CheckedConsumer<String> repoInitTextExtensionConsumer;
 
-    private SlingInitialContentPackageEntryMetaData slingInitialContentPackageEntryMetaData;
+    private final boolean isFileDescriptorEntry;
 
     private boolean isFirstElement = true;
     private boolean finished = false;
     private boolean xmlProcessed = false;
     private String primaryNodeName;
     private XMLNode currentNode;
-    public VaultContentXMLContentCreator(String repositoryPath, OutputStream targetOutputStream, JcrNamespaceRegistry namespaceRegistry, VaultPackageAssembler packageAssembler, CheckedConsumer<String> repoInitTextExtensionConsumer, SlingInitialContentPackageEntryMetaData slingInitialContentPackageEntryMetaData) throws XMLStreamException, RepositoryException {
+    public VaultContentXMLContentCreator(String repositoryPath, OutputStream targetOutputStream, JcrNamespaceRegistry namespaceRegistry, VaultPackageAssembler packageAssembler, CheckedConsumer<String> repoInitTextExtensionConsumer, boolean isFileDescriptorEntry) throws XMLStreamException, RepositoryException {
         this.repositoryPath = repositoryPath;
         this.targetOutputStream = targetOutputStream;
         this.packageAssembler = packageAssembler;
         this.namespaceRegistry = namespaceRegistry;
         this.repoInitTextExtensionConsumer = repoInitTextExtensionConsumer;
-        this.slingInitialContentPackageEntryMetaData = slingInitialContentPackageEntryMetaData;
+        this.isFileDescriptorEntry = isFileDescriptorEntry;
     }
 
     public void setIsXmlProcessed(){
         this.xmlProcessed = true;
-    }
-
-    public void setSlingInitialContentPackageEntryMetaData(SlingInitialContentPackageEntryMetaData slingInitialContentPackageEntryMetaData) {
-        this.slingInitialContentPackageEntryMetaData = slingInitialContentPackageEntryMetaData;
     }
     
     @Override
@@ -114,7 +109,7 @@ public class VaultContentXMLContentCreator implements ContentCreator {
 
         //if we are dealing with a descriptor file, we should use nt:file as default primaryType. 
 
-        String defaultNtType = slingInitialContentPackageEntryMetaData.isFileDescriptorEntry() ? JcrConstants.NT_FILE : JcrConstants.NT_UNSTRUCTURED;
+        String defaultNtType = isFileDescriptorEntry ? JcrConstants.NT_FILE : JcrConstants.NT_UNSTRUCTURED;
         String toUsePrimaryNodeType = StringUtils.isNotBlank(primaryNodeType) ? primaryNodeType : defaultNtType;
         XMLNode intermediateNode = new XMLNode(packageAssembler,basePath,elementName,jcrNodeName, toUsePrimaryNodeType, mixinNodeTypes);
         //add the created node to the correct parent if present

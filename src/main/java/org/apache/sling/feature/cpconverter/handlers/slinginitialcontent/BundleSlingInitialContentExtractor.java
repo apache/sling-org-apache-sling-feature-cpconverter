@@ -116,7 +116,7 @@ public class BundleSlingInitialContentExtractor {
 
             final JarFile jarFile = context.getJarFile();
             Enumeration<? extends JarEntry> entries = jarFile.entries();
-
+            
             while(entries.hasMoreElements()){
                 JarEntry jarEntry = entries.nextElement();
 
@@ -246,26 +246,23 @@ public class BundleSlingInitialContentExtractor {
             
             final ContentReader contentReader = getContentReaderForEntry(file, pathEntryValue);
             if (contentReader != null) {
-                SlingInitialContentPackageEntryMetaData slingInitialContentPackageEntryMetaData;
-                
+            
                 // convert to docview xml
                 tmpDocViewInputFile = Files.createTempFile(context.getConverter().getTempDirectory().toPath(), "docview", ".xml");
                 try (OutputStream docViewOutput = Files.newOutputStream(tmpDocViewInputFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
-                    
-                    slingInitialContentPackageEntryMetaData = computePackeEntryMetaData(collectedSlingInitialContentBundleEntries, contentPackageEntryPath);
 
-                    repositoryPath = StringUtils.substringBeforeLast(slingInitialContentPackageEntryMetaData.getRecomputedPackageEntryPath(), "/");
-                    VaultContentXMLContentCreator contentCreator = new VaultContentXMLContentCreator(repositoryPath, docViewOutput, context.getNamespaceRegistry(), packageAssembler, repoInitTextExtensionConsumer,slingInitialContentPackageEntryMetaData);
-                    
-                    contentCreator.setSlingInitialContentPackageEntryMetaData(slingInitialContentPackageEntryMetaData);
+                    repositoryPath = FilenameUtils.removeExtension(repositoryPath);
+                    boolean isFileDescriptor = isFileDescriptor(collectedSlingInitialContentBundleEntries, contentPackageEntryPath);
+                    VaultContentXMLContentCreator contentCreator = new VaultContentXMLContentCreator(StringUtils.substringBeforeLast(repositoryPath, "/"), docViewOutput, context.getNamespaceRegistry(), packageAssembler, repoInitTextExtensionConsumer, isFileDescriptor);
 
+                    
                     if(file.getName().endsWith(".xml")){
                         contentCreator.setIsXmlProcessed();
                     }
 
                     contentReader.parse(file.toURI().toURL(), contentCreator);
+                    contentPackageEntryPath = recomputeContentPackageEntryPath(collectedSlingInitialContentBundleEntries, contentPackageEntryPath, contentCreator);
                     contentCreator.finish();
-                    contentPackageEntryPath = slingInitialContentPackageEntryMetaData.getRecomputedPackageEntryPath();
 
                 } catch (IOException | XMLStreamException e) {
                     throw new IOException("Can not parse " + file, e);
@@ -313,21 +310,31 @@ public class BundleSlingInitialContentExtractor {
         
         parentFolderPaths.add(new RepoPath(parentFolder));
     }
-    
-    
+
+
+    @NotNull
+    private boolean isFileDescriptor(@NotNull Set<SlingInitialContentBundleEntry> bundleEntries, final String contentPackageEntryPath) {
+
+        //sometimes we are dealing with double extensions (.json.xml)
+        String recomputedContentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath);
+
+        final String checkIfRecomputedPathCandidate = StringUtils.removeStart(recomputedContentPackageEntryPath, "/jcr_root");
+        return bundleEntries.stream().anyMatch(bundleEntry -> StringUtils.equals(checkIfRecomputedPathCandidate,bundleEntry.getRepositoryPath()));
+
+    }
     
     @NotNull
-    private SlingInitialContentPackageEntryMetaData computePackeEntryMetaData(@NotNull Set<SlingInitialContentBundleEntry> bundleEntries, final String contentPackageEntryPath) {
+    private String recomputeContentPackageEntryPath(@NotNull Set<SlingInitialContentBundleEntry> bundleEntries, final String contentPackageEntryPath, VaultContentXMLContentCreator contentCreator) {
         
         //sometimes we are dealing with double extensions (.json.xml)
         String recomputedContentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath);
         
-//        if(StringUtils.isNotBlank(primaryNodeName)){
-//            //custom node name
-//            recomputedContentPackageEntryPath = StringUtils.substringBeforeLast(recomputedContentPackageEntryPath, "/") ;
-//            recomputedContentPackageEntryPath = recomputedContentPackageEntryPath + "/" + primaryNodeName;
-//        }
-        
+        if(StringUtils.isNotBlank(contentCreator.getPrimaryNodeName())){
+            //custom node name
+            recomputedContentPackageEntryPath = StringUtils.substringBeforeLast(recomputedContentPackageEntryPath, "/") ;
+            recomputedContentPackageEntryPath = recomputedContentPackageEntryPath + "/" + contentCreator.getPrimaryNodeName();
+        }
+
         final String checkIfRecomputedPathCandidate = StringUtils.removeStart(recomputedContentPackageEntryPath, "/jcr_root");
         //  check if the resulting candidate matches one of the repositoryPaths in the bundle entries we have.
         //  for example        /apps/test.json.xml (descriptor entry)
@@ -342,7 +349,7 @@ public class BundleSlingInitialContentExtractor {
             isFileDescriptor = false;
         }
 
-        return new SlingInitialContentPackageEntryMetaData(isFileDescriptor,recomputedContentPackageEntryPath);
+        return recomputedContentPackageEntryPath;
         
     }
 
