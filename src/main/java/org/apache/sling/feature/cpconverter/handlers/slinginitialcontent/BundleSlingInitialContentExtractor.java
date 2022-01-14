@@ -136,7 +136,9 @@ public class BundleSlingInitialContentExtractor {
                             }
 
                             targetFile.getParentFile().mkdirs();
-                            targetFile.createNewFile();
+                            if(!targetFile.exists() && !targetFile.createNewFile()){
+                                throw new IOException("Could not create placeholder file!");
+                            }
                            
                             FileOutputStream fos = new FileOutputStream(targetFile);
                             safelyWriteOutputStream(compressedSize, total, data, input, fos, true);

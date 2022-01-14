@@ -53,7 +53,7 @@ public class XMLNode {
     public XMLNode(@NotNull VaultPackageAssembler packageAssembler, 
                    @NotNull String basePath,
                    @NotNull String xmlElementName,
-                   @NotNull String jcrNodeName,
+                   @Nullable String jcrNodeName,
                    @NotNull String primaryNodeType,
                    @NotNull String[] mixinNodeTypes){
         this.packageAssembler = packageAssembler;
@@ -129,7 +129,7 @@ public class XMLNode {
         return xmlElementName;
     }
 
-    public String getJcrNodeName() {
+    public @Nullable String getJcrNodeName() {
         return jcrNodeName;
     }
 
