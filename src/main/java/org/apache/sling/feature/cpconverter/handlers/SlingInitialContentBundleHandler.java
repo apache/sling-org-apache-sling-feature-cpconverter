@@ -59,7 +59,7 @@ public class SlingInitialContentBundleHandler extends BundleEntryHandler {
     class BundleSlingInitialContentExtractorOverride extends BundleSlingInitialContentExtractor{
         @Override
         protected void finalizePackageAssembly(@NotNull BundleSlingInitialContentExtractorContext context) throws IOException, ConverterException {
-            for (java.util.Map.Entry<PackageType, VaultPackageAssembler> entry : packageAssemblers.entrySet()) {
+            for (java.util.Map.Entry<PackageType, VaultPackageAssembler> entry : assemblerProvider.getPackageAssemblerEntrySet()) {
                 File packageFile = entry.getValue().createPackage();
                 ContentPackage2FeatureModelConverter converter = context.getConverter();
                 handler.processSubPackage(context.getPath() + "-" + entry.getKey(), context.getRunMode(), converter.open(packageFile), converter, true);

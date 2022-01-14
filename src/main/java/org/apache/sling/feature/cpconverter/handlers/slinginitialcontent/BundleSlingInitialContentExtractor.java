@@ -32,6 +32,7 @@ import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
+import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.assembler.AssemblerProvider;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.readers.XMLReader;
 import org.apache.sling.feature.cpconverter.repoinit.createpath.CreatePathSegmentProcessor;
 import org.apache.sling.feature.cpconverter.shared.CheckedConsumer;
@@ -73,7 +74,7 @@ public class BundleSlingInitialContentExtractor {
     private static final Logger logger = LoggerFactory.getLogger(BundleSlingInitialContentExtractor.class);
 
 
-    protected final Map<PackageType, VaultPackageAssembler> packageAssemblers = new EnumMap<>(PackageType.class);
+    protected final AssemblerProvider assemblerProvider = new AssemblerProvider();
     private CheckedConsumer<String> repoInitTextExtensionConsumer;
     private final Set<RepoPath> parentFolderPaths = new HashSet<>();
  
@@ -242,7 +243,7 @@ public class BundleSlingInitialContentExtractor {
         Path tmpDocViewInputFile = null;
         
         try(InputStream bundleFileInputStream = new FileInputStream(file)) {
-            VaultPackageAssembler packageAssembler = initPackageAssemblerForPath(context, repositoryPath, pathEntryValue);
+            VaultPackageAssembler packageAssembler = assemblerProvider.initPackageAssemblerForPath(context, repositoryPath, pathEntryValue);
             
             final ContentReader contentReader = getContentReaderForEntry(file, pathEntryValue);
             if (contentReader != null) {
@@ -343,71 +344,22 @@ public class BundleSlingInitialContentExtractor {
         if(bundleEntries.stream().anyMatch(bundleEntry -> StringUtils.equals(checkIfRecomputedPathCandidate,bundleEntry.getRepositoryPath()))){
             //we are dealing with a folder descriptor here
             recomputedContentPackageEntryPath = recomputedContentPackageEntryPath + ".dir/" + DOT_CONTENT_XML;
-            isFileDescriptor = true;
         }else{
             recomputedContentPackageEntryPath = recomputedContentPackageEntryPath + "/" + DOT_CONTENT_XML;
-            isFileDescriptor = false;
         }
 
         return recomputedContentPackageEntryPath;
         
     }
-
-
-    /**
-     * Lazily initializes the cache with the necessary VaultPackageAssemblers
-     * @param repositoryPath
-     * @return the VaultPackageAssembler from the cache to use for the given repository path
-     */
-    public VaultPackageAssembler initPackageAssemblerForPath( @NotNull BundleSlingInitialContentExtractorContext context, @NotNull String repositoryPath, @NotNull PathEntry pathEntry)
-            throws ConverterException {
-        
-        ArtifactId bundleArtifactId = context.getBundleArtifactId();
-        PackageType packageType = VaultPackageUtils.detectPackageType(repositoryPath);
-        VaultPackageAssembler assembler = packageAssemblers.get(packageType);
-        if (assembler == null) {
-            final String packageNameSuffix;
-            switch (packageType) {
-                case APPLICATION:
-                    packageNameSuffix = "-apps";
-                    break;
-                case CONTENT:
-                    packageNameSuffix = "-content";
-                    break;
-                default:
-                    throw new ConverterException("Unexpected package type " + packageType + " detected for path " + repositoryPath);
-            }
-            final PackageId packageId = new PackageId(bundleArtifactId.getGroupId(), bundleArtifactId.getArtifactId()+packageNameSuffix, bundleArtifactId.getVersion());
-            assembler = VaultPackageAssembler.create(context.getConverter().getTempDirectory(), packageId, "Generated out of Sling Initial Content from bundle " + bundleArtifactId + " by cp2fm");
-            packageAssemblers.put(packageType, assembler);
-            logger.info("Created package {} out of Sling-Initial-Content from '{}'", packageId, bundleArtifactId);
-        }
-
-        ImportMode importMode;
-        if (pathEntry.isOverwrite()) {
-            importMode = ImportMode.UPDATE;
-        } else {
-            importMode = ImportMode.MERGE;
-        }
-        
-        DefaultWorkspaceFilter filter = assembler.getFilter();
-        if (filter.getFilterSets().stream().noneMatch(set -> set.getRoot().equals(pathEntry.getTarget() != null ? pathEntry.getTarget() : "/") &&
-                set.getImportMode() == importMode)) {
-            PathFilterSet pathFilterSet = new PathFilterSet(pathEntry.getTarget() != null ? pathEntry.getTarget() : "/");
-            // TODO: add handling for merge, mergeProperties and overwriteProperties (https://issues.apache.org/jira/browse/SLING-10318)
-            pathFilterSet.setImportMode(importMode);
-            filter.add(pathFilterSet);
-        }
-        return assembler;
-    }
+    
 
     protected void finalizePackageAssembly(BundleSlingInitialContentExtractorContext context) throws IOException, ConverterException {
-        for (java.util.Map.Entry<PackageType, VaultPackageAssembler> entry : packageAssemblers.entrySet()) {
+        for (Map.Entry<PackageType, VaultPackageAssembler> entry : assemblerProvider.getPackageAssemblerEntrySet()) {
             File packageFile = entry.getValue().createPackage();
             ContentPackage2FeatureModelConverter converter = context.getConverter();
             converter.processSubPackage(context.getPath() + "-" + entry.getKey(), context.getRunMode(), converter.open(packageFile), false);
         }
-        packageAssemblers.clear();
+        assemblerProvider.clear();
     }
     
     static final JsonReader jsonReader = new JsonReader();
