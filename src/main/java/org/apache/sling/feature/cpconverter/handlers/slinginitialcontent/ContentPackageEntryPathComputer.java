@@ -18,21 +18,24 @@ package org.apache.sling.feature.cpconverter.handlers.slinginitialcontent;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.SlingInitialContentBundleEntry;
-import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.VaultContentXMLContentCreator;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;
 
 import static org.apache.jackrabbit.vault.util.Constants.DOT_CONTENT_XML;
 
+/**
+ * Performs re-computation of the ContentPackagePath of the bundle entry (Sling Initial Content)
+ */
 public class ContentPackageEntryPathComputer {
 
     private final Set<SlingInitialContentBundleEntry> bundleEntries;
     private final String contentPackageEntryPath;
     private final VaultContentXMLContentCreator contentCreator;
 
-    public ContentPackageEntryPathComputer(@NotNull Set<SlingInitialContentBundleEntry> bundleEntries, @NotNull final String contentPackageEntryPath, @NotNull VaultContentXMLContentCreator contentCreator){
+    public ContentPackageEntryPathComputer(@NotNull Set<SlingInitialContentBundleEntry> bundleEntries, 
+                                           @NotNull final String contentPackageEntryPath, 
+                                           @NotNull VaultContentXMLContentCreator contentCreator){
         this.bundleEntries = bundleEntries;
         this.contentPackageEntryPath = contentPackageEntryPath;
         this.contentCreator = contentCreator;

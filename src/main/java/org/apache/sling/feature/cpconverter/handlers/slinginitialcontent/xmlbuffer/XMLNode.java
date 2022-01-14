@@ -17,6 +17,8 @@
 package org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.xmlbuffer;
 
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -48,7 +50,12 @@ public class XMLNode {
     private final Map<String,String> vltXmlParsedProperties = new HashMap<>();
     private final Map<String,XMLNode> children = new LinkedHashMap<>();
     
-    public XMLNode(VaultPackageAssembler packageAssembler, String basePath, String xmlElementName, String jcrNodeName, String primaryNodeType, String[] mixinNodeTypes){
+    public XMLNode(@NotNull VaultPackageAssembler packageAssembler, 
+                   @NotNull String basePath,
+                   @NotNull String xmlElementName,
+                   @NotNull String jcrNodeName,
+                   @NotNull String primaryNodeType,
+                   @NotNull String[] mixinNodeTypes){
         this.packageAssembler = packageAssembler;
         this.basePath = basePath;
         this.xmlElementName = xmlElementName;
@@ -57,7 +64,7 @@ public class XMLNode {
         this.mixinNodeTypes = mixinNodeTypes;
     }
     
-    public void addProperty(String name, int propertyType, String value){
+    public void addProperty(@NotNull String name, int propertyType, @NotNull  String value){
         String propertyTypeName = PropertyType.nameFromValue(propertyType);
         
         if(propertyType > 0){
@@ -68,7 +75,7 @@ public class XMLNode {
       
     }
     
-    public void addProperty(String name, int propertyType, String[] values) throws RepositoryException {
+    public void addProperty(@NotNull String name, int propertyType, @NotNull String[] values) throws RepositoryException {
         String propertyTypeName = PropertyType.nameFromValue(propertyType);
         
         if(propertyType > 0){
@@ -79,11 +86,11 @@ public class XMLNode {
        
     }
 
-    public void addChildNode(String name, XMLNode xmlNode){
+    public void addChildNode(@NotNull String name, @NotNull XMLNode xmlNode){
         this.children.put(name, xmlNode);
     }
     
-    public void addProperty(String name, Object value)  throws RepositoryException {
+    public void addProperty(@NotNull String name, @Nullable Object value)  throws RepositoryException {
         if (value == null) {
             return;
         }

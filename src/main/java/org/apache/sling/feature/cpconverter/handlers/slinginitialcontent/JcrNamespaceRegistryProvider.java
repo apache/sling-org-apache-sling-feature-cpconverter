@@ -48,7 +48,9 @@ public class JcrNamespaceRegistryProvider {
     private final JarFile jarFile;
     private final Map<String, String> predefinedNamespaceUriByPrefix;
 
-    JcrNamespaceRegistryProvider(@NotNull Manifest manifest, @NotNull JarFile jarFile, @NotNull Map<String, String> predefinedNamespaceUriByPrefix){
+    JcrNamespaceRegistryProvider(@NotNull Manifest manifest, 
+                                 @NotNull JarFile jarFile, 
+                                 @NotNull Map<String, String> predefinedNamespaceUriByPrefix){
 
         this.manifest = manifest;
         this.jarFile = jarFile;

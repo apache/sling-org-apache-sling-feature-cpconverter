@@ -17,6 +17,7 @@
 package org.apache.sling.feature.cpconverter.handlers.slinginitialcontent;
 
 import org.apache.sling.jcr.contentloader.PathEntry;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.util.Objects;
@@ -25,20 +26,17 @@ import java.util.jar.JarEntry;
 public class SlingInitialContentBundleEntry {
     
     
-    private final JarEntry jarEntry;
     private final File targetFile;
     private final PathEntry pathEntry;
     private final String repositoryPath;
 
-    public SlingInitialContentBundleEntry(JarEntry jarEntry, File targetFile, PathEntry pathEntry, String repositoryPath) {
-        this.jarEntry = jarEntry;
+    public SlingInitialContentBundleEntry(
+                                          @NotNull File targetFile,
+                                          @NotNull PathEntry pathEntry,
+                                          @NotNull String repositoryPath) {
         this.targetFile = targetFile;
         this.pathEntry = pathEntry;
         this.repositoryPath = repositoryPath;
-    }
-
-    public JarEntry getJarEntry() {
-        return jarEntry;
     }
 
     public File getTargetFile() {
@@ -63,6 +61,6 @@ public class SlingInitialContentBundleEntry {
 
     @Override
     public int hashCode() {
-        return Objects.hash(jarEntry, targetFile, pathEntry, repositoryPath);
+        return Objects.hash(targetFile, pathEntry, repositoryPath);
     }
 }

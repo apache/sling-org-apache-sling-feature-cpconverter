@@ -38,13 +38,16 @@ import java.util.Set;
 
 import static org.apache.jackrabbit.vault.util.Constants.DOT_CONTENT_XML;
 
+/**
+ * Handles creating the parent folders for sling initial content entries from the bundle
+ */
 public class ParentFolderRepoInitHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(ParentFolderRepoInitHandler.class);
     
     private final Set<RepoPath> parentFolderPaths = new HashSet<>();
     
-    public void addParentsForPath(String contentPackageEntryPath)  {
+    public void addParentsForPath(@NotNull String contentPackageEntryPath)  {
 
         String parentFolder = contentPackageEntryPath;
         if(StringUtils.endsWith(contentPackageEntryPath, DOT_CONTENT_XML)){
@@ -60,7 +63,8 @@ public class ParentFolderRepoInitHandler {
         parentFolderPaths.clear();
     }
 
-    public void addRepoinitExtension(List<VaultPackageAssembler> assemblers, FeaturesManager featureManager) throws IOException, ConverterException {
+    public void addRepoinitExtension(@NotNull List<VaultPackageAssembler> assemblers, 
+                                     @NotNull FeaturesManager featureManager) throws IOException, ConverterException {
 
         try (Formatter formatter = new Formatter()) {
             parentFolderPaths.stream()

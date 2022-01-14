@@ -18,6 +18,9 @@ package org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.reader
 
 import org.apache.sling.jcr.contentloader.internal.readers.XmlReader;
 
+/**
+ * Extends the XMLReader to perform the activate method on construction, since it's protected.
+ */
 public class XMLReader extends XmlReader {
     public XMLReader(){
         this.activate();

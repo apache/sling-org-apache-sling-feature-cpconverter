@@ -21,6 +21,7 @@ import org.apache.sling.jcr.contentloader.ContentReader;
 import org.apache.sling.jcr.contentloader.PathEntry;
 import org.apache.sling.jcr.contentloader.internal.readers.JsonReader;
 import org.apache.sling.jcr.contentloader.internal.readers.ZipReader;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 
@@ -33,7 +34,7 @@ public class ContentReaderProvider {
     static final XMLReader xmlReader = new XMLReader();
     static final ZipReader zipReader   = new ZipReader();
     
-    public ContentReader getContentReaderForEntry(File entry, PathEntry pathEntry){
+    public ContentReader getContentReaderForEntry(@NotNull File entry, @NotNull PathEntry pathEntry){
         String entryName = entry.getName();
         if (entryName.endsWith(".json") && !pathEntry.isIgnoredImportProvider("json")) {
             return jsonReader;

@@ -24,23 +24,37 @@ import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter
 import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.shared.CheckedConsumer;
-import org.apache.sling.feature.cpconverter.vltpkg.*;
+import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.jcr.contentloader.PathEntry;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.jar.*;
+import java.util.jar.Attributes;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 
 /**
  * Extracts the sling initial content from a bundle to an java.io.InputStream.
@@ -50,8 +64,6 @@ public class BundleSlingInitialContentExtractor {
     private static final double THRESHOLD_RATIO = 10;
     private static final int BUFFER = 512;
     private static final long TOOBIG = 0x6400000; // Max size of unzipped data, 100MB
-    private static final Logger logger = LoggerFactory.getLogger(BundleSlingInitialContentExtractor.class);
-
 
     protected final AssemblerProvider assemblerProvider = new AssemblerProvider();
     protected final ContentReaderProvider contentReaderProvider = new ContentReaderProvider();
@@ -59,17 +71,20 @@ public class BundleSlingInitialContentExtractor {
     
     private CheckedConsumer<String> repoInitTextExtensionConsumer;
     
-    static Version getModifiedOsgiVersion(Version originalVersion) {
-        return new Version(originalVersion.getMajor(), originalVersion.getMinor(), originalVersion.getMicro(), originalVersion.getQualifier() + "_" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);
+    static Version getModifiedOsgiVersion(@NotNull Version originalVersion) {
+        return new Version( originalVersion.getMajor(), 
+                            originalVersion.getMinor(), 
+                            originalVersion.getMicro(), 
+                    originalVersion.getQualifier() + "_" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);
     }
 
     @SuppressWarnings("java:S5042") // we already addressed this
-    @Nullable public InputStream extract(BundleSlingInitialContentExtractorContext context) throws IOException, ConverterException {
+    @Nullable public InputStream extract(@NotNull BundleSlingInitialContentExtractorContext context) throws IOException, ConverterException {
 
         ContentPackage2FeatureModelConverter contentPackage2FeatureModelConverter = context.getConverter();
-        repoInitTextExtensionConsumer = (String repoInitText) -> {
+        repoInitTextExtensionConsumer = (String repoInitText) -> 
             contentPackage2FeatureModelConverter.getAclManager().addRepoinitExtention("content-package", repoInitText, null, contentPackage2FeatureModelConverter.getFeaturesManager());
-        };
+        
         
         if (context.getSlingInitialContentPolicy() == ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP) {
             return null;
@@ -159,14 +174,16 @@ public class BundleSlingInitialContentExtractor {
     }
 
     @NotNull
-    private SlingInitialContentBundleEntry createSlingInitialContentBundleEntry(BundleSlingInitialContentExtractorContext context, String basePath, JarEntry jarEntry, File targetFile) throws UnsupportedEncodingException {
+    private SlingInitialContentBundleEntry createSlingInitialContentBundleEntry(@NotNull BundleSlingInitialContentExtractorContext context, 
+                                                                                @NotNull String basePath, 
+                                                                                @NotNull JarEntry jarEntry, 
+                                                                                @NotNull File targetFile) throws UnsupportedEncodingException {
         final String entryName = StringUtils.substringAfter( targetFile.getPath(), basePath + "/");
         final PathEntry pathEntryValue = context.getPathEntryList().stream().filter(p -> entryName.startsWith( p.getPath())).findFirst().orElseThrow(NullPointerException::new);
         final String target = pathEntryValue.getTarget();
         // https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html#file-name-escaping
         String repositoryPath = (target != null ? target : "/") + URLDecoder.decode(entryName.substring(pathEntryValue.getPath().length()), "UTF-8");
-        SlingInitialContentBundleEntry bundleEntry = new SlingInitialContentBundleEntry(jarEntry, targetFile, pathEntryValue, repositoryPath);
-        return bundleEntry;
+        return new SlingInitialContentBundleEntry(targetFile, pathEntryValue, repositoryPath);
     }
 
 
@@ -175,11 +192,11 @@ public class BundleSlingInitialContentExtractor {
         parentFolderRepoInitHandler.reset();
     }
 
-    public void addRepoinitExtension(List<VaultPackageAssembler> assemblers, FeaturesManager featureManager) throws IOException, ConverterException {
+    public void addRepoinitExtension(@NotNull List<VaultPackageAssembler> assemblers, @NotNull FeaturesManager featureManager) throws IOException, ConverterException {
         parentFolderRepoInitHandler.addRepoinitExtension(assemblers, featureManager);
     }
 
-    protected void finalizePackageAssembly(BundleSlingInitialContentExtractorContext context) throws IOException, ConverterException {
+    protected void finalizePackageAssembly(@NotNull BundleSlingInitialContentExtractorContext context) throws IOException, ConverterException {
         for (Map.Entry<PackageType, VaultPackageAssembler> entry : assemblerProvider.getPackageAssemblerEntrySet()) {
             File packageFile = entry.getValue().createPackage();
             ContentPackage2FeatureModelConverter converter = context.getConverter();
@@ -188,7 +205,12 @@ public class BundleSlingInitialContentExtractor {
         assemblerProvider.clear();
     }
 
-    private void safelyWriteOutputStream(long compressedSize, AtomicLong total, byte[] data, InputStream input, OutputStream fos, boolean shouldClose) throws IOException {
+    private void safelyWriteOutputStream(@NotNull long compressedSize, 
+                                         @NotNull AtomicLong total, 
+                                         @NotNull byte[] data, 
+                                         @NotNull InputStream input, 
+                                         @NotNull OutputStream fos, 
+                                         boolean shouldClose) throws IOException {
         int count;
         BufferedOutputStream dest = new BufferedOutputStream(fos, BUFFER);
         while (total.get() + BUFFER <= TOOBIG && (count = input.read(data, 0, BUFFER)) != -1) {

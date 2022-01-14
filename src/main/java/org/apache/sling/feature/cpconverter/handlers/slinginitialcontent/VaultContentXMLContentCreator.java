@@ -24,6 +24,7 @@ import org.apache.sling.feature.cpconverter.shared.CheckedConsumer;
 import org.apache.sling.feature.cpconverter.vltpkg.JcrNamespaceRegistry;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.jcr.contentloader.ContentCreator;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.jcr.RepositoryException;
@@ -59,7 +60,12 @@ public class VaultContentXMLContentCreator implements ContentCreator {
     private boolean xmlProcessed = false;
     private String primaryNodeName;
     private XMLNode currentNode;
-    public VaultContentXMLContentCreator(String repositoryPath, OutputStream targetOutputStream, JcrNamespaceRegistry namespaceRegistry, VaultPackageAssembler packageAssembler, CheckedConsumer<String> repoInitTextExtensionConsumer, boolean isFileDescriptorEntry) throws XMLStreamException, RepositoryException {
+    public VaultContentXMLContentCreator(@NotNull String repositoryPath,
+                                         @NotNull OutputStream targetOutputStream,
+                                         @NotNull JcrNamespaceRegistry namespaceRegistry,
+                                         @NotNull VaultPackageAssembler packageAssembler,
+                                         @NotNull CheckedConsumer<String> repoInitTextExtensionConsumer, 
+                                         boolean isFileDescriptorEntry) throws XMLStreamException, RepositoryException {
         this.repositoryPath = repositoryPath;
         this.targetOutputStream = targetOutputStream;
         this.packageAssembler = packageAssembler;

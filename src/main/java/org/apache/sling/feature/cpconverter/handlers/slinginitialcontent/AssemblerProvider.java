@@ -48,7 +48,9 @@ public class AssemblerProvider {
      * @param repositoryPath
      * @return the VaultPackageAssembler from the cache to use for the given repository path
      */
-    public VaultPackageAssembler initPackageAssemblerForPath(@NotNull BundleSlingInitialContentExtractorContext context, @NotNull String repositoryPath, @NotNull PathEntry pathEntry)
+    public VaultPackageAssembler initPackageAssemblerForPath(@NotNull BundleSlingInitialContentExtractorContext context, 
+                                                             @NotNull String repositoryPath, 
+                                                             @NotNull PathEntry pathEntry)
             throws ConverterException {
 
         ArtifactId bundleArtifactId = context.getBundleArtifactId();
@@ -63,7 +65,10 @@ public class AssemblerProvider {
     }
 
     @NotNull
-    private VaultPackageAssembler lazyConstruct(@NotNull BundleSlingInitialContentExtractorContext context, @NotNull String repositoryPath, ArtifactId bundleArtifactId, PackageType packageType) throws ConverterException {
+    private VaultPackageAssembler lazyConstruct(@NotNull BundleSlingInitialContentExtractorContext context, 
+                                                @NotNull String repositoryPath, 
+                                                @NotNull ArtifactId bundleArtifactId, 
+                                                @NotNull PackageType packageType) throws ConverterException {
         VaultPackageAssembler assembler = packageAssemblers.get(packageType);
         if (assembler == null) {
             final String packageNameSuffix;
@@ -85,7 +90,7 @@ public class AssemblerProvider {
         return assembler;
     }
 
-    private void addPathFilterSetToAssemblerFilter(@NotNull PathEntry pathEntry, VaultPackageAssembler assembler) {
+    private void addPathFilterSetToAssemblerFilter(@NotNull PathEntry pathEntry, @NotNull VaultPackageAssembler assembler) {
         ImportMode importMode;
         if (pathEntry.isOverwrite()) {
             importMode = ImportMode.UPDATE;

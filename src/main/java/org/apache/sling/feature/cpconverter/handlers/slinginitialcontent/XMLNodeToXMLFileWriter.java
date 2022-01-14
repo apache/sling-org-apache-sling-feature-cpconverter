@@ -21,6 +21,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.xmlbuffer.XMLNode;
 import org.apache.sling.feature.cpconverter.vltpkg.JcrNamespaceRegistry;
+import org.jetbrains.annotations.NotNull;
 
 import javax.jcr.RepositoryException;
 import javax.xml.stream.XMLOutputFactory;
@@ -40,7 +41,9 @@ public class XMLNodeToXMLFileWriter {
     private final XMLStreamWriter streamWriter;
     private final JcrNamespaceRegistry namespaceRegistry;
 
-    public XMLNodeToXMLFileWriter(XMLNode parentNode, OutputStream targetOutputStream, JcrNamespaceRegistry namespaceRegistry) throws XMLStreamException {
+    public XMLNodeToXMLFileWriter(@NotNull XMLNode parentNode,
+                                  @NotNull OutputStream targetOutputStream,
+                                  @NotNull JcrNamespaceRegistry namespaceRegistry) throws XMLStreamException {
         this.parentNode = parentNode;
 
         this.streamWriter = new IndentingXMLStreamWriter(
@@ -59,7 +62,7 @@ public class XMLNodeToXMLFileWriter {
         streamWriter.writeEndDocument();
     }
     
-    private void writeNode(XMLNode xmlNode, boolean isFirstElement) throws RepositoryException, XMLStreamException {
+    private void writeNode(@NotNull XMLNode xmlNode, boolean isFirstElement) throws RepositoryException, XMLStreamException {
         
         streamWriter.writeStartElement(xmlNode.getXmlElementName());
         

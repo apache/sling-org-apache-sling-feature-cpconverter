@@ -47,7 +47,12 @@ public class BundleSlingInitialContentExtractorContext {
     private final Iterator<PathEntry> pathEntries;
     private final List<PathEntry> pathEntryList = new ArrayList<>();
 
-    public BundleSlingInitialContentExtractorContext(ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy, @NotNull String path, @NotNull ArtifactId bundleArtifactId, @NotNull JarFile jarFile, @NotNull ContentPackage2FeatureModelConverter converter, @Nullable String runMode) throws IOException {
+    public BundleSlingInitialContentExtractorContext(@NotNull ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy, 
+                                                     @NotNull String path, 
+                                                     @NotNull ArtifactId bundleArtifactId, 
+                                                     @NotNull JarFile jarFile, 
+                                                     @NotNull ContentPackage2FeatureModelConverter converter, 
+                                                     @Nullable String runMode) throws IOException {
         this.slingInitialContentPolicy = slingInitialContentPolicy;
         this.path = path;
         this.bundleArtifactId = bundleArtifactId;

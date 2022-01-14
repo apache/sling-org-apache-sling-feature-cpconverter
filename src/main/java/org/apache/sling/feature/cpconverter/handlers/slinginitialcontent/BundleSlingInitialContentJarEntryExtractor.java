@@ -53,7 +53,10 @@ public class BundleSlingInitialContentJarEntryExtractor {
     private final ParentFolderRepoInitHandler parentFolderRepoInitHandler;
     private final CheckedConsumer<String> repoInitTextExtensionConsumer;
 
-    public BundleSlingInitialContentJarEntryExtractor(AssemblerProvider assemblerProvider, ContentReaderProvider contentReaderProvider, ParentFolderRepoInitHandler parentFolderRepoInitHandler, CheckedConsumer<String> repoInitTextExtensionConsumer) {
+    public BundleSlingInitialContentJarEntryExtractor(@NotNull AssemblerProvider assemblerProvider,
+                                                      @NotNull ContentReaderProvider contentReaderProvider,
+                                                      @NotNull ParentFolderRepoInitHandler parentFolderRepoInitHandler,
+                                                      @NotNull CheckedConsumer<String> repoInitTextExtensionConsumer) {
         this.assemblerProvider = assemblerProvider;
         this.contentReaderProvider = contentReaderProvider;
         this.parentFolderRepoInitHandler = parentFolderRepoInitHandler;
@@ -65,7 +68,9 @@ public class BundleSlingInitialContentJarEntryExtractor {
      * @return {@code true} in case the given entry was part of the initial content otherwise {@code false}
      * @throws Exception
      */
-    public void extractSlingInitialContent(@NotNull BundleSlingInitialContentExtractorContext context, @NotNull SlingInitialContentBundleEntry slingInitialContentBundleEntry, @NotNull Set<SlingInitialContentBundleEntry> collectedSlingInitialContentBundleEntries) throws IOException, ConverterException {
+    public void extractSlingInitialContent(@NotNull BundleSlingInitialContentExtractorContext context, 
+                                           @NotNull SlingInitialContentBundleEntry slingInitialContentBundleEntry, 
+                                           @NotNull Set<SlingInitialContentBundleEntry> collectedSlingInitialContentBundleEntries) throws IOException, ConverterException {
 
         String repositoryPath = slingInitialContentBundleEntry.getRepositoryPath();
         File file = slingInitialContentBundleEntry.getTargetFile();
@@ -132,7 +137,7 @@ public class BundleSlingInitialContentJarEntryExtractor {
     }
 
     @NotNull
-    private boolean isFileDescriptor(@NotNull Set<SlingInitialContentBundleEntry> bundleEntries, final String contentPackageEntryPath) {
+    private boolean isFileDescriptor(@NotNull Set<SlingInitialContentBundleEntry> bundleEntries, @NotNull final String contentPackageEntryPath) {
 
         //sometimes we are dealing with double extensions (.json.xml)
         String recomputedContentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath);
