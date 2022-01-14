@@ -17,19 +17,14 @@
 package org.apache.sling.feature.cpconverter.handlers.slinginitialcontent;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.jackrabbit.util.Text;
-import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.packaging.PackageType;
-import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.shared.CheckedConsumer;
 import org.apache.sling.feature.cpconverter.vltpkg.*;
-import org.apache.sling.jcr.contentloader.ContentReader;
 import org.apache.sling.jcr.contentloader.PathEntry;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,8 +33,6 @@ import org.osgi.framework.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jcr.RepositoryException;
-import javax.xml.stream.XMLStreamException;
 import java.io.*;
 import java.net.URLDecoder;
 import java.nio.file.Files;
@@ -65,7 +58,6 @@ public class BundleSlingInitialContentExtractor {
     protected final ParentFolderRepoInitHandler parentFolderRepoInitHandler = new ParentFolderRepoInitHandler();
     
     private CheckedConsumer<String> repoInitTextExtensionConsumer;
- 
     
     static Version getModifiedOsgiVersion(Version originalVersion) {
         return new Version(originalVersion.getMajor(), originalVersion.getMinor(), originalVersion.getMicro(), originalVersion.getQualifier() + "_" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);
@@ -106,6 +98,8 @@ public class BundleSlingInitialContentExtractor {
             final JarFile jarFile = context.getJarFile();
             Enumeration<? extends JarEntry> entries = jarFile.entries();
             
+            // first we collect all the entries into a set, collectedSlingInitialContentBundleEntries.
+            // we need it up front to be perform various checks in another loop later.
             while(entries.hasMoreElements()){
                 JarEntry jarEntry = entries.nextElement();
 
@@ -118,7 +112,6 @@ public class BundleSlingInitialContentExtractor {
                 if (!jarEntry.isDirectory()) {
                     try (InputStream input = new BufferedInputStream(jarFile.getInputStream(jarEntry))) {
                         if (containsSlingInitialContent(context, jarEntry)) {
-
                             
                             File targetFile = new File(contentPackage2FeatureModelConverter.getTempDirectory(), jarEntry.getName());
                             String canonicalDestinationPath = targetFile.getCanonicalPath();
@@ -132,14 +125,8 @@ public class BundleSlingInitialContentExtractor {
                            
                             FileOutputStream fos = new FileOutputStream(targetFile);
                             safelyWriteOutputStream(compressedSize, total, data, input, fos, true);
-                            
-                            final String entryName = StringUtils.substringAfter( targetFile.getPath(),basePath + "/");
-                            final PathEntry pathEntryValue = context.getPathEntryList().stream().filter(p -> entryName.startsWith( p.getPath())).findFirst().orElseThrow(NullPointerException::new);
-                            final String target = pathEntryValue.getTarget();
-                            // https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html#file-name-escaping
-                            String repositoryPath = (target != null ? target : "/") + URLDecoder.decode(entryName.substring(pathEntryValue.getPath().length()), "UTF-8");
-                            SlingInitialContentBundleEntry bundleEntry = new SlingInitialContentBundleEntry(jarEntry, targetFile, pathEntryValue, repositoryPath);
-                            
+
+                            SlingInitialContentBundleEntry bundleEntry = createSlingInitialContentBundleEntry(context, basePath, jarEntry, targetFile);
                             collectedSlingInitialContentBundleEntries.add(bundleEntry);
                         } else {
                             bundleOutput.putNextEntry(jarEntry);
@@ -155,11 +142,11 @@ public class BundleSlingInitialContentExtractor {
                 }
 
             }
-           
      
-  
+            // now that we got collectedSlingInitialContentBundleEntries ready, we loop it and perform an extract for each entry.
+            BundleSlingInitialContentJarEntryExtractor jarEntryExtractor = new BundleSlingInitialContentJarEntryExtractor(assemblerProvider, contentReaderProvider, parentFolderRepoInitHandler, repoInitTextExtensionConsumer);
             for(SlingInitialContentBundleEntry slingInitialContentBundleEntry : collectedSlingInitialContentBundleEntries){
-                extractSlingInitialContentForJarEntry(context, slingInitialContentBundleEntry, collectedSlingInitialContentBundleEntries, basePath);
+                jarEntryExtractor.extractSlingInitialContent(context, slingInitialContentBundleEntry, collectedSlingInitialContentBundleEntries);
             }
       
         }
@@ -171,30 +158,19 @@ public class BundleSlingInitialContentExtractor {
         return Files.newInputStream(newBundleFile, StandardOpenOption.READ, StandardOpenOption.DELETE_ON_CLOSE);
     }
 
-    
-
-    private void safelyWriteOutputStream(long compressedSize, AtomicLong total, byte[] data, InputStream input, OutputStream fos, boolean shouldClose) throws IOException {
-        int count;
-        BufferedOutputStream dest = new BufferedOutputStream(fos, BUFFER);
-        while (total.get() + BUFFER <= TOOBIG && (count = input.read(data, 0, BUFFER)) != -1) {
-            dest.write(data, 0, count);
-            total.addAndGet(count);
-
-            double compressionRatio = (double) count / compressedSize;
-            if(compressionRatio > THRESHOLD_RATIO) {
-                // ratio between compressed and uncompressed data is highly suspicious, looks like a Zip Bomb Attack
-                break;
-            }
-        }
-        dest.flush();
-        
-        if(shouldClose){
-            dest.close();
-        }
-        
+    @NotNull
+    private SlingInitialContentBundleEntry createSlingInitialContentBundleEntry(BundleSlingInitialContentExtractorContext context, String basePath, JarEntry jarEntry, File targetFile) throws UnsupportedEncodingException {
+        final String entryName = StringUtils.substringAfter( targetFile.getPath(), basePath + "/");
+        final PathEntry pathEntryValue = context.getPathEntryList().stream().filter(p -> entryName.startsWith( p.getPath())).findFirst().orElseThrow(NullPointerException::new);
+        final String target = pathEntryValue.getTarget();
+        // https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html#file-name-escaping
+        String repositoryPath = (target != null ? target : "/") + URLDecoder.decode(entryName.substring(pathEntryValue.getPath().length()), "UTF-8");
+        SlingInitialContentBundleEntry bundleEntry = new SlingInitialContentBundleEntry(jarEntry, targetFile, pathEntryValue, repositoryPath);
+        return bundleEntry;
     }
 
-    
+
+
     public void reset() {
         parentFolderRepoInitHandler.reset();
     }
@@ -212,97 +188,36 @@ public class BundleSlingInitialContentExtractor {
         assemblerProvider.clear();
     }
 
+    private void safelyWriteOutputStream(long compressedSize, AtomicLong total, byte[] data, InputStream input, OutputStream fos, boolean shouldClose) throws IOException {
+        int count;
+        BufferedOutputStream dest = new BufferedOutputStream(fos, BUFFER);
+        while (total.get() + BUFFER <= TOOBIG && (count = input.read(data, 0, BUFFER)) != -1) {
+            dest.write(data, 0, count);
+            total.addAndGet(count);
+
+            double compressionRatio = (double) count / compressedSize;
+            if(compressionRatio > THRESHOLD_RATIO) {
+                // ratio between compressed and uncompressed data is highly suspicious, looks like a Zip Bomb Attack
+                break;
+            }
+        }
+        dest.flush();
+
+        if(shouldClose){
+            dest.close();
+        }
+
+    }
+
     /**
      * Returns whether the jarEntry is initial content
      * @param jarEntry
      * @return
      */
-    boolean containsSlingInitialContent( @NotNull BundleSlingInitialContentExtractorContext context, @NotNull JarEntry jarEntry){
+    private boolean containsSlingInitialContent( @NotNull BundleSlingInitialContentExtractorContext context, @NotNull JarEntry jarEntry){
         final String entryName = jarEntry.getName();
         return  context.getPathEntryList().stream().anyMatch(p -> entryName.startsWith(p.getPath()));
     }
-
-    /**
-     *
-     * @return {@code true} in case the given entry was part of the initial content otherwise {@code false}
-     * @throws Exception
-     */
-    void extractSlingInitialContentForJarEntry(@NotNull BundleSlingInitialContentExtractorContext context, @NotNull SlingInitialContentBundleEntry slingInitialContentBundleEntry, @NotNull  Set<SlingInitialContentBundleEntry> collectedSlingInitialContentBundleEntries, @NotNull String basePath) throws IOException, ConverterException {
-
-        String repositoryPath = slingInitialContentBundleEntry.getRepositoryPath();
-        File file = slingInitialContentBundleEntry.getTargetFile();
-        PathEntry pathEntryValue = slingInitialContentBundleEntry.getPathEntry();
-        // all entry paths used by entry handlers start with "/"
-        String contentPackageEntryPath = "/" + org.apache.jackrabbit.vault.util.Constants.ROOT_DIR + PlatformNameFormat.getPlatformPath(repositoryPath);
-
-        Path tmpDocViewInputFile = null;
-
-        try(InputStream bundleFileInputStream = new FileInputStream(file)) {
-            VaultPackageAssembler packageAssembler = assemblerProvider.initPackageAssemblerForPath(context, repositoryPath, pathEntryValue);
-
-            final ContentReader contentReader = contentReaderProvider.getContentReaderForEntry(file, pathEntryValue);
-            if (contentReader != null) {
-
-                // convert to docview xml
-                tmpDocViewInputFile = Files.createTempFile(context.getConverter().getTempDirectory().toPath(), "docview", ".xml");
-                try (OutputStream docViewOutput = Files.newOutputStream(tmpDocViewInputFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)) {
-
-                    repositoryPath = FilenameUtils.removeExtension(repositoryPath);
-                    boolean isFileDescriptor = isFileDescriptor(collectedSlingInitialContentBundleEntries, contentPackageEntryPath);
-                    VaultContentXMLContentCreator contentCreator = new VaultContentXMLContentCreator(StringUtils.substringBeforeLast(repositoryPath, "/"), docViewOutput, context.getNamespaceRegistry(), packageAssembler, repoInitTextExtensionConsumer, isFileDescriptor);
-
-
-                    if(file.getName().endsWith(".xml")){
-                        contentCreator.setIsXmlProcessed();
-                    }
-
-                    contentReader.parse(file.toURI().toURL(), contentCreator);
-                    contentPackageEntryPath =  new ContentPackageEntryPathComputer(collectedSlingInitialContentBundleEntries, contentPackageEntryPath, contentCreator).compute();
-                    contentCreator.finish();
-
-                } catch (IOException | XMLStreamException e) {
-                    throw new IOException("Can not parse " + file, e);
-                } catch (DocViewSerializerContentHandlerException | RepositoryException e) {
-                    throw new IOException("Can not convert " + file + " to enhanced DocView format", e);
-                }
-
-                // remap CND files to make sure they are picked up by NodeTypesEntryHandler;
-                if (context.getNamespaceRegistry().getRegisteredCndSystemIds().contains(file.getName())) {
-                    contentPackageEntryPath = "/META-INF/vault/" + Text.getName(file.getName()) + ".cnd";
-                }
-
-
-            }
-
-            try (Archive virtualArchive = SingleFileArchive.fromPathOrInputStream(tmpDocViewInputFile, bundleFileInputStream,
-                    () -> Files.createTempFile(context.getConverter().getTempDirectory().toPath(), "initial-content", Text.getName(file.getName())), contentPackageEntryPath)) {
-                // in which content package should this end up?
-
-                if (tmpDocViewInputFile != null) {
-                    packageAssembler.addEntry(contentPackageEntryPath, tmpDocViewInputFile.toFile());
-                } else {
-                    packageAssembler.addEntry(contentPackageEntryPath, bundleFileInputStream);
-                }
-                parentFolderRepoInitHandler.addParentsForPath(contentPackageEntryPath);
-            }
-
-        } finally {
-            if (tmpDocViewInputFile != null) {
-                Files.delete(tmpDocViewInputFile);
-            }
-        }
-    }
-
-    @NotNull
-    private boolean isFileDescriptor(@NotNull Set<SlingInitialContentBundleEntry> bundleEntries, final String contentPackageEntryPath) {
-
-        //sometimes we are dealing with double extensions (.json.xml)
-        String recomputedContentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath);
-
-        final String checkIfRecomputedPathCandidate = StringUtils.removeStart(recomputedContentPackageEntryPath, "/jcr_root");
-        return bundleEntries.stream().anyMatch(bundleEntry -> StringUtils.equals(checkIfRecomputedPathCandidate,bundleEntry.getRepositoryPath()));
-
-    }
-
+    
     
 }

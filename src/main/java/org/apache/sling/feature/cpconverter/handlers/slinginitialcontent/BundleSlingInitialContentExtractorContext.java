@@ -31,6 +31,9 @@ import java.util.Objects;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
+/**
+ * Holds various context variables for the BundleSlingInitialContentExtractor
+ */
 public class BundleSlingInitialContentExtractorContext {
 
     private final ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy;
