@@ -30,7 +30,7 @@ import static javax.jcr.NamespaceRegistry.PREFIX_XML;
 public class JcrNamespaceRegistryTest{
     
     
-
+    @Test
     public void test_unregister() throws RepositoryException, ParseException, IOException {
         JcrNamespaceRegistry jcrNamespaceRegistry = new JcrNamespaceRegistry();
 
@@ -39,21 +39,23 @@ public class JcrNamespaceRegistryTest{
         Assert.assertEquals(8, jcrNamespaceRegistry.getURIs().length);
 
         //throws javax.jcr.NamespaceException: No URI for prefix 'xml' declared.
-        Assert.assertNull(jcrNamespaceRegistry.getURI(PREFIX_XML));
+        Assert.assertThrows(NamespaceException.class, () -> jcrNamespaceRegistry.getURI(PREFIX_XML));
+       
     }
-    
-   
+
+    @Test
     public void test_get_prefix_exception() throws RepositoryException, ParseException, IOException {
 
         JcrNamespaceRegistry jcrNamespaceRegistry = new JcrNamespaceRegistry();
         Assert.assertNull(jcrNamespaceRegistry.getPrefix("_Asd"));
     }
 
-
+    @Test
     public void test_get_uri_exception() throws RepositoryException, ParseException, IOException {
 
         JcrNamespaceRegistry jcrNamespaceRegistry = new JcrNamespaceRegistry();
-        Assert.assertNull(jcrNamespaceRegistry.getURI("_Asd"));
+        Assert.assertThrows(NamespaceException.class, () -> jcrNamespaceRegistry.getURI("_Asd"));
+        
     }
     
 }
