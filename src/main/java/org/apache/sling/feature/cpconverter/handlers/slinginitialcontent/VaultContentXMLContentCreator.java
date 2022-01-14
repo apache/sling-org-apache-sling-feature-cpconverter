@@ -25,8 +25,6 @@ import org.apache.sling.feature.cpconverter.vltpkg.JcrNamespaceRegistry;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.jcr.contentloader.ContentCreator;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.xml.stream.XMLStreamException;
@@ -36,23 +34,18 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 /**
  * ContentCreator substitute to create valid XML files to be packaged into a VaultPackage to be installed later
  */
 public class VaultContentXMLContentCreator implements ContentCreator {
     
-    private final static Pattern DATE_PATTERN = Pattern.compile("[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}(.*)");
-    private final static Logger logger = LoggerFactory.getLogger(BundleSlingInitialContentExtractor.class);
-
     private final String repositoryPath;
     private final OutputStream targetOutputStream;
     private final VaultPackageAssembler packageAssembler;
     private final LinkedList<XMLNode> parentNodePathStack = new LinkedList<>();
     private final JcrNamespaceRegistry namespaceRegistry;
-    private final CheckedConsumer<String> repoInitTextExtensionConsumer;
-
+  
     private final boolean isFileDescriptorEntry;
 
     private boolean isFirstElement = true;
@@ -60,17 +53,16 @@ public class VaultContentXMLContentCreator implements ContentCreator {
     private boolean xmlProcessed = false;
     private String primaryNodeName;
     private XMLNode currentNode;
+    
     public VaultContentXMLContentCreator(@NotNull String repositoryPath,
                                          @NotNull OutputStream targetOutputStream,
                                          @NotNull JcrNamespaceRegistry namespaceRegistry,
                                          @NotNull VaultPackageAssembler packageAssembler,
-                                         @NotNull CheckedConsumer<String> repoInitTextExtensionConsumer, 
                                          boolean isFileDescriptorEntry) throws XMLStreamException, RepositoryException {
         this.repositoryPath = repositoryPath;
         this.targetOutputStream = targetOutputStream;
         this.packageAssembler = packageAssembler;
         this.namespaceRegistry = namespaceRegistry;
-        this.repoInitTextExtensionConsumer = repoInitTextExtensionConsumer;
         this.isFileDescriptorEntry = isFileDescriptorEntry;
     }
 

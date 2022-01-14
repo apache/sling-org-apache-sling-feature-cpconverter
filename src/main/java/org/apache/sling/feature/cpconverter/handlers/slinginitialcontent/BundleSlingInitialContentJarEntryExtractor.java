@@ -22,7 +22,6 @@ import org.apache.jackrabbit.util.Text;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.cpconverter.ConverterException;
-import org.apache.sling.feature.cpconverter.shared.CheckedConsumer;
 import org.apache.sling.feature.cpconverter.vltpkg.DocViewSerializerContentHandlerException;
 import org.apache.sling.feature.cpconverter.vltpkg.SingleFileArchive;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
@@ -51,16 +50,13 @@ public class BundleSlingInitialContentJarEntryExtractor {
     private final AssemblerProvider assemblerProvider;
     private final ContentReaderProvider contentReaderProvider;
     private final ParentFolderRepoInitHandler parentFolderRepoInitHandler;
-    private final CheckedConsumer<String> repoInitTextExtensionConsumer;
 
     public BundleSlingInitialContentJarEntryExtractor(@NotNull AssemblerProvider assemblerProvider,
                                                       @NotNull ContentReaderProvider contentReaderProvider,
-                                                      @NotNull ParentFolderRepoInitHandler parentFolderRepoInitHandler,
-                                                      @NotNull CheckedConsumer<String> repoInitTextExtensionConsumer) {
+                                                      @NotNull ParentFolderRepoInitHandler parentFolderRepoInitHandler) {
         this.assemblerProvider = assemblerProvider;
         this.contentReaderProvider = contentReaderProvider;
         this.parentFolderRepoInitHandler = parentFolderRepoInitHandler;
-        this.repoInitTextExtensionConsumer = repoInitTextExtensionConsumer;
     }
 
     /**
@@ -69,12 +65,12 @@ public class BundleSlingInitialContentJarEntryExtractor {
      * @throws Exception
      */
     public void extractSlingInitialContent(@NotNull BundleSlingInitialContentExtractorContext context, 
-                                           @NotNull SlingInitialContentBundleEntry slingInitialContentBundleEntry, 
-                                           @NotNull Set<SlingInitialContentBundleEntry> collectedSlingInitialContentBundleEntries) throws IOException, ConverterException {
+                                           @NotNull SlingInitialContentBundleEntryMetaData slingInitialContentBundleEntryMetaData, 
+                                           @NotNull Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries) throws IOException, ConverterException {
 
-        String repositoryPath = slingInitialContentBundleEntry.getRepositoryPath();
-        File file = slingInitialContentBundleEntry.getTargetFile();
-        PathEntry pathEntryValue = slingInitialContentBundleEntry.getPathEntry();
+        String repositoryPath = slingInitialContentBundleEntryMetaData.getRepositoryPath();
+        File file = slingInitialContentBundleEntryMetaData.getTargetFile();
+        PathEntry pathEntryValue = slingInitialContentBundleEntryMetaData.getPathEntry();
         // all entry paths used by entry handlers start with "/"
         String contentPackageEntryPath = "/" + org.apache.jackrabbit.vault.util.Constants.ROOT_DIR + PlatformNameFormat.getPlatformPath(repositoryPath);
 
@@ -92,7 +88,7 @@ public class BundleSlingInitialContentJarEntryExtractor {
 
                     repositoryPath = FilenameUtils.removeExtension(repositoryPath);
                     boolean isFileDescriptorEntry = isFileDescriptor(collectedSlingInitialContentBundleEntries, contentPackageEntryPath);
-                    VaultContentXMLContentCreator contentCreator = new VaultContentXMLContentCreator(StringUtils.substringBeforeLast(repositoryPath, "/"), docViewOutput, context.getNamespaceRegistry(), packageAssembler, repoInitTextExtensionConsumer, isFileDescriptorEntry);
+                    VaultContentXMLContentCreator contentCreator = new VaultContentXMLContentCreator(StringUtils.substringBeforeLast(repositoryPath, "/"), docViewOutput, context.getNamespaceRegistry(), packageAssembler, isFileDescriptorEntry);
 
 
                     if(file.getName().endsWith(".xml")){
@@ -137,7 +133,7 @@ public class BundleSlingInitialContentJarEntryExtractor {
     }
 
     @NotNull
-    private boolean isFileDescriptor(@NotNull Set<SlingInitialContentBundleEntry> bundleEntries, @NotNull final String contentPackageEntryPath) {
+    private boolean isFileDescriptor(@NotNull Set<SlingInitialContentBundleEntryMetaData> bundleEntries, @NotNull final String contentPackageEntryPath) {
 
         //sometimes we are dealing with double extensions (.json.xml)
         String recomputedContentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath);

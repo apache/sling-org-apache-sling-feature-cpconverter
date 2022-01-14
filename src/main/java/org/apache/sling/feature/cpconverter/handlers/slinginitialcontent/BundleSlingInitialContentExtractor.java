@@ -23,7 +23,6 @@ import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
-import org.apache.sling.feature.cpconverter.shared.CheckedConsumer;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.jcr.contentloader.PathEntry;
 import org.jetbrains.annotations.NotNull;
@@ -69,8 +68,6 @@ public class BundleSlingInitialContentExtractor {
     protected final ContentReaderProvider contentReaderProvider = new ContentReaderProvider();
     protected final ParentFolderRepoInitHandler parentFolderRepoInitHandler = new ParentFolderRepoInitHandler();
     
-    private CheckedConsumer<String> repoInitTextExtensionConsumer;
-    
     static Version getModifiedOsgiVersion(@NotNull Version originalVersion) {
         return new Version( originalVersion.getMajor(), 
                             originalVersion.getMinor(), 
@@ -82,9 +79,6 @@ public class BundleSlingInitialContentExtractor {
     @Nullable public InputStream extract(@NotNull BundleSlingInitialContentExtractorContext context) throws IOException, ConverterException {
 
         ContentPackage2FeatureModelConverter contentPackage2FeatureModelConverter = context.getConverter();
-        repoInitTextExtensionConsumer = (String repoInitText) -> 
-            contentPackage2FeatureModelConverter.getAclManager().addRepoinitExtention("content-package", repoInitText, null, contentPackage2FeatureModelConverter.getFeaturesManager());
-        
         
         if (context.getSlingInitialContentPolicy() == ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP) {
             return null;
@@ -106,7 +100,7 @@ public class BundleSlingInitialContentExtractor {
         try (OutputStream fileOutput = Files.newOutputStream(newBundleFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
              JarOutputStream bundleOutput = new JarOutputStream(fileOutput, manifest)) {
 
-            Set<SlingInitialContentBundleEntry> collectedSlingInitialContentBundleEntries = new HashSet<>();
+            Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries = new HashSet<>();
             
             AtomicLong total = new AtomicLong(0);
 
@@ -143,7 +137,7 @@ public class BundleSlingInitialContentExtractor {
                             FileOutputStream fos = new FileOutputStream(targetFile);
                             safelyWriteOutputStream(compressedSize, total, data, input, fos, true);
 
-                            SlingInitialContentBundleEntry bundleEntry = createSlingInitialContentBundleEntry(context, basePath, jarEntry, targetFile);
+                            SlingInitialContentBundleEntryMetaData bundleEntry = createSlingInitialContentBundleEntry(context, basePath, jarEntry, targetFile);
                             collectedSlingInitialContentBundleEntries.add(bundleEntry);
                         } else {
                             bundleOutput.putNextEntry(jarEntry);
@@ -161,9 +155,11 @@ public class BundleSlingInitialContentExtractor {
             }
      
             // now that we got collectedSlingInitialContentBundleEntries ready, we loop it and perform an extract for each entry.
-            BundleSlingInitialContentJarEntryExtractor jarEntryExtractor = new BundleSlingInitialContentJarEntryExtractor(assemblerProvider, contentReaderProvider, parentFolderRepoInitHandler, repoInitTextExtensionConsumer);
-            for(SlingInitialContentBundleEntry slingInitialContentBundleEntry : collectedSlingInitialContentBundleEntries){
-                jarEntryExtractor.extractSlingInitialContent(context, slingInitialContentBundleEntry, collectedSlingInitialContentBundleEntries);
+            BundleSlingInitialContentJarEntryExtractor jarEntryExtractor = 
+                    new BundleSlingInitialContentJarEntryExtractor(assemblerProvider, contentReaderProvider, parentFolderRepoInitHandler);
+            
+            for(SlingInitialContentBundleEntryMetaData slingInitialContentBundleEntryMetaData : collectedSlingInitialContentBundleEntries){
+                jarEntryExtractor.extractSlingInitialContent(context, slingInitialContentBundleEntryMetaData, collectedSlingInitialContentBundleEntries);
             }
       
         }
@@ -176,16 +172,16 @@ public class BundleSlingInitialContentExtractor {
     }
 
     @NotNull
-    private SlingInitialContentBundleEntry createSlingInitialContentBundleEntry(@NotNull BundleSlingInitialContentExtractorContext context, 
-                                                                                @NotNull String basePath, 
-                                                                                @NotNull JarEntry jarEntry, 
-                                                                                @NotNull File targetFile) throws UnsupportedEncodingException {
+    private SlingInitialContentBundleEntryMetaData createSlingInitialContentBundleEntry(@NotNull BundleSlingInitialContentExtractorContext context,
+                                                                                        @NotNull String basePath,
+                                                                                        @NotNull JarEntry jarEntry,
+                                                                                        @NotNull File targetFile) throws UnsupportedEncodingException {
         final String entryName = StringUtils.substringAfter( targetFile.getPath(), basePath + "/");
         final PathEntry pathEntryValue = context.getPathEntryList().stream().filter(p -> entryName.startsWith( p.getPath())).findFirst().orElseThrow(NullPointerException::new);
         final String target = pathEntryValue.getTarget();
         // https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html#file-name-escaping
         String repositoryPath = (target != null ? target : "/") + URLDecoder.decode(entryName.substring(pathEntryValue.getPath().length()), "UTF-8");
-        return new SlingInitialContentBundleEntry(targetFile, pathEntryValue, repositoryPath);
+        return new SlingInitialContentBundleEntryMetaData(targetFile, pathEntryValue, repositoryPath);
     }
 
 

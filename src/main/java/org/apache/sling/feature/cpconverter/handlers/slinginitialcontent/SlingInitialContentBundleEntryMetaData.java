@@ -21,16 +21,17 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.util.Objects;
-import java.util.jar.JarEntry;
 
-public class SlingInitialContentBundleEntry {
-    
+/**
+ * Holds BundleEntry MetaData.
+ */
+public class SlingInitialContentBundleEntryMetaData {
     
     private final File targetFile;
     private final PathEntry pathEntry;
     private final String repositoryPath;
 
-    public SlingInitialContentBundleEntry(
+    public SlingInitialContentBundleEntryMetaData(
                                           @NotNull File targetFile,
                                           @NotNull PathEntry pathEntry,
                                           @NotNull String repositoryPath) {
@@ -55,7 +56,7 @@ public class SlingInitialContentBundleEntry {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        SlingInitialContentBundleEntry that = (SlingInitialContentBundleEntry) o;
+        SlingInitialContentBundleEntryMetaData that = (SlingInitialContentBundleEntryMetaData) o;
         return repositoryPath.equals(that.repositoryPath);
     }
 

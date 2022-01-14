@@ -31,6 +31,9 @@ import java.util.List;
 import static org.apache.jackrabbit.vault.util.Constants.DOT_CONTENT_XML;
 
 public class CreatePathSegmentProcessor {
+    
+    private CreatePathSegmentProcessor() {
+    }
 
     /**
      * Process segments of a repopath to createpath, checking packageassemblers for existing primaryType definitions.

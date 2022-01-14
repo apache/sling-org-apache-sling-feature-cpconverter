@@ -61,7 +61,11 @@ public class BundleSlingInitialContentExtractorContext {
         this.runMode = runMode;
 
         this.manifest = Objects.requireNonNull(jarFile.getManifest());
-        this.namespaceRegistry = new JcrNamespaceRegistryProvider(manifest, jarFile, converter.getFeaturesManager().getNamespaceUriByPrefix()).provideRegistryFromBundle();
+        this.namespaceRegistry = 
+                new JcrNamespaceRegistryProvider(manifest, 
+                                                jarFile, 
+                                                converter.getFeaturesManager().getNamespaceUriByPrefix()
+                ).provideRegistryFromBundle();
 
         pathEntries = PathEntry.getContentPaths(manifest, -1);
 

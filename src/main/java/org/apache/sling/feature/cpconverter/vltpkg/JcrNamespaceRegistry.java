@@ -94,7 +94,7 @@ public class JcrNamespaceRegistry implements NamespaceRegistry, NamespaceResolve
         try {
             return ntManagerProvider.getURI(prefix);
         } catch (RepositoryException e) {
-            logger.info("Could not find prefix " + prefix + " in registered namespaces");
+            logger.info("Could not find prefix {} in registered namespaces", prefix);
             return StringUtils.EMPTY;
         }
     }
@@ -104,7 +104,7 @@ public class JcrNamespaceRegistry implements NamespaceRegistry, NamespaceResolve
         try {
             return ntManagerProvider.getPrefix(uri);
         } catch (RepositoryException e) {
-            logger.info("Could not find uri " + uri + " in registered namespaces");
+            logger.info("Could not find uri {} in registered namespaces", uri);
             return null;
         }
     }

@@ -29,11 +29,11 @@ import static org.apache.jackrabbit.vault.util.Constants.DOT_CONTENT_XML;
  */
 public class ContentPackageEntryPathComputer {
 
-    private final Set<SlingInitialContentBundleEntry> bundleEntries;
+    private final Set<SlingInitialContentBundleEntryMetaData> bundleEntries;
     private final String contentPackageEntryPath;
     private final VaultContentXMLContentCreator contentCreator;
 
-    public ContentPackageEntryPathComputer(@NotNull Set<SlingInitialContentBundleEntry> bundleEntries, 
+    public ContentPackageEntryPathComputer(@NotNull Set<SlingInitialContentBundleEntryMetaData> bundleEntries, 
                                            @NotNull final String contentPackageEntryPath, 
                                            @NotNull VaultContentXMLContentCreator contentCreator){
         this.bundleEntries = bundleEntries;
