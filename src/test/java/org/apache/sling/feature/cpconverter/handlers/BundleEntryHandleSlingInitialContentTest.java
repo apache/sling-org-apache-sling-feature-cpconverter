@@ -31,6 +31,7 @@ import static org.xmlunit.assertj.XmlAssert.assertThat;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.Dictionary;
 import java.util.HashMap;
@@ -38,6 +39,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.jar.JarFile;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
@@ -81,6 +84,8 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
     @Captor
     ArgumentCaptor<Configuration> cfgCaptor;
+    
+    private static final Gson GSON =  new GsonBuilder().create();
 
     @Test
     public void testSlingInitialContent() throws Exception {
@@ -158,6 +163,71 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         assertEquals(ArtifactId.fromMvnId("io.wcm:io.wcm.handler.media:1.11.6-cp2fm-converted"), result.getId());
         assertEquals("io.wcm.handler.media", result.getMetadata().get(Constants.BUNDLE_SYMBOLICNAME));
         assertEquals("1.11.6", result.getMetadata().get(Constants.BUNDLE_VERSION));
+    }
+
+
+    @Test
+    public void testJsonI18nWithXMLFolderDescriptors() throws Exception {
+        setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite.core-1.0.0-SNAPSHOT-i18n-xml-folderdescriptor.jar");
+        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
+        converter.setEntryHandlersManager(handlersManager);
+        Map<String, String> namespaceRegistry = new HashMap<>();
+
+        namespaceRegistry.put("cq","http://www.day.com/jcr/cq/1.0");
+        namespaceRegistry.put("granite", "http://www.adobe.com/jcr/granite/1.0");
+
+
+        when(featuresManager.getNamespaceUriByPrefix()).thenReturn(namespaceRegistry);
+
+        File targetFolder = tmpFolder.newFolder();
+        when(converter.getArtifactsDeployer()).thenReturn(new SimpleFolderArtifactsDeployer(targetFolder));
+        when(converter.isSubContentPackageIncluded("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar-APPLICATION")).thenReturn(true);
+
+        VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
+        Properties props = new Properties();
+        props.setProperty(PackageProperties.NAME_GROUP, "com.mysite");
+        props.setProperty(PackageProperties.NAME_NAME, "mysite.core");
+        props.setProperty(PackageProperties.NAME_VERSION, "1.0.0-SNAPSHOT");
+        when(assembler.getPackageProperties()).thenReturn(props);
+        converter.setMainPackageAssembler(assembler);
+        converter.setAclManager(new DefaultAclManager());
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
+
+        handler.setBundleSlingInitialContentExtractor(extractor);
+        handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
+        handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter);
+
+        converter.deployPackages();
+
+        class TypedMap extends HashMap<String,String> {}
+        // verify generated package
+        try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "mysite.core-apps-1.0.0-SNAPSHOT-cp2fm-converted.zip"));
+             Archive archive = vaultPackage.getArchive()) {
+            archive.open(true);
+            PackageId targetId = PackageId.fromString("com.mysite:mysite.core-apps:1.0.0-SNAPSHOT-cp2fm-converted");
+            assertEquals(targetId, vaultPackage.getId());
+
+            Entry jsonFileEntry = archive.getEntry("/jcr_root/apps/myinitialcontentest/test/i18n/en.json");
+            assertNotNull(jsonFileEntry);
+            
+            //compare JSON
+
+            InputStream byteStream = archive.getInputSource(jsonFileEntry).getByteStream();
+            TypedMap actualJson = GSON.fromJson(new InputStreamReader(byteStream), TypedMap.class);
+            TypedMap expectedJson = GSON.fromJson(new InputStreamReader(getClass().getResourceAsStream("i18n-jsonfile-xml-descriptor-test/en.json")), TypedMap.class);
+            
+            assertEquals(expectedJson, actualJson);
+            //compare XML
+            
+            Entry jsonFileDescriptorEntry = archive.getEntry("/jcr_root/apps/myinitialcontentest/test/i18n/en.json.xml");
+            assertNotNull(jsonFileDescriptorEntry);
+
+            String expectedXML = IOUtils.toString(getClass().getResourceAsStream("i18n-jsonfile-xml-descriptor-test/en.json.xml"), UTF_8);
+            String actualXML = IOUtils.toString(archive.getInputSource(jsonFileDescriptorEntry).getByteStream(), UTF_8);
+    
+            assertThat(expectedXML).and(actualXML).areSimilar();
+
+        }
     }
 
 
