@@ -35,7 +35,8 @@ class ContentReaderProvider {
     static final XMLReader xmlReader = new XMLReader();
     static final ZipReader zipReader = new ZipReader();
 
-    @Nullable ContentReader getContentReaderForEntry(@NotNull File entry, @NotNull PathEntry pathEntry) {
+    @Nullable 
+    ContentReader getContentReaderForEntry(@NotNull File entry, @NotNull PathEntry pathEntry) {
         String entryName = entry.getName();
         if (entryName.endsWith(".json") && !pathEntry.isIgnoredImportProvider("json")) {
             return jsonReader;

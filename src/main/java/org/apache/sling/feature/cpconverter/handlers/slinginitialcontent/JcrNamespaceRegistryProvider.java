@@ -57,7 +57,8 @@ class JcrNamespaceRegistryProvider {
         this.predefinedNamespaceUriByPrefix = predefinedNamespaceUriByPrefix;
     }
 
-    @NotNull JcrNamespaceRegistry provideRegistryFromBundle() throws IOException {
+    @NotNull 
+    JcrNamespaceRegistry provideRegistryFromBundle() throws IOException {
         try {
             JcrNamespaceRegistry registry = new JcrNamespaceRegistry();
             for (Map.Entry<String, String> entry : predefinedNamespaceUriByPrefix.entrySet()) {

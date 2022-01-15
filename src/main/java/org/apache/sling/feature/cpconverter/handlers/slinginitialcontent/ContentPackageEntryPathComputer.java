@@ -41,7 +41,8 @@ class ContentPackageEntryPathComputer {
         this.contentCreator = contentCreator;
     }
 
-    @NotNull String compute() {
+    @NotNull 
+    String compute() {
 
         String recomputedContentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath);
 

@@ -23,7 +23,7 @@ import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
-import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractorContext;
+import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractContext;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,7 +49,7 @@ public class SlingInitialContentBundleHandler extends BundleEntryHandler {
             Artifact artifact = extractFeatureArtifact(bundleName, jarFile);
             ArtifactId id = artifact.getId();
             
-            BundleSlingInitialContentExtractorContext context = new BundleSlingInitialContentExtractorContext(slingInitialContentPolicy, path, id, jarFile, converter, runMode);
+            BundleSlingInitialContentExtractContext context = new BundleSlingInitialContentExtractContext(slingInitialContentPolicy, path, id, jarFile, converter, runMode);
             try (InputStream ignored = new BundleSlingInitialContentExtractorOverride().extract(context)) {
                 logger.info("Ignoring inputstream {} with id {}", path, id);
             }
@@ -58,7 +58,7 @@ public class SlingInitialContentBundleHandler extends BundleEntryHandler {
     
     class BundleSlingInitialContentExtractorOverride extends BundleSlingInitialContentExtractor{
         @Override
-        protected void finalizePackageAssembly(@NotNull BundleSlingInitialContentExtractorContext context) throws IOException, ConverterException {
+        protected void finalizePackageAssembly(@NotNull BundleSlingInitialContentExtractContext context) throws IOException, ConverterException {
             for (java.util.Map.Entry<PackageType, VaultPackageAssembler> entry : assemblerProvider.getPackageAssemblerEntrySet()) {
                 File packageFile = entry.getValue().createPackage();
                 ContentPackage2FeatureModelConverter converter = context.getConverter();

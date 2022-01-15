@@ -70,7 +70,7 @@ public class BundleSlingInitialContentExtractor {
 
     @SuppressWarnings("java:S5042") // we already addressed this
     @Nullable
-    public InputStream extract(@NotNull BundleSlingInitialContentExtractorContext context) throws IOException, ConverterException {
+    public InputStream extract(@NotNull BundleSlingInitialContentExtractContext context) throws IOException, ConverterException {
 
         ContentPackage2FeatureModelConverter contentPackage2FeatureModelConverter = context.getConverter();
 
@@ -114,7 +114,7 @@ public class BundleSlingInitialContentExtractor {
                 long compressedSize = jarEntry.getCompressedSize();
                 if (!jarEntry.isDirectory()) {
                     try (InputStream input = new BufferedInputStream(jarFile.getInputStream(jarEntry))) {
-                        if (containsSlingInitialContent(context, jarEntry)) {
+                        if (jarEntryContainsSlingInitialContent(context, jarEntry)) {
 
                             File targetFile = new File(contentPackage2FeatureModelConverter.getTempDirectory(), jarEntry.getName());
                             String canonicalDestinationPath = targetFile.getCanonicalPath();
@@ -173,7 +173,7 @@ public class BundleSlingInitialContentExtractor {
     }
 
     @NotNull
-    private SlingInitialContentBundleEntryMetaData createSlingInitialContentBundleEntry(@NotNull BundleSlingInitialContentExtractorContext context,
+    private SlingInitialContentBundleEntryMetaData createSlingInitialContentBundleEntry(@NotNull BundleSlingInitialContentExtractContext context,
                                                                                         @NotNull String basePath,
                                                                                         @NotNull JarEntry jarEntry,
                                                                                         @NotNull File targetFile) throws UnsupportedEncodingException {
@@ -190,11 +190,11 @@ public class BundleSlingInitialContentExtractor {
         parentFolderRepoInitHandler.reset();
     }
 
-    public void addRepoinitExtension(@NotNull List<VaultPackageAssembler> assemblers, @NotNull FeaturesManager featureManager) throws IOException, ConverterException {
+    public void addRepoInitExtension(@NotNull List<VaultPackageAssembler> assemblers, @NotNull FeaturesManager featureManager) throws IOException, ConverterException {
         parentFolderRepoInitHandler.addRepoinitExtension(assemblers, featureManager);
     }
 
-    protected void finalizePackageAssembly(@NotNull BundleSlingInitialContentExtractorContext context) throws IOException, ConverterException {
+    protected void finalizePackageAssembly(@NotNull BundleSlingInitialContentExtractContext context) throws IOException, ConverterException {
         for (Map.Entry<PackageType, VaultPackageAssembler> entry : assemblerProvider.getPackageAssemblerEntrySet()) {
             File packageFile = entry.getValue().createPackage();
             ContentPackage2FeatureModelConverter converter = context.getConverter();
@@ -228,14 +228,8 @@ public class BundleSlingInitialContentExtractor {
         }
 
     }
-
-    /**
-     * Returns whether the jarEntry is Sling initial content
-     * @param context
-     * @param jarEntry
-     * @return
-     */
-    private boolean containsSlingInitialContent(@NotNull BundleSlingInitialContentExtractorContext context, @NotNull JarEntry jarEntry) {
+    
+    private boolean jarEntryContainsSlingInitialContent(@NotNull BundleSlingInitialContentExtractContext context, @NotNull JarEntry jarEntry) {
         final String entryName = jarEntry.getName();
         return context.getPathEntryList().stream().anyMatch(p -> entryName.startsWith(p.getPath()));
     }

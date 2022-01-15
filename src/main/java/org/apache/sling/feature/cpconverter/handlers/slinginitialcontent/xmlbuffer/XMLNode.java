@@ -31,7 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Represents an XML node in the buffer to be written in a sling initial content package
+ * Represents an XML node in the buffer to be written in a sling initial content package later
  */
 public class XMLNode {
 

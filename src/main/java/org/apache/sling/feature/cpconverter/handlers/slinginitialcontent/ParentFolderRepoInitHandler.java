@@ -99,7 +99,8 @@ class ParentFolderRepoInitHandler {
     }
 
 
-    @Nullable CreatePath getCreatePath(@NotNull RepoPath path, @NotNull Collection<VaultPackageAssembler> packageAssemblers) {
+    @Nullable 
+    CreatePath getCreatePath(@NotNull RepoPath path, @NotNull Collection<VaultPackageAssembler> packageAssemblers) {
         if (path.getParent() == null) {
             logger.debug("Omit create path statement for path '{}'", path);
             return null;

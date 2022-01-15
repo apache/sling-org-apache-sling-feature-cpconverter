@@ -34,7 +34,7 @@ import java.util.jar.Manifest;
 /**
  * Holds various context variables for the BundleSlingInitialContentExtractor
  */
-public class BundleSlingInitialContentExtractorContext {
+public class BundleSlingInitialContentExtractContext {
 
     private final ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy;
     private final String path;
@@ -46,12 +46,12 @@ public class BundleSlingInitialContentExtractorContext {
     private final JcrNamespaceRegistry namespaceRegistry;
     private final List<PathEntry> pathEntryList = new ArrayList<>();
 
-    public BundleSlingInitialContentExtractorContext(@NotNull ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy,
-                                                     @NotNull String path,
-                                                     @NotNull ArtifactId bundleArtifactId,
-                                                     @NotNull JarFile jarFile,
-                                                     @NotNull ContentPackage2FeatureModelConverter converter,
-                                                     @Nullable String runMode) throws IOException {
+    public BundleSlingInitialContentExtractContext(@NotNull ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy,
+                                                   @NotNull String path,
+                                                   @NotNull ArtifactId bundleArtifactId,
+                                                   @NotNull JarFile jarFile,
+                                                   @NotNull ContentPackage2FeatureModelConverter converter,
+                                                   @Nullable String runMode) throws IOException {
         this.slingInitialContentPolicy = slingInitialContentPolicy;
         this.path = path;
         this.bundleArtifactId = bundleArtifactId;

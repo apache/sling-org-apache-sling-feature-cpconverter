@@ -30,7 +30,6 @@ import org.apache.sling.jcr.contentloader.PathEntry;
 import org.jetbrains.annotations.NotNull;
 
 import javax.jcr.RepositoryException;
-import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -64,7 +63,7 @@ class BundleSlingInitialContentJarEntryExtractor {
      * @return {@code true} in case the given entry was part of the initial content otherwise {@code false}
      * @throws Exception
      */
-    void extractSlingInitialContent(@NotNull BundleSlingInitialContentExtractorContext context,
+    void extractSlingInitialContent(@NotNull BundleSlingInitialContentExtractContext context,
                                            @NotNull SlingInitialContentBundleEntryMetaData slingInitialContentBundleEntryMetaData,
                                            @NotNull Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries) throws IOException, ConverterException {
 

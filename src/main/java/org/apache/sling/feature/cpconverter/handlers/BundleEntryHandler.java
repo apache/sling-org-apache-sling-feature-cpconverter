@@ -46,7 +46,7 @@ import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.SlingInitialContentPolicy;
 import org.apache.sling.feature.cpconverter.artifacts.InputStreamArtifactWriter;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
-import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractorContext;
+import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Constants;
@@ -150,7 +150,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
             Artifact artifact = extractFeatureArtifact(bundleName, jarFile);
             ArtifactId id = artifact.getId();
 
-            BundleSlingInitialContentExtractorContext context = new BundleSlingInitialContentExtractorContext(slingInitialContentPolicy, path, id, jarFile, converter, runMode);
+            BundleSlingInitialContentExtractContext context = new BundleSlingInitialContentExtractContext(slingInitialContentPolicy, path, id, jarFile, converter, runMode);
             try (InputStream strippedBundleInput = bundleSlingInitialContentExtractor.extract(context)) {
                 if (strippedBundleInput != null && slingInitialContentPolicy == ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.EXTRACT_AND_REMOVE) {
                     id = id.changeVersion(id.getVersion() + "-" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);

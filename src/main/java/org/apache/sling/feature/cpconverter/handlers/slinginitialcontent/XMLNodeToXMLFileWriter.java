@@ -37,6 +37,9 @@ import static org.apache.jackrabbit.vault.util.JcrConstants.JCR_MIXINTYPES;
 import static org.apache.jackrabbit.vault.util.JcrConstants.JCR_PRIMARYTYPE;
 import static org.apache.jackrabbit.vault.util.JcrConstants.NT_UNSTRUCTURED;
 
+/**
+ * Takes the buffered parent XMLNode and writes it to an actual XML file
+ */
 class XMLNodeToXMLFileWriter {
 
     private final XMLNode parentNode;

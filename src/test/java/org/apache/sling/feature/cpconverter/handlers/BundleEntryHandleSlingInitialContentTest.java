@@ -23,7 +23,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -36,7 +35,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Dictionary;
 import java.util.HashMap;
@@ -124,7 +122,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
         handler.handle("/jcr_root/apps/gav/install/io.wcm.handler.media-1.11.6.jar", archive, entry, converter);
         
-        extractor.addRepoinitExtension(converter.getAssemblers(), featuresManager);
+        extractor.addRepoInitExtension(converter.getAssemblers(), featuresManager);
         
         converter.deployPackages();
         // verify generated bundle
@@ -285,7 +283,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter);
 
         converter.deployPackages();
-        extractor.addRepoinitExtension(converter.getAssemblers(), featuresManager);
+        extractor.addRepoInitExtension(converter.getAssemblers(), featuresManager);
 
         try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "mysite.core-apps-1.0.0-SNAPSHOT-cp2fm-converted.zip"));
              Archive archive = vaultPackage.getArchive()) {

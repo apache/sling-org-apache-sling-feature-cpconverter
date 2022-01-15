@@ -52,7 +52,7 @@ public class AssemblerProvider {
      * @return the VaultPackageAssembler from the cache to use for the given repository path
      */
     @NotNull
-    public VaultPackageAssembler initPackageAssemblerForPath(@NotNull BundleSlingInitialContentExtractorContext context,
+    public VaultPackageAssembler initPackageAssemblerForPath(@NotNull BundleSlingInitialContentExtractContext context,
                                                              @NotNull String repositoryPath,
                                                              @NotNull PathEntry pathEntry)
             throws ConverterException {
@@ -70,7 +70,7 @@ public class AssemblerProvider {
     }
 
     @NotNull
-    private VaultPackageAssembler lazyConstruct(@NotNull BundleSlingInitialContentExtractorContext context,
+    private VaultPackageAssembler lazyConstruct(@NotNull BundleSlingInitialContentExtractContext context,
                                                 @NotNull String repositoryPath,
                                                 @NotNull ArtifactId bundleArtifactId,
                                                 @NotNull PackageType packageType) throws ConverterException {
