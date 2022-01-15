@@ -99,7 +99,7 @@ class BundleSlingInitialContentJarEntryExtractor {
                     contentPackageEntryPath = new ContentPackageEntryPathComputer(collectedSlingInitialContentBundleEntries, contentPackageEntryPath, contentCreator).compute();
                     contentCreator.finish();
 
-                } catch (IOException | XMLStreamException e) {
+                } catch (IOException e) {
                     throw new IOException("Can not parse " + file, e);
                 } catch (DocViewSerializerContentHandlerException | RepositoryException e) {
                     throw new IOException("Can not convert " + file + " to enhanced DocView format", e);

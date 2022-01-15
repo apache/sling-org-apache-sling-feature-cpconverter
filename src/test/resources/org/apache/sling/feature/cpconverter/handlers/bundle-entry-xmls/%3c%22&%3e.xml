@@ -4,4 +4,4 @@
           xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:rep="internal" xmlns:mix="http://www.jcp.org/jcr/mix/1.0"
           xmlns:sling="http://sling.apache.org/jcr/sling/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0"
           xmlns:vlt="http://www.day.com/jcr/vault/1.0" jcr:primaryType="cq:Component"
-          sling:resourceSuperType="mysite-aem/core/components/global/page" fancyCharacters="&lt;&amp;&quot;'>"/>
+          sling:resourceSuperType="mysite-aem/core/components/global/page" fancyCharacters="&lt;&amp;&quot;'>"></jcr:root>

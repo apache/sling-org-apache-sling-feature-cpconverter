@@ -59,7 +59,7 @@ public class VaultContentXMLContentCreator implements ContentCreator {
                                          @NotNull OutputStream targetOutputStream,
                                          @NotNull JcrNamespaceRegistry namespaceRegistry,
                                          @NotNull VaultPackageAssembler packageAssembler,
-                                         boolean isFileDescriptorEntry) throws XMLStreamException, RepositoryException {
+                                         boolean isFileDescriptorEntry) {
         this.repositoryPath = repositoryPath;
         this.targetOutputStream = targetOutputStream;
         this.packageAssembler = packageAssembler;

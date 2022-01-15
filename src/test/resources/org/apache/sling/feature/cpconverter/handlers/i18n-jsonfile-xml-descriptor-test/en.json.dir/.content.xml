@@ -4,4 +4,5 @@
           xmlns:my="http://namespace.com/my"
           jcr:language="{String}en"
           jcr:mixinTypes="[mix:language]"
-          jcr:primaryType="nt:file"/>
+          jcr:primaryType="nt:file">
+</jcr:root>

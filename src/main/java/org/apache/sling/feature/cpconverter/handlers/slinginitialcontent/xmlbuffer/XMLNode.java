@@ -55,7 +55,7 @@ public class XMLNode {
                    @NotNull String xmlElementName,
                    @Nullable String jcrNodeName,
                    @NotNull String primaryNodeType,
-                   @NotNull String[] mixinNodeTypes) {
+                   @Nullable String[] mixinNodeTypes) {
         this.packageAssembler = packageAssembler;
         this.basePath = basePath;
         this.xmlElementName = xmlElementName;
@@ -141,7 +141,7 @@ public class XMLNode {
         return primaryNodeType;
     }
 
-    @NotNull
+    @Nullable
     public String[] getMixinNodeTypes() {
         return mixinNodeTypes;
     }

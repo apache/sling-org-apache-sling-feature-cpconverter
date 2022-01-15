@@ -16,7 +16,8 @@
  */
 package org.apache.sling.feature.cpconverter.handlers.slinginitialcontent;
 
-import com.sun.xml.txw2.output.IndentingXMLStreamWriter;
+
+import javanet.staxutils.IndentingXMLEventWriter;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.xmlbuffer.XMLNode;
@@ -24,9 +25,10 @@ import org.apache.sling.feature.cpconverter.vltpkg.JcrNamespaceRegistry;
 import org.jetbrains.annotations.NotNull;
 
 import javax.jcr.RepositoryException;
+import javax.xml.stream.XMLEventFactory;
+import javax.xml.stream.XMLEventWriter;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamWriter;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -38,46 +40,49 @@ import static org.apache.jackrabbit.vault.util.JcrConstants.NT_UNSTRUCTURED;
 class XMLNodeToXMLFileWriter {
 
     private final XMLNode parentNode;
-    private final XMLStreamWriter streamWriter;
+    private final XMLEventWriter eventWriter;
     private final JcrNamespaceRegistry namespaceRegistry;
-
+    private final XMLEventFactory eventFactory = XMLEventFactory.newInstance();
+    
     XMLNodeToXMLFileWriter(@NotNull XMLNode parentNode,
                                   @NotNull OutputStream targetOutputStream,
                                   @NotNull JcrNamespaceRegistry namespaceRegistry) throws XMLStreamException {
         this.parentNode = parentNode;
-
-        this.streamWriter = new IndentingXMLStreamWriter(
-                XMLOutputFactory.newInstance().createXMLStreamWriter(targetOutputStream, StandardCharsets.UTF_8.name())
+        XMLEventWriter writer = XMLOutputFactory.newInstance().createXMLEventWriter(targetOutputStream, StandardCharsets.UTF_8.name());
+        this.eventWriter = new IndentingXMLEventWriter(
+                writer
         );
         this.namespaceRegistry = namespaceRegistry;
-        this.streamWriter.setNamespaceContext(this.namespaceRegistry);
+        this.eventWriter.setNamespaceContext(this.namespaceRegistry);
 
     }
 
     void write() throws XMLStreamException, RepositoryException {
-        streamWriter.writeStartDocument();
 
+        eventWriter.add(eventFactory.createStartDocument());
         writeNode(parentNode, true);
-
-        streamWriter.writeEndDocument();
+        eventWriter.add(eventFactory.createEndDocument());
+        
     }
 
     void writeNode(@NotNull XMLNode xmlNode, boolean isFirstElement) throws RepositoryException, XMLStreamException {
 
-        streamWriter.writeStartElement(xmlNode.getXmlElementName());
-
+        eventWriter.add(eventFactory.createStartElement(StringUtils.EMPTY, StringUtils.EMPTY, xmlNode.getXmlElementName()));
+       
         if (isFirstElement) {
             for (String prefix : namespaceRegistry.getPrefixes()) {
-                streamWriter.writeNamespace(prefix, namespaceRegistry.getURI(prefix));
+                eventWriter.add(eventFactory.createNamespace(prefix, namespaceRegistry.getURI(prefix)));
             }
         }
 
         String primaryNodeType = xmlNode.getPrimaryNodeType();
         String[] mixinNodeTypes = xmlNode.getMixinNodeTypes();
 
-        streamWriter.writeAttribute(JCR_PRIMARYTYPE, StringUtils.isNotBlank(primaryNodeType) ? primaryNodeType : NT_UNSTRUCTURED);
+
+        eventWriter.add(eventFactory.createAttribute(JCR_PRIMARYTYPE,  StringUtils.isNotBlank(primaryNodeType) ? primaryNodeType : NT_UNSTRUCTURED));
+       
         if (ArrayUtils.isNotEmpty(mixinNodeTypes)) {
-            streamWriter.writeAttribute(JCR_MIXINTYPES, "[" + String.join(",", mixinNodeTypes) + "]");
+            eventWriter.add(eventFactory.createAttribute(JCR_MIXINTYPES, "[" + String.join(",", mixinNodeTypes) + "]"));
         }
 
         for (Map.Entry<String, String> entry : xmlNode.getVltXmlParsedProperties().entrySet()) {
@@ -86,15 +91,14 @@ class XMLNodeToXMLFileWriter {
                 continue;
             }
 
-            streamWriter.writeAttribute(entry.getKey(), entry.getValue());
+            eventWriter.add(eventFactory.createAttribute(entry.getKey(), entry.getValue()));
         }
 
         for (XMLNode node : xmlNode.getChildren().values()) {
             writeNode(node, false);
         }
 
-
-        streamWriter.writeEndElement();
+        eventWriter.add(eventFactory.createEndElement(StringUtils.EMPTY, StringUtils.EMPTY, xmlNode.getXmlElementName()));
 
 
     }

@@ -256,6 +256,14 @@
       <version>3.4.6</version>
       <scope>compile</scope>
     </dependency>
+
+    <dependency>
+      <groupId>stax-utils</groupId>
+      <artifactId>stax-utils</artifactId>
+      <version>snapshot-20040917</version>
+      <scope>compile</scope>
+    </dependency>
+    
     <!-- https://mvnrepository.com/artifact/org.xmlunit/xmlunit-core -->
     <dependency>
       <groupId>org.xmlunit</groupId>
