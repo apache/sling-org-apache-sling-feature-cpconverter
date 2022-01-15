@@ -46,10 +46,10 @@ class XMLNodeToXMLFileWriter {
     private final XMLEventWriter eventWriter;
     private final JcrNamespaceRegistry namespaceRegistry;
     private final XMLEventFactory eventFactory = XMLEventFactory.newInstance();
-    
+
     XMLNodeToXMLFileWriter(@NotNull XMLNode parentNode,
-                                  @NotNull OutputStream targetOutputStream,
-                                  @NotNull JcrNamespaceRegistry namespaceRegistry) throws XMLStreamException {
+                           @NotNull OutputStream targetOutputStream,
+                           @NotNull JcrNamespaceRegistry namespaceRegistry) throws XMLStreamException {
         this.parentNode = parentNode;
         XMLEventWriter writer = XMLOutputFactory.newInstance().createXMLEventWriter(targetOutputStream, StandardCharsets.UTF_8.name());
         this.eventWriter = new IndentingXMLEventWriter(
@@ -65,13 +65,13 @@ class XMLNodeToXMLFileWriter {
         eventWriter.add(eventFactory.createStartDocument());
         writeNode(parentNode, true);
         eventWriter.add(eventFactory.createEndDocument());
-        
+
     }
 
     void writeNode(@NotNull XMLNode xmlNode, boolean isFirstElement) throws RepositoryException, XMLStreamException {
 
         eventWriter.add(eventFactory.createStartElement(StringUtils.EMPTY, StringUtils.EMPTY, xmlNode.getXmlElementName()));
-       
+
         if (isFirstElement) {
             for (String prefix : namespaceRegistry.getPrefixes()) {
                 eventWriter.add(eventFactory.createNamespace(prefix, namespaceRegistry.getURI(prefix)));
@@ -82,8 +82,8 @@ class XMLNodeToXMLFileWriter {
         String[] mixinNodeTypes = xmlNode.getMixinNodeTypes();
 
 
-        eventWriter.add(eventFactory.createAttribute(JCR_PRIMARYTYPE,  StringUtils.isNotBlank(primaryNodeType) ? primaryNodeType : NT_UNSTRUCTURED));
-       
+        eventWriter.add(eventFactory.createAttribute(JCR_PRIMARYTYPE, StringUtils.isNotBlank(primaryNodeType) ? primaryNodeType : NT_UNSTRUCTURED));
+
         if (ArrayUtils.isNotEmpty(mixinNodeTypes)) {
             eventWriter.add(eventFactory.createAttribute(JCR_MIXINTYPES, "[" + String.join(",", mixinNodeTypes) + "]"));
         }

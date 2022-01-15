@@ -56,10 +56,10 @@ public class VaultContentXMLContentCreator implements ContentCreator {
     private XMLNode currentNode;
 
     VaultContentXMLContentCreator(@NotNull String repositoryPath,
-                                         @NotNull OutputStream targetOutputStream,
-                                         @NotNull JcrNamespaceRegistry namespaceRegistry,
-                                         @NotNull VaultPackageAssembler packageAssembler,
-                                         boolean isFileDescriptorEntry) {
+                                  @NotNull OutputStream targetOutputStream,
+                                  @NotNull JcrNamespaceRegistry namespaceRegistry,
+                                  @NotNull VaultPackageAssembler packageAssembler,
+                                  boolean isFileDescriptorEntry) {
         this.repositoryPath = repositoryPath;
         this.targetOutputStream = targetOutputStream;
         this.packageAssembler = packageAssembler;

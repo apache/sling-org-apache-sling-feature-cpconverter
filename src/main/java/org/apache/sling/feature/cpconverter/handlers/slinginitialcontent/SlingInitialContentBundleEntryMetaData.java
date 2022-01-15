@@ -40,17 +40,17 @@ class SlingInitialContentBundleEntryMetaData {
         this.repositoryPath = repositoryPath;
     }
 
-    @NotNull 
+    @NotNull
     File getTargetFile() {
         return targetFile;
     }
 
-    @NotNull 
+    @NotNull
     PathEntry getPathEntry() {
         return pathEntry;
     }
 
-    @NotNull 
+    @NotNull
     String getRepositoryPath() {
         return repositoryPath;
     }

@@ -29,20 +29,20 @@ import static org.apache.sling.feature.cpconverter.shared.ConverterConstants.SLA
  * Performs re-computation of the ContentPackagePath of the bundle entry (Sling Initial Content)
  */
 class ContentPackageEntryPathComputer {
-    
+
     private final Set<SlingInitialContentBundleEntryMetaData> bundleEntries;
     private final String contentPackageEntryPath;
     private final VaultContentXMLContentCreator contentCreator;
 
-    ContentPackageEntryPathComputer(    @NotNull Set<SlingInitialContentBundleEntryMetaData> bundleEntries,
-                                        @NotNull final String contentPackageEntryPath,
-                                        @NotNull VaultContentXMLContentCreator contentCreator) {
+    ContentPackageEntryPathComputer(@NotNull Set<SlingInitialContentBundleEntryMetaData> bundleEntries,
+                                    @NotNull final String contentPackageEntryPath,
+                                    @NotNull VaultContentXMLContentCreator contentCreator) {
         this.bundleEntries = bundleEntries;
         this.contentPackageEntryPath = contentPackageEntryPath;
         this.contentCreator = contentCreator;
     }
 
-    @NotNull 
+    @NotNull
     String compute() {
 
         String recomputedContentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath);

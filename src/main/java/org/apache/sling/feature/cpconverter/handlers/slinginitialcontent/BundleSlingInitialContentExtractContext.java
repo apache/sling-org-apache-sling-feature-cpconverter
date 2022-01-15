@@ -72,12 +72,12 @@ public class BundleSlingInitialContentExtractContext {
             pathEntries.forEachRemaining(pathEntryList::add);
         }
     }
-    
+
     @NotNull
     public ContentPackage2FeatureModelConverter.SlingInitialContentPolicy getSlingInitialContentPolicy() {
         return slingInitialContentPolicy;
     }
-    
+
     @NotNull
     public String getPath() {
         return path;

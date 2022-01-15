@@ -45,7 +45,7 @@ import java.util.jar.Manifest;
  * Extracts the sling initial content from a bundle to an java.io.InputStream.
  */
 public class BundleSlingInitialContentExtractor {
-    
+
     protected final AssemblerProvider assemblerProvider = new AssemblerProvider();
     protected final ContentReaderProvider contentReaderProvider = new ContentReaderProvider();
     protected final ParentFolderRepoInitHandler parentFolderRepoInitHandler = new ParentFolderRepoInitHandler();

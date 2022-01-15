@@ -46,14 +46,14 @@ import static org.apache.sling.feature.cpconverter.shared.ConverterConstants.SLA
  * Handles the bundle sling initial content extraction on the jarEntry level.
  */
 class BundleSlingInitialContentJarEntryExtractor {
-    
+
     private final AssemblerProvider assemblerProvider;
     private final ContentReaderProvider contentReaderProvider;
     private final ParentFolderRepoInitHandler parentFolderRepoInitHandler;
 
     BundleSlingInitialContentJarEntryExtractor(@NotNull AssemblerProvider assemblerProvider,
-                                                      @NotNull ContentReaderProvider contentReaderProvider,
-                                                      @NotNull ParentFolderRepoInitHandler parentFolderRepoInitHandler) {
+                                               @NotNull ContentReaderProvider contentReaderProvider,
+                                               @NotNull ParentFolderRepoInitHandler parentFolderRepoInitHandler) {
         this.assemblerProvider = assemblerProvider;
         this.contentReaderProvider = contentReaderProvider;
         this.parentFolderRepoInitHandler = parentFolderRepoInitHandler;
@@ -64,8 +64,8 @@ class BundleSlingInitialContentJarEntryExtractor {
      * @throws Exception
      */
     void extractSlingInitialContent(@NotNull BundleSlingInitialContentExtractContext context,
-                                           @NotNull SlingInitialContentBundleEntryMetaData slingInitialContentBundleEntryMetaData,
-                                           @NotNull Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries) throws IOException, ConverterException {
+                                    @NotNull SlingInitialContentBundleEntryMetaData slingInitialContentBundleEntryMetaData,
+                                    @NotNull Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries) throws IOException, ConverterException {
 
         String repositoryPath = slingInitialContentBundleEntryMetaData.getRepositoryPath();
         File file = slingInitialContentBundleEntryMetaData.getTargetFile();

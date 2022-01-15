@@ -43,8 +43,9 @@ public class AssemblerProvider {
 
     private final Map<PackageType, VaultPackageAssembler> packageAssemblers = new EnumMap<>(PackageType.class);
 
-    AssemblerProvider(){ }
-    
+    AssemblerProvider() {
+    }
+
     /**
      * Lazily initializes the cache with the necessary VaultPackageAssemblers
      *
@@ -63,7 +64,7 @@ public class AssemblerProvider {
         addPathFilterSetToAssemblerFilter(pathEntry, assembler);
         return assembler;
     }
-    
+
     @NotNull
     public Set<Map.Entry<PackageType, VaultPackageAssembler>> getPackageAssemblerEntrySet() {
         return packageAssemblers.entrySet();
@@ -112,7 +113,7 @@ public class AssemblerProvider {
             filter.add(pathFilterSet);
         }
     }
-    
+
     public void clear() {
         this.packageAssemblers.clear();
     }

@@ -60,7 +60,7 @@ class JcrNamespaceRegistryProvider {
         this.predefinedNamespaceUriByPrefix = predefinedNamespaceUriByPrefix;
     }
 
-    @NotNull 
+    @NotNull
     JcrNamespaceRegistry provideRegistryFromBundle() throws IOException {
         try {
             JcrNamespaceRegistry registry = new JcrNamespaceRegistry();
@@ -85,7 +85,7 @@ class JcrNamespaceRegistryProvider {
         }
     }
 
-    private void registerNamespacesIntoRegistry(@NotNull final JcrNamespaceRegistry registry, 
+    private void registerNamespacesIntoRegistry(@NotNull final JcrNamespaceRegistry registry,
                                                 @NotNull final String namespacesDefinitionHeader) throws RepositoryException {
         final StringTokenizer st = new StringTokenizer(namespacesDefinitionHeader, ",");
 
@@ -103,7 +103,7 @@ class JcrNamespaceRegistryProvider {
         }
     }
 
-    private void registerCndIntoRegistry(@NotNull final JcrNamespaceRegistry registry, 
+    private void registerCndIntoRegistry(@NotNull final JcrNamespaceRegistry registry,
                                          @NotNull final String typesHeader) throws IOException, ParseException, RepositoryException {
         for (ManifestHeader.Entry entry : ManifestHeader.parse(typesHeader).getEntries()) {
             JarEntry jarEntry = jarFile.getJarEntry(entry.getValue());

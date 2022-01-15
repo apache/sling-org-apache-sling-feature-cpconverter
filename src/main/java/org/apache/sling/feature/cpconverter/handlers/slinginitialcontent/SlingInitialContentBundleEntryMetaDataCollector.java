@@ -59,11 +59,11 @@ class SlingInitialContentBundleEntryMetaDataCollector {
     private final Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries = new HashSet<>();
     private final AtomicLong total = new AtomicLong(0);
     private final JarFile jarFile;
-    
+
     SlingInitialContentBundleEntryMetaDataCollector(@NotNull BundleSlingInitialContentExtractContext context,
-                                                           @NotNull String basePath,
-                                                           @NotNull ContentPackage2FeatureModelConverter contentPackage2FeatureModelConverter,
-                                                           @NotNull Path newBundleFile) {
+                                                    @NotNull String basePath,
+                                                    @NotNull ContentPackage2FeatureModelConverter contentPackage2FeatureModelConverter,
+                                                    @NotNull Path newBundleFile) {
         this.context = context;
         this.basePath = basePath;
         this.contentPackage2FeatureModelConverter = contentPackage2FeatureModelConverter;
@@ -71,15 +71,15 @@ class SlingInitialContentBundleEntryMetaDataCollector {
         this.jarFile = context.getJarFile();
     }
 
-    @NotNull  
+    @NotNull
     Set<SlingInitialContentBundleEntryMetaData> collectFromContext() throws IOException {
-        
+
         final Manifest manifest = context.getManifest();
-        
+
         // create JAR file to prevent extracting it twice and for random access
         try (OutputStream fileOutput = Files.newOutputStream(newBundleFile, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
              JarOutputStream bundleOutput = new JarOutputStream(fileOutput, manifest)) {
-          
+
             Enumeration<? extends JarEntry> entries = jarFile.entries();
 
             // first we collect all the entries into a set, collectedSlingInitialContentBundleEntries.
@@ -90,7 +90,7 @@ class SlingInitialContentBundleEntryMetaDataCollector {
                 if (jarEntry.getName().equals(JarFile.MANIFEST_NAME)) {
                     continue;
                 }
-               
+
                 if (!jarEntry.isDirectory()) {
                     extractFile(jarEntry, bundleOutput);
                 }
@@ -100,7 +100,7 @@ class SlingInitialContentBundleEntryMetaDataCollector {
                 }
             }
         }
-        
+
         return collectedSlingInitialContentBundleEntries;
     }
 

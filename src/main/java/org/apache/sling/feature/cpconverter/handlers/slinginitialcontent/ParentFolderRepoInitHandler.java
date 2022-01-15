@@ -64,7 +64,7 @@ class ParentFolderRepoInitHandler {
     }
 
     void addRepoinitExtension(@NotNull List<VaultPackageAssembler> assemblers,
-                                     @NotNull FeaturesManager featureManager) throws IOException, ConverterException {
+                              @NotNull FeaturesManager featureManager) throws IOException, ConverterException {
 
         try (Formatter formatter = new Formatter()) {
             parentFolderPaths.stream()
@@ -99,7 +99,7 @@ class ParentFolderRepoInitHandler {
     }
 
 
-    @Nullable 
+    @Nullable
     CreatePath getCreatePath(@NotNull RepoPath path, @NotNull Collection<VaultPackageAssembler> packageAssemblers) {
         if (path.getParent() == null) {
             logger.debug("Omit create path statement for path '{}'", path);
