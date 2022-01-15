@@ -78,17 +78,18 @@ public class BundleSlingInitialContentExtractor {
         Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries = collector.collectFromContext();
 
         // now that we got collectedSlingInitialContentBundleEntries ready, we loop it and perform an extract for each entry.
+        // then add it into the appropriate vault package assemblers
         BundleSlingInitialContentJarEntryExtractor jarEntryExtractor =
                 new BundleSlingInitialContentJarEntryExtractor(assemblerProvider, contentReaderProvider, parentFolderRepoInitHandler);
 
         for (SlingInitialContentBundleEntryMetaData slingInitialContentBundleEntryMetaData : collectedSlingInitialContentBundleEntries) {
-            jarEntryExtractor.extractSlingInitialContent(context, slingInitialContentBundleEntryMetaData, collectedSlingInitialContentBundleEntries);
+            jarEntryExtractor.extractAndAddToAssembler(context, slingInitialContentBundleEntryMetaData, collectedSlingInitialContentBundleEntries);
         }
 
         // add additional content packages to feature model
         finalizePackageAssembly(context);
 
-        // return stripped bundle's inputstream which must be deleted on close
+        // return bundle's inputstream, stripped off sling initial content, which must be deleted on close
         return Files.newInputStream(newBundleFile, StandardOpenOption.READ, StandardOpenOption.DELETE_ON_CLOSE);
     }
 

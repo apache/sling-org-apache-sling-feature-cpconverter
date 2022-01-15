@@ -67,4 +67,11 @@ class SlingInitialContentBundleEntryMetaData {
     public int hashCode() {
         return Objects.hash(targetFile, pathEntry, repositoryPath);
     }
+
+    @Override
+    public String toString() {
+        return "SlingInitialContentBundleEntryMetaData{" +
+                "repositoryPath='" + repositoryPath + '\'' +
+                '}';
+    }
 }

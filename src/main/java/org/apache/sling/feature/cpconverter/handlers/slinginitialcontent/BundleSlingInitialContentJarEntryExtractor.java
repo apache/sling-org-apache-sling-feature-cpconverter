@@ -63,9 +63,9 @@ class BundleSlingInitialContentJarEntryExtractor {
      * @return {@code true} in case the given entry was part of the initial content otherwise {@code false}
      * @throws Exception
      */
-    void extractSlingInitialContent(@NotNull BundleSlingInitialContentExtractContext context,
-                                    @NotNull SlingInitialContentBundleEntryMetaData slingInitialContentBundleEntryMetaData,
-                                    @NotNull Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries) throws IOException, ConverterException {
+    void extractAndAddToAssembler(@NotNull BundleSlingInitialContentExtractContext context,
+                                  @NotNull SlingInitialContentBundleEntryMetaData slingInitialContentBundleEntryMetaData,
+                                  @NotNull Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries) throws IOException, ConverterException {
 
         String repositoryPath = slingInitialContentBundleEntryMetaData.getRepositoryPath();
         File file = slingInitialContentBundleEntryMetaData.getTargetFile();
