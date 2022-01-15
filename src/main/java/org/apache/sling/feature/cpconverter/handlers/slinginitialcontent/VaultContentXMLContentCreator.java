@@ -126,7 +126,7 @@ public class VaultContentXMLContentCreator implements ContentCreator {
     }
 
     @NotNull
-    private String getValidElementName(@NotNull String name) {
+    private static String getValidElementName(@NotNull String name) {
         if (StringUtils.isNumeric(name.substring(0, 1))) {
             return "_" + name;
         }
