@@ -125,13 +125,13 @@ class SlingInitialContentBundleEntryMetaDataCollector {
                 }
 
                 FileOutputStream fos = new FileOutputStream(targetFile);
-                safelyWriteOutputStream(compressedSize, total, data, input, fos, true);
+                safelyWriteOutputStream(compressedSize, data, input, fos, true);
 
                 SlingInitialContentBundleEntryMetaData bundleEntry = createSlingInitialContentBundleEntry(context, basePath, jarEntry, targetFile);
                 collectedSlingInitialContentBundleEntries.add(bundleEntry);
             } else {
                 bundleOutput.putNextEntry(jarEntry);
-                safelyWriteOutputStream(compressedSize, total, data, input, bundleOutput, false);
+                safelyWriteOutputStream(compressedSize, data, input, bundleOutput, false);
                 IOUtils.copy(input, bundleOutput);
                 bundleOutput.closeEntry();
             }
@@ -139,7 +139,6 @@ class SlingInitialContentBundleEntryMetaDataCollector {
     }
 
     private void safelyWriteOutputStream(@NotNull long compressedSize,
-                                         @NotNull AtomicLong total,
                                          @NotNull byte[] data,
                                          @NotNull InputStream input,
                                          @NotNull OutputStream fos,
