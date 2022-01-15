@@ -36,6 +36,9 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
+/**
+ * Encapsulates the JcrNamespace registry provision logic for Sling Initial Content
+ */
 class JcrNamespaceRegistryProvider {
 
     public static final String NODETYPES_BUNDLE_HEADER = "Sling-Nodetypes";
@@ -66,43 +69,53 @@ class JcrNamespaceRegistryProvider {
             }
 
             // parse Sling-Namespaces header (https://github.com/apache/sling-org-apache-sling-jcr-base/blob/66be360910c265473799635fcac0e23895898913/src/main/java/org/apache/sling/jcr/base/internal/loader/Loader.java#L192)
-            final String namespacesDefinitionHeader = manifest.getMainAttributes().getValue(NAMESPACES_BUNDLE_HEADER);
+            String namespacesDefinitionHeader = manifest.getMainAttributes().getValue(NAMESPACES_BUNDLE_HEADER);
             if (namespacesDefinitionHeader != null) {
-                final StringTokenizer st = new StringTokenizer(namespacesDefinitionHeader, ",");
-
-                while (st.hasMoreTokens()) {
-                    final String token = st.nextToken().trim();
-                    int pos = token.indexOf('=');
-                    if (pos == -1) {
-                        logger.warn("createNamespaceRegistry: Bundle {} has an invalid namespace manifest header entry: {}",
-                                manifest.getMainAttributes().getValue(Constants.BUNDLE_SYMBOLICNAME), token);
-                    } else {
-                        final String prefix = token.substring(0, pos).trim();
-                        final String namespace = token.substring(pos + 1).trim();
-                        registry.registerNamespace(prefix, namespace);
-                    }
-                }
+                registerNamespacesIntoRegistry(registry, namespacesDefinitionHeader);
             }
 
             // parse Sling-Nodetypes header
-            final String typesHeader = manifest.getMainAttributes().getValue(NODETYPES_BUNDLE_HEADER);
+            String typesHeader = manifest.getMainAttributes().getValue(NODETYPES_BUNDLE_HEADER);
             if (typesHeader != null) {
-                for (ManifestHeader.Entry entry : ManifestHeader.parse(typesHeader).getEntries()) {
-                    JarEntry jarEntry = jarFile.getJarEntry(entry.getValue());
-                    if (jarEntry == null) {
-                        logger.warn("createNamespaceRegistry: Bundle {} has referenced a non existing node type definition: {}",
-                                manifest.getMainAttributes().getValue(Constants.BUNDLE_SYMBOLICNAME), entry.getValue());
-                    } else {
-                        try (InputStream inputStream = jarFile.getInputStream(jarEntry);
-                             Reader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
-                            registry.registerCnd(reader, entry.getValue());
-                        }
-                    }
-                }
+                registerCndIntoRegistry(registry, typesHeader);
             }
             return registry;
         } catch (final RepositoryException | ParseException e) {
             throw new IOException(e.getMessage(), e);
+        }
+    }
+
+    private void registerNamespacesIntoRegistry(@NotNull final JcrNamespaceRegistry registry, 
+                                                @NotNull final String namespacesDefinitionHeader) throws RepositoryException {
+        final StringTokenizer st = new StringTokenizer(namespacesDefinitionHeader, ",");
+
+        while (st.hasMoreTokens()) {
+            final String token = st.nextToken().trim();
+            int pos = token.indexOf('=');
+            if (pos == -1) {
+                logger.warn("createNamespaceRegistry: Bundle {} has an invalid namespace manifest header entry: {}",
+                        manifest.getMainAttributes().getValue(Constants.BUNDLE_SYMBOLICNAME), token);
+            } else {
+                String prefix = token.substring(0, pos).trim();
+                String namespace = token.substring(pos + 1).trim();
+                registry.registerNamespace(prefix, namespace);
+            }
+        }
+    }
+
+    private void registerCndIntoRegistry(@NotNull final JcrNamespaceRegistry registry, 
+                                         @NotNull final String typesHeader) throws IOException, ParseException, RepositoryException {
+        for (ManifestHeader.Entry entry : ManifestHeader.parse(typesHeader).getEntries()) {
+            JarEntry jarEntry = jarFile.getJarEntry(entry.getValue());
+            if (jarEntry == null) {
+                logger.warn("createNamespaceRegistry: Bundle {} has referenced a non existing node type definition: {}",
+                        manifest.getMainAttributes().getValue(Constants.BUNDLE_SYMBOLICNAME), entry.getValue());
+            } else {
+                try (InputStream inputStream = jarFile.getInputStream(jarEntry);
+                     Reader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
+                    registry.registerCnd(reader, entry.getValue());
+                }
+            }
         }
     }
 

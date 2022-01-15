@@ -113,33 +113,7 @@ public class BundleSlingInitialContentExtractor {
 
                 long compressedSize = jarEntry.getCompressedSize();
                 if (!jarEntry.isDirectory()) {
-                    try (InputStream input = new BufferedInputStream(jarFile.getInputStream(jarEntry))) {
-                        if (jarEntryContainsSlingInitialContent(context, jarEntry)) {
-
-                            File targetFile = new File(contentPackage2FeatureModelConverter.getTempDirectory(), jarEntry.getName());
-                            String canonicalDestinationPath = targetFile.getCanonicalPath();
-
-                            if (!canonicalDestinationPath.startsWith(contentPackage2FeatureModelConverter.getTempDirectory().getCanonicalPath())) {
-                                throw new IOException("Entry is outside of the target directory");
-                            }
-
-                            targetFile.getParentFile().mkdirs();
-                            if (!targetFile.exists() && !targetFile.createNewFile()) {
-                                throw new IOException("Could not create placeholder file!");
-                            }
-
-                            FileOutputStream fos = new FileOutputStream(targetFile);
-                            safelyWriteOutputStream(compressedSize, total, data, input, fos, true);
-
-                            SlingInitialContentBundleEntryMetaData bundleEntry = createSlingInitialContentBundleEntry(context, basePath, jarEntry, targetFile);
-                            collectedSlingInitialContentBundleEntries.add(bundleEntry);
-                        } else {
-                            bundleOutput.putNextEntry(jarEntry);
-                            safelyWriteOutputStream(compressedSize, total, data, input, bundleOutput, false);
-                            IOUtils.copy(input, bundleOutput);
-                            bundleOutput.closeEntry();
-                        }
-                    }
+                    extractFile(context, contentPackage2FeatureModelConverter, basePath, bundleOutput, collectedSlingInitialContentBundleEntries, total, jarFile, jarEntry, data, compressedSize);
                 }
 
                 if (total.get() + BUFFER > TOOBIG) {
@@ -163,6 +137,36 @@ public class BundleSlingInitialContentExtractor {
 
         // return stripped bundle's inputstream which must be deleted on close
         return Files.newInputStream(newBundleFile, StandardOpenOption.READ, StandardOpenOption.DELETE_ON_CLOSE);
+    }
+
+    private void extractFile(@NotNull BundleSlingInitialContentExtractContext context, ContentPackage2FeatureModelConverter contentPackage2FeatureModelConverter, String basePath, JarOutputStream bundleOutput, Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries, AtomicLong total, JarFile jarFile, JarEntry jarEntry, byte[] data, long compressedSize) throws IOException {
+        try (InputStream input = new BufferedInputStream(jarFile.getInputStream(jarEntry))) {
+            if (jarEntryContainsSlingInitialContent(context, jarEntry)) {
+
+                File targetFile = new File(contentPackage2FeatureModelConverter.getTempDirectory(), jarEntry.getName());
+                String canonicalDestinationPath = targetFile.getCanonicalPath();
+
+                if (!canonicalDestinationPath.startsWith(contentPackage2FeatureModelConverter.getTempDirectory().getCanonicalPath())) {
+                    throw new IOException("Entry is outside of the target directory");
+                }
+
+                targetFile.getParentFile().mkdirs();
+                if (!targetFile.exists() && !targetFile.createNewFile()) {
+                    throw new IOException("Could not create placeholder file!");
+                }
+
+                FileOutputStream fos = new FileOutputStream(targetFile);
+                safelyWriteOutputStream(compressedSize, total, data, input, fos, true);
+
+                SlingInitialContentBundleEntryMetaData bundleEntry = createSlingInitialContentBundleEntry(context, basePath, jarEntry, targetFile);
+                collectedSlingInitialContentBundleEntries.add(bundleEntry);
+            } else {
+                bundleOutput.putNextEntry(jarEntry);
+                safelyWriteOutputStream(compressedSize, total, data, input, bundleOutput, false);
+                IOUtils.copy(input, bundleOutput);
+                bundleOutput.closeEntry();
+            }
+        }
     }
 
     static Version getModifiedOsgiVersion(@NotNull Version originalVersion) {

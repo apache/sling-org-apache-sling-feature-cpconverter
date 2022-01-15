@@ -40,13 +40,13 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Set;
 
+import static org.apache.sling.feature.cpconverter.shared.ConverterConstants.SLASH;
+
 /**
  * Handles the bundle sling initial content extraction on the jarEntry level.
  */
 class BundleSlingInitialContentJarEntryExtractor {
-
-
-    private static final String SLASH = "/";
+    
     private final AssemblerProvider assemblerProvider;
     private final ContentReaderProvider contentReaderProvider;
     private final ParentFolderRepoInitHandler parentFolderRepoInitHandler;

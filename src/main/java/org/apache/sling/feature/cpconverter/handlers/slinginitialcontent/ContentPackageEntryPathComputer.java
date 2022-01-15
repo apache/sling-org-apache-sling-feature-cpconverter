@@ -23,12 +23,13 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Set;
 
 import static org.apache.jackrabbit.vault.util.Constants.DOT_CONTENT_XML;
+import static org.apache.sling.feature.cpconverter.shared.ConverterConstants.SLASH;
 
 /**
  * Performs re-computation of the ContentPackagePath of the bundle entry (Sling Initial Content)
  */
 class ContentPackageEntryPathComputer {
-
+    
     private final Set<SlingInitialContentBundleEntryMetaData> bundleEntries;
     private final String contentPackageEntryPath;
     private final VaultContentXMLContentCreator contentCreator;
@@ -50,8 +51,8 @@ class ContentPackageEntryPathComputer {
         // if this is set, we need to use it in the path.
         if (StringUtils.isNotBlank(contentCreator.getPrimaryNodeName())) {
             //custom node name
-            recomputedContentPackageEntryPath = StringUtils.substringBeforeLast(recomputedContentPackageEntryPath, "/");
-            recomputedContentPackageEntryPath = recomputedContentPackageEntryPath + "/" + contentCreator.getPrimaryNodeName();
+            recomputedContentPackageEntryPath = StringUtils.substringBeforeLast(recomputedContentPackageEntryPath, SLASH);
+            recomputedContentPackageEntryPath = recomputedContentPackageEntryPath + SLASH + contentCreator.getPrimaryNodeName();
         }
 
         final String checkIfRecomputedPathCandidate = StringUtils.removeStart(recomputedContentPackageEntryPath, "/jcr_root");
@@ -65,7 +66,7 @@ class ContentPackageEntryPathComputer {
             //  in this case we are dealing with a folder descriptor. for example:
             //  /apps/testJsonFolder.json
             //  we want it to end up in the following format: /apps/testJsonFolder/.content.xml in our assembler.
-            recomputedContentPackageEntryPath = recomputedContentPackageEntryPath + "/" + DOT_CONTENT_XML;
+            recomputedContentPackageEntryPath = recomputedContentPackageEntryPath + SLASH + DOT_CONTENT_XML;
         }
 
         return recomputedContentPackageEntryPath;

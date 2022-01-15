@@ -43,16 +43,17 @@ public class CreatePathSegmentProcessor {
      * @return
      */
     public static boolean processSegments(@NotNull RepoPath path, @NotNull Collection<VaultPackageAssembler> packageAssemblers, @NotNull CreatePath cp) {
-        String platformPath = "";
+        StringBuilder platformPath = new StringBuilder();
         boolean foundType = false;
         for (String part : path.getSegments()) {
-            String platformname = PlatformNameFormat.getPlatformName(part);
-            platformPath += platformPath.isEmpty() ? platformname : "/" + platformname;
+            String platformName = PlatformNameFormat.getPlatformName(part);
+            platformPath.append(platformPath.toString().isEmpty() ? platformName : "/" + platformName);
+            
             boolean segmentAdded = false;
             //loop all package assemblers and check if .content.xml is defined
             for (VaultPackageAssembler packageAssembler : packageAssemblers) {
                 File currentContent = packageAssembler.getEntry(platformPath + "/" + DOT_CONTENT_XML);
-                if (currentContent != null && currentContent.isFile()) {
+                if (currentContent.exists() && currentContent.isFile()) {
                     //add segment if jcr:primaryType is defined.
                     segmentAdded =  addSegment(cp, part, currentContent);
                     if (segmentAdded) {

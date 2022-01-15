@@ -22,4 +22,5 @@ public final class ConverterConstants {
     
     public static final String SYSTEM_USER_REL_PATH_DEFAULT = "system";
     
+    public static final String SLASH = "/";
 }
