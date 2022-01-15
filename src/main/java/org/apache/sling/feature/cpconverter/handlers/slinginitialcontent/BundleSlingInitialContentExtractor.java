@@ -49,8 +49,7 @@ public class BundleSlingInitialContentExtractor {
     protected final AssemblerProvider assemblerProvider = new AssemblerProvider();
     protected final ContentReaderProvider contentReaderProvider = new ContentReaderProvider();
     protected final ParentFolderRepoInitHandler parentFolderRepoInitHandler = new ParentFolderRepoInitHandler();
-
-    @SuppressWarnings("java:S5042") // we already addressed this
+    
     @Nullable
     public InputStream extract(@NotNull BundleSlingInitialContentExtractContext context) throws IOException, ConverterException {
 

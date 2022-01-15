@@ -70,7 +70,8 @@ class SlingInitialContentBundleEntryMetaDataCollector {
         this.newBundleFile = newBundleFile;
         this.jarFile = context.getJarFile();
     }
-
+    
+    @SuppressWarnings("java:S5042") // we already addressed this
     @NotNull
     Set<SlingInitialContentBundleEntryMetaData> collectFromContext() throws IOException {
 
