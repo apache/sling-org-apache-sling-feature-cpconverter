@@ -36,13 +36,13 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
-public class JcrNamespaceRegistryProvider {
+class JcrNamespaceRegistryProvider {
 
     public static final String NODETYPES_BUNDLE_HEADER = "Sling-Nodetypes";
 
     public static final String NAMESPACES_BUNDLE_HEADER = "Sling-Namespaces";
 
-    private final static Logger logger = LoggerFactory.getLogger(BundleSlingInitialContentExtractor.class);
+    private static final Logger logger = LoggerFactory.getLogger(JcrNamespaceRegistryProvider.class);
 
     private final Manifest manifest;
     private final JarFile jarFile;
@@ -57,7 +57,7 @@ public class JcrNamespaceRegistryProvider {
         this.predefinedNamespaceUriByPrefix = predefinedNamespaceUriByPrefix;
     }
 
-    public JcrNamespaceRegistry provideRegistryFromBundle() throws IOException {
+    @NotNull JcrNamespaceRegistry provideRegistryFromBundle() throws IOException {
         try {
             JcrNamespaceRegistry registry = new JcrNamespaceRegistry();
             for (Map.Entry<String, String> entry : predefinedNamespaceUriByPrefix.entrySet()) {

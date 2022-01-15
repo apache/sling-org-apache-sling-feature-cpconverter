@@ -75,7 +75,7 @@ public class XMLNode {
 
     }
 
-    public void addProperty(@NotNull String name, int propertyType, @NotNull String[] values) throws RepositoryException {
+    public void addProperty(@NotNull String name, int propertyType, @NotNull String[] values) {
         String propertyTypeName = PropertyType.nameFromValue(propertyType);
 
         if (propertyType > 0) {
@@ -121,30 +121,37 @@ public class XMLNode {
 
     }
 
+    @NotNull
     public String getPath() {
         return this.basePath + "/" + this.jcrNodeName;
     }
 
+    @NotNull
     public String getXmlElementName() {
         return xmlElementName;
     }
 
-    public @Nullable String getJcrNodeName() {
+    @Nullable
+    public String getJcrNodeName() {
         return jcrNodeName;
     }
 
+    @NotNull
     public String getPrimaryNodeType() {
         return primaryNodeType;
     }
 
+    @NotNull
     public String[] getMixinNodeTypes() {
         return mixinNodeTypes;
     }
 
+    @NotNull
     public Map<String, XMLNode> getChildren() {
         return children;
     }
 
+    @NotNull
     public Map<String, String> getVltXmlParsedProperties() {
         return vltXmlParsedProperties;
     }

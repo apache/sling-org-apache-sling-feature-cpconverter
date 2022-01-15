@@ -68,13 +68,6 @@ public class BundleSlingInitialContentExtractor {
     protected final ContentReaderProvider contentReaderProvider = new ContentReaderProvider();
     protected final ParentFolderRepoInitHandler parentFolderRepoInitHandler = new ParentFolderRepoInitHandler();
 
-    static Version getModifiedOsgiVersion(@NotNull Version originalVersion) {
-        return new Version(originalVersion.getMajor(),
-                originalVersion.getMinor(),
-                originalVersion.getMicro(),
-                originalVersion.getQualifier() + "_" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);
-    }
-
     @SuppressWarnings("java:S5042") // we already addressed this
     @Nullable
     public InputStream extract(@NotNull BundleSlingInitialContentExtractorContext context) throws IOException, ConverterException {
@@ -172,6 +165,13 @@ public class BundleSlingInitialContentExtractor {
         return Files.newInputStream(newBundleFile, StandardOpenOption.READ, StandardOpenOption.DELETE_ON_CLOSE);
     }
 
+    static Version getModifiedOsgiVersion(@NotNull Version originalVersion) {
+        return new Version(originalVersion.getMajor(),
+                originalVersion.getMinor(),
+                originalVersion.getMicro(),
+                originalVersion.getQualifier() + "_" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);
+    }
+
     @NotNull
     private SlingInitialContentBundleEntryMetaData createSlingInitialContentBundleEntry(@NotNull BundleSlingInitialContentExtractorContext context,
                                                                                         @NotNull String basePath,
@@ -230,8 +230,8 @@ public class BundleSlingInitialContentExtractor {
     }
 
     /**
-     * Returns whether the jarEntry is initial content
-     *
+     * Returns whether the jarEntry is Sling initial content
+     * @param context
      * @param jarEntry
      * @return
      */

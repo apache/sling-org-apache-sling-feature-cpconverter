@@ -44,7 +44,6 @@ public class BundleSlingInitialContentExtractorContext {
     private final String runMode;
     private final Manifest manifest;
     private final JcrNamespaceRegistry namespaceRegistry;
-    private final Iterator<PathEntry> pathEntries;
     private final List<PathEntry> pathEntryList = new ArrayList<>();
 
     public BundleSlingInitialContentExtractorContext(@NotNull ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy,
@@ -67,45 +66,54 @@ public class BundleSlingInitialContentExtractorContext {
                         converter.getFeaturesManager().getNamespaceUriByPrefix()
                 ).provideRegistryFromBundle();
 
-        pathEntries = PathEntry.getContentPaths(manifest, -1);
+        Iterator<PathEntry> pathEntries = PathEntry.getContentPaths(manifest, -1);
 
         if (pathEntries != null) {
             pathEntries.forEachRemaining(pathEntryList::add);
         }
     }
-
+    
+    @NotNull
     public ContentPackage2FeatureModelConverter.SlingInitialContentPolicy getSlingInitialContentPolicy() {
         return slingInitialContentPolicy;
     }
-
+    
+    @NotNull
     public String getPath() {
         return path;
     }
 
+    @NotNull
     public ArtifactId getBundleArtifactId() {
         return bundleArtifactId;
     }
 
+    @NotNull
     public ContentPackage2FeatureModelConverter getConverter() {
         return converter;
     }
 
+    @Nullable
     public String getRunMode() {
         return runMode;
     }
 
+    @NotNull
     public JarFile getJarFile() {
         return jarFile;
     }
 
+    @NotNull
     public Manifest getManifest() {
         return manifest;
     }
 
+    @NotNull
     public JcrNamespaceRegistry getNamespaceRegistry() {
         return namespaceRegistry;
     }
 
+    @NotNull
     public List<PathEntry> getPathEntryList() {
         return new ArrayList<>(pathEntryList);
     }

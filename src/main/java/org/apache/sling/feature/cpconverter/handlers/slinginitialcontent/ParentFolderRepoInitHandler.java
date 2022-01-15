@@ -41,13 +41,13 @@ import static org.apache.jackrabbit.vault.util.Constants.DOT_CONTENT_XML;
 /**
  * Handles creating the parent folders for sling initial content entries from the bundle
  */
-public class ParentFolderRepoInitHandler {
+class ParentFolderRepoInitHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(ParentFolderRepoInitHandler.class);
 
     private final Set<RepoPath> parentFolderPaths = new HashSet<>();
 
-    public void addParentsForPath(@NotNull String contentPackageEntryPath) {
+    void addParentsForPath(@NotNull String contentPackageEntryPath) {
 
         String parentFolder = contentPackageEntryPath;
         if (StringUtils.endsWith(contentPackageEntryPath, DOT_CONTENT_XML)) {
@@ -59,11 +59,11 @@ public class ParentFolderRepoInitHandler {
         parentFolderPaths.add(new RepoPath(parentFolder));
     }
 
-    public void reset() {
+    void reset() {
         parentFolderPaths.clear();
     }
 
-    public void addRepoinitExtension(@NotNull List<VaultPackageAssembler> assemblers,
+    void addRepoinitExtension(@NotNull List<VaultPackageAssembler> assemblers,
                                      @NotNull FeaturesManager featureManager) throws IOException, ConverterException {
 
         try (Formatter formatter = new Formatter()) {
@@ -99,7 +99,7 @@ public class ParentFolderRepoInitHandler {
     }
 
 
-    protected @Nullable CreatePath getCreatePath(@NotNull RepoPath path, @NotNull Collection<VaultPackageAssembler> packageAssemblers) {
+    @Nullable CreatePath getCreatePath(@NotNull RepoPath path, @NotNull Collection<VaultPackageAssembler> packageAssemblers) {
         if (path.getParent() == null) {
             logger.debug("Omit create path statement for path '{}'", path);
             return null;

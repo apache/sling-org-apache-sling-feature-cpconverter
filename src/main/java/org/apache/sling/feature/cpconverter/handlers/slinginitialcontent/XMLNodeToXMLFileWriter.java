@@ -35,13 +35,13 @@ import static org.apache.jackrabbit.vault.util.JcrConstants.JCR_MIXINTYPES;
 import static org.apache.jackrabbit.vault.util.JcrConstants.JCR_PRIMARYTYPE;
 import static org.apache.jackrabbit.vault.util.JcrConstants.NT_UNSTRUCTURED;
 
-public class XMLNodeToXMLFileWriter {
+class XMLNodeToXMLFileWriter {
 
     private final XMLNode parentNode;
     private final XMLStreamWriter streamWriter;
     private final JcrNamespaceRegistry namespaceRegistry;
 
-    public XMLNodeToXMLFileWriter(@NotNull XMLNode parentNode,
+    XMLNodeToXMLFileWriter(@NotNull XMLNode parentNode,
                                   @NotNull OutputStream targetOutputStream,
                                   @NotNull JcrNamespaceRegistry namespaceRegistry) throws XMLStreamException {
         this.parentNode = parentNode;
@@ -54,7 +54,7 @@ public class XMLNodeToXMLFileWriter {
 
     }
 
-    public void write() throws XMLStreamException, RepositoryException {
+    void write() throws XMLStreamException, RepositoryException {
         streamWriter.writeStartDocument();
 
         writeNode(parentNode, true);
@@ -62,7 +62,7 @@ public class XMLNodeToXMLFileWriter {
         streamWriter.writeEndDocument();
     }
 
-    private void writeNode(@NotNull XMLNode xmlNode, boolean isFirstElement) throws RepositoryException, XMLStreamException {
+    void writeNode(@NotNull XMLNode xmlNode, boolean isFirstElement) throws RepositoryException, XMLStreamException {
 
         streamWriter.writeStartElement(xmlNode.getXmlElementName());
 

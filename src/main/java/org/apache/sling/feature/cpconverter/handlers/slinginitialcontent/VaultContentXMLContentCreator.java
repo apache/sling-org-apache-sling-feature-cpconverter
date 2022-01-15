@@ -25,6 +25,7 @@ import org.apache.sling.feature.cpconverter.vltpkg.JcrNamespaceRegistry;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.jcr.contentloader.ContentCreator;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
@@ -55,7 +56,7 @@ public class VaultContentXMLContentCreator implements ContentCreator {
     private String primaryNodeName;
     private XMLNode currentNode;
 
-    public VaultContentXMLContentCreator(@NotNull String repositoryPath,
+    VaultContentXMLContentCreator(@NotNull String repositoryPath,
                                          @NotNull OutputStream targetOutputStream,
                                          @NotNull JcrNamespaceRegistry namespaceRegistry,
                                          @NotNull VaultPackageAssembler packageAssembler,
@@ -67,7 +68,7 @@ public class VaultContentXMLContentCreator implements ContentCreator {
         this.isFileDescriptorEntry = isFileDescriptorEntry;
     }
 
-    public void setIsXmlProcessed() {
+    void setIsXmlProcessed() {
         this.xmlProcessed = true;
     }
 
@@ -125,13 +126,15 @@ public class VaultContentXMLContentCreator implements ContentCreator {
         parentNodePathStack.push(currentNode);
     }
 
-    private String getValidElementName(String name) {
+    @NotNull
+    private String getValidElementName(@NotNull String name) {
         if (StringUtils.isNumeric(name.substring(0, 1))) {
             return "_" + name;
         }
         return name;
     }
 
+    @Nullable
     public String getPrimaryNodeName() {
         return primaryNodeName;
     }

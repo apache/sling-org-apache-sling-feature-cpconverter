@@ -44,14 +44,15 @@ import java.util.Set;
 /**
  * Handles the bundle sling initial content extraction on the jarEntry level.
  */
-public class BundleSlingInitialContentJarEntryExtractor {
+class BundleSlingInitialContentJarEntryExtractor {
 
 
+    private static final String SLASH = "/";
     private final AssemblerProvider assemblerProvider;
     private final ContentReaderProvider contentReaderProvider;
     private final ParentFolderRepoInitHandler parentFolderRepoInitHandler;
 
-    public BundleSlingInitialContentJarEntryExtractor(@NotNull AssemblerProvider assemblerProvider,
+    BundleSlingInitialContentJarEntryExtractor(@NotNull AssemblerProvider assemblerProvider,
                                                       @NotNull ContentReaderProvider contentReaderProvider,
                                                       @NotNull ParentFolderRepoInitHandler parentFolderRepoInitHandler) {
         this.assemblerProvider = assemblerProvider;
@@ -63,7 +64,7 @@ public class BundleSlingInitialContentJarEntryExtractor {
      * @return {@code true} in case the given entry was part of the initial content otherwise {@code false}
      * @throws Exception
      */
-    public void extractSlingInitialContent(@NotNull BundleSlingInitialContentExtractorContext context,
+    void extractSlingInitialContent(@NotNull BundleSlingInitialContentExtractorContext context,
                                            @NotNull SlingInitialContentBundleEntryMetaData slingInitialContentBundleEntryMetaData,
                                            @NotNull Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries) throws IOException, ConverterException {
 
@@ -71,7 +72,7 @@ public class BundleSlingInitialContentJarEntryExtractor {
         File file = slingInitialContentBundleEntryMetaData.getTargetFile();
         PathEntry pathEntryValue = slingInitialContentBundleEntryMetaData.getPathEntry();
         // all entry paths used by entry handlers start with "/"
-        String contentPackageEntryPath = "/" + org.apache.jackrabbit.vault.util.Constants.ROOT_DIR + PlatformNameFormat.getPlatformPath(repositoryPath);
+        String contentPackageEntryPath = SLASH + org.apache.jackrabbit.vault.util.Constants.ROOT_DIR + PlatformNameFormat.getPlatformPath(repositoryPath);
 
         Path tmpDocViewInputFile = null;
 

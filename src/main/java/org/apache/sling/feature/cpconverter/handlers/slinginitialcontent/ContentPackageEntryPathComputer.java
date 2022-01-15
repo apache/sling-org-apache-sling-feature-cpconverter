@@ -27,22 +27,21 @@ import static org.apache.jackrabbit.vault.util.Constants.DOT_CONTENT_XML;
 /**
  * Performs re-computation of the ContentPackagePath of the bundle entry (Sling Initial Content)
  */
-public class ContentPackageEntryPathComputer {
+class ContentPackageEntryPathComputer {
 
     private final Set<SlingInitialContentBundleEntryMetaData> bundleEntries;
     private final String contentPackageEntryPath;
     private final VaultContentXMLContentCreator contentCreator;
 
-    public ContentPackageEntryPathComputer(@NotNull Set<SlingInitialContentBundleEntryMetaData> bundleEntries,
-                                           @NotNull final String contentPackageEntryPath,
-                                           @NotNull VaultContentXMLContentCreator contentCreator) {
+    ContentPackageEntryPathComputer(    @NotNull Set<SlingInitialContentBundleEntryMetaData> bundleEntries,
+                                        @NotNull final String contentPackageEntryPath,
+                                        @NotNull VaultContentXMLContentCreator contentCreator) {
         this.bundleEntries = bundleEntries;
         this.contentPackageEntryPath = contentPackageEntryPath;
         this.contentCreator = contentCreator;
     }
 
-    @NotNull
-    public String compute() {
+    @NotNull String compute() {
 
         String recomputedContentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath);
 

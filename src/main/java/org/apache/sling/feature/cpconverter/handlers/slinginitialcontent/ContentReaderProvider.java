@@ -22,19 +22,20 @@ import org.apache.sling.jcr.contentloader.PathEntry;
 import org.apache.sling.jcr.contentloader.internal.readers.JsonReader;
 import org.apache.sling.jcr.contentloader.internal.readers.ZipReader;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 
 /**
  * Holds The ContentReader instances and provides them for pathEntries.
  */
-public class ContentReaderProvider {
+class ContentReaderProvider {
 
     static final JsonReader jsonReader = new JsonReader();
     static final XMLReader xmlReader = new XMLReader();
     static final ZipReader zipReader = new ZipReader();
 
-    public ContentReader getContentReaderForEntry(@NotNull File entry, @NotNull PathEntry pathEntry) {
+    @Nullable ContentReader getContentReaderForEntry(@NotNull File entry, @NotNull PathEntry pathEntry) {
         String entryName = entry.getName();
         if (entryName.endsWith(".json") && !pathEntry.isIgnoredImportProvider("json")) {
             return jsonReader;
