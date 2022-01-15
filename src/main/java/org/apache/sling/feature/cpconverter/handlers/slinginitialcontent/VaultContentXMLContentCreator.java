@@ -20,7 +20,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.xmlbuffer.XMLNode;
-import org.apache.sling.feature.cpconverter.shared.CheckedConsumer;
 import org.apache.sling.feature.cpconverter.vltpkg.JcrNamespaceRegistry;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.jcr.contentloader.ContentCreator;
