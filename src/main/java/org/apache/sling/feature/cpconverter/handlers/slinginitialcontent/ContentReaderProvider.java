@@ -32,15 +32,15 @@ public class ContentReaderProvider {
 
     static final JsonReader jsonReader = new JsonReader();
     static final XMLReader xmlReader = new XMLReader();
-    static final ZipReader zipReader   = new ZipReader();
-    
-    public ContentReader getContentReaderForEntry(@NotNull File entry, @NotNull PathEntry pathEntry){
+    static final ZipReader zipReader = new ZipReader();
+
+    public ContentReader getContentReaderForEntry(@NotNull File entry, @NotNull PathEntry pathEntry) {
         String entryName = entry.getName();
         if (entryName.endsWith(".json") && !pathEntry.isIgnoredImportProvider("json")) {
             return jsonReader;
-        } else if(entryName.endsWith(".xml") && !pathEntry.isIgnoredImportProvider("xml")) {
+        } else if (entryName.endsWith(".xml") && !pathEntry.isIgnoredImportProvider("xml")) {
             return xmlReader;
-        } else if(
+        } else if (
                 (entryName.endsWith(".zip") && !pathEntry.isIgnoredImportProvider("zip")) ||
                         (entryName.endsWith(".jar") && !pathEntry.isIgnoredImportProvider("jar"))
         ) {
@@ -49,5 +49,5 @@ public class ContentReaderProvider {
             return null;
         }
     }
-    
+
 }

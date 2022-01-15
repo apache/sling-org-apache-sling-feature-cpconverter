@@ -47,11 +47,11 @@ public class BundleSlingInitialContentExtractorContext {
     private final Iterator<PathEntry> pathEntries;
     private final List<PathEntry> pathEntryList = new ArrayList<>();
 
-    public BundleSlingInitialContentExtractorContext(@NotNull ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy, 
-                                                     @NotNull String path, 
-                                                     @NotNull ArtifactId bundleArtifactId, 
-                                                     @NotNull JarFile jarFile, 
-                                                     @NotNull ContentPackage2FeatureModelConverter converter, 
+    public BundleSlingInitialContentExtractorContext(@NotNull ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy,
+                                                     @NotNull String path,
+                                                     @NotNull ArtifactId bundleArtifactId,
+                                                     @NotNull JarFile jarFile,
+                                                     @NotNull ContentPackage2FeatureModelConverter converter,
                                                      @Nullable String runMode) throws IOException {
         this.slingInitialContentPolicy = slingInitialContentPolicy;
         this.path = path;
@@ -61,15 +61,15 @@ public class BundleSlingInitialContentExtractorContext {
         this.runMode = runMode;
 
         this.manifest = Objects.requireNonNull(jarFile.getManifest());
-        this.namespaceRegistry = 
-                new JcrNamespaceRegistryProvider(manifest, 
-                                                jarFile, 
-                                                converter.getFeaturesManager().getNamespaceUriByPrefix()
+        this.namespaceRegistry =
+                new JcrNamespaceRegistryProvider(manifest,
+                        jarFile,
+                        converter.getFeaturesManager().getNamespaceUriByPrefix()
                 ).provideRegistryFromBundle();
 
         pathEntries = PathEntry.getContentPaths(manifest, -1);
 
-        if(pathEntries != null){
+        if (pathEntries != null) {
             pathEntries.forEachRemaining(pathEntryList::add);
         }
     }

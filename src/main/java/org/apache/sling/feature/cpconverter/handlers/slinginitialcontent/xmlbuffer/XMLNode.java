@@ -47,15 +47,15 @@ public class XMLNode {
     private final String[] mixinNodeTypes;
 
     private final VaultPackageAssembler packageAssembler;
-    private final Map<String,String> vltXmlParsedProperties = new HashMap<>();
-    private final Map<String,XMLNode> children = new LinkedHashMap<>();
-    
-    public XMLNode(@NotNull VaultPackageAssembler packageAssembler, 
+    private final Map<String, String> vltXmlParsedProperties = new HashMap<>();
+    private final Map<String, XMLNode> children = new LinkedHashMap<>();
+
+    public XMLNode(@NotNull VaultPackageAssembler packageAssembler,
                    @NotNull String basePath,
                    @NotNull String xmlElementName,
                    @Nullable String jcrNodeName,
                    @NotNull String primaryNodeType,
-                   @NotNull String[] mixinNodeTypes){
+                   @NotNull String[] mixinNodeTypes) {
         this.packageAssembler = packageAssembler;
         this.basePath = basePath;
         this.xmlElementName = xmlElementName;
@@ -63,38 +63,38 @@ public class XMLNode {
         this.primaryNodeType = primaryNodeType;
         this.mixinNodeTypes = mixinNodeTypes;
     }
-    
-    public void addProperty(@NotNull String name, int propertyType, @NotNull  String value){
+
+    public void addProperty(@NotNull String name, int propertyType, @NotNull String value) {
         String propertyTypeName = PropertyType.nameFromValue(propertyType);
-        
-        if(propertyType > 0){
+
+        if (propertyType > 0) {
             vltXmlParsedProperties.put(name, String.format(FORMAT_SINGLE_VALUE_TYPED, propertyTypeName, value));
-        }else{
+        } else {
             vltXmlParsedProperties.put(name, String.format(FORMAT_SINGLE_VALUE, value));
         }
-      
-    }
-    
-    public void addProperty(@NotNull String name, int propertyType, @NotNull String[] values) throws RepositoryException {
-        String propertyTypeName = PropertyType.nameFromValue(propertyType);
-        
-        if(propertyType > 0){
-            vltXmlParsedProperties.put(name, String.format(FORMAT_MULTI_VALUE_TYPED, propertyTypeName,  String.join(",", values)));
-        }else{
-            vltXmlParsedProperties.put(name, String.format(FORMAT_MULTI_VALUE,  String.join(",", values)));
-        }
-       
+
     }
 
-    public void addChildNode(@NotNull String name, @NotNull XMLNode xmlNode){
+    public void addProperty(@NotNull String name, int propertyType, @NotNull String[] values) throws RepositoryException {
+        String propertyTypeName = PropertyType.nameFromValue(propertyType);
+
+        if (propertyType > 0) {
+            vltXmlParsedProperties.put(name, String.format(FORMAT_MULTI_VALUE_TYPED, propertyTypeName, String.join(",", values)));
+        } else {
+            vltXmlParsedProperties.put(name, String.format(FORMAT_MULTI_VALUE, String.join(",", values)));
+        }
+
+    }
+
+    public void addChildNode(@NotNull String name, @NotNull XMLNode xmlNode) {
         this.children.put(name, xmlNode);
     }
-    
-    public void addProperty(@NotNull String name, @Nullable Object value)  throws RepositoryException {
+
+    public void addProperty(@NotNull String name, @Nullable Object value) throws RepositoryException {
         if (value == null) {
             return;
         }
-        
+
         if (value instanceof Long) {
             vltXmlParsedProperties.put(name, String.format(FORMAT_SINGLE_VALUE_TYPED, "Long", value.toString()));
         } else if (value instanceof Date) {
@@ -118,13 +118,13 @@ public class XMLNode {
         } else {
             vltXmlParsedProperties.put(name, String.format(FORMAT_SINGLE_VALUE, value));
         }
-        
+
     }
 
-    public String getPath(){
+    public String getPath() {
         return this.basePath + "/" + this.jcrNodeName;
     }
- 
+
     public String getXmlElementName() {
         return xmlElementName;
     }

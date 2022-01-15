@@ -67,26 +67,27 @@ public class BundleSlingInitialContentExtractor {
     protected final AssemblerProvider assemblerProvider = new AssemblerProvider();
     protected final ContentReaderProvider contentReaderProvider = new ContentReaderProvider();
     protected final ParentFolderRepoInitHandler parentFolderRepoInitHandler = new ParentFolderRepoInitHandler();
-    
+
     static Version getModifiedOsgiVersion(@NotNull Version originalVersion) {
-        return new Version( originalVersion.getMajor(), 
-                            originalVersion.getMinor(), 
-                            originalVersion.getMicro(), 
-                    originalVersion.getQualifier() + "_" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);
+        return new Version(originalVersion.getMajor(),
+                originalVersion.getMinor(),
+                originalVersion.getMicro(),
+                originalVersion.getQualifier() + "_" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);
     }
 
     @SuppressWarnings("java:S5042") // we already addressed this
-    @Nullable public InputStream extract(@NotNull BundleSlingInitialContentExtractorContext context) throws IOException, ConverterException {
+    @Nullable
+    public InputStream extract(@NotNull BundleSlingInitialContentExtractorContext context) throws IOException, ConverterException {
 
         ContentPackage2FeatureModelConverter contentPackage2FeatureModelConverter = context.getConverter();
-        
+
         if (context.getSlingInitialContentPolicy() == ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP) {
             return null;
         }
-        if(CollectionUtils.isEmpty(context.getPathEntryList())){
+        if (CollectionUtils.isEmpty(context.getPathEntryList())) {
             return null;
         }
-        
+
         // remove header
         final Manifest manifest = context.getManifest();
         manifest.getMainAttributes().remove(new Attributes.Name(PathEntry.CONTENT_HEADER));
@@ -101,27 +102,27 @@ public class BundleSlingInitialContentExtractor {
              JarOutputStream bundleOutput = new JarOutputStream(fileOutput, manifest)) {
 
             Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries = new HashSet<>();
-            
+
             AtomicLong total = new AtomicLong(0);
 
             final JarFile jarFile = context.getJarFile();
             Enumeration<? extends JarEntry> entries = jarFile.entries();
-            
+
             // first we collect all the entries into a set, collectedSlingInitialContentBundleEntries.
             // we need it up front to be perform various checks in another loop later.
-            while(entries.hasMoreElements()){
+            while (entries.hasMoreElements()) {
                 JarEntry jarEntry = entries.nextElement();
 
                 if (jarEntry.getName().equals(JarFile.MANIFEST_NAME)) {
                     continue;
                 }
                 byte[] data = new byte[BUFFER];
-                
+
                 long compressedSize = jarEntry.getCompressedSize();
                 if (!jarEntry.isDirectory()) {
                     try (InputStream input = new BufferedInputStream(jarFile.getInputStream(jarEntry))) {
                         if (containsSlingInitialContent(context, jarEntry)) {
-                            
+
                             File targetFile = new File(contentPackage2FeatureModelConverter.getTempDirectory(), jarEntry.getName());
                             String canonicalDestinationPath = targetFile.getCanonicalPath();
 
@@ -130,10 +131,10 @@ public class BundleSlingInitialContentExtractor {
                             }
 
                             targetFile.getParentFile().mkdirs();
-                            if(!targetFile.exists() && !targetFile.createNewFile()){
+                            if (!targetFile.exists() && !targetFile.createNewFile()) {
                                 throw new IOException("Could not create placeholder file!");
                             }
-                           
+
                             FileOutputStream fos = new FileOutputStream(targetFile);
                             safelyWriteOutputStream(compressedSize, total, data, input, fos, true);
 
@@ -147,23 +148,23 @@ public class BundleSlingInitialContentExtractor {
                         }
                     }
                 }
-                
+
                 if (total.get() + BUFFER > TOOBIG) {
                     throw new IllegalStateException("File being unzipped is too big.");
                 }
 
             }
-     
+
             // now that we got collectedSlingInitialContentBundleEntries ready, we loop it and perform an extract for each entry.
-            BundleSlingInitialContentJarEntryExtractor jarEntryExtractor = 
+            BundleSlingInitialContentJarEntryExtractor jarEntryExtractor =
                     new BundleSlingInitialContentJarEntryExtractor(assemblerProvider, contentReaderProvider, parentFolderRepoInitHandler);
-            
-            for(SlingInitialContentBundleEntryMetaData slingInitialContentBundleEntryMetaData : collectedSlingInitialContentBundleEntries){
+
+            for (SlingInitialContentBundleEntryMetaData slingInitialContentBundleEntryMetaData : collectedSlingInitialContentBundleEntries) {
                 jarEntryExtractor.extractSlingInitialContent(context, slingInitialContentBundleEntryMetaData, collectedSlingInitialContentBundleEntries);
             }
-      
+
         }
-        
+
         // add additional content packages to feature model
         finalizePackageAssembly(context);
 
@@ -176,14 +177,13 @@ public class BundleSlingInitialContentExtractor {
                                                                                         @NotNull String basePath,
                                                                                         @NotNull JarEntry jarEntry,
                                                                                         @NotNull File targetFile) throws UnsupportedEncodingException {
-        final String entryName = StringUtils.substringAfter( targetFile.getPath(), basePath + "/");
-        final PathEntry pathEntryValue = context.getPathEntryList().stream().filter(p -> entryName.startsWith( p.getPath())).findFirst().orElseThrow(NullPointerException::new);
+        final String entryName = StringUtils.substringAfter(targetFile.getPath(), basePath + "/");
+        final PathEntry pathEntryValue = context.getPathEntryList().stream().filter(p -> entryName.startsWith(p.getPath())).findFirst().orElseThrow(NullPointerException::new);
         final String target = pathEntryValue.getTarget();
         // https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html#file-name-escaping
         String repositoryPath = (target != null ? target : "/") + URLDecoder.decode(entryName.substring(pathEntryValue.getPath().length()), "UTF-8");
         return new SlingInitialContentBundleEntryMetaData(targetFile, pathEntryValue, repositoryPath);
     }
-
 
 
     public void reset() {
@@ -203,11 +203,11 @@ public class BundleSlingInitialContentExtractor {
         assemblerProvider.clear();
     }
 
-    private void safelyWriteOutputStream(@NotNull long compressedSize, 
-                                         @NotNull AtomicLong total, 
-                                         @NotNull byte[] data, 
-                                         @NotNull InputStream input, 
-                                         @NotNull OutputStream fos, 
+    private void safelyWriteOutputStream(@NotNull long compressedSize,
+                                         @NotNull AtomicLong total,
+                                         @NotNull byte[] data,
+                                         @NotNull InputStream input,
+                                         @NotNull OutputStream fos,
                                          boolean shouldClose) throws IOException {
         int count;
         BufferedOutputStream dest = new BufferedOutputStream(fos, BUFFER);
@@ -216,14 +216,14 @@ public class BundleSlingInitialContentExtractor {
             total.addAndGet(count);
 
             double compressionRatio = (double) count / compressedSize;
-            if(compressionRatio > THRESHOLD_RATIO) {
+            if (compressionRatio > THRESHOLD_RATIO) {
                 // ratio between compressed and uncompressed data is highly suspicious, looks like a Zip Bomb Attack
                 break;
             }
         }
         dest.flush();
 
-        if(shouldClose){
+        if (shouldClose) {
             dest.close();
         }
 
@@ -231,13 +231,14 @@ public class BundleSlingInitialContentExtractor {
 
     /**
      * Returns whether the jarEntry is initial content
+     *
      * @param jarEntry
      * @return
      */
-    private boolean containsSlingInitialContent( @NotNull BundleSlingInitialContentExtractorContext context, @NotNull JarEntry jarEntry){
+    private boolean containsSlingInitialContent(@NotNull BundleSlingInitialContentExtractorContext context, @NotNull JarEntry jarEntry) {
         final String entryName = jarEntry.getName();
-        return  context.getPathEntryList().stream().anyMatch(p -> entryName.startsWith(p.getPath()));
+        return context.getPathEntryList().stream().anyMatch(p -> entryName.startsWith(p.getPath()));
     }
-    
-    
+
+
 }

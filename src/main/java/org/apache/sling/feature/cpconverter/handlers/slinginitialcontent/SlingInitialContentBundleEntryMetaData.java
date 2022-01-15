@@ -26,15 +26,15 @@ import java.util.Objects;
  * Holds BundleEntry MetaData.
  */
 public class SlingInitialContentBundleEntryMetaData {
-    
+
     private final File targetFile;
     private final PathEntry pathEntry;
     private final String repositoryPath;
 
     public SlingInitialContentBundleEntryMetaData(
-                                          @NotNull File targetFile,
-                                          @NotNull PathEntry pathEntry,
-                                          @NotNull String repositoryPath) {
+            @NotNull File targetFile,
+            @NotNull PathEntry pathEntry,
+            @NotNull String repositoryPath) {
         this.targetFile = targetFile;
         this.pathEntry = pathEntry;
         this.repositoryPath = repositoryPath;

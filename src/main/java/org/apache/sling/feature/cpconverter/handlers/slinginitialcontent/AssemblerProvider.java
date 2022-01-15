@@ -38,18 +38,19 @@ import java.util.Set;
  * Encapsulates the VaultPackage assembler logic for the sling initial content extraction
  */
 public class AssemblerProvider {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(AssemblerProvider.class);
 
     private final Map<PackageType, VaultPackageAssembler> packageAssemblers = new EnumMap<>(PackageType.class);
 
     /**
      * Lazily initializes the cache with the necessary VaultPackageAssemblers
+     *
      * @param repositoryPath
      * @return the VaultPackageAssembler from the cache to use for the given repository path
      */
-    public VaultPackageAssembler initPackageAssemblerForPath(@NotNull BundleSlingInitialContentExtractorContext context, 
-                                                             @NotNull String repositoryPath, 
+    public VaultPackageAssembler initPackageAssemblerForPath(@NotNull BundleSlingInitialContentExtractorContext context,
+                                                             @NotNull String repositoryPath,
                                                              @NotNull PathEntry pathEntry)
             throws ConverterException {
 
@@ -65,9 +66,9 @@ public class AssemblerProvider {
     }
 
     @NotNull
-    private VaultPackageAssembler lazyConstruct(@NotNull BundleSlingInitialContentExtractorContext context, 
-                                                @NotNull String repositoryPath, 
-                                                @NotNull ArtifactId bundleArtifactId, 
+    private VaultPackageAssembler lazyConstruct(@NotNull BundleSlingInitialContentExtractorContext context,
+                                                @NotNull String repositoryPath,
+                                                @NotNull ArtifactId bundleArtifactId,
                                                 @NotNull PackageType packageType) throws ConverterException {
         VaultPackageAssembler assembler = packageAssemblers.get(packageType);
         if (assembler == null) {
@@ -82,7 +83,7 @@ public class AssemblerProvider {
                 default:
                     throw new ConverterException("Unexpected package type " + packageType + " detected for path " + repositoryPath);
             }
-            final PackageId packageId = new PackageId(bundleArtifactId.getGroupId(), bundleArtifactId.getArtifactId()+packageNameSuffix, bundleArtifactId.getVersion());
+            final PackageId packageId = new PackageId(bundleArtifactId.getGroupId(), bundleArtifactId.getArtifactId() + packageNameSuffix, bundleArtifactId.getVersion());
             assembler = VaultPackageAssembler.create(context.getConverter().getTempDirectory(), packageId, "Generated out of Sling Initial Content from bundle " + bundleArtifactId + " by cp2fm");
             packageAssemblers.put(packageType, assembler);
             logger.info("Created package {} out of Sling-Initial-Content from '{}'", packageId, bundleArtifactId);

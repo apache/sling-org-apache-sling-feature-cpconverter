@@ -51,54 +51,53 @@ public class XMLNodeToXMLFileWriter {
         );
         this.namespaceRegistry = namespaceRegistry;
         this.streamWriter.setNamespaceContext(this.namespaceRegistry);
-       
+
     }
-    
+
     public void write() throws XMLStreamException, RepositoryException {
         streamWriter.writeStartDocument();
-        
+
         writeNode(parentNode, true);
-        
+
         streamWriter.writeEndDocument();
     }
-    
+
     private void writeNode(@NotNull XMLNode xmlNode, boolean isFirstElement) throws RepositoryException, XMLStreamException {
-        
+
         streamWriter.writeStartElement(xmlNode.getXmlElementName());
-        
+
         if (isFirstElement) {
             for (String prefix : namespaceRegistry.getPrefixes()) {
                 streamWriter.writeNamespace(prefix, namespaceRegistry.getURI(prefix));
             }
         }
-        
-        String primaryNodeType  = xmlNode.getPrimaryNodeType();
+
+        String primaryNodeType = xmlNode.getPrimaryNodeType();
         String[] mixinNodeTypes = xmlNode.getMixinNodeTypes();
-        
+
         streamWriter.writeAttribute(JCR_PRIMARYTYPE, StringUtils.isNotBlank(primaryNodeType) ? primaryNodeType : NT_UNSTRUCTURED);
-        if(ArrayUtils.isNotEmpty(mixinNodeTypes)){
+        if (ArrayUtils.isNotEmpty(mixinNodeTypes)) {
             streamWriter.writeAttribute(JCR_MIXINTYPES, "[" + String.join(",", mixinNodeTypes) + "]");
         }
-        
-        for(Map.Entry<String,String> entry: xmlNode.getVltXmlParsedProperties().entrySet()){
-            
-            if(entry.getKey().equals(JCR_PRIMARYTYPE) || entry.getKey().equals(JCR_MIXINTYPES)){
+
+        for (Map.Entry<String, String> entry : xmlNode.getVltXmlParsedProperties().entrySet()) {
+
+            if (entry.getKey().equals(JCR_PRIMARYTYPE) || entry.getKey().equals(JCR_MIXINTYPES)) {
                 continue;
             }
-            
+
             streamWriter.writeAttribute(entry.getKey(), entry.getValue());
         }
-        
-        for(XMLNode node: xmlNode.getChildren().values()){
+
+        for (XMLNode node : xmlNode.getChildren().values()) {
             writeNode(node, false);
         }
 
 
         streamWriter.writeEndElement();
-        
+
 
     }
 
-    
-    
+
 }

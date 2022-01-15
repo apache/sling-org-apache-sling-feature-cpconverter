@@ -60,12 +60,11 @@ public class BundleSlingInitialContentJarEntryExtractor {
     }
 
     /**
-     *
      * @return {@code true} in case the given entry was part of the initial content otherwise {@code false}
      * @throws Exception
      */
-    public void extractSlingInitialContent(@NotNull BundleSlingInitialContentExtractorContext context, 
-                                           @NotNull SlingInitialContentBundleEntryMetaData slingInitialContentBundleEntryMetaData, 
+    public void extractSlingInitialContent(@NotNull BundleSlingInitialContentExtractorContext context,
+                                           @NotNull SlingInitialContentBundleEntryMetaData slingInitialContentBundleEntryMetaData,
                                            @NotNull Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries) throws IOException, ConverterException {
 
         String repositoryPath = slingInitialContentBundleEntryMetaData.getRepositoryPath();
@@ -76,7 +75,7 @@ public class BundleSlingInitialContentJarEntryExtractor {
 
         Path tmpDocViewInputFile = null;
 
-        try(InputStream bundleFileInputStream = new FileInputStream(file)) {
+        try (InputStream bundleFileInputStream = new FileInputStream(file)) {
             VaultPackageAssembler packageAssembler = assemblerProvider.initPackageAssemblerForPath(context, repositoryPath, pathEntryValue);
 
             final ContentReader contentReader = contentReaderProvider.getContentReaderForEntry(file, pathEntryValue);
@@ -91,12 +90,12 @@ public class BundleSlingInitialContentJarEntryExtractor {
                     VaultContentXMLContentCreator contentCreator = new VaultContentXMLContentCreator(StringUtils.substringBeforeLast(repositoryPath, "/"), docViewOutput, context.getNamespaceRegistry(), packageAssembler, isFileDescriptorEntry);
 
 
-                    if(file.getName().endsWith(".xml")){
+                    if (file.getName().endsWith(".xml")) {
                         contentCreator.setIsXmlProcessed();
                     }
 
                     contentReader.parse(file.toURI().toURL(), contentCreator);
-                    contentPackageEntryPath =  new ContentPackageEntryPathComputer(collectedSlingInitialContentBundleEntries, contentPackageEntryPath, contentCreator).compute();
+                    contentPackageEntryPath = new ContentPackageEntryPathComputer(collectedSlingInitialContentBundleEntries, contentPackageEntryPath, contentCreator).compute();
                     contentCreator.finish();
 
                 } catch (IOException | XMLStreamException e) {
@@ -139,8 +138,8 @@ public class BundleSlingInitialContentJarEntryExtractor {
         String recomputedContentPackageEntryPath = FilenameUtils.removeExtension(contentPackageEntryPath);
 
         final String checkIfRecomputedPathCandidate = StringUtils.removeStart(recomputedContentPackageEntryPath, "/jcr_root");
-        return bundleEntries.stream().anyMatch(bundleEntry -> StringUtils.equals(checkIfRecomputedPathCandidate,bundleEntry.getRepositoryPath()));
+        return bundleEntries.stream().anyMatch(bundleEntry -> StringUtils.equals(checkIfRecomputedPathCandidate, bundleEntry.getRepositoryPath()));
 
     }
-    
+
 }

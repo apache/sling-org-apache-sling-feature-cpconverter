@@ -37,7 +37,7 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
 public class JcrNamespaceRegistryProvider {
-    
+
     public static final String NODETYPES_BUNDLE_HEADER = "Sling-Nodetypes";
 
     public static final String NAMESPACES_BUNDLE_HEADER = "Sling-Namespaces";
@@ -48,15 +48,15 @@ public class JcrNamespaceRegistryProvider {
     private final JarFile jarFile;
     private final Map<String, String> predefinedNamespaceUriByPrefix;
 
-    JcrNamespaceRegistryProvider(@NotNull Manifest manifest, 
-                                 @NotNull JarFile jarFile, 
-                                 @NotNull Map<String, String> predefinedNamespaceUriByPrefix){
+    JcrNamespaceRegistryProvider(@NotNull Manifest manifest,
+                                 @NotNull JarFile jarFile,
+                                 @NotNull Map<String, String> predefinedNamespaceUriByPrefix) {
 
         this.manifest = manifest;
         this.jarFile = jarFile;
         this.predefinedNamespaceUriByPrefix = predefinedNamespaceUriByPrefix;
     }
-    
+
     public JcrNamespaceRegistry provideRegistryFromBundle() throws IOException {
         try {
             JcrNamespaceRegistry registry = new JcrNamespaceRegistry();
@@ -69,15 +69,15 @@ public class JcrNamespaceRegistryProvider {
             if (namespacesDefinitionHeader != null) {
                 final StringTokenizer st = new StringTokenizer(namespacesDefinitionHeader, ",");
 
-                while ( st.hasMoreTokens() ) {
+                while (st.hasMoreTokens()) {
                     final String token = st.nextToken().trim();
                     int pos = token.indexOf('=');
-                    if ( pos == -1 ) {
+                    if (pos == -1) {
                         logger.warn("createNamespaceRegistry: Bundle {} has an invalid namespace manifest header entry: {}",
                                 manifest.getMainAttributes().getValue(Constants.BUNDLE_SYMBOLICNAME), token);
                     } else {
                         final String prefix = token.substring(0, pos).trim();
-                        final String namespace = token.substring(pos+1).trim();
+                        final String namespace = token.substring(pos + 1).trim();
                         registry.registerNamespace(prefix, namespace);
                     }
                 }
@@ -100,9 +100,9 @@ public class JcrNamespaceRegistryProvider {
                 }
             }
             return registry;
-        } catch ( final RepositoryException | ParseException e) {
+        } catch (final RepositoryException | ParseException e) {
             throw new IOException(e.getMessage(), e);
         }
     }
-    
+
 }

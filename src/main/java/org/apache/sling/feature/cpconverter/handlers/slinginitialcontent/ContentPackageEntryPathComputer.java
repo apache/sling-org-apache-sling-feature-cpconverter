@@ -33,9 +33,9 @@ public class ContentPackageEntryPathComputer {
     private final String contentPackageEntryPath;
     private final VaultContentXMLContentCreator contentCreator;
 
-    public ContentPackageEntryPathComputer(@NotNull Set<SlingInitialContentBundleEntryMetaData> bundleEntries, 
-                                           @NotNull final String contentPackageEntryPath, 
-                                           @NotNull VaultContentXMLContentCreator contentCreator){
+    public ContentPackageEntryPathComputer(@NotNull Set<SlingInitialContentBundleEntryMetaData> bundleEntries,
+                                           @NotNull final String contentPackageEntryPath,
+                                           @NotNull VaultContentXMLContentCreator contentCreator) {
         this.bundleEntries = bundleEntries;
         this.contentPackageEntryPath = contentPackageEntryPath;
         this.contentCreator = contentCreator;
@@ -48,9 +48,9 @@ public class ContentPackageEntryPathComputer {
 
         // this covers the case of having a primary node name defined in the xml/json descriptor itself.
         // if this is set, we need to use it in the path.
-        if(StringUtils.isNotBlank(contentCreator.getPrimaryNodeName())){
+        if (StringUtils.isNotBlank(contentCreator.getPrimaryNodeName())) {
             //custom node name
-            recomputedContentPackageEntryPath = StringUtils.substringBeforeLast(recomputedContentPackageEntryPath, "/") ;
+            recomputedContentPackageEntryPath = StringUtils.substringBeforeLast(recomputedContentPackageEntryPath, "/");
             recomputedContentPackageEntryPath = recomputedContentPackageEntryPath + "/" + contentCreator.getPrimaryNodeName();
         }
 
@@ -58,10 +58,10 @@ public class ContentPackageEntryPathComputer {
         //  check if the resulting candidate matches one of the repositoryPaths in the bundle entries we have.
         //  for example        /apps/testJsonFile.json.xml (descriptor entry)
         //  will match         /apps/testJsonFile.json (file entry)
-        if(bundleEntries.stream().anyMatch(bundleEntry -> StringUtils.equals(checkIfRecomputedPathCandidate,bundleEntry.getRepositoryPath()))){
+        if (bundleEntries.stream().anyMatch(bundleEntry -> StringUtils.equals(checkIfRecomputedPathCandidate, bundleEntry.getRepositoryPath()))) {
             //we are dealing with a file descriptor here
             recomputedContentPackageEntryPath = recomputedContentPackageEntryPath + ".dir/" + DOT_CONTENT_XML;
-        }else{
+        } else {
             //  in this case we are dealing with a folder descriptor. for example:
             //  /apps/testJsonFolder.json
             //  we want it to end up in the following format: /apps/testJsonFolder/.content.xml in our assembler.

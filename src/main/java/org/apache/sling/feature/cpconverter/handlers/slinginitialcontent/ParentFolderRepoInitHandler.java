@@ -44,13 +44,13 @@ import static org.apache.jackrabbit.vault.util.Constants.DOT_CONTENT_XML;
 public class ParentFolderRepoInitHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(ParentFolderRepoInitHandler.class);
-    
+
     private final Set<RepoPath> parentFolderPaths = new HashSet<>();
-    
-    public void addParentsForPath(@NotNull String contentPackageEntryPath)  {
+
+    public void addParentsForPath(@NotNull String contentPackageEntryPath) {
 
         String parentFolder = contentPackageEntryPath;
-        if(StringUtils.endsWith(contentPackageEntryPath, DOT_CONTENT_XML)){
+        if (StringUtils.endsWith(contentPackageEntryPath, DOT_CONTENT_XML)) {
             parentFolder = StringUtils.substringBeforeLast(parentFolder, "/" + DOT_CONTENT_XML);
         }
         parentFolder = StringUtils.substringBeforeLast(parentFolder, "/");
@@ -58,26 +58,26 @@ public class ParentFolderRepoInitHandler {
 
         parentFolderPaths.add(new RepoPath(parentFolder));
     }
-    
+
     public void reset() {
         parentFolderPaths.clear();
     }
 
-    public void addRepoinitExtension(@NotNull List<VaultPackageAssembler> assemblers, 
+    public void addRepoinitExtension(@NotNull List<VaultPackageAssembler> assemblers,
                                      @NotNull FeaturesManager featureManager) throws IOException, ConverterException {
 
         try (Formatter formatter = new Formatter()) {
             parentFolderPaths.stream()
-                    .filter( entry -> parentFolderPaths.stream()
+                    .filter(entry -> parentFolderPaths.stream()
                             .noneMatch(other -> !other.equals(
                                     entry) &&
                                     other.startsWith(entry)
                             )
                     )
-                    .filter( entry ->
+                    .filter(entry ->
                             !entry.isRepositoryPath()
                     )
-                    .map( entry ->
+                    .map(entry ->
                             // we want to make sure of all our entries that are repositoryPaths, 
                             // we create repoinit statements to create the parent folders with proper types.
                             // if we don't do this we will end up with constraintViolationExceptions.
@@ -95,7 +95,7 @@ public class ParentFolderRepoInitHandler {
                 featureManager.addOrAppendRepoInitExtension("content-package", text, null);
             }
         }
-        
+
     }
 
 
@@ -109,5 +109,5 @@ public class ParentFolderRepoInitHandler {
         CreatePathSegmentProcessor.processSegments(path, packageAssemblers, cp);
         return cp;
     }
-    
+
 }
