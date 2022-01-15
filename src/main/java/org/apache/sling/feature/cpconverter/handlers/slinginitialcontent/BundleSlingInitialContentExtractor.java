@@ -49,7 +49,15 @@ public class BundleSlingInitialContentExtractor {
     protected final AssemblerProvider assemblerProvider = new AssemblerProvider();
     protected final ContentReaderProvider contentReaderProvider = new ContentReaderProvider();
     protected final ParentFolderRepoInitHandler parentFolderRepoInitHandler = new ParentFolderRepoInitHandler();
-    
+
+    /**
+     * Extract the bundle sling initial content, assemble it into package assemblers into a different package,
+     * And strip the bundle of all the sling initial content.
+     * @param context all context variables needed to perform the extraction.
+     * @return stripped bundle inputstream
+     * @throws IOException
+     * @throws ConverterException
+     */
     @Nullable
     public InputStream extract(@NotNull BundleSlingInitialContentExtractContext context) throws IOException, ConverterException {
 
@@ -62,19 +70,12 @@ public class BundleSlingInitialContentExtractor {
             return null;
         }
 
-        // remove header
-        final Manifest manifest = context.getManifest();
-        manifest.getMainAttributes().remove(new Attributes.Name(PathEntry.CONTENT_HEADER));
-        // change version to have suffix
-        Version originalVersion = new Version(Objects.requireNonNull(manifest.getMainAttributes().getValue(Constants.BUNDLE_VERSION)));
-        manifest.getMainAttributes().putValue(Constants.BUNDLE_VERSION, getModifiedOsgiVersion(originalVersion).toString());
-        Path newBundleFile = Files.createTempFile(contentPackage2FeatureModelConverter.getTempDirectory().toPath(), "newBundle", ".jar");
-        String basePath = contentPackage2FeatureModelConverter.getTempDirectory().getPath();
-
-
+        // create a temporary bundle file to tinker with
+        Path newTemporaryBundleFile = getNewBundleFile(context, contentPackage2FeatureModelConverter);
+       
         // collect the metadata into a set first, we need all the data upfront in our second loop.
         SlingInitialContentBundleEntryMetaDataCollector collector =
-                new SlingInitialContentBundleEntryMetaDataCollector(context, basePath, contentPackage2FeatureModelConverter, newBundleFile);
+                new SlingInitialContentBundleEntryMetaDataCollector(context, contentPackage2FeatureModelConverter, newTemporaryBundleFile);
         Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries = collector.collectFromContext();
 
         // now that we got collectedSlingInitialContentBundleEntries ready, we loop it and perform an extract for each entry.
@@ -90,7 +91,7 @@ public class BundleSlingInitialContentExtractor {
         finalizePackageAssembly(context);
 
         // return bundle's inputstream, stripped off sling initial content, which must be deleted on close
-        return Files.newInputStream(newBundleFile, StandardOpenOption.READ, StandardOpenOption.DELETE_ON_CLOSE);
+        return Files.newInputStream(newTemporaryBundleFile, StandardOpenOption.READ, StandardOpenOption.DELETE_ON_CLOSE);
     }
 
     static Version getModifiedOsgiVersion(@NotNull Version originalVersion) {
@@ -115,6 +116,16 @@ public class BundleSlingInitialContentExtractor {
             converter.processSubPackage(context.getPath() + "-" + entry.getKey(), context.getRunMode(), converter.open(packageFile), false);
         }
         assemblerProvider.clear();
+    }
+
+    private Path getNewBundleFile(@NotNull BundleSlingInitialContentExtractContext context, ContentPackage2FeatureModelConverter contentPackage2FeatureModelConverter) throws IOException {
+        final Manifest manifest = context.getManifest();
+        // remove header
+        manifest.getMainAttributes().remove(new Attributes.Name(PathEntry.CONTENT_HEADER));
+        // change version to have suffix
+        Version originalVersion = new Version(Objects.requireNonNull(manifest.getMainAttributes().getValue(Constants.BUNDLE_VERSION)));
+        manifest.getMainAttributes().putValue(Constants.BUNDLE_VERSION, getModifiedOsgiVersion(originalVersion).toString());
+        return Files.createTempFile(contentPackage2FeatureModelConverter.getTempDirectory().toPath(), "newBundle", ".jar");
     }
 
 }

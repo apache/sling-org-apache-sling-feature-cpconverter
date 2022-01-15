@@ -61,16 +61,20 @@ class SlingInitialContentBundleEntryMetaDataCollector {
     private final JarFile jarFile;
 
     SlingInitialContentBundleEntryMetaDataCollector(@NotNull BundleSlingInitialContentExtractContext context,
-                                                    @NotNull String basePath,
                                                     @NotNull ContentPackage2FeatureModelConverter contentPackage2FeatureModelConverter,
                                                     @NotNull Path newBundleFile) {
         this.context = context;
-        this.basePath = basePath;
+        this.basePath = contentPackage2FeatureModelConverter.getTempDirectory().getPath();
         this.contentPackage2FeatureModelConverter = contentPackage2FeatureModelConverter;
         this.newBundleFile = newBundleFile;
         this.jarFile = context.getJarFile();
     }
-    
+
+    /**
+     * Collects all the MetaData from the context into a set
+     * @return
+     * @throws IOException
+     */
     @SuppressWarnings("java:S5042") // we already addressed this
     @NotNull
     Set<SlingInitialContentBundleEntryMetaData> collectFromContext() throws IOException {
@@ -128,7 +132,7 @@ class SlingInitialContentBundleEntryMetaDataCollector {
                 FileOutputStream fos = new FileOutputStream(targetFile);
                 safelyWriteOutputStream(compressedSize, data, input, fos, true);
 
-                SlingInitialContentBundleEntryMetaData bundleEntry = createSlingInitialContentBundleEntry(context, basePath, jarEntry, targetFile);
+                SlingInitialContentBundleEntryMetaData bundleEntry = createSlingInitialContentBundleEntry(context, targetFile);
                 collectedSlingInitialContentBundleEntries.add(bundleEntry);
             } else {
                 bundleOutput.putNextEntry(jarEntry);
@@ -171,8 +175,6 @@ class SlingInitialContentBundleEntryMetaDataCollector {
 
     @NotNull
     private SlingInitialContentBundleEntryMetaData createSlingInitialContentBundleEntry(@NotNull BundleSlingInitialContentExtractContext context,
-                                                                                        @NotNull String basePath,
-                                                                                        @NotNull JarEntry jarEntry,
                                                                                         @NotNull File targetFile) throws UnsupportedEncodingException {
         final String entryName = StringUtils.substringAfter(targetFile.getPath(), basePath + "/");
         final PathEntry pathEntryValue = context.getPathEntryList().stream().filter(p -> entryName.startsWith(p.getPath())).findFirst().orElseThrow(NullPointerException::new);

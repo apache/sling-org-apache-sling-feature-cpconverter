@@ -60,8 +60,12 @@ class BundleSlingInitialContentJarEntryExtractor {
     }
 
     /**
-     * @return {@code true} in case the given entry was part of the initial content otherwise {@code false}
-     * @throws Exception
+     * Extract slingInitialContentBundleEntryMetaData and add it to the assembler
+     * @param context BundleSlingInitialContentExtractContext
+     * @param slingInitialContentBundleEntryMetaData SlingInitialContentBundleEntryMetaData
+     * @param collectedSlingInitialContentBundleEntries complete set of all SlingInitialContentBundleEntryMetaData for the bundle
+     * @throws IOException
+     * @throws ConverterException
      */
     void extractAndAddToAssembler(@NotNull BundleSlingInitialContentExtractContext context,
                                   @NotNull SlingInitialContentBundleEntryMetaData slingInitialContentBundleEntryMetaData,

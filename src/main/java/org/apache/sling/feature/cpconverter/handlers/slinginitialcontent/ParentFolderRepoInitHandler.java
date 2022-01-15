@@ -47,10 +47,15 @@ class ParentFolderRepoInitHandler {
 
     private final Set<RepoPath> parentFolderPaths = new HashSet<>();
 
-    void addParentsForPath(@NotNull String contentPackageEntryPath) {
+    /**
+     * Handles creating the parent folders for sling initial content entries from the bundle
+     * @param contentPackageEntryRepositoryPath the actual repository path of the entry 
+     *                                          eg: /jcr_root/apps/mysite/component/component-a/.content.xml
+     */
+    void addParentsForPath(@NotNull String contentPackageEntryRepositoryPath) {
 
-        String parentFolder = contentPackageEntryPath;
-        if (StringUtils.endsWith(contentPackageEntryPath, DOT_CONTENT_XML)) {
+        String parentFolder = contentPackageEntryRepositoryPath;
+        if (StringUtils.endsWith(contentPackageEntryRepositoryPath, DOT_CONTENT_XML)) {
             parentFolder = StringUtils.substringBeforeLast(parentFolder, "/" + DOT_CONTENT_XML);
         }
         parentFolder = StringUtils.substringBeforeLast(parentFolder, "/");

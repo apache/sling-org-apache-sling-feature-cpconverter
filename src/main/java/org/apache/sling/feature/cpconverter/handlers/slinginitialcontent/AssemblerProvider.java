@@ -49,7 +49,7 @@ public class AssemblerProvider {
     /**
      * Lazily initializes the cache with the necessary VaultPackageAssemblers
      *
-     * @param repositoryPath
+     * @param repositoryPath repository path of the sling initial content entry
      * @return the VaultPackageAssembler from the cache to use for the given repository path
      */
     @NotNull
