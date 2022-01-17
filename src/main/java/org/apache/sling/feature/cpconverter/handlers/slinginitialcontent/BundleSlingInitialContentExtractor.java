@@ -53,6 +53,7 @@ public class BundleSlingInitialContentExtractor {
     /**
      * Extract the bundle sling initial content, assemble it into package assemblers into a different package,
      * And strip the bundle of all the sling initial content.
+     *
      * @param context all context variables needed to perform the extraction.
      * @return stripped bundle inputstream
      * @throws IOException
@@ -72,7 +73,7 @@ public class BundleSlingInitialContentExtractor {
 
         // create a bundle file that will contain all non-sling initial content 
         Path strippedBundleFile = getNewBundleFile(context, contentPackage2FeatureModelConverter);
-       
+
         // collect the metadata into a set first, we need all the data upfront in our second loop.
         SlingInitialContentBundleEntryMetaDataCollector collector =
                 new SlingInitialContentBundleEntryMetaDataCollector(context, contentPackage2FeatureModelConverter, strippedBundleFile);

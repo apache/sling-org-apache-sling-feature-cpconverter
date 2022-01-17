@@ -49,7 +49,8 @@ class ParentFolderRepoInitHandler {
 
     /**
      * Handles creating the parent folders for sling initial content entries from the bundle
-     * @param contentPackageEntryRepositoryPath the actual repository path of the entry 
+     *
+     * @param contentPackageEntryRepositoryPath the actual repository path of the entry
      *                                          eg: /jcr_root/apps/mysite/component/component-a/.content.xml
      */
     void addParentsForPath(@NotNull String contentPackageEntryRepositoryPath) {

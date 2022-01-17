@@ -61,8 +61,9 @@ class BundleSlingInitialContentJarEntryExtractor {
 
     /**
      * Extract slingInitialContentBundleEntryMetaData and add it to the assembler
-     * @param context BundleSlingInitialContentExtractContext
-     * @param slingInitialContentBundleEntryMetaData SlingInitialContentBundleEntryMetaData
+     *
+     * @param context                                   BundleSlingInitialContentExtractContext
+     * @param slingInitialContentBundleEntryMetaData    SlingInitialContentBundleEntryMetaData
      * @param collectedSlingInitialContentBundleEntries complete set of all SlingInitialContentBundleEntryMetaData for the bundle
      * @throws IOException
      * @throws ConverterException

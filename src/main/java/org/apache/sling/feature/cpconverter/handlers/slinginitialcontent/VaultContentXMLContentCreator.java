@@ -42,7 +42,7 @@ import java.util.Set;
 public class VaultContentXMLContentCreator implements ContentCreator {
 
     private static final String ACL_NOT_SUPPORTED_MSG = "Sling Initial Content - ACL statements are not supported yet . SLING issue: https://issues.apache.org/jira/browse/SLING-11060";
-    
+
     private final String repositoryPath;
     private final OutputStream targetOutputStream;
     private final VaultPackageAssembler packageAssembler;
