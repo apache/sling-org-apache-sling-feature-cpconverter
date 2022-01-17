@@ -1,0 +1,10 @@
+{
+  "com.mysite.components.templating.navigation.title": "Navigation",
+  "com.mysite.components.templating.navigation.overview": "Overview",
+  "com.mysite.components.templating.navigation.open": "Open navigation",
+  "com.mysite.components.templating.navigation.close": "Close navigation",
+  "com.mysite.components.templating.navigation.go-back": "Go back",
+  "com.mysite.components.search": "Search",
+  "com.mysite.components.search.results": "results found",
+  "com.mysite.components.search.showmore": "Show more"
+}

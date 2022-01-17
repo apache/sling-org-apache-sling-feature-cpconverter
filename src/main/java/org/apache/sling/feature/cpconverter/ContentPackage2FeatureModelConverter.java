@@ -56,6 +56,7 @@ import org.apache.sling.feature.cpconverter.handlers.DefaultHandler;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
 import org.apache.sling.feature.cpconverter.handlers.NodeTypesEntryHandler;
+import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
 import org.apache.sling.feature.cpconverter.vltpkg.BaseVaultPackageScanner;
 import org.apache.sling.feature.cpconverter.vltpkg.PackagesEventsEmitter;
 import org.apache.sling.feature.cpconverter.vltpkg.RecollectorVaultPackageScanner;
@@ -104,6 +105,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     private PackagePolicy contentTypePackagePolicy = PackagePolicy.REFERENCE;
 
     private boolean removeInstallHooks = false;
+    
+    private BundleSlingInitialContentExtractor bundleSlingInitialContentExtractor = new BundleSlingInitialContentExtractor();
 
     public enum PackagePolicy {
         /**
@@ -266,6 +269,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             logger.info("content-package '{}' successfully read!", contentPackage);
 
             aclManager.reset();
+            bundleSlingInitialContentExtractor.reset();
+            
         }
 
         logger.info("Ordering input content-package(s) {}...", idPackageMapping.keySet());
@@ -302,7 +307,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                     // finally serialize the Feature Model(s) file(s)
 
                     aclManager.addRepoinitExtension(assemblers, featuresManager);
-
+                    bundleSlingInitialContentExtractor.addRepoInitExtension(assemblers, featuresManager);
+                    
                     logger.info("Conversion complete!");
 
                     featuresManager.serialize();
@@ -310,7 +316,9 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                     emitters.stream().forEach(e -> e.endPackage(vaultPackage.getId(), result));
                 }
             } finally {
+                
                 aclManager.reset();
+                bundleSlingInitialContentExtractor.reset();
                 assemblers.clear();
 
                 try {
@@ -364,10 +372,11 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         // Please note: THIS IS A HACK to meet the new requirement without drastically change the original design
         // temporary swap the main handler to collect stuff
         VaultPackageAssembler handler = getMainPackageAssembler();
-        assemblers.add(handler);
+      
         Properties parentProps = handler.getPackageProperties();
         boolean isContainerPackage = PackageType.CONTAINER.equals(parentProps.get(PackageProperties.NAME_PACKAGE_TYPE));
         setMainPackageAssembler(clonedPackage);
+        assemblers.add(clonedPackage);
 
         // scan the detected package, first
         traverse(vaultPackage);
@@ -494,6 +503,11 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         }
     }
 
+    public ContentPackage2FeatureModelConverter setBundleSlingInitialContentExtractor(BundleSlingInitialContentExtractor bundleSlingInitialContentExtractor) {
+        this.bundleSlingInitialContentExtractor = bundleSlingInitialContentExtractor;
+        return this;
+    }
+
     @Override
     protected void onFile(@NotNull String entryPath, @NotNull Archive archive, @NotNull Entry entry) throws IOException, ConverterException {
         try {
@@ -544,4 +558,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         cleanup();
     }
 
+    public List<VaultPackageAssembler> getAssemblers() {
+        return new ArrayList<>(assemblers);
+    }
 }

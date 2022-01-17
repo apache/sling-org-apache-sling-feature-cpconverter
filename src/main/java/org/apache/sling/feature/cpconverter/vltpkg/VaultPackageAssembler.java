@@ -60,6 +60,7 @@ import static org.apache.jackrabbit.vault.util.Constants.META_DIR;
 import static org.apache.jackrabbit.vault.util.Constants.PROPERTIES_XML;
 import static org.apache.jackrabbit.vault.util.Constants.ROOT_DIR;
 import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER;
+import static org.apache.sling.feature.cpconverter.shared.ConverterConstants.SLASH;
 import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.getDependencies;
 import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.setDependencies;
 import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.toRepositoryPath;
@@ -233,8 +234,13 @@ public class VaultPackageAssembler {
     }
 
     public @NotNull File getEntry(@NotNull String path) {
-        if (!path.startsWith(ROOT_DIR)) {
-            path = ROOT_DIR + path;
+        if (!path.startsWith(ROOT_DIR + SLASH)) {
+            if(path.startsWith(SLASH)){
+                path = ROOT_DIR + path;
+            }else{
+                path = ROOT_DIR + SLASH + path;
+            }
+           
         }
 
         return new File(storingDirectory, path);
@@ -358,7 +364,7 @@ public class VaultPackageAssembler {
             }
         }
     }
-
+    
     private static final class RemoveInstallHooksPredicate implements Predicate<Map.Entry<Object, Object>> {
         @Override
         public boolean test(java.util.Map.Entry<Object, Object> entry) {
