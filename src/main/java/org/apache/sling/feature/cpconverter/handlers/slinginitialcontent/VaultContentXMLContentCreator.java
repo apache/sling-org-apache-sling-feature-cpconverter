@@ -41,6 +41,8 @@ import java.util.Set;
  */
 public class VaultContentXMLContentCreator implements ContentCreator {
 
+    private static final String ACL_NOT_SUPPORTED_MSG = "Sling Initial Content - ACL statements are not supported yet . SLING issue: https://issues.apache.org/jira/browse/SLING-11060";
+    
     private final String repositoryPath;
     private final OutputStream targetOutputStream;
     private final VaultPackageAssembler packageAssembler;
@@ -201,30 +203,30 @@ public class VaultContentXMLContentCreator implements ContentCreator {
 
 
     @Override
-    public boolean switchCurrentNode(String subPath, String newNodeType) throws RepositoryException {
-        throw new UnsupportedOperationException();
+    public boolean switchCurrentNode(String subPath, String newNodeType) {
+        throw new UnsupportedOperationException(ACL_NOT_SUPPORTED_MSG);
     }
 
     @Override
-    public void createUser(String name, String password, Map<String, Object> extraProperties) throws RepositoryException {
-        throw new UnsupportedOperationException();
+    public void createUser(String name, String password, Map<String, Object> extraProperties) {
+        throw new UnsupportedOperationException(ACL_NOT_SUPPORTED_MSG);
     }
 
     @Override
-    public void createGroup(String name, String[] members, Map<String, Object> extraProperties) throws RepositoryException {
-        throw new UnsupportedOperationException();
+    public void createGroup(String name, String[] members, Map<String, Object> extraProperties) {
+        throw new UnsupportedOperationException(ACL_NOT_SUPPORTED_MSG);
     }
 
     @Override
-    public void createAce(String principal, String[] grantedPrivileges, String[] deniedPrivileges, String order) throws RepositoryException {
-        throw new UnsupportedOperationException();
+    public void createAce(String principal, String[] grantedPrivileges, String[] deniedPrivileges, String order) {
+        throw new UnsupportedOperationException(ACL_NOT_SUPPORTED_MSG);
     }
 
     @Override
     public void createAce(String principalId, String[] grantedPrivilegeNames, String[] deniedPrivilegeNames,
                           String order, Map<String, Value> restrictions, Map<String, Value[]> mvRestrictions,
-                          Set<String> removedRestrictionNames) throws RepositoryException {
-        throw new UnsupportedOperationException();
+                          Set<String> removedRestrictionNames) {
+        throw new UnsupportedOperationException(ACL_NOT_SUPPORTED_MSG);
     }
 
 }

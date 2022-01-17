@@ -76,7 +76,7 @@ public class BundleSlingInitialContentExtractor {
         // collect the metadata into a set first, we need all the data upfront in our second loop.
         SlingInitialContentBundleEntryMetaDataCollector collector =
                 new SlingInitialContentBundleEntryMetaDataCollector(context, contentPackage2FeatureModelConverter, newTemporaryBundleFile);
-        Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries = collector.collectFromContext();
+        Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries = collector.collectFromContextAndWriteTmpFiles();
 
         // now that we got collectedSlingInitialContentBundleEntries ready, we loop it and perform an extract for each entry.
         // then add it into the appropriate vault package assemblers

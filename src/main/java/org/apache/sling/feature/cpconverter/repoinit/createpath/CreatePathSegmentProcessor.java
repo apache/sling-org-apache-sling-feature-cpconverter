@@ -31,12 +31,13 @@ import java.util.List;
 import static org.apache.jackrabbit.vault.util.Constants.DOT_CONTENT_XML;
 
 public class CreatePathSegmentProcessor {
-    
+
     private CreatePathSegmentProcessor() {
     }
 
     /**
      * Process segments of a repopath to createpath, checking packageassemblers for existing primaryType definitions.
+     *
      * @param path
      * @param packageAssemblers
      * @param cp
@@ -48,14 +49,14 @@ public class CreatePathSegmentProcessor {
         for (String part : path.getSegments()) {
             String platformName = PlatformNameFormat.getPlatformName(part);
             platformPath.append(platformPath.toString().isEmpty() ? platformName : "/" + platformName);
-            
+
             boolean segmentAdded = false;
             //loop all package assemblers and check if .content.xml is defined
             for (VaultPackageAssembler packageAssembler : packageAssemblers) {
                 File currentContent = packageAssembler.getEntry(platformPath + "/" + DOT_CONTENT_XML);
                 if (currentContent.exists() && currentContent.isFile()) {
                     //add segment if jcr:primaryType is defined.
-                    segmentAdded =  addSegment(cp, part, currentContent);
+                    segmentAdded = addSegment(cp, part, currentContent);
                     if (segmentAdded) {
                         foundType = true;
                         break;
@@ -100,5 +101,5 @@ public class CreatePathSegmentProcessor {
         }
         return false;
     }
-    
+
 }

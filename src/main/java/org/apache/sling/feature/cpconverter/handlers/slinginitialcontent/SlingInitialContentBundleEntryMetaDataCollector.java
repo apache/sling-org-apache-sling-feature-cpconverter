@@ -43,6 +43,8 @@ import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
+import static org.apache.sling.feature.cpconverter.shared.ConverterConstants.SLASH;
+
 /**
  * Handles collecting the metadata for each sling initial content entry, to be used for extraction in another loop
  */
@@ -77,7 +79,7 @@ class SlingInitialContentBundleEntryMetaDataCollector {
      */
     @SuppressWarnings("java:S5042") // we already addressed this
     @NotNull
-    Set<SlingInitialContentBundleEntryMetaData> collectFromContext() throws IOException {
+    Set<SlingInitialContentBundleEntryMetaData> collectFromContextAndWriteTmpFiles() throws IOException {
 
         final Manifest manifest = context.getManifest();
 
@@ -108,19 +110,19 @@ class SlingInitialContentBundleEntryMetaDataCollector {
 
         return collectedSlingInitialContentBundleEntries;
     }
-
     private void extractFile(JarEntry jarEntry, JarOutputStream bundleOutput) throws IOException {
 
         byte[] data = new byte[BUFFER];
         long compressedSize = jarEntry.getCompressedSize();
 
         try (InputStream input = new BufferedInputStream(jarFile.getInputStream(jarEntry))) {
-            if (jarEntryContainsSlingInitialContent(context, jarEntry)) {
+            if (jarEntryIsSlingInitialContent(context, jarEntry)) {
 
                 File targetFile = new File(contentPackage2FeatureModelConverter.getTempDirectory(), jarEntry.getName());
                 String canonicalDestinationPath = targetFile.getCanonicalPath();
 
-                if (!canonicalDestinationPath.startsWith(contentPackage2FeatureModelConverter.getTempDirectory().getCanonicalPath())) {
+                
+                if (!checkIfPathStartsWithOrIsEqual(contentPackage2FeatureModelConverter.getTempDirectory().getCanonicalPath(),canonicalDestinationPath)){
                     throw new IOException("Entry is outside of the target directory");
                 }
 
@@ -135,6 +137,7 @@ class SlingInitialContentBundleEntryMetaDataCollector {
                 SlingInitialContentBundleEntryMetaData bundleEntry = createSlingInitialContentBundleEntry(context, targetFile);
                 collectedSlingInitialContentBundleEntries.add(bundleEntry);
             } else {
+                //write 'normal' content out to the normal bundle output
                 bundleOutput.putNextEntry(jarEntry);
                 safelyWriteOutputStream(compressedSize, data, input, bundleOutput, false);
                 IOUtils.copy(input, bundleOutput);
@@ -168,20 +171,32 @@ class SlingInitialContentBundleEntryMetaDataCollector {
 
     }
 
-    private boolean jarEntryContainsSlingInitialContent(@NotNull BundleSlingInitialContentExtractContext context, @NotNull JarEntry jarEntry) {
+    private boolean jarEntryIsSlingInitialContent(@NotNull BundleSlingInitialContentExtractContext context, @NotNull JarEntry jarEntry) {
         final String entryName = jarEntry.getName();
-        return context.getPathEntryList().stream().anyMatch(p -> entryName.startsWith(p.getPath()));
+        return context.getPathEntryList().stream().anyMatch( 
+                pathEntry -> checkIfPathStartsWithOrIsEqual(pathEntry.getPath(), entryName)
+        );
     }
 
     @NotNull
     private SlingInitialContentBundleEntryMetaData createSlingInitialContentBundleEntry(@NotNull BundleSlingInitialContentExtractContext context,
                                                                                         @NotNull File targetFile) throws UnsupportedEncodingException {
         final String entryName = StringUtils.substringAfter(targetFile.getPath(), basePath + "/");
-        final PathEntry pathEntryValue = context.getPathEntryList().stream().filter(p -> entryName.startsWith(p.getPath())).findFirst().orElseThrow(NullPointerException::new);
+        final PathEntry pathEntryValue = context.getPathEntryList().stream().filter( 
+                                            pathEntry -> checkIfPathStartsWithOrIsEqual(pathEntry.getPath(), entryName)
+                                        ).findFirst().orElseThrow(NullPointerException::new);
         final String target = pathEntryValue.getTarget();
         // https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html#file-name-escaping
         String repositoryPath = (target != null ? target : "/") + URLDecoder.decode(entryName.substring(pathEntryValue.getPath().length()), "UTF-8");
         return new SlingInitialContentBundleEntryMetaData(targetFile, pathEntryValue, repositoryPath);
     }
 
+
+    private static boolean checkIfPathStartsWithOrIsEqual(String pathA, String pathB){
+        String fixedPath = pathA;
+        if (!fixedPath.endsWith(SLASH)) {
+            fixedPath = pathA + SLASH;
+        }
+        return pathB.startsWith(fixedPath) || pathB.equals(pathA);
+    }
 }
