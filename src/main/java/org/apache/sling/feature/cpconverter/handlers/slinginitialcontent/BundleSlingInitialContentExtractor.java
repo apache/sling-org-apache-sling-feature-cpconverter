@@ -70,12 +70,12 @@ public class BundleSlingInitialContentExtractor {
             return null;
         }
 
-        // create a temporary bundle file to tinker with
-        Path newTemporaryBundleFile = getNewBundleFile(context, contentPackage2FeatureModelConverter);
+        // create a bundle file that will contain all non-sling initial content 
+        Path strippedBundleFile = getNewBundleFile(context, contentPackage2FeatureModelConverter);
        
         // collect the metadata into a set first, we need all the data upfront in our second loop.
         SlingInitialContentBundleEntryMetaDataCollector collector =
-                new SlingInitialContentBundleEntryMetaDataCollector(context, contentPackage2FeatureModelConverter, newTemporaryBundleFile);
+                new SlingInitialContentBundleEntryMetaDataCollector(context, contentPackage2FeatureModelConverter, strippedBundleFile);
         Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries = collector.collectFromContextAndWriteTmpFiles();
 
         // now that we got collectedSlingInitialContentBundleEntries ready, we loop it and perform an extract for each entry.
@@ -91,7 +91,7 @@ public class BundleSlingInitialContentExtractor {
         finalizePackageAssembly(context);
 
         // return bundle's inputstream, stripped off sling initial content, which must be deleted on close
-        return Files.newInputStream(newTemporaryBundleFile, StandardOpenOption.READ, StandardOpenOption.DELETE_ON_CLOSE);
+        return Files.newInputStream(strippedBundleFile, StandardOpenOption.READ, StandardOpenOption.DELETE_ON_CLOSE);
     }
 
     static Version getModifiedOsgiVersion(@NotNull Version originalVersion) {
