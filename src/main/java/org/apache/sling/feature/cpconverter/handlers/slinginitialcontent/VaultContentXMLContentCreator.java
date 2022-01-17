@@ -141,7 +141,7 @@ public class VaultContentXMLContentCreator implements ContentCreator {
     }
 
     @Override
-    public void finishNode() throws RepositoryException {
+    public void finishNode() {
         if (parentNodePathStack.size() > 1) {
             this.parentNodePathStack.pop();
         }
