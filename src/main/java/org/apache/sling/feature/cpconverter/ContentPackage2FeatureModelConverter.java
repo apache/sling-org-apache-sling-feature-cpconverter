@@ -108,7 +108,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     
     private boolean disablePackageTypeRecalculation = false;
     
-    private BundleSlingInitialContentExtractor bundleSlingInitialContentExtractor;
+    private BundleSlingInitialContentExtractor bundleSlingInitialContentExtractor = new BundleSlingInitialContentExtractor();
 
     public enum PackagePolicy {
         /**
@@ -150,7 +150,6 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         super(strictValidation);
         this.recollectorVaultPackageScanner = new RecollectorVaultPackageScanner(this, this.packageManager, strictValidation, subContentPackages, slingInitialContentPolicy);
         this.tmpDirectory = Files.createTempDirectory("cp2fm-converter").toFile();
-        this.bundleSlingInitialContentExtractor = new BundleSlingInitialContentExtractor();
     }
 
     public @NotNull ContentPackage2FeatureModelConverter setEntryHandlersManager(@Nullable EntryHandlersManager handlersManager) {
