@@ -106,7 +106,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     private boolean removeInstallHooks = false;
     
-    private boolean forceRecalculatePackageType = true;
+    private boolean disablePackageTypeRecalculation = false;
     
     private BundleSlingInitialContentExtractor bundleSlingInitialContentExtractor;
 
@@ -148,9 +148,9 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     public ContentPackage2FeatureModelConverter(boolean strictValidation, @NotNull SlingInitialContentPolicy slingInitialContentPolicy) throws IOException {
         super(strictValidation);
-        this.recollectorVaultPackageScanner = new RecollectorVaultPackageScanner(this, this.packageManager, strictValidation, forceRecalculatePackageType, subContentPackages, slingInitialContentPolicy);
+        this.recollectorVaultPackageScanner = new RecollectorVaultPackageScanner(this, this.packageManager, strictValidation, disablePackageTypeRecalculation, subContentPackages, slingInitialContentPolicy);
         this.tmpDirectory = Files.createTempDirectory("cp2fm-converter").toFile();
-        this.bundleSlingInitialContentExtractor = new BundleSlingInitialContentExtractor(forceRecalculatePackageType);
+        this.bundleSlingInitialContentExtractor = new BundleSlingInitialContentExtractor();
     }
 
     public @NotNull ContentPackage2FeatureModelConverter setEntryHandlersManager(@Nullable EntryHandlersManager handlersManager) {
@@ -293,7 +293,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         for (VaultPackage vaultPackage : orderedContentPackages) {
             try {
                 emitters.stream().forEach(e -> e.startPackage(vaultPackage));
-                setMainPackageAssembler(VaultPackageAssembler.create(this.getTempDirectory(), vaultPackage, removeInstallHooks, forceRecalculatePackageType));
+                setMainPackageAssembler(VaultPackageAssembler.create(this.getTempDirectory(), vaultPackage, removeInstallHooks, disablePackageTypeRecalculation));
                 assemblers.add(getMainPackageAssembler());
 
                 ArtifactId mvnPackageId = toArtifactId(vaultPackage.getId(), vaultPackage.getFile());
@@ -370,7 +370,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
         emitters.stream().forEach(e -> e.startSubPackage(path, vaultPackage));
 
-        VaultPackageAssembler clonedPackage = VaultPackageAssembler.create(this.getTempDirectory(), vaultPackage, removeInstallHooks,forceRecalculatePackageType);
+        VaultPackageAssembler clonedPackage = VaultPackageAssembler.create(this.getTempDirectory(), vaultPackage, removeInstallHooks,disablePackageTypeRecalculation);
 
         // Please note: THIS IS A HACK to meet the new requirement without drastically change the original design
         // temporary swap the main handler to collect stuff

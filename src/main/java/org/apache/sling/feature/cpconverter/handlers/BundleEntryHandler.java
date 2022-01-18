@@ -67,7 +67,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
     private boolean enforceBundlesBelowInstallFolder;
 
     protected SlingInitialContentPolicy slingInitialContentPolicy;
-    private BundleSlingInitialContentExtractor bundleSlingInitialContentExtractor = new BundleSlingInitialContentExtractor(true);
+    private BundleSlingInitialContentExtractor bundleSlingInitialContentExtractor = new BundleSlingInitialContentExtractor();
 
     public BundleEntryHandler() {
         super("/jcr_root/(?:apps|libs)/.+/(?<foldername>install|config)(?:\\.(?<runmode>[^/]+))?/(?:(?<startlevel>[0-9]+)/)?.+\\.jar");

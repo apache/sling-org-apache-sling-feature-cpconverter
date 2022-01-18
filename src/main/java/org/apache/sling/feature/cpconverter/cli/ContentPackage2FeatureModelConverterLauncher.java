@@ -131,7 +131,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     private boolean disableInstallerPolicy = false;
 
     @Option(names = { "--force-recalculate-package-type" }, description = "Do not the source package type to get the resulting package type, recalculate instead.", required = false)
-    private boolean forceRecalculatePackageType = false;
+    private boolean disablePackageTypeRecalculation = false;
 
     @Option(names = { "--content-type-package-policy" }, description = "Determines what to do with converted packages of type 'content'. Valid values: ${COMPLETION-CANDIDATES}.", required = false, showDefaultValue = Visibility.ALWAYS)
     private ContentPackage2FeatureModelConverter.PackagePolicy contentTypePackagePolicy = ContentPackage2FeatureModelConverter.PackagePolicy.DROP;
@@ -211,7 +211,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                 }
 
                 try (ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation, slingInitialContentPolicy)) {
-                    BundleSlingInitialContentExtractor bundleSlingInitialContentExtractor = new BundleSlingInitialContentExtractor(forceRecalculatePackageType);
+                    BundleSlingInitialContentExtractor bundleSlingInitialContentExtractor = new BundleSlingInitialContentExtractor();
                     converter.setFeaturesManager(featuresManager)
                              .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(artifactsOutputDirectory))
                              .setBundleSlingInitialContentExtractor(bundleSlingInitialContentExtractor)

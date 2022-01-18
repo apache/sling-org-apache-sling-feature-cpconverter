@@ -81,18 +81,18 @@ public class VaultPackageAssembler {
     private final File storingDirectory;
     private final Properties properties;
     private final File tmpDir;
-    private final boolean forceRecalculatePackageType;
+    private final boolean disablePackageTypeRecalculation;
 
     /**
      * This class can not be instantiated from outside
      */
     private VaultPackageAssembler(@NotNull File tempDir, @NotNull File storingDirectory, @NotNull Properties properties, 
-                                  @NotNull Set<Dependency> dependencies, boolean forceRecalculatePackageType) {
+                                  @NotNull Set<Dependency> dependencies, boolean disablePackageTypeRecalculation) {
         this.storingDirectory = storingDirectory;
         this.properties = properties;
         this.dependencies = dependencies;
         this.tmpDir = tempDir;
-        this.forceRecalculatePackageType = forceRecalculatePackageType;
+        this.disablePackageTypeRecalculation = disablePackageTypeRecalculation;
     }
     
     /**
@@ -104,7 +104,7 @@ public class VaultPackageAssembler {
      * @param removeInstallHooks whether to remove install hooks or not
      * @return the package assembler
      */
-    public static @NotNull VaultPackageAssembler create(@NotNull File baseTempDir, @NotNull VaultPackage vaultPackage, boolean removeInstallHooks, boolean forceRecalculatePackageType) {
+    public static @NotNull VaultPackageAssembler create(@NotNull File baseTempDir, @NotNull VaultPackage vaultPackage, boolean removeInstallHooks, boolean disablePackageTypeRecalculation) {
         final File tempDir = new File(baseTempDir, "synthetic-content-packages_" + System.currentTimeMillis());
         PackageId packageId = vaultPackage.getId();
         File storingDirectory = initStoringDirectory(packageId, tempDir);
@@ -128,7 +128,7 @@ public class VaultPackageAssembler {
 
         Set<Dependency> dependencies = getDependencies(vaultPackage);
 
-        VaultPackageAssembler assembler = new VaultPackageAssembler(tempDir, storingDirectory, properties, dependencies,forceRecalculatePackageType);
+        VaultPackageAssembler assembler = new VaultPackageAssembler(tempDir, storingDirectory, properties, dependencies,disablePackageTypeRecalculation);
         assembler.mergeFilters(Objects.requireNonNull(vaultPackage.getMetaInf().getFilter()));
         return assembler;
     }
@@ -141,7 +141,7 @@ public class VaultPackageAssembler {
      * @param description the description which should end up in the package properties
      * @return the package assembler
      */
-    public static @NotNull VaultPackageAssembler create(@NotNull File baseTempDir, @NotNull PackageId packageId, String description, boolean forceRecalculatePackageType) {
+    public static @NotNull VaultPackageAssembler create(@NotNull File baseTempDir, @NotNull PackageId packageId, String description) {
         final File tempDir = new File(baseTempDir, "synthetic-content-packages_" + System.currentTimeMillis());
         File storingDirectory = initStoringDirectory(packageId, tempDir);
         Properties props = new Properties();
@@ -151,7 +151,7 @@ public class VaultPackageAssembler {
         props.put(PackageProperties.NAME_VERSION, packageId.getVersionString() + VERSION_SUFFIX);
 
         props.put(PackageProperties.NAME_DESCRIPTION, description);
-        return new VaultPackageAssembler(tempDir, storingDirectory, props, new HashSet<>(),forceRecalculatePackageType);
+        return new VaultPackageAssembler(tempDir, storingDirectory, props, new HashSet<>(),false);
     }
 
     private static @NotNull File initStoringDirectory(PackageId packageId, @NotNull File tempDir) {
@@ -295,7 +295,7 @@ public class VaultPackageAssembler {
         } else {
             sourcePackageType = null;
         }
-        PackageType newPackageType = VaultPackageUtils.recalculatePackageType(sourcePackageType, storingDirectory, forceRecalculatePackageType);
+        PackageType newPackageType = VaultPackageUtils.recalculatePackageType(sourcePackageType, storingDirectory, disablePackageTypeRecalculation);
         if (newPackageType != null) {
             properties.setProperty(PackageProperties.NAME_PACKAGE_TYPE, newPackageType.name().toLowerCase());
         }

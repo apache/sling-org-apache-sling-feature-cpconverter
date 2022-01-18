@@ -51,7 +51,7 @@ public class AdjustedFilterTest extends AbstractConverterTest {
     private ContentPackage2FeatureModelConverter converter;
     private File outputDirectory;
     
-    private final EntryHandlersManager handlersManager = spy(new DefaultEntryHandlersManager(Collections.emptyMap(), false, ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP,new BundleSlingInitialContentExtractor(true),  ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT));
+    private final EntryHandlersManager handlersManager = spy(new DefaultEntryHandlersManager(Collections.emptyMap(), false, ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP,new BundleSlingInitialContentExtractor(),  ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT));
 
     @Before
     public void setUp() throws Exception {

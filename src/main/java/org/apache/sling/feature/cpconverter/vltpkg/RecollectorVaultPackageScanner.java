@@ -41,7 +41,7 @@ public final class RecollectorVaultPackageScanner extends BaseVaultPackageScanne
     public RecollectorVaultPackageScanner(@NotNull ContentPackage2FeatureModelConverter converter,
                                           @NotNull PackageManager packageManager,
                                           boolean strictValidation,
-                                          boolean forceRecalculatePackageType,
+                                          boolean disablePackageTypeRecalculation,
                                           @NotNull Map<PackageId, String> subContentPackages,
                                           @NotNull ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy) {
         super(packageManager, strictValidation);
@@ -51,7 +51,7 @@ public final class RecollectorVaultPackageScanner extends BaseVaultPackageScanne
                 new UsersEntryHandler(),
                 new GroupEntryHandler(),
                 versionResolverContentPackageEntryHandler,
-                new SlingInitialContentBundleHandler(versionResolverContentPackageEntryHandler, slingInitialContentPolicy,forceRecalculatePackageType)
+                new SlingInitialContentBundleHandler(versionResolverContentPackageEntryHandler, slingInitialContentPolicy,disablePackageTypeRecalculation)
         };
     }
 

@@ -88,10 +88,11 @@ public class VaultPackageUtils {
         }
     }
 
-    static @Nullable PackageType recalculatePackageType(PackageType sourcePackageType, @NotNull File outputDirectory, boolean forceRecalculatePackageType) {
-        if (!forceRecalculatePackageType && sourcePackageType != null && sourcePackageType != PackageType.MIXED) {
+    static @Nullable PackageType recalculatePackageType(PackageType sourcePackageType, @NotNull File outputDirectory, boolean disablePackageTypeRecalculation) {
+        if (sourcePackageType != null && (sourcePackageType != PackageType.MIXED || disablePackageTypeRecalculation)) {
             return null;
         }
+        
         AtomicBoolean foundMutableFiles = new AtomicBoolean();
         AtomicBoolean foundImmutableFiles = new AtomicBoolean();
         forEachDirectoryBelowJcrRoot(outputDirectory, (child, base) -> {

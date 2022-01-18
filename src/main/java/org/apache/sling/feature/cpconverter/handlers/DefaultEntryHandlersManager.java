@@ -36,7 +36,7 @@ public class DefaultEntryHandlersManager implements EntryHandlersManager {
         this(Collections.emptyMap(), 
                 false, 
                 SlingInitialContentPolicy.KEEP,
-                new BundleSlingInitialContentExtractor(false),  
+                new BundleSlingInitialContentExtractor(),  
                 ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT
         );
     }

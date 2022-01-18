@@ -65,19 +65,19 @@ public class VaultPackageAssemblerUnparameterizedTest {
         resource = VaultPackageAssemblerTest.class.getResource("../mixed");
         File mixedInput = FileUtils.toFile(resource);
 
-        Assert.assertEquals(APPLICATION, VaultPackageUtils.recalculatePackageType(APPLICATION, immutableInput, true));
-        Assert.assertEquals(APPLICATION, VaultPackageUtils.recalculatePackageType(CONTENT, immutableInput, true));
-        Assert.assertEquals(APPLICATION, VaultPackageUtils.recalculatePackageType(MIXED, immutableInput, true));
-        Assert.assertEquals(APPLICATION, VaultPackageUtils.recalculatePackageType(null, immutableInput, true));
+        Assert.assertNull(VaultPackageUtils.recalculatePackageType(APPLICATION, immutableInput, true));;
+        Assert.assertNull(VaultPackageUtils.recalculatePackageType(CONTENT, immutableInput, true));;
+        Assert.assertNull(VaultPackageUtils.recalculatePackageType(MIXED, immutableInput, true));;
+        Assert.assertEquals(APPLICATION, VaultPackageUtils.recalculatePackageType(null, immutableInput, true));;
 
-        Assert.assertEquals(CONTENT, VaultPackageUtils.recalculatePackageType(APPLICATION, mutableInput, true));
-        Assert.assertEquals(CONTENT, VaultPackageUtils.recalculatePackageType(CONTENT, mutableInput, true));
-        Assert.assertEquals(CONTENT, VaultPackageUtils.recalculatePackageType(MIXED, mutableInput, true));
-        Assert.assertEquals(CONTENT, VaultPackageUtils.recalculatePackageType(null, mutableInput, true));
+        Assert.assertNull(VaultPackageUtils.recalculatePackageType(APPLICATION, mutableInput, true));;
+        Assert.assertNull(VaultPackageUtils.recalculatePackageType(CONTENT, mutableInput, true));;
+        Assert.assertNull(VaultPackageUtils.recalculatePackageType(MIXED, mutableInput, true));;
+        Assert.assertEquals(CONTENT, VaultPackageUtils.recalculatePackageType(null, mutableInput, true));;
 
-        Assert.assertEquals(MIXED, VaultPackageUtils.recalculatePackageType(APPLICATION, mixedInput, true));
-        Assert.assertEquals(MIXED, VaultPackageUtils.recalculatePackageType(CONTENT, mixedInput, true));
-        Assert.assertEquals(MIXED, VaultPackageUtils.recalculatePackageType(MIXED, mixedInput, true));
-        Assert.assertEquals(MIXED, VaultPackageUtils.recalculatePackageType(null, mixedInput, true));
+        Assert.assertNull(VaultPackageUtils.recalculatePackageType(APPLICATION, mixedInput, true));;
+        Assert.assertNull(VaultPackageUtils.recalculatePackageType(CONTENT, mixedInput, true));;
+        Assert.assertNull(VaultPackageUtils.recalculatePackageType(MIXED, mixedInput, true));;
+        Assert.assertEquals(MIXED, VaultPackageUtils.recalculatePackageType(null, mixedInput, true));;
     }
 }
