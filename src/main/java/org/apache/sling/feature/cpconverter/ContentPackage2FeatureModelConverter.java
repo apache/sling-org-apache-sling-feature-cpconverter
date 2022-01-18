@@ -148,7 +148,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     public ContentPackage2FeatureModelConverter(boolean strictValidation, @NotNull SlingInitialContentPolicy slingInitialContentPolicy) throws IOException {
         super(strictValidation);
-        this.recollectorVaultPackageScanner = new RecollectorVaultPackageScanner(this, this.packageManager, strictValidation, disablePackageTypeRecalculation, subContentPackages, slingInitialContentPolicy);
+        this.recollectorVaultPackageScanner = new RecollectorVaultPackageScanner(this, this.packageManager, strictValidation, subContentPackages, slingInitialContentPolicy);
         this.tmpDirectory = Files.createTempDirectory("cp2fm-converter").toFile();
         this.bundleSlingInitialContentExtractor = new BundleSlingInitialContentExtractor();
     }

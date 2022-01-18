@@ -36,11 +36,9 @@ import java.util.jar.JarFile;
 
 public class SlingInitialContentBundleHandler extends BundleEntryHandler {
     private final @NotNull AbstractContentPackageHandler handler;
-    private final boolean disablePackageTypeRecalculation;
 
-    public SlingInitialContentBundleHandler(@NotNull AbstractContentPackageHandler handler, @NotNull ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy, boolean disablePackageTypeRecalculation) {
+    public SlingInitialContentBundleHandler(@NotNull AbstractContentPackageHandler handler, @NotNull ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy) {
         this.handler = handler;
-        this.disablePackageTypeRecalculation = disablePackageTypeRecalculation;
         setSlingInitialContentPolicy(slingInitialContentPolicy);
     }
     
