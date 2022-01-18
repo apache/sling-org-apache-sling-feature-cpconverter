@@ -36,9 +36,11 @@ import java.util.jar.JarFile;
 
 public class SlingInitialContentBundleHandler extends BundleEntryHandler {
     private final @NotNull AbstractContentPackageHandler handler;
+    private final boolean forceRecalculatePackageType;
 
-    public SlingInitialContentBundleHandler(@NotNull AbstractContentPackageHandler handler, @NotNull ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy) {
+    public SlingInitialContentBundleHandler(@NotNull AbstractContentPackageHandler handler, @NotNull ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy, boolean forceRecalculatePackageType) {
         this.handler = handler;
+        this.forceRecalculatePackageType = forceRecalculatePackageType;
         setSlingInitialContentPolicy(slingInitialContentPolicy);
     }
     
@@ -50,13 +52,17 @@ public class SlingInitialContentBundleHandler extends BundleEntryHandler {
             ArtifactId id = artifact.getId();
             
             BundleSlingInitialContentExtractContext context = new BundleSlingInitialContentExtractContext(slingInitialContentPolicy, path, id, jarFile, converter, runMode);
-            try (InputStream ignored = new BundleSlingInitialContentExtractorOverride().extract(context)) {
+            try (InputStream ignored = new BundleSlingInitialContentExtractorOverride(forceRecalculatePackageType).extract(context)) {
                 logger.info("Ignoring inputstream {} with id {}", path, id);
             }
         }
     }
     
     class BundleSlingInitialContentExtractorOverride extends BundleSlingInitialContentExtractor{
+        public BundleSlingInitialContentExtractorOverride(boolean forceRecalculatePackageType) {
+            super(forceRecalculatePackageType);
+        }
+
         @Override
         protected void finalizePackageAssembly(@NotNull BundleSlingInitialContentExtractContext context) throws IOException, ConverterException {
             for (java.util.Map.Entry<PackageType, VaultPackageAssembler> entry : assemblerProvider.getPackageAssemblerEntrySet()) {

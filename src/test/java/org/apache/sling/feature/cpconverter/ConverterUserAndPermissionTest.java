@@ -136,7 +136,7 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
     public ConverterUserAndPermissionTest(@NotNull String systemUserRelPath, @Nullable String enforcePrincipalBasedSupportedPath, @NotNull String name) throws Exception {
         this.aclManager = new DefaultAclManager(enforcePrincipalBasedSupportedPath, systemUserRelPath);
         this.handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, 
-                ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(), systemUserRelPath);
+                ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(true), systemUserRelPath);
         this.enforcePrincipalBased = (enforcePrincipalBasedSupportedPath != null);
         this.withRelPath = (enforcePrincipalBased) ? enforcePrincipalBasedSupportedPath.substring(enforcePrincipalBasedSupportedPath.indexOf(systemUserRelPath)) : systemUserRelPath;
     }

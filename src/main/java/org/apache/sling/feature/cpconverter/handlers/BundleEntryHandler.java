@@ -67,7 +67,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
     private boolean enforceBundlesBelowInstallFolder;
 
     protected SlingInitialContentPolicy slingInitialContentPolicy;
-    private BundleSlingInitialContentExtractor bundleSlingInitialContentExtractor = new BundleSlingInitialContentExtractor();
+    private BundleSlingInitialContentExtractor bundleSlingInitialContentExtractor = new BundleSlingInitialContentExtractor(true);
 
     public BundleEntryHandler() {
         super("/jcr_root/(?:apps|libs)/.+/(?<foldername>install|config)(?:\\.(?<runmode>[^/]+))?/(?:(?<startlevel>[0-9]+)/)?.+\\.jar");
@@ -151,6 +151,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
             ArtifactId id = artifact.getId();
 
             BundleSlingInitialContentExtractContext context = new BundleSlingInitialContentExtractContext(slingInitialContentPolicy, path, id, jarFile, converter, runMode);
+            
             try (InputStream strippedBundleInput = bundleSlingInitialContentExtractor.extract(context)) {
                 if (strippedBundleInput != null && slingInitialContentPolicy == ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.EXTRACT_AND_REMOVE) {
                     id = id.changeVersion(id.getVersion() + "-" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);

@@ -46,9 +46,13 @@ import java.util.jar.Manifest;
  */
 public class BundleSlingInitialContentExtractor {
 
-    protected final AssemblerProvider assemblerProvider = new AssemblerProvider();
+    protected final AssemblerProvider assemblerProvider;
     protected final ContentReaderProvider contentReaderProvider = new ContentReaderProvider();
     protected final ParentFolderRepoInitHandler parentFolderRepoInitHandler = new ParentFolderRepoInitHandler();
+
+    public BundleSlingInitialContentExtractor(boolean forceRecalculatePackageType) {
+        this.assemblerProvider = new AssemblerProvider(forceRecalculatePackageType);
+    }
 
     /**
      * Extract the bundle sling initial content, assemble it into package assemblers into a different package,

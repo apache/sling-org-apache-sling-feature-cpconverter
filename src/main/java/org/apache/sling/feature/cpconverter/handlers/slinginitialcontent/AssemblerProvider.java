@@ -42,8 +42,10 @@ public class AssemblerProvider {
     private static final Logger logger = LoggerFactory.getLogger(AssemblerProvider.class);
 
     private final Map<PackageType, VaultPackageAssembler> packageAssemblers = new EnumMap<>(PackageType.class);
+    private final boolean forceRecalculatePackageType;
 
-    AssemblerProvider() {
+    AssemblerProvider(boolean forceRecalculatePackageType) {
+        this.forceRecalculatePackageType = forceRecalculatePackageType;
     }
 
     /**
@@ -89,7 +91,7 @@ public class AssemblerProvider {
                     throw new ConverterException("Unexpected package type " + packageType + " detected for path " + repositoryPath);
             }
             final PackageId packageId = new PackageId(bundleArtifactId.getGroupId(), bundleArtifactId.getArtifactId() + packageNameSuffix, bundleArtifactId.getVersion());
-            assembler = VaultPackageAssembler.create(context.getConverter().getTempDirectory(), packageId, "Generated out of Sling Initial Content from bundle " + bundleArtifactId + " by cp2fm");
+            assembler = VaultPackageAssembler.create(context.getConverter().getTempDirectory(), packageId, "Generated out of Sling Initial Content from bundle " + bundleArtifactId + " by cp2fm",forceRecalculatePackageType);
             packageAssemblers.put(packageType, assembler);
             logger.info("Created package {} out of Sling-Initial-Content from '{}'", packageId, bundleArtifactId);
         }

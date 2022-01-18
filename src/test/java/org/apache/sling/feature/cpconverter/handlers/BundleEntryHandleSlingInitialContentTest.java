@@ -116,7 +116,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         converter.setMainPackageAssembler(assembler);
         converter.setAclManager(new DefaultAclManager());
         
-        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor(true);
         
         handler.setBundleSlingInitialContentExtractor(extractor);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
@@ -183,7 +183,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
     @Test
     public void testJsonI18nWithXMLFolderDescriptors() throws Exception {
         setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite.core-1.0.0-SNAPSHOT-i18n-xml-folderdescriptor.jar");
-        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
+        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(true), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
         converter.setEntryHandlersManager(handlersManager);
         Map<String, String> namespaceRegistry = new HashMap<>();
 
@@ -205,7 +205,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         when(assembler.getPackageProperties()).thenReturn(props);
         converter.setMainPackageAssembler(assembler);
         converter.setAclManager(new DefaultAclManager());
-        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor(true);
 
         handler.setBundleSlingInitialContentExtractor(extractor);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
@@ -252,7 +252,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
     public void testSlingInitialContentWithNodeTypeAndNoDefinedParent() throws Exception {
         setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite.core-1.0.0-SNAPSHOT-slinginitialcontent-test.jar");
         
-        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
+        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(true), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
         converter.setEntryHandlersManager(handlersManager);
         Map<String, String> namespaceRegistry = new HashMap<>();
 
@@ -276,7 +276,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         
         DefaultAclManager aclManager = new DefaultAclManager();
         converter.setAclManager(aclManager);
-        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor(true);
 
         handler.setBundleSlingInitialContentExtractor(extractor);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
@@ -315,7 +315,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
     @Test
     public void testSlingInitialContentWithNodeTypeAndPageJson() throws Exception {
         setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite.core-1.0.0-SNAPSHOT-pagejson.jar");
-        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
+        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(true), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
         converter.setEntryHandlersManager(handlersManager);
         Map<String, String> namespaceRegistry = new HashMap<>();
 
@@ -337,7 +337,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         when(assembler.getPackageProperties()).thenReturn(props);
         converter.setMainPackageAssembler(assembler);
         converter.setAclManager(new DefaultAclManager());
-        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor(true);
 
         handler.setBundleSlingInitialContentExtractor(extractor);        
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
@@ -371,7 +371,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
     @Test
     public void testSlingInitialContentWithSpecialCharacters() throws Exception {
         setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite.core-1.0.0-SNAPSHOT-specialchars-json-inputstream.jar");
-        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
+        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(true), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
         converter.setEntryHandlersManager(handlersManager);
         Map<String, String> namespaceRegistry = new HashMap<>();
 
@@ -393,7 +393,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         when(assembler.getPackageProperties()).thenReturn(props);
         converter.setMainPackageAssembler(assembler);
         converter.setAclManager(new DefaultAclManager());
-        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor(true);
 
         handler.setBundleSlingInitialContentExtractor(extractor);        
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
@@ -435,7 +435,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
     @Test
     public void testSlingInitialContentWithNumberedEntries() throws Exception {
         setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "io.wcm.handler.link-1.7.02.jar");
-        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
+        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(true), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
         converter.setEntryHandlersManager(handlersManager);
         Map<String, String> namespaceRegistry = new HashMap<>();
 
@@ -457,7 +457,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         when(assembler.getPackageProperties()).thenReturn(props);
         converter.setMainPackageAssembler(assembler);
         converter.setAclManager(new DefaultAclManager());
-        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor(true);
 
         handler.setBundleSlingInitialContentExtractor(extractor);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
@@ -499,7 +499,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         props.setProperty(PackageProperties.NAME_VERSION, "1.0.0-SNAPSHOT");
         when(assembler.getPackageProperties()).thenReturn(props);
         converter.setMainPackageAssembler(assembler);
-        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor(true);
 
         handler.setBundleSlingInitialContentExtractor(extractor);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
@@ -550,7 +550,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         when(assembler.getPackageProperties()).thenReturn(props);
         converter.setMainPackageAssembler(assembler);
         converter.setAclManager(new DefaultAclManager());
-        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor(true);
 
         handler.setBundleSlingInitialContentExtractor(extractor);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
@@ -588,7 +588,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         when(assembler.getPackageProperties()).thenReturn(props);
         converter.setMainPackageAssembler(assembler);
         converter.setAclManager(new DefaultAclManager());
-        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor(true);
 
         handler.setBundleSlingInitialContentExtractor(extractor);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_KEEP);

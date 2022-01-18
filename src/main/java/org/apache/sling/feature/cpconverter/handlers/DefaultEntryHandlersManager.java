@@ -33,11 +33,19 @@ public class DefaultEntryHandlersManager implements EntryHandlersManager {
     private final List<EntryHandler> entryHandlers = new LinkedList<>();
 
     public DefaultEntryHandlersManager() {
-        this(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP,new BundleSlingInitialContentExtractor(),  ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
+        this(Collections.emptyMap(), 
+                false, 
+                SlingInitialContentPolicy.KEEP,
+                new BundleSlingInitialContentExtractor(false),  
+                ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT
+        );
     }
 
-    public DefaultEntryHandlersManager(@NotNull Map<String, String> configs, boolean enforceConfigurationsAndBundlesBelowProperFolder,
-                                       @NotNull SlingInitialContentPolicy slingInitialContentPolicy, @NotNull BundleSlingInitialContentExtractor bundleSlingInitialContentExtractor,  @NotNull String systemUserRelPath) {
+    public DefaultEntryHandlersManager(@NotNull Map<String, String> configs, 
+                                       boolean enforceConfigurationsAndBundlesBelowProperFolder,
+                                       @NotNull SlingInitialContentPolicy slingInitialContentPolicy, 
+                                       @NotNull BundleSlingInitialContentExtractor bundleSlingInitialContentExtractor,  
+                                       @NotNull String systemUserRelPath) {
         ServiceLoader<EntryHandler> entryHandlersLoader = ServiceLoader.load(EntryHandler.class);
         for (EntryHandler entryHandler : entryHandlersLoader) {
             if (configs.containsKey(entryHandler.getClass().getName())) {

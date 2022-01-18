@@ -88,8 +88,8 @@ public class VaultPackageUtils {
         }
     }
 
-    static @Nullable PackageType recalculatePackageType(PackageType sourcePackageType, @NotNull File outputDirectory) {
-        if (sourcePackageType != null && sourcePackageType != PackageType.MIXED) {
+    static @Nullable PackageType recalculatePackageType(PackageType sourcePackageType, @NotNull File outputDirectory, boolean forceRecalculatePackageType) {
+        if (!forceRecalculatePackageType && sourcePackageType != null && sourcePackageType != PackageType.MIXED) {
             return null;
         }
         AtomicBoolean foundMutableFiles = new AtomicBoolean();
