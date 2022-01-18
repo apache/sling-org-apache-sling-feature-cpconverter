@@ -130,7 +130,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Option(names = { "--disable-installer-policy" }, description = "Disables enforcing that OSGi configurations are only allowed below a folder called 'config' and OSGi bundles are only allowed below a folder called 'install'. Instead both are detected below either 'install' or 'config'.", required = false)
     private boolean disableInstallerPolicy = false;
 
-    @Option(names = { "--force-recalculate-package-type" }, description = "Do not the source package type to get the resulting package type, recalculate instead.", required = false)
+    @Option(names = { "--disable-package-type-recalculation" }, description = "Disables the package recalculation", required = false)
     private boolean disablePackageTypeRecalculation = false;
 
     @Option(names = { "--content-type-package-policy" }, description = "Determines what to do with converted packages of type 'content'. Valid values: ${COMPLETION-CANDIDATES}.", required = false, showDefaultValue = Visibility.ALWAYS)
