@@ -143,11 +143,12 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     }
 
     public ContentPackage2FeatureModelConverter() throws IOException {
-        this(false, SlingInitialContentPolicy.KEEP);
+        this(false, SlingInitialContentPolicy.KEEP, false);
     }
 
-    public ContentPackage2FeatureModelConverter(boolean strictValidation, @NotNull SlingInitialContentPolicy slingInitialContentPolicy) throws IOException {
+    public ContentPackage2FeatureModelConverter(boolean strictValidation, @NotNull SlingInitialContentPolicy slingInitialContentPolicy, boolean disablePackageTypeRecalculation) throws IOException {
         super(strictValidation);
+        this.disablePackageTypeRecalculation = disablePackageTypeRecalculation;
         this.recollectorVaultPackageScanner = new RecollectorVaultPackageScanner(this, this.packageManager, strictValidation, subContentPackages, slingInitialContentPolicy);
         this.tmpDirectory = Files.createTempDirectory("cp2fm-converter").toFile();
     }
