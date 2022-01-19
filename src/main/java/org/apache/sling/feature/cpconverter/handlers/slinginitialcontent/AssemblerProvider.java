@@ -43,6 +43,9 @@ public class AssemblerProvider {
 
     private final Map<PackageType, VaultPackageAssembler> packageAssemblers = new EnumMap<>(PackageType.class);
 
+    AssemblerProvider() {
+    }
+
     /**
      * Lazily initializes the cache with the necessary VaultPackageAssemblers
      *
