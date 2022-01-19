@@ -34,6 +34,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.utils.manifest.Clause;
 import org.apache.felix.utils.manifest.Parser;
 import org.apache.jackrabbit.vault.fs.io.Archive;
@@ -236,7 +237,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
 
         if (groupId == null) {
             // maybe the included jar is just an OSGi bundle but not a valid Maven artifact
-            groupId = getName(getCheckedProperty(jarFile.getManifest(), Constants.BUNDLE_SYMBOLICNAME));
+            groupId = StringUtils.substringBefore(getCheckedProperty(jarFile.getManifest(), Constants.BUNDLE_SYMBOLICNAME), ";");
             // Make sure there are not spaces in the name to adhere to the Maven Group Id specification
             groupId = groupId.replace(' ', '_').replace(':', '_').replace('/', '_').replace('\\', '_');
             if (groupId.indexOf('.') != -1) {
@@ -261,22 +262,11 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
     private static void setMetadataFromManifest(@NotNull Manifest manifest, @NotNull String name, @NotNull Artifact artifact, boolean strip) {
         String value = manifest.getMainAttributes().getValue(name);
         if (strip) {
-            value = getName(value);
+            value = StringUtils.substringBefore(value, ";");
         }
         if (value != null) {
             artifact.getMetadata().put(name, value);
         }
-    }
-
-    private static @Nullable String getName(@Nullable  String headerValue) {
-        if (headerValue == null) {
-            return null;
-        }
-        int idx = headerValue.indexOf(';');
-        if (idx != -1) {
-            return headerValue.substring(0, idx);
-        }
-        return headerValue;
     }
 
     private static @NotNull String getCheckedProperty(@NotNull Manifest manifest, @NotNull String name) {
