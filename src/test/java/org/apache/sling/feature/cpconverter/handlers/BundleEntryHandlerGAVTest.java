@@ -74,6 +74,19 @@ public class BundleEntryHandlerGAVTest extends AbstractBundleEntryHandlerTest {
     }
 
     @Test
+    public void testNoGAVNoMeta() throws Exception {
+        setUpArchive("/jcr_root/apps/gav/install/peaberry.jar", "peaberry.jar");
+        handler.handle("/jcr_root/apps/gav/install/peaberry.jar", archive, entry, converter);
+        ArgumentCaptor<Artifact> captor = ArgumentCaptor.forClass(Artifact.class);
+        Mockito.verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
+        final Artifact result = captor.getValue();
+        assertNotNull(result);
+        assertEquals(ArtifactId.fromMvnId("org.ops4j:peaberry:jar:1.3.0"), result.getId());
+        assertEquals("org.ops4j.peaberry", result.getMetadata().get(Constants.BUNDLE_SYMBOLICNAME));
+        assertEquals("1.3.0", result.getMetadata().get(Constants.BUNDLE_VERSION));
+    }
+
+    @Test
     public void testBundleBelowConfigFolderWithEnforcement() throws Exception {
         handler.setEnforceBundlesBelowInstallFolder(true);
         when(entry.getName()).thenReturn("mybundle.jar");

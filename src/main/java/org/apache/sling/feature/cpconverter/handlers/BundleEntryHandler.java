@@ -34,6 +34,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.utils.manifest.Clause;
 import org.apache.felix.utils.manifest.Parser;
 import org.apache.jackrabbit.vault.fs.io.Archive;
@@ -236,7 +237,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
 
         if (groupId == null) {
             // maybe the included jar is just an OSGi bundle but not a valid Maven artifact
-            groupId = getCheckedProperty(jarFile.getManifest(), Constants.BUNDLE_SYMBOLICNAME);
+            groupId = StringUtils.substringBefore(getCheckedProperty(jarFile.getManifest(), Constants.BUNDLE_SYMBOLICNAME), ";");
             // Make sure there are not spaces in the name to adhere to the Maven Group Id specification
             groupId = groupId.replace(' ', '_').replace(':', '_').replace('/', '_').replace('\\', '_');
             if (groupId.indexOf('.') != -1) {
@@ -252,14 +253,17 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
 
         // create artifact and store symbolic name and version in metadata
         final Artifact result = new Artifact(new ArtifactId(groupId, artifactId, version, classifier, JAR_TYPE));
-        setMetadataFromManifest(jarFile.getManifest(), Constants.BUNDLE_VERSION, result);
-        setMetadataFromManifest(jarFile.getManifest(), Constants.BUNDLE_SYMBOLICNAME, result);
+        setMetadataFromManifest(jarFile.getManifest(), Constants.BUNDLE_VERSION, result, false);
+        setMetadataFromManifest(jarFile.getManifest(), Constants.BUNDLE_SYMBOLICNAME, result, true);
 
         return result;
     }
 
-    private static void setMetadataFromManifest(@NotNull Manifest manifest, @NotNull String name, @NotNull Artifact artifact) {
+    private static void setMetadataFromManifest(@NotNull Manifest manifest, @NotNull String name, @NotNull Artifact artifact, boolean strip) {
         String value = manifest.getMainAttributes().getValue(name);
+        if (strip) {
+            value = StringUtils.substringBefore(value, ";");
+        }
         if (value != null) {
             artifact.getMetadata().put(name, value);
         }
