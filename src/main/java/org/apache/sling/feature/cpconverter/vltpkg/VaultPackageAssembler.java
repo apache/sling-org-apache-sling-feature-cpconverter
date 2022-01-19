@@ -86,8 +86,11 @@ public class VaultPackageAssembler {
     /**
      * This class can not be instantiated from outside
      */
-    private VaultPackageAssembler(@NotNull File tempDir, @NotNull File storingDirectory, @NotNull Properties properties, 
-                                  @NotNull Set<Dependency> dependencies, boolean disablePackageTypeRecalculation) {
+    private VaultPackageAssembler(@NotNull File tempDir, 
+                                  @NotNull File storingDirectory, 
+                                  @NotNull Properties properties, 
+                                  @NotNull Set<Dependency> dependencies, 
+                                  boolean disablePackageTypeRecalculation) {
         this.storingDirectory = storingDirectory;
         this.properties = properties;
         this.dependencies = dependencies;
@@ -102,9 +105,13 @@ public class VaultPackageAssembler {
      * @param baseTempDir the temp dir
      * @param vaultPackage the package to take as blueprint
      * @param removeInstallHooks whether to remove install hooks or not
+     * @param disablePackageTypeRecalculation disables the package recalculation and uses the parent source type                        
      * @return the package assembler
      */
-    public static @NotNull VaultPackageAssembler create(@NotNull File baseTempDir, @NotNull VaultPackage vaultPackage, boolean removeInstallHooks, boolean disablePackageTypeRecalculation) {
+    public static @NotNull VaultPackageAssembler create(@NotNull File baseTempDir, 
+                                                        @NotNull VaultPackage vaultPackage, 
+                                                        boolean removeInstallHooks, 
+                                                        boolean disablePackageTypeRecalculation) {
         final File tempDir = new File(baseTempDir, "synthetic-content-packages_" + System.currentTimeMillis());
         PackageId packageId = vaultPackage.getId();
         File storingDirectory = initStoringDirectory(packageId, tempDir);

@@ -59,7 +59,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
     private static final String NAME_ARTIFACT_ID = "artifactId";
 
     private static final String JAR_TYPE = "jar";
-    
+
     private static final Pattern POM_PROPERTIES_PATTERN = Pattern.compile("META-INF/maven/[^/]+/[^/]+/pom.properties");
 
     private static final Pattern POM_XML_PATTERN = Pattern.compile("META-INF/maven/[^/]+/[^/]+/pom.xml");
@@ -83,9 +83,9 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
 
     @Override
     public void handle(@NotNull String path,
-           @NotNull Archive archive, 
-           @NotNull Entry entry, 
-           @NotNull ContentPackage2FeatureModelConverter converter) throws IOException, ConverterException {
+                       @NotNull Archive archive,
+                       @NotNull Entry entry,
+                       @NotNull ContentPackage2FeatureModelConverter converter) throws IOException, ConverterException {
         logger.info("Processing bundle {}...", entry.getName());
 
         Matcher matcher = getPattern().matcher(path);
@@ -94,17 +94,17 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
         // we are pretty sure it matches, here
         if (!matcher.matches()) {
             throw new IllegalStateException("Something went terribly wrong: pattern '"
-                                            + getPattern().pattern()
-                                            + "' should have matched already with path '"
-                                            + path
-                                            + "' but it does not, currently");
+                    + getPattern().pattern()
+                    + "' should have matched already with path '"
+                    + path
+                    + "' but it does not, currently");
         }
 
         if (enforceBundlesBelowInstallFolder && !"install".equals(matcher.group("foldername"))) {
             throw new ConverterException("OSGi bundles are only considered if placed below a folder called 'install', but the bundle at '"+ path + "' is placed outside!");
         }
 
-        
+
         runMode = matcher.group("runmode");
         if (runMode != null) {
             // there is a specified RunMode
@@ -129,12 +129,12 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
         if (edx > 0) {
             bundleName = bundleName.substring(0, edx);
         }
-        
+
         // create a temporary JAR file (extracted from archive)
         Path tmpBundleJar = Files.createTempFile(converter.getTempDirectory().toPath(), "extracted", bundleName + ".jar");
         try {
             try (OutputStream output = Files.newOutputStream(tmpBundleJar);
-                InputStream input = Objects.requireNonNull(archive.openInputStream(entry))) {
+                 InputStream input = Objects.requireNonNull(archive.openInputStream(entry))) {
                 IOUtils.copy(input, output);
             }
             processBundleInputStream(path, tmpBundleJar, bundleName, runMode, startLevel, converter);
@@ -151,7 +151,6 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
             ArtifactId id = artifact.getId();
 
             BundleSlingInitialContentExtractContext context = new BundleSlingInitialContentExtractContext(slingInitialContentPolicy, path, id, jarFile, converter, runMode);
-            
             try (InputStream strippedBundleInput = bundleSlingInitialContentExtractor.extract(context)) {
                 if (strippedBundleInput != null && slingInitialContentPolicy == ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.EXTRACT_AND_REMOVE) {
                     id = id.changeVersion(id.getVersion() + "-" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);

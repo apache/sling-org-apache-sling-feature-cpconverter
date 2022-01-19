@@ -88,7 +88,10 @@ public class VaultPackageUtils {
         }
     }
 
-    static @Nullable PackageType recalculatePackageType(PackageType sourcePackageType, @NotNull File outputDirectory, boolean disablePackageTypeRecalculation) {
+    static @Nullable PackageType recalculatePackageType(PackageType sourcePackageType, 
+                                                        @NotNull File outputDirectory, 
+                                                        boolean disablePackageTypeRecalculation) {
+        
         if (sourcePackageType != null && (sourcePackageType != PackageType.MIXED || disablePackageTypeRecalculation)) {
             return null;
         }

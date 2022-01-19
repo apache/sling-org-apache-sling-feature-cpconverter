@@ -41,23 +41,22 @@ public class SlingInitialContentBundleHandler extends BundleEntryHandler {
         this.handler = handler;
         setSlingInitialContentPolicy(slingInitialContentPolicy);
     }
-    
+
     @Override
     void processBundleInputStream(@NotNull String path, @NotNull Path originalBundleFile, @NotNull String bundleName, @Nullable String runMode, @Nullable Integer startLevel, @NotNull ContentPackage2FeatureModelConverter converter) throws IOException, ConverterException {
         try (JarFile jarFile = new JarFile(originalBundleFile.toFile())) {
             // first extract bundle metadata from JAR input stream
             Artifact artifact = extractFeatureArtifact(bundleName, jarFile);
             ArtifactId id = artifact.getId();
-            
+
             BundleSlingInitialContentExtractContext context = new BundleSlingInitialContentExtractContext(slingInitialContentPolicy, path, id, jarFile, converter, runMode);
             try (InputStream ignored = new BundleSlingInitialContentExtractorOverride().extract(context)) {
                 logger.info("Ignoring inputstream {} with id {}", path, id);
             }
         }
     }
-    
-    class BundleSlingInitialContentExtractorOverride extends BundleSlingInitialContentExtractor{
 
+    class BundleSlingInitialContentExtractorOverride extends BundleSlingInitialContentExtractor{
         @Override
         protected void finalizePackageAssembly(@NotNull BundleSlingInitialContentExtractContext context) throws IOException, ConverterException {
             for (java.util.Map.Entry<PackageType, VaultPackageAssembler> entry : assemblerProvider.getPackageAssemblerEntrySet()) {
@@ -68,5 +67,5 @@ public class SlingInitialContentBundleHandler extends BundleEntryHandler {
         }
     }
 
-   
+
 }
