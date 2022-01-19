@@ -60,6 +60,7 @@ public abstract class AbstractBundleEntryHandlerTest {
     @Before
     public void setUp() throws IOException {
         handler = new BundleEntryHandler();
+        handler.setSlingInitialContentPolicy(ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP);
         ArtifactsDeployer deployer = Mockito.spy(ArtifactsDeployer.class);
         when(converter.getArtifactsDeployer()).thenReturn(deployer);
         when(converter.getTempDirectory()).thenReturn(tmpFolder.getRoot());
