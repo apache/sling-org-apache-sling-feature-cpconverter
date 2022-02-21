@@ -40,12 +40,8 @@ import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 class TestUtils {
-
-    private static final Logger log = LoggerFactory.getLogger(TestUtils.class);
 
     private TestUtils() {}
 
