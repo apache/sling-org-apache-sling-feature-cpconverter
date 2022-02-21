@@ -16,6 +16,20 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Extension;
@@ -28,17 +42,6 @@ import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Collections;
-
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 class TestUtils {
 
@@ -71,5 +74,32 @@ class TestUtils {
 
         converter.getAclManager().addRepoinitExtension(Collections.singletonList(packageAssembler), featuresManager);
         return feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+    }
+
+    /**
+     * Returns a test file that is located in a similar directory to the specified class
+     *
+     * <p>This is intended to work on a similar way to <tt>getClass().getResourceAsStream()</tt>, but with
+     * files instead.</p>
+     *
+     * @param klazz the class used to locate the file
+     * @param pathElement a path element
+     * @param pathElements additional, optional, elements
+     * @return a file that exists
+     * @throws IllegalArgumentException if the file does not exist
+     */
+    static File getPackageRelativeFile(Class<?> klazz, String pathElement, String... pathElements) {
+        List<CharSequence> segments =  new ArrayList<>();
+        segments.addAll(Arrays.asList("src", "test", "resources"));
+        segments.addAll(Arrays.asList(klazz.getPackage().getName().split("\\.")));
+        segments.add(pathElement);
+        if ( pathElements != null )
+            segments.addAll(Arrays.asList(pathElements));
+
+        String fileName = String.join(File.separator, segments.toArray(new CharSequence[0]));
+        File file = new File(fileName);
+        if ( !file.exists() )
+            throw new IllegalArgumentException("File " + file + " does not exist");
+        return file;
     }
 }
