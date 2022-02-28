@@ -41,6 +41,11 @@ public class DefaultEntryHandlersManager implements EntryHandlersManager {
         );
     }
 
+    public DefaultEntryHandlersManager(@NotNull Map<String, String> configs, boolean enforceConfigurationsAndBundlesBelowProperFolder,
+                                        @NotNull SlingInitialContentPolicy slingInitialContentPolicy,  @NotNull String systemUserRelPath) {
+        this(configs, enforceConfigurationsAndBundlesBelowProperFolder, slingInitialContentPolicy, new BundleSlingInitialContentExtractor(), systemUserRelPath); 
+    }
+
     public DefaultEntryHandlersManager(@NotNull Map<String, String> configs, 
                                        boolean enforceConfigurationsAndBundlesBelowProperFolder,
                                        @NotNull SlingInitialContentPolicy slingInitialContentPolicy, 

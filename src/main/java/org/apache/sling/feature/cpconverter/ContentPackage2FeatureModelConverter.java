@@ -146,6 +146,10 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         this(false, SlingInitialContentPolicy.KEEP, false);
     }
 
+    public ContentPackage2FeatureModelConverter(boolean strictValidation, @NotNull SlingInitialContentPolicy slingInitialContentPolicy) throws IOException {
+        this(strictValidation, slingInitialContentPolicy, false);
+    }
+
     public ContentPackage2FeatureModelConverter(boolean strictValidation, @NotNull SlingInitialContentPolicy slingInitialContentPolicy, boolean disablePackageTypeRecalculation) throws IOException {
         super(strictValidation);
         this.disablePackageTypeRecalculation = disablePackageTypeRecalculation;
