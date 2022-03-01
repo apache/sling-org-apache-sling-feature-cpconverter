@@ -38,6 +38,7 @@ import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
+import org.apache.sling.feature.cpconverter.index.DefaultIndexManager;
 import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
@@ -217,6 +218,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                              .setBundleSlingInitialContentExtractor(bundleSlingInitialContentExtractor)
                              .setEntryHandlersManager(new DefaultEntryHandlersManager(entryHandlerConfigsMap, !disableInstallerPolicy, slingInitialContentPolicy, bundleSlingInitialContentExtractor, systemUserRelPath))
                              .setAclManager(aclManager)
+                             .setIndexManager(new DefaultIndexManager())
                              .setEmitter(DefaultPackagesEventsEmitter.open(featureModelsOutputDirectory))
                              .setFailOnMixedPackages(failOnMixedPackages)
                              .setContentTypePackagePolicy(contentTypePackagePolicy);
