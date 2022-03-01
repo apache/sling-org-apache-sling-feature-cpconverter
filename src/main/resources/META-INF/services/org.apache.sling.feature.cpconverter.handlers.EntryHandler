@@ -2,6 +2,7 @@ org.apache.sling.feature.cpconverter.handlers.BundleEntryHandler
 org.apache.sling.feature.cpconverter.handlers.ConfigurationEntryHandler
 org.apache.sling.feature.cpconverter.handlers.ContentPackageEntryHandler
 org.apache.sling.feature.cpconverter.handlers.GroupEntryHandler
+org.apache.sling.feature.cpconverter.handlers.IndexDefinitionsEntryHandler
 org.apache.sling.feature.cpconverter.handlers.JsonConfigurationEntryHandler
 org.apache.sling.feature.cpconverter.handlers.NodeTypesEntryHandler
 org.apache.sling.feature.cpconverter.handlers.PrivilegesHandler

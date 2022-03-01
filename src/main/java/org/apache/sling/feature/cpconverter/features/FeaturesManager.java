@@ -70,6 +70,8 @@ public interface FeaturesManager {
     void addOrAppendRepoInitExtension(@NotNull String source, @NotNull String text, @Nullable String runMode)
             throws IOException, ConverterException;
 
+    void addOrAppendOakIndexDefinitionsExtension(String source, String text) throws IOException, ConverterException;
+
     @NotNull
     Map<String, String> getNamespaceUriByPrefix();
 

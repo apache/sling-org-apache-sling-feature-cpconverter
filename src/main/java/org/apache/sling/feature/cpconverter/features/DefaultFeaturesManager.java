@@ -50,6 +50,7 @@ import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.Mapping;
+import org.apache.sling.feature.cpconverter.index.IndexManager;
 import org.apache.sling.feature.cpconverter.interpolator.SimpleVariablesInterpolator;
 import org.apache.sling.feature.cpconverter.interpolator.VariablesInterpolator;
 import org.apache.sling.feature.cpconverter.repoinit.NoOpVisitor;
@@ -328,7 +329,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         }
         return false;
     }
-    
+
     private List<String> convertMappings(@Nullable String[] mappings, @NotNull String pid, boolean enforceServiceMappingByPrincipal) throws ConverterException {
         if (mappings == null) {
             return Collections.emptyList();
@@ -393,8 +394,8 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
 
         adjustConfigurationProperties(configuration, configurationProperties);
     }
-    
-    private void adjustConfigurationProperties(@NotNull Configuration configuration, 
+
+    private void adjustConfigurationProperties(@NotNull Configuration configuration,
                                                @NotNull Dictionary<String, Object> configurationProperties) {
         Enumeration<String> keys = configurationProperties.keys();
         while (keys.hasMoreElements()) {
@@ -538,7 +539,22 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
             repoInitExtension.setText(repoInitExtension.getText().concat(System.lineSeparator()).concat(text));
         }
     }
-    
+
+    @Override
+    public void addOrAppendOakIndexDefinitionsExtension(String source, String text)
+            throws IOException, ConverterException {
+
+        Extension oakIndexDefsExtension = getRunMode(null).getExtensions().getByName(IndexManager.EXTENSION_NAME);
+        if (oakIndexDefsExtension == null) {
+            oakIndexDefsExtension = new Extension(ExtensionType.JSON, IndexManager.EXTENSION_NAME, ExtensionState.REQUIRED);
+            getRunMode(null).getExtensions().add(oakIndexDefsExtension);
+            oakIndexDefsExtension.setJSON(text);
+        } else {
+            oakIndexDefsExtension.setJSON(oakIndexDefsExtension.getText().concat(System.lineSeparator()).concat(text));
+        }
+
+    }
+
     private static void checkReferences(@NotNull final Dictionary<String, Object> configurationProperties, @NotNull final String pid) throws ConverterException {
         final String[] references = Converters.standardConverter().convert(configurationProperties.get("references")).to(String[].class);
         if (references != null && references.length > 0) {

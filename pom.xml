@@ -35,7 +35,7 @@
     <sling.java.version>8</sling.java.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <picocli.version>3.6.0</picocli.version>
-    <org.apache.jackrabbit.vault.version>3.4.10</org.apache.jackrabbit.vault.version>
+    <org.apache.jackrabbit.vault.version>3.6.0</org.apache.jackrabbit.vault.version>
     <jackrabbit-api.version>2.18.4</jackrabbit-api.version>
     <jackrabbit-spi-commons.version>2.18.4</jackrabbit-spi-commons.version>
     <mockito-core.version>3.2.0</mockito-core.version>
@@ -253,7 +253,7 @@
     <dependency>
       <groupId>org.apache.jackrabbit.vault</groupId>
       <artifactId>vault-validation</artifactId>
-      <version>3.4.6</version>
+      <version>3.6.0</version>
       <scope>compile</scope>
     </dependency>
 

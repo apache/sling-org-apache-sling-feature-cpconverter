@@ -57,6 +57,7 @@ import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
 import org.apache.sling.feature.cpconverter.handlers.NodeTypesEntryHandler;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
+import org.apache.sling.feature.cpconverter.index.IndexManager;
 import org.apache.sling.feature.cpconverter.vltpkg.BaseVaultPackageScanner;
 import org.apache.sling.feature.cpconverter.vltpkg.PackagesEventsEmitter;
 import org.apache.sling.feature.cpconverter.vltpkg.RecollectorVaultPackageScanner;
@@ -109,6 +110,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     private boolean disablePackageTypeRecalculation = false;
     
     private BundleSlingInitialContentExtractor bundleSlingInitialContentExtractor = new BundleSlingInitialContentExtractor();
+
+    private IndexManager indexManager;
 
     public enum PackagePolicy {
         /**
@@ -236,6 +239,15 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return this;
     }
 
+    public @Nullable IndexManager getIndexManager() {
+        return indexManager;
+    }
+
+    public @NotNull ContentPackage2FeatureModelConverter setIndexManager(IndexManager indexManager) {
+        this.indexManager = indexManager;
+        return this;
+    }
+
     public @NotNull File getTempDirectory() {
         return this.tmpDirectory;
     }
@@ -315,6 +327,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
                     aclManager.addRepoinitExtension(assemblers, featuresManager);
                     bundleSlingInitialContentExtractor.addRepoInitExtension(assemblers, featuresManager);
+                    indexManager.addRepoinitExtension(featuresManager);
                     
                     logger.info("Conversion complete!");
 
@@ -326,6 +339,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 
                 aclManager.reset();
                 bundleSlingInitialContentExtractor.reset();
+                indexManager.reset();
                 assemblers.clear();
 
                 try {
@@ -379,7 +393,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         // Please note: THIS IS A HACK to meet the new requirement without drastically change the original design
         // temporary swap the main handler to collect stuff
         VaultPackageAssembler handler = getMainPackageAssembler();
-      
+        
         Properties parentProps = handler.getPackageProperties();
         boolean isContainerPackage = PackageType.CONTAINER.equals(parentProps.get(PackageProperties.NAME_PACKAGE_TYPE));
         setMainPackageAssembler(clonedPackage);
