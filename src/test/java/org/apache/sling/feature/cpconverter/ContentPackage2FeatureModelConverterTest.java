@@ -487,6 +487,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), aclManager))
                     .setBundlesDeployer(new SimpleFolderArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                    .setIndexManager(new DefaultIndexManager())
                     .convert(packageFile);
         } finally {
             verify(aclManager, times(1)).addPrivilegeDefinitions(any(PrivilegeDefinitions.class));

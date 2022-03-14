@@ -47,6 +47,13 @@ import org.xml.sax.InputSource;
  */
 public class IndexDefinitionsEntryHandler extends AbstractRegexEntryHandler {
 
+    private static final String PATH_PATTERN = "" +
+            "/jcr_root/" + // jcr_root dir
+            "(.*/)?" + // optional path segment
+            PlatformNameFormat.getPlatformName(IndexDefinitions.OAK_INDEX_NAME) +
+            "(.*/)?" + // additional path segments
+            "/.*xml"; // only xml files
+
     private final class IndexDefinitionsParserHandler implements DocViewParserHandler {
         private final WorkspaceFilter filter;
         private IndexDefinitions definitions;
@@ -61,7 +68,7 @@ public class IndexDefinitionsEntryHandler extends AbstractRegexEntryHandler {
                 @NotNull Optional<DocViewNode2> parentDocViewNode, int line, int column)
                 throws IOException, RepositoryException {
 
-            if ( nodePath.startsWith(IndexDefinitions.OAK_INDEX_PATH) && filter.contains(nodePath) ) {
+            if ( nodePath.contains(IndexDefinitions.OAK_INDEX_PATH) && filter.contains(nodePath) ) {
                 definitions.addNode(Text.getRelativeParent(nodePath, 1), docViewNode);
             }
         }
@@ -80,7 +87,7 @@ public class IndexDefinitionsEntryHandler extends AbstractRegexEntryHandler {
     }
 
     public IndexDefinitionsEntryHandler() {
-        super("/jcr_root/" + PlatformNameFormat.getPlatformName(IndexDefinitions.OAK_INDEX_NAME)+ "/.*(/)?/*.xml");
+        super(PATH_PATTERN);
     }
 
     @Override

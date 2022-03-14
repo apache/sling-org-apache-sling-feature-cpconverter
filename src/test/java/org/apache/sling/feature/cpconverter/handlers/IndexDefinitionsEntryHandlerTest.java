@@ -20,7 +20,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.jcr.NamespaceRegistry;
@@ -52,10 +54,13 @@ public class IndexDefinitionsEntryHandlerTest {
     public void matches() {
         IndexDefinitionsEntryHandler handler = new IndexDefinitionsEntryHandler();
         assertThat(handler.matches("/jcr_root/_oak_index/.content.xml")).isTrue();
+        assertThat(handler.matches("/jcr_root/not_oak_index/.content.xml")).isFalse();
         assertThat(handler.matches("/jcr_root/_oak_index/bar/.content.xml")).isTrue();
         assertThat(handler.matches("/jcr_root/_oak_index/lucene/tika/config.xml")).isTrue();
         assertThat(handler.matches("/jcr_root/_oak_index/.vlt")).isFalse();
-        assertThat(handler.matches("/jcr_root/apps/_oak_index/.content.xml")).isFalse();
+        assertThat(handler.matches("/jcr_root/apps/_oak_index/.content.xml")).isTrue();
+        assertThat(handler.matches("/jcr_root/apps/.content.xml")).isFalse();
+        assertThat(handler.matches("/jcr_root/not_oak_index/.content.xml")).isFalse();
     }
 
     @Test
@@ -66,14 +71,18 @@ public class IndexDefinitionsEntryHandlerTest {
         traverseForIndexing(manager, "index_single_file");
 
         IndexDefinitions defs = manager.getIndexes();
-        List<DocViewNode2> indexes = defs.getIndexes();
+        Map<String, List<DocViewNode2>> indexes = defs.getIndexes();
 
         assertThat(indexes).as("index definitions")
+            .hasSize(1)
+            .containsKey("/oak:index");
+
+       List<DocViewNode2> rootIndexes = indexes.get("/oak:index");
+       assertThat(rootIndexes).as("root oak indexes")
             .hasSize(1)
             .element(0)
                 .has( Conditions.localName("foo") )
                 .has( Conditions.property("type", "property") );
-
     }
 
     @Test
@@ -84,18 +93,26 @@ public class IndexDefinitionsEntryHandlerTest {
         traverseForIndexing(manager, "index_multiple_files");
 
         IndexDefinitions defs = manager.getIndexes();
-        List<DocViewNode2> indexes = defs.getIndexes();
+        Map<String, List<DocViewNode2>> indexes = defs.getIndexes();
 
         assertThat(indexes).as("index definitions")
+            .hasSize(1)
+            .containsKey("/oak:index");
+
+        List<DocViewNode2> rootIndexes = indexes.get("/oak:index");
+        assertThat(rootIndexes).as("root indexes")
             .hasSize(2);
 
-        assertThat(indexes).as("baz index")
+        // ensure consistent order
+        Collections.sort(rootIndexes, (a, b) -> defs.toShortName(a.getName()).compareTo(defs.toShortName(b.getName())));
+
+        assertThat(rootIndexes).as("baz index")
             .element(0).has( Conditions.localName("baz") );
-        assertThat(indexes).as("lucene_custom index")
+        assertThat(rootIndexes).as("lucene_custom index")
             .element(1)
                 .has( Conditions.localName("lucene_custom") )
                 .has( Conditions.property("type", "lucene") )
-                .has(Conditions.childWithLocalName("/oak:index/lucene_custom", "indexRules", defs));
+                .has( Conditions.childWithLocalName("/oak:index/lucene_custom", "indexRules", defs));
 
     }
 
@@ -106,14 +123,22 @@ public class IndexDefinitionsEntryHandlerTest {
         traverseForIndexing(manager, "index_nested_tika");
 
         IndexDefinitions defs = manager.getIndexes();
-        List<DocViewNode2> indexes = defs.getIndexes();
+        Map<String, List<DocViewNode2>> indexes = defs.getIndexes();
 
         assertThat(indexes).as("index definitions")
+            .hasSize(1)
+            .containsKey("/oak:index");
+
+        List<DocViewNode2> rootIndexes = indexes.get("/oak:index");
+        assertThat(rootIndexes).as("root indexes")
+            .hasSize(1);
+
+        assertThat(rootIndexes).as("index definitions")
             .hasSize(1)
             .element(0)
                 .has(Conditions.localName("lucene-custom"));
 
-        DocViewNode2 luceneCustom = indexes.get(0);
+        DocViewNode2 luceneCustom = rootIndexes.get(0);
         assertThat(luceneCustom).as("lucene index definition")
             .has(Conditions.childWithLocalName("/oak:index/lucene-custom", "indexRules", defs))
             .has(Conditions.childWithLocalName("/oak:index/lucene-custom", "tika", defs));
@@ -141,6 +166,28 @@ public class IndexDefinitionsEntryHandlerTest {
         assertIsValidXml(tikaConfig);
     }
 
+
+    @Test
+    public void handleIndexDefinitionUnderNonRootPath() throws IOException, ConverterException {
+
+        DefaultIndexManager manager = new DefaultIndexManager();
+
+        traverseForIndexing(manager, "index_non_root_path");
+
+        IndexDefinitions defs = manager.getIndexes();
+        Map<String, List<DocViewNode2>> indexes = defs.getIndexes();
+        assertThat(indexes).as("index definitions")
+            .hasSize(1)
+            .containsKey("/content/oak:index");
+
+        List<DocViewNode2> contentIndexes = indexes.get("/content/oak:index");
+        assertThat(contentIndexes).as("/content indexes")
+            .hasSize(1)
+            .element(0)
+                .has( Conditions.localName("lucene") )
+                .has( Conditions.property("type", "lucene") );
+
+    }
 
     private void assertIsValidXml(byte[] tikeConfig) throws ParserConfigurationException, SAXException, IOException {
 
