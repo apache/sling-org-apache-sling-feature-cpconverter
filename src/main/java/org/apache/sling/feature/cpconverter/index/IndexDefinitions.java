@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.spi.Name;
@@ -34,6 +35,12 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Holds information about discovered index definitions
+ *
+ * <p>According to the Oak documentation, indexes are located under a root <tt>/oak:index</tt>, or (lucene indexes only)
+ * under arbitrary repository locations, as long as they have an <tt>oak:index</tt> parent node.</p>
+ *
+ * <p>This class supports non-root indexes but does not attempt to enforce Oak-level invariants, such as which index
+ * types support non-root locations.</p>
  *
  */
 public class IndexDefinitions {
@@ -72,14 +79,28 @@ public class IndexDefinitions {
         currentChildren.add(node);
     }
 
-    public @NotNull List<DocViewNode2> getIndexes() {
-        return getChildren(OAK_INDEX_PATH);
+    /**
+     * Returns the discovered index definitions by location
+     *
+     * <p>The returned map has the index parent location as keys and the index definitions as values, for instance:</p>
+     *
+     * <pre>
+     *  &sol;oak:index -> [counter, uuid]
+     *  &sol;content&sol;oak:index -> [lucene-2]
+     * </pre>
+     *
+     *
+     * @return a map of discovered index locations, possibly empty
+     */
+    public @NotNull Map<String, List<DocViewNode2>> getIndexes() {
+        return children.entrySet().stream()
+            .filter( e -> e.getKey().endsWith(OAK_INDEX_PATH) )
+            .collect( Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue) );
     }
 
     public @NotNull List<DocViewNode2> getChildren(@NotNull String parentPath) {
         return children.getOrDefault(parentPath, Collections.emptyList());
     }
-
 
     /**
      * Returns a name in compact format

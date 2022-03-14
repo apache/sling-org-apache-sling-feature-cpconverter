@@ -20,6 +20,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -63,9 +64,9 @@ public class IndexDefinitionsJsonWriter {
     public void writeAsJson(@NotNull OutputStream out) {
         try ( JsonGenerator root = Json.createGenerator(out) ) {
             root.writeStartObject();
-            for ( DocViewNode2 index : indexDefinitions.getIndexes() ) {
-                write(root, index, IndexDefinitions.OAK_INDEX_PATH);
-            }
+            for ( Map.Entry<String, List<DocViewNode2>> indexEntry : indexDefinitions.getIndexes().entrySet() )
+                for ( DocViewNode2 index : indexEntry.getValue() )
+                    write(root, index, indexEntry.getKey());
             root.writeEnd(); // end object declaration
         }
     }
