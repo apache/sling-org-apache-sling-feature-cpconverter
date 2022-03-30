@@ -20,6 +20,9 @@ import org.apache.sling.repoinit.parser.operations.AddGroupMembers;
 import org.apache.sling.repoinit.parser.operations.CreateGroup;
 import org.apache.sling.repoinit.parser.operations.CreatePath;
 import org.apache.sling.repoinit.parser.operations.CreateUser;
+import org.apache.sling.repoinit.parser.operations.DeleteAclPaths;
+import org.apache.sling.repoinit.parser.operations.DeleteAclPrincipalBased;
+import org.apache.sling.repoinit.parser.operations.DeleteAclPrincipals;
 import org.apache.sling.repoinit.parser.operations.DeleteGroup;
 import org.apache.sling.repoinit.parser.operations.DeleteServiceUser;
 import org.apache.sling.repoinit.parser.operations.DeleteUser;
@@ -27,6 +30,9 @@ import org.apache.sling.repoinit.parser.operations.DisableServiceUser;
 import org.apache.sling.repoinit.parser.operations.RegisterNamespace;
 import org.apache.sling.repoinit.parser.operations.RegisterNodetypes;
 import org.apache.sling.repoinit.parser.operations.RegisterPrivilege;
+import org.apache.sling.repoinit.parser.operations.RemoveAcePaths;
+import org.apache.sling.repoinit.parser.operations.RemoveAcePrincipalBased;
+import org.apache.sling.repoinit.parser.operations.RemoveAcePrincipals;
 import org.apache.sling.repoinit.parser.operations.RemoveGroupMembers;
 import org.apache.sling.repoinit.parser.operations.SetAclPrincipalBased;
 import org.apache.sling.repoinit.parser.operations.SetProperties;
@@ -95,6 +101,36 @@ class DefaultVisitor extends NoOpVisitor {
     @Override
     public void visitDisableServiceUser(DisableServiceUser disableServiceUser) {
         formatter.format("%s", disableServiceUser.asRepoInitString());
+    }
+
+    @Override
+    public void visitRemoveAcePrincipal(RemoveAcePrincipals s) {
+        formatter.format("%s", s.asRepoInitString());
+    }
+
+    @Override
+    public void visitRemoveAcePaths(RemoveAcePaths s) {
+        formatter.format("%s", s.asRepoInitString());
+    }
+
+    @Override
+    public void visitRemoveAcePrincipalBased(RemoveAcePrincipalBased s) {
+        formatter.format("%s", s.asRepoInitString());
+    }
+
+    @Override
+    public void visitDeleteAclPrincipals(DeleteAclPrincipals s) {
+        formatter.format("%s", s.asRepoInitString());
+    }
+
+    @Override
+    public void visitDeleteAclPaths(DeleteAclPaths s) {
+        formatter.format("%s", s.asRepoInitString());
+    }
+
+    @Override
+    public void visitDeleteAclPrincipalBased(DeleteAclPrincipalBased s) {
+        formatter.format("%s", s.asRepoInitString());
     }
 
     @Override
