@@ -21,6 +21,9 @@ import org.apache.sling.repoinit.parser.operations.CreateGroup;
 import org.apache.sling.repoinit.parser.operations.CreatePath;
 import org.apache.sling.repoinit.parser.operations.CreateServiceUser;
 import org.apache.sling.repoinit.parser.operations.CreateUser;
+import org.apache.sling.repoinit.parser.operations.DeleteAclPaths;
+import org.apache.sling.repoinit.parser.operations.DeleteAclPrincipalBased;
+import org.apache.sling.repoinit.parser.operations.DeleteAclPrincipals;
 import org.apache.sling.repoinit.parser.operations.DeleteGroup;
 import org.apache.sling.repoinit.parser.operations.DeleteServiceUser;
 import org.apache.sling.repoinit.parser.operations.DeleteUser;
@@ -29,6 +32,9 @@ import org.apache.sling.repoinit.parser.operations.OperationVisitor;
 import org.apache.sling.repoinit.parser.operations.RegisterNamespace;
 import org.apache.sling.repoinit.parser.operations.RegisterNodetypes;
 import org.apache.sling.repoinit.parser.operations.RegisterPrivilege;
+import org.apache.sling.repoinit.parser.operations.RemoveAcePaths;
+import org.apache.sling.repoinit.parser.operations.RemoveAcePrincipalBased;
+import org.apache.sling.repoinit.parser.operations.RemoveAcePrincipals;
 import org.apache.sling.repoinit.parser.operations.RemoveGroupMembers;
 import org.apache.sling.repoinit.parser.operations.SetAclPaths;
 import org.apache.sling.repoinit.parser.operations.SetAclPrincipalBased;
@@ -74,6 +80,18 @@ public abstract class NoOpVisitor implements OperationVisitor {
     }
 
     @Override
+    public void visitRemoveAcePrincipal(RemoveAcePrincipals s) {
+    }
+
+    @Override
+    public void visitRemoveAcePaths(RemoveAcePaths s) {
+    }
+
+    @Override
+    public void visitRemoveAcePrincipalBased(RemoveAcePrincipalBased s) {
+    }
+
+    @Override
     public void visitCreatePath(CreatePath createPath) {
     }
 
@@ -103,5 +121,17 @@ public abstract class NoOpVisitor implements OperationVisitor {
 
     @Override
     public void visitSetProperties(SetProperties setProperties) {
+    }
+
+    @Override
+    public void visitDeleteAclPrincipals(DeleteAclPrincipals s) {
+    }
+
+    @Override
+    public void visitDeleteAclPaths(DeleteAclPaths s) {
+    }
+
+    @Override
+    public void visitDeleteAclPrincipalBased(DeleteAclPrincipalBased s) {
     }
 }
