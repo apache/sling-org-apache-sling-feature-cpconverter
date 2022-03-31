@@ -57,6 +57,7 @@ import org.apache.sling.feature.cpconverter.handlers.EntryHandler;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
 import org.apache.sling.feature.cpconverter.handlers.NodeTypesEntryHandler;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
+import org.apache.sling.feature.cpconverter.index.DefaultIndexManager;
 import org.apache.sling.feature.cpconverter.index.IndexManager;
 import org.apache.sling.feature.cpconverter.vltpkg.BaseVaultPackageScanner;
 import org.apache.sling.feature.cpconverter.vltpkg.PackagesEventsEmitter;
@@ -111,7 +112,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     
     private BundleSlingInitialContentExtractor bundleSlingInitialContentExtractor = new BundleSlingInitialContentExtractor();
 
-    private IndexManager indexManager;
+    private IndexManager indexManager = new DefaultIndexManager();
 
     public enum PackagePolicy {
         /**

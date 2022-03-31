@@ -68,7 +68,6 @@ import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
-import org.apache.sling.feature.cpconverter.index.DefaultIndexManager;
 import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
@@ -101,8 +100,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         converter = new ContentPackage2FeatureModelConverter()
                     .setEntryHandlersManager(handlersManager)
                     .setFeaturesManager(new DefaultFeaturesManager(new File("")))
-                    .setAclManager(new DefaultAclManager())
-                    .setIndexManager(new DefaultIndexManager());
+                    .setAclManager(new DefaultAclManager());
     }
 
     @After
@@ -487,7 +485,6 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), aclManager))
                     .setBundlesDeployer(new SimpleFolderArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
-                    .setIndexManager(new DefaultIndexManager())
                     .convert(packageFile);
         } finally {
             verify(aclManager, times(1)).addPrivilegeDefinitions(any(PrivilegeDefinitions.class));
