@@ -218,6 +218,15 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
     }
 
     @Test
+    public void convertContentPackageWithDefaultConverter() throws Exception {
+        // this test verifies that the converter functions without any explicit dependencies set
+        // please ensure that it always passes and do not modify it to configure dependen
+        converter.close();
+        converter = new ContentPackage2FeatureModelConverter();
+        convertContentPackage();
+    }
+
+    @Test
     public void convertContentPackageDropContentTypePackagePolicy() throws Exception {
         URL packageUrl = getClass().getResource("test-content-package.zip");
         File packageFile = FileUtils.toFile(packageUrl);
