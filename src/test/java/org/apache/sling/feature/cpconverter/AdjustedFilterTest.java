@@ -27,7 +27,6 @@ import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
-import org.apache.sling.feature.cpconverter.index.DefaultIndexManager;
 import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
 import org.jetbrains.annotations.NotNull;
@@ -60,8 +59,7 @@ public class AdjustedFilterTest extends AbstractConverterTest {
 
         converter = new ContentPackage2FeatureModelConverter()
                 .setEntryHandlersManager(handlersManager)
-                .setAclManager(aclManager)
-                .setIndexManager(new DefaultIndexManager());
+                .setAclManager(aclManager);
 
         outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
         FeaturesManager featuresManager = new DefaultFeaturesManager(true, 5, outputDirectory, null, null, null, aclManager);

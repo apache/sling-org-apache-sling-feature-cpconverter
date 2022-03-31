@@ -35,7 +35,6 @@ import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
-import org.apache.sling.feature.cpconverter.index.DefaultIndexManager;
 import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
@@ -147,7 +146,6 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
         converter = new ContentPackage2FeatureModelConverter()
                 .setEntryHandlersManager(handlersManager)
                 .setAclManager(aclManager)
-                .setIndexManager(new DefaultIndexManager())
                 .setContentTypePackagePolicy(PackagePolicy.REFERENCE);
 
         outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
