@@ -546,7 +546,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
 
         Extension oakIndexDefsExtension = getRunMode(null).getExtensions().getByName(IndexManager.EXTENSION_NAME);
         if (oakIndexDefsExtension == null) {
-            oakIndexDefsExtension = new Extension(ExtensionType.JSON, IndexManager.EXTENSION_NAME, ExtensionState.REQUIRED);
+            oakIndexDefsExtension = new Extension(ExtensionType.JSON, IndexManager.EXTENSION_NAME, ExtensionState.OPTIONAL);
             getRunMode(null).getExtensions().add(oakIndexDefsExtension);
             oakIndexDefsExtension.setJSON(text);
         } else {
