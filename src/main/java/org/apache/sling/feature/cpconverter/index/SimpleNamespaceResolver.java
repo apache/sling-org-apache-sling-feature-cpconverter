@@ -33,14 +33,13 @@ public class SimpleNamespaceResolver implements NamespaceResolver {
     public String getURI(String prefix) throws NamespaceException {
         if ( OAK_PREFIX.equals(prefix) )
             return OAK_NAMESPACE;
-        return null;
+        throw new NamespaceException("Unknown prefix: '" + prefix + "'");
     }
 
     @Override
     public String getPrefix(String uri) throws NamespaceException {
         if (OAK_NAMESPACE.equals(uri) )
             return OAK_PREFIX;
-
-        return null;
+        throw new NamespaceException("Unknown uri: '" + uri + "'");
     }
 }
