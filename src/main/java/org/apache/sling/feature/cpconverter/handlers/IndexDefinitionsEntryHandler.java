@@ -35,6 +35,7 @@ import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter
 import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.index.IndexDefinitions;
 import org.apache.sling.feature.cpconverter.index.IndexManager;
+import org.apache.sling.feature.cpconverter.index.SimpleNamespaceResolver;
 import org.jetbrains.annotations.NotNull;
 import org.xml.sax.InputSource;
 
@@ -112,7 +113,7 @@ public class IndexDefinitionsEntryHandler extends AbstractRegexEntryHandler {
                     isDocView =  DocViewParser.isDocView(new InputSource(isCheck));
                 }
                 if ( isDocView ) {
-                    DocViewParser parser = new DocViewParser();
+                    DocViewParser parser = new DocViewParser(new SimpleNamespaceResolver());
                     IndexDefinitionsParserHandler handler = new IndexDefinitionsParserHandler(archive.getMetaInf().getFilter(), indexManager.getIndexes());
 
                     parser.parse(repositoryPath, inputSource, handler);
