@@ -16,6 +16,8 @@
  */
 package org.apache.sling.feature.cpconverter.index;
 
+import static org.apache.sling.feature.cpconverter.index.SimpleNamespaceResolver.OAK_NAMESPACE;
+import static org.apache.sling.feature.cpconverter.index.SimpleNamespaceResolver.OAK_PREFIX;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
@@ -48,10 +50,6 @@ import org.junit.Test;
 
 public class IndexDefinitionsJsonWriterTest {
 
-    // copied from oak-spi-core/NamespaceConstants to not add a dependency on Oak
-    private static final String PREFIX_OAK = "oak";
-    private static final String NAMESPACE_OAK = "http://jackrabbit.apache.org/oak/ns/1.0";
-
     private NameFactory nameFactory;
     private IndexDefinitions definitions;
 
@@ -61,7 +59,7 @@ public class IndexDefinitionsJsonWriterTest {
         definitions = new IndexDefinitions();
         definitions.registerPrefixMapping(NamespaceRegistry.PREFIX_NT, NamespaceRegistry.NAMESPACE_NT);
         definitions.registerPrefixMapping(NamespaceRegistry.PREFIX_JCR, NamespaceRegistry.NAMESPACE_JCR);
-        definitions.registerPrefixMapping(PREFIX_OAK, NAMESPACE_OAK);
+        definitions.registerPrefixMapping(OAK_PREFIX, OAK_NAMESPACE);
 
     }
 
@@ -76,7 +74,7 @@ public class IndexDefinitionsJsonWriterTest {
 
         Collection<DocViewProperty2> fooProps = new ArrayList<>();
         fooProps.add(new DocViewProperty2(nameFactory.create("{}type"), "property"));
-        fooProps.add(new DocViewProperty2(nameFactory.create(NamespaceRegistry.NAMESPACE_JCR, "primaryType"), PREFIX_OAK+":QueryIndexDefinition"));
+        fooProps.add(new DocViewProperty2(nameFactory.create(NamespaceRegistry.NAMESPACE_JCR, "primaryType"), OAK_PREFIX+":QueryIndexDefinition"));
         fooProps.add(new DocViewProperty2(nameFactory.create("{}reindex"), Boolean.FALSE.toString(), PropertyType.BOOLEAN));
         fooProps.add(new DocViewProperty2(nameFactory.create("{}reindexCount"), "1", PropertyType.LONG));
 
@@ -84,7 +82,7 @@ public class IndexDefinitionsJsonWriterTest {
 
         Collection<DocViewProperty2> barProps = new ArrayList<>();
         barProps.add(new DocViewProperty2(nameFactory.create("{}type"), "property"));
-        barProps.add(new DocViewProperty2(nameFactory.create(NamespaceRegistry.NAMESPACE_JCR, "primaryType"), PREFIX_OAK+":QueryIndexDefinition"));
+        barProps.add(new DocViewProperty2(nameFactory.create(NamespaceRegistry.NAMESPACE_JCR, "primaryType"), OAK_PREFIX+":QueryIndexDefinition"));
         barProps.add(new DocViewProperty2(nameFactory.create("{}reindex"), Boolean.TRUE.toString(), PropertyType.BOOLEAN));
         barProps.add(new DocViewProperty2(nameFactory.create("{}reindexCount"), "25", PropertyType.LONG));
 
@@ -110,7 +108,7 @@ public class IndexDefinitionsJsonWriterTest {
 
         Collection<DocViewProperty2> fooProps = new ArrayList<>();
         fooProps.add(new DocViewProperty2(nameFactory.create("{}type"), "property"));
-        fooProps.add(new DocViewProperty2(nameFactory.create(NamespaceRegistry.NAMESPACE_JCR, "primaryType"), PREFIX_OAK+":QueryIndexDefinition"));
+        fooProps.add(new DocViewProperty2(nameFactory.create(NamespaceRegistry.NAMESPACE_JCR, "primaryType"), OAK_PREFIX+":QueryIndexDefinition"));
         fooProps.add(new DocViewProperty2(nameFactory.create("{}reindex"), Boolean.FALSE.toString(), PropertyType.BOOLEAN));
         fooProps.add(new DocViewProperty2(nameFactory.create("{}reindexCount"), "1.0", PropertyType.LONG));
 
@@ -134,7 +132,7 @@ public class IndexDefinitionsJsonWriterTest {
         // lucene index
         Collection<DocViewProperty2> luceneProps = new ArrayList<>();
         luceneProps.add(new DocViewProperty2(nameFactory.create("{}type"), "lucene"));
-        luceneProps.add(new DocViewProperty2(nameFactory.create(NamespaceRegistry.NAMESPACE_JCR, "primaryType"), PREFIX_OAK+":QueryIndexDefinition"));
+        luceneProps.add(new DocViewProperty2(nameFactory.create(NamespaceRegistry.NAMESPACE_JCR, "primaryType"), OAK_PREFIX+":QueryIndexDefinition"));
         luceneProps.add(new DocViewProperty2(nameFactory.create("{}reindex"), Boolean.FALSE.toString(), PropertyType.BOOLEAN));
         luceneProps.add(new DocViewProperty2(nameFactory.create("{}reindexCount"), "1", PropertyType.LONG));
         luceneProps.add(new DocViewProperty2(nameFactory.create("{}includePropertyTypes"), Arrays.asList("String", "Binary"), PropertyType.STRING));

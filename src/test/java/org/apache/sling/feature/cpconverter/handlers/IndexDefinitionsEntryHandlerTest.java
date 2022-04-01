@@ -189,6 +189,13 @@ public class IndexDefinitionsEntryHandlerTest {
 
     }
 
+    @Test
+    public void handleIndexDefinitionWithMissingNamespaces() throws IOException, ConverterException {
+        DefaultIndexManager manager = new DefaultIndexManager();
+
+        traverseForIndexing(manager, "index_missing_namespaces");
+    }
+
     private void assertIsValidXml(byte[] tikeConfig) throws ParserConfigurationException, SAXException, IOException {
 
         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
