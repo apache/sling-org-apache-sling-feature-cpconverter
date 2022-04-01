@@ -48,6 +48,17 @@ public class IndexDefinitionsJsonWriter {
 
     private static final Function<String, JsonValue> BLOB_MAPPER =  s -> Json.createValue(":blobid:" + Base64.encode(s));
 
+    private static final Function<String, JsonValue> SAFE_LONG_MAPPER = new Function<String, JsonValue>() {
+
+        @Override
+        public JsonValue apply(String t) {
+            if ( t.endsWith(".0") )
+                t = t.replace(".0", "");
+
+            return Json.createValue(Long.parseLong(t));
+        }
+    };
+
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final IndexDefinitions indexDefinitions;
@@ -91,7 +102,7 @@ public class IndexDefinitionsJsonWriter {
                     write(json, propertyName, property.getStringValues(), s -> Json.createValue("str:" + s ));
                     break;
                 case PropertyType.LONG:
-                    write(json, propertyName, property.getStringValues(), s -> Json.createValue(Long.parseLong(s) ));
+                    write(json, propertyName, property.getStringValues(), SAFE_LONG_MAPPER );
                     break;
                 case PropertyType.BOOLEAN:
                     write(json, propertyName, property.getStringValues(), s -> ( Boolean.parseBoolean(s) ? JsonValue.TRUE : JsonValue.FALSE)  );
