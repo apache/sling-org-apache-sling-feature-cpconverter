@@ -106,6 +106,27 @@ public class IndexDefinitionsJsonWriterTest {
     }
 
     @Test
+    public void invalidLongPropertyIsAccepted() throws IOException {
+
+        Collection<DocViewProperty2> fooProps = new ArrayList<>();
+        fooProps.add(new DocViewProperty2(nameFactory.create("{}type"), "property"));
+        fooProps.add(new DocViewProperty2(nameFactory.create(NamespaceRegistry.NAMESPACE_JCR, "primaryType"), PREFIX_OAK+":QueryIndexDefinition"));
+        fooProps.add(new DocViewProperty2(nameFactory.create("{}reindex"), Boolean.FALSE.toString(), PropertyType.BOOLEAN));
+        fooProps.add(new DocViewProperty2(nameFactory.create("{}reindexCount"), "1.0", PropertyType.LONG));
+
+        definitions.addNode("/oak:index", new DocViewNode2(nameFactory.create("{}foo"), fooProps));
+
+        JsonObject root = generateAndParse(definitions);
+        assertThat(root).as("indexDefinitions")
+            .hasSize(1)
+            .hasEntrySatisfying("/oak:index/foo", Conditions.isJsonObject());
+
+        JsonObject fooIndex = root.getJsonObject("/oak:index/foo");
+        assertThat(fooIndex).as("foo index")
+            .contains(entry("reindexCount", Json.createValue(1)));
+    }
+
+    @Test
     public void luceneIndexDefinitionWithTikaConfig() throws IOException {
 
         String configXmlFileContents = "<properties/>";
