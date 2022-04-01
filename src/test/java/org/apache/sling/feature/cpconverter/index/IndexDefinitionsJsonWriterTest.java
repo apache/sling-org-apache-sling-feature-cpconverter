@@ -83,10 +83,10 @@ public class IndexDefinitionsJsonWriterTest {
         definitions.addNode("/oak:index", new DocViewNode2(nameFactory.create("{}foo"), fooProps));
 
         Collection<DocViewProperty2> barProps = new ArrayList<>();
-        fooProps.add(new DocViewProperty2(nameFactory.create("{}type"), "property"));
-        fooProps.add(new DocViewProperty2(nameFactory.create(NamespaceRegistry.NAMESPACE_JCR, "primaryType"), PREFIX_OAK+":QueryIndexDefinition"));
-        fooProps.add(new DocViewProperty2(nameFactory.create("{}reindex"), Boolean.TRUE.toString(), PropertyType.BOOLEAN));
-        fooProps.add(new DocViewProperty2(nameFactory.create("{}reindexCount"), "25", PropertyType.LONG));
+        barProps.add(new DocViewProperty2(nameFactory.create("{}type"), "property"));
+        barProps.add(new DocViewProperty2(nameFactory.create(NamespaceRegistry.NAMESPACE_JCR, "primaryType"), PREFIX_OAK+":QueryIndexDefinition"));
+        barProps.add(new DocViewProperty2(nameFactory.create("{}reindex"), Boolean.TRUE.toString(), PropertyType.BOOLEAN));
+        barProps.add(new DocViewProperty2(nameFactory.create("{}reindexCount"), "25", PropertyType.LONG));
 
         definitions.addNode("/oak:index", new DocViewNode2(nameFactory.create("{}bar"), barProps));
 
