@@ -155,10 +155,10 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
             try (InputStream strippedBundleInput = bundleSlingInitialContentExtractor.extract(context)) {
                 if (strippedBundleInput != null && slingInitialContentPolicy == ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.EXTRACT_AND_REMOVE) {
                     id = id.changeVersion(id.getVersion() + "-" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);
-                    Objects.requireNonNull(converter.getArtifactsDeployer()).deploy(new InputStreamArtifactWriter(strippedBundleInput), id);
+                    Objects.requireNonNull(converter.getArtifactsDeployer()).deploy(new InputStreamArtifactWriter(strippedBundleInput), runMode, id);
                 } else {
                     try (InputStream originalBundleInput = Files.newInputStream(originalBundleFile)) {
-                        Objects.requireNonNull(converter.getArtifactsDeployer()).deploy(new InputStreamArtifactWriter(originalBundleInput), id);
+                        Objects.requireNonNull(converter.getArtifactsDeployer()).deploy(new InputStreamArtifactWriter(originalBundleInput), runMode, id);
                     }
                 }
             }

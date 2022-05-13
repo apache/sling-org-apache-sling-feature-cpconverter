@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import org.apache.sling.feature.ArtifactId;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * SPI to deploy artifacts
@@ -29,10 +30,11 @@ public interface ArtifactsDeployer {
     /**
      * Deploy the artifact and return information about its location
      * @param artifactWriter The artifact writer to use
+     * @param runmode Optional runmode
      * @param id The artifact id
      * @return Information about the location, this is deployer specific
      * @throws IOException If deploying fails
      */
-    @NotNull String deploy(@NotNull ArtifactWriter artifactWriter, @NotNull ArtifactId id) throws IOException;
+    @NotNull String deploy(@NotNull ArtifactWriter artifactWriter, @Nullable String runmode, @NotNull ArtifactId id) throws IOException;
 
 }

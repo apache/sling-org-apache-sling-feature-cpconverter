@@ -452,7 +452,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                     if (unreferencedArtifactsDeployer == null) {
                         throw new IllegalStateException("ContentTypePackagePolicy PUT_IN_DEDICATED_FOLDER requires a valid deployer ");
                     }
-                    final String location = unreferencedArtifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), mvnPackageId);
+                    final String location = unreferencedArtifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), runMode, mvnPackageId);
                     logger.info("Put converted package of PackageType.CONTENT {} (content-package id: {}) at {} (not referenced in feature model)",
                             mvnPackageId.getArtifactId(), vaultPackage.getId(), location);
                     break;
@@ -488,7 +488,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             try {
                 File finalContentPackageArchive = assembler.createPackage();
                 // deploy the new content-package to the local mvn bundles dir
-                deployer.deploy(new FileArtifactWriter(finalContentPackageArchive), mvnPackageId);
+                deployer.deploy(new FileArtifactWriter(finalContentPackageArchive), runMode, mvnPackageId);
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }

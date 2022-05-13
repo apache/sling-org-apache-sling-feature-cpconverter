@@ -22,6 +22,7 @@ import java.io.IOException;
 
 import org.apache.sling.feature.ArtifactId;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +47,7 @@ public class SimpleFolderArtifactsDeployer implements ArtifactsDeployer {
     }
 
     @Override
-    public @NotNull String deploy(@NotNull ArtifactWriter artifactWriter, @NotNull ArtifactId id) throws IOException {
+    public @NotNull String deploy(@NotNull ArtifactWriter artifactWriter, @Nullable String runmode, @NotNull ArtifactId id) throws IOException {
         File targetFile = new File(artifactsDirectory, id.toMvnName());
         logger.info("Writing data to {}...", targetFile);
 

@@ -26,6 +26,7 @@ import java.util.StringTokenizer;
 
 import org.apache.sling.feature.ArtifactId;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +51,7 @@ public final class LocalMavenRepositoryArtifactsDeployer implements ArtifactsDep
     }
 
     @Override
-    public @NotNull String deploy(@NotNull ArtifactWriter artifactWriter, @NotNull ArtifactId id) throws IOException {
+    public @NotNull String deploy(@NotNull ArtifactWriter artifactWriter, @Nullable String runmode, @NotNull ArtifactId id) throws IOException {
         requireNonNull(artifactWriter, "Null ArtifactWriter can not install an artifact to a Maven repository.");
         requireNonNull(id, "Bundle can not be installed to a Maven repository without specifying a valid id.");
 

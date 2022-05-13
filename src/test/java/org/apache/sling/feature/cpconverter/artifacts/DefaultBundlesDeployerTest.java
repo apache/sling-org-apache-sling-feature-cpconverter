@@ -65,12 +65,12 @@ public class DefaultBundlesDeployerTest {
 
     @Test(expected = NullPointerException.class)
     public void deployLocallyAndAttachRequiresNonNullInput() throws Exception {
-        artifactDeployer.deploy(null, null);
+        artifactDeployer.deploy(null, null, null);
     }
 
     @Test(expected = NullPointerException.class)
     public void deployLocallyAndAttachRequiresNonNullArtifactId() throws Exception {
-        artifactDeployer.deploy(mock(ArtifactWriter.class), null);
+        artifactDeployer.deploy(mock(ArtifactWriter.class), null, null);
     }
 
 }
