@@ -48,6 +48,7 @@ import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
+import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.ArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.artifacts.FileArtifactWriter;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
@@ -82,7 +83,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     private EntryHandlersManager handlersManager;
 
-    private AclManager aclManager;
+    private AclManager aclManager = new DefaultAclManager();
 
     private FeaturesManager featuresManager;
 
@@ -197,7 +198,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return this;
     }
 
-    public @Nullable AclManager getAclManager() {
+    public @NotNull AclManager getAclManager() {
         return aclManager;
     }
 

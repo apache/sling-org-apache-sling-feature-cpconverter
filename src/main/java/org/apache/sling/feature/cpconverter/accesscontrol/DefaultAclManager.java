@@ -95,13 +95,13 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     
     private RepoPath userRootPath;
 
-    public DefaultAclManager() throws ConverterException {
+    public DefaultAclManager() {
         this(null, ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
     }
 
-    public DefaultAclManager(@Nullable String enforcePrincipalBasedSupportedPath, @NotNull String systemRelPath) throws ConverterException {
+    public DefaultAclManager(@Nullable String enforcePrincipalBasedSupportedPath, @NotNull String systemRelPath)  {
         if (enforcePrincipalBasedSupportedPath != null && !enforcePrincipalBasedSupportedPath.contains(systemRelPath)) {
-            throw new ConverterException("Relative path for system users "+ systemRelPath + " not included in " + enforcePrincipalBasedSupportedPath);
+            throw new RuntimeException("Relative path for system users "+ systemRelPath + " not included in " + enforcePrincipalBasedSupportedPath);
         }
         this.enforcePrincipalBasedSupportedPath = (enforcePrincipalBasedSupportedPath == null) ? null : new RepoPath(enforcePrincipalBasedSupportedPath);
         this.systemRelPath = systemRelPath;

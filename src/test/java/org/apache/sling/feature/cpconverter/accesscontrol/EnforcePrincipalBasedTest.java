@@ -96,8 +96,8 @@ public class EnforcePrincipalBasedTest {
         getRepoInitExtension(acMgr, accessControlledPath, systemUser, false);
     }
 
-    @Test(expected = ConverterException.class)
-    public void testPathMismatch() throws ConverterException {
+    @Test(expected = RuntimeException.class)
+    public void testPathMismatch() throws RuntimeException {
         new DefaultAclManager("/an/invalid/supported/path", "system");
     }
 
