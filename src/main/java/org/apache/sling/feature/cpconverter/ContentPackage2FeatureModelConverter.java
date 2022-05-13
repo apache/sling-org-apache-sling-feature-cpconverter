@@ -452,9 +452,9 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                     if (unreferencedArtifactsDeployer == null) {
                         throw new IllegalStateException("ContentTypePackagePolicy PUT_IN_DEDICATED_FOLDER requires a valid deployer ");
                     }
-                    unreferencedArtifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), mvnPackageId);
-                    logger.info("Put converted package of PackageType.CONTENT {} (content-package id: {}) in {} (not referenced in feature model)",
-                            mvnPackageId.getArtifactId(), vaultPackage.getId(), unreferencedArtifactsDeployer.getBaseDirectory());
+                    final String location = unreferencedArtifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), mvnPackageId);
+                    logger.info("Put converted package of PackageType.CONTENT {} (content-package id: {}) at {} (not referenced in feature model)",
+                            mvnPackageId.getArtifactId(), vaultPackage.getId(), location);
                     break;
                 case REFERENCE:
                     deploy(assembler, mvnPackageId, runMode);

@@ -32,7 +32,7 @@ import org.junit.Test;
 
 public class DefaultBundlesDeployerTest {
 
-    private ArtifactsDeployer artifactDeployer;
+    private LocalMavenRepositoryArtifactsDeployer artifactDeployer;
 
     private File outputDirectory;
 

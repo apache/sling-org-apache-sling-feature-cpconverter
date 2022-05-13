@@ -41,13 +41,12 @@ public class SimpleFolderArtifactsDeployer implements ArtifactsDeployer {
         }
     }
 
-    @Override
     public @NotNull File getBaseDirectory() {
         return artifactsDirectory;
     }
 
     @Override
-    public void deploy(@NotNull ArtifactWriter artifactWriter, @NotNull ArtifactId id) throws IOException {
+    public @NotNull String deploy(@NotNull ArtifactWriter artifactWriter, @NotNull ArtifactId id) throws IOException {
         File targetFile = new File(artifactsDirectory, id.toMvnName());
         logger.info("Writing data to {}...", targetFile);
 
@@ -56,6 +55,8 @@ public class SimpleFolderArtifactsDeployer implements ArtifactsDeployer {
         }
 
         logger.info("Data successfully written to {}.", targetFile);
+
+        return targetFile.toString();
     }
 
 }

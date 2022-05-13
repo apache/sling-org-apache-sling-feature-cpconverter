@@ -45,13 +45,12 @@ public final class LocalMavenRepositoryArtifactsDeployer implements ArtifactsDep
         }
     }
 
-    @Override
     public @NotNull File getBaseDirectory() {
-        return artifactsDirectory;
+        return this.artifactsDirectory;
     }
 
     @Override
-    public void deploy(@NotNull ArtifactWriter artifactWriter, @NotNull ArtifactId id) throws IOException {
+    public @NotNull String deploy(@NotNull ArtifactWriter artifactWriter, @NotNull ArtifactId id) throws IOException {
         requireNonNull(artifactWriter, "Null ArtifactWriter can not install an artifact to a Maven repository.");
         requireNonNull(id, "Bundle can not be installed to a Maven repository without specifying a valid id.");
 
@@ -91,6 +90,7 @@ public final class LocalMavenRepositoryArtifactsDeployer implements ArtifactsDep
                 new MavenPomSupplierWriter(id).write(targetStream);
             }
         }
+        return targetFile.toString();
     }
 
 }
