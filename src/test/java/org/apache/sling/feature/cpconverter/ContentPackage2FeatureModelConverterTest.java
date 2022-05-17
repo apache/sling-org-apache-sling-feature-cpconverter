@@ -16,7 +16,6 @@
  */
 package org.apache.sling.feature.cpconverter;
 
-import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.EXTRACT_AND_REMOVE;
 import static org.apache.sling.feature.cpconverter.Util.normalize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -67,8 +66,6 @@ import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
-import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
-import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.junit.After;
@@ -478,16 +475,18 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
         try {
             DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
-            ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()
-                    .setEntryHandlersManager(handlersManager)
+            try (ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()) {
+                converter.setEntryHandlersManager(handlersManager)
                     .setAclManager(aclManager);
-
-            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), aclManager))
+                converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), aclManager))
                     .setBundlesDeployer(new SimpleFolderArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
-                    .convert(packageFile);
-        } finally {
+                    .convert(packageFile);    
+            }
+
             verify(aclManager, times(1)).addPrivilegeDefinitions(any(PrivilegeDefinitions.class));
+            
+        } finally {
             deleteDirTree(outputDirectory);
         }
     }
@@ -859,19 +858,23 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         File packageFile = FileUtils.toFile(packageUrl);
         File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
-        File unrefOutputDir = new File(outputDirectory, "unref");
+        try {
+            File unrefOutputDir = new File(outputDirectory, "unref");
 
-        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
-                .setUnreferencedArtifactsDeployer(new LocalMavenRepositoryArtifactsDeployer(unrefOutputDir))
-                .setContentTypePackagePolicy(PackagePolicy.PUT_IN_DEDICATED_FOLDER)
-                .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
-                .convert(packageFile);
-
-        File converted = new File(unrefOutputDir, "my_packages/demo-cp/0.0.0/demo-cp-0.0.0-cp2fm-converted.zip");
-
-        assertEquals(PackageType.CONTENT, converter.open(converted).getProperties().getPackageType());
-        try (FileReader reader = new FileReader(new File(outputDirectory, "content-packages.csv"))){
-            assertTrue(IOUtils.readLines(reader).get(2).contains("my_packages:demo-cp,CONTENT"));
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
+                    .setUnreferencedArtifactsDeployer(new LocalMavenRepositoryArtifactsDeployer(unrefOutputDir))
+                    .setContentTypePackagePolicy(PackagePolicy.PUT_IN_DEDICATED_FOLDER)
+                    .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                    .convert(packageFile);
+    
+            File converted = new File(unrefOutputDir, "my_packages/demo-cp/0.0.0/demo-cp-0.0.0-cp2fm-converted.zip");
+    
+            assertEquals(PackageType.CONTENT, converter.open(converted).getProperties().getPackageType());
+            try (FileReader reader = new FileReader(new File(outputDirectory, "content-packages.csv"))){
+                assertTrue(IOUtils.readLines(reader).get(2).contains("my_packages:demo-cp,CONTENT"));
+            }    
+        } finally {
+            deleteDirTree(outputDirectory);
         }
     }
 

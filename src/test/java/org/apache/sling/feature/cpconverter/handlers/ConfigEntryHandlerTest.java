@@ -71,18 +71,18 @@ public class ConfigEntryHandlerTest {
         when(featuresManager.getTargetFeature()).thenReturn(expected);
         doCallRealMethod().when(featuresManager).addConfiguration(anyString(), any(), anyString(), any());
 
-        ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
-        when(converter.getFeaturesManager()).thenReturn(featuresManager);
+        try(ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()) {
+            converter.setFeaturesManager(featuresManager);
+            new ConfigurationEntryHandler().handle(resourceConfiguration, archive, entry, converter);
 
-        new ConfigurationEntryHandler().handle(resourceConfiguration, archive, entry, converter);
-
-        verifyConfiguration(expected);
-
-        StringWriter writer = new StringWriter();
-        FeatureJSONWriter.write(writer, expected);
-
-        Feature current = FeatureJSONReader.read(new StringReader(writer.toString()), "fake");
-        verifyConfiguration(current);
+            verifyConfiguration(expected);
+    
+            StringWriter writer = new StringWriter();
+            FeatureJSONWriter.write(writer, expected);
+    
+            Feature current = FeatureJSONReader.read(new StringReader(writer.toString()), "fake");
+            verifyConfiguration(current);    
+        }
     }
 
     private void verifyConfiguration(Feature feature) {
@@ -107,26 +107,27 @@ public class ConfigEntryHandlerTest {
         Archive archive = mock(Archive.class);
         Entry entry = mock(Entry.class);
         FeaturesManager manager = mock(FeaturesManager.class);
-        ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
-        when(converter.getFeaturesManager()).thenReturn(manager);
+        try(ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()) {
+            converter.setFeaturesManager(manager);
 
-        when(entry.getName()).thenReturn("/jcr_root/apps/foo/bar/config/baz/blub.cfg");
-        when(archive.openInputStream(entry)).thenReturn(new ByteArrayInputStream("{}".getBytes()));
+            when(entry.getName()).thenReturn("/jcr_root/apps/foo/bar/config/baz/blub.cfg");
+            when(archive.openInputStream(entry)).thenReturn(new ByteArrayInputStream("{}".getBytes()));
 
-        AbstractConfigurationEntryHandler handler = new AbstractConfigurationEntryHandler("cfg") {
-            @Override
-            protected @NotNull Dictionary<String, Object> parseConfiguration(@NotNull String name, @NotNull InputStream input) throws IOException {
-                return new Hashtable<String, Object>(){{put("foo", "bar");}};
-            }
-        };
-        handler.handle("/jcr_root/apps/foo/bar/config/baz/blub.cfg", archive, entry, converter);
+            AbstractConfigurationEntryHandler handler = new AbstractConfigurationEntryHandler("cfg") {
+                @Override
+                protected @NotNull Dictionary<String, Object> parseConfiguration(@NotNull String name, @NotNull InputStream input) throws IOException {
+                    return new Hashtable<String, Object>(){{put("foo", "bar");}};
+                }
+            };
+            handler.handle("/jcr_root/apps/foo/bar/config/baz/blub.cfg", archive, entry, converter);
 
-        ArgumentCaptor<Configuration> cfgCaptor = ArgumentCaptor.forClass(Configuration.class);
+            ArgumentCaptor<Configuration> cfgCaptor = ArgumentCaptor.forClass(Configuration.class);
 
-        Mockito.verify(manager).addConfiguration(Mockito.isNull(), cfgCaptor.capture(), Mockito.eq("/jcr_root/apps/foo/bar/config/baz/blub.cfg"), 
-                Mockito.eq(new Hashtable<String, Object>(){{put("foo","bar");}}));
-        assertEquals("blub", cfgCaptor.getValue().getPid());
-        Mockito.verify(manager).addConfiguration(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any());
+            Mockito.verify(manager).addConfiguration(Mockito.isNull(), cfgCaptor.capture(), Mockito.eq("/jcr_root/apps/foo/bar/config/baz/blub.cfg"), 
+                    Mockito.eq(new Hashtable<String, Object>(){{put("foo","bar");}}));
+            assertEquals("blub", cfgCaptor.getValue().getPid());
+            Mockito.verify(manager).addConfiguration(Mockito.any(), Mockito.any(), Mockito.anyString(), Mockito.any());
+        }
     }
 
     @Test
@@ -136,9 +137,11 @@ public class ConfigEntryHandlerTest {
         Archive archive = Mockito.mock(Archive.class);
         Entry entry = Mockito.mock(Entry.class);
         Mockito.when(archive.openInputStream(entry)).thenReturn(new ByteArrayInputStream(new byte[0]));
-        assertThrows(ConverterException.class, () -> {
-            handler.handle("/jcr_root/apps/myapp/install/myconfig.config", archive, entry, Mockito.mock(ContentPackage2FeatureModelConverter.class));
-        });
+        try(ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()) {
+            assertThrows(ConverterException.class, () -> {
+                handler.handle("/jcr_root/apps/myapp/install/myconfig.config", archive, entry, converter);
+            });
+        }
     }
 
     @Test
@@ -148,9 +151,10 @@ public class ConfigEntryHandlerTest {
         Archive archive = Mockito.mock(Archive.class);
         Entry entry = Mockito.mock(Entry.class);
         Mockito.when(archive.openInputStream(entry)).thenReturn(new ByteArrayInputStream(new byte[0]));
-        ContentPackage2FeatureModelConverter converter = Mockito.mock(ContentPackage2FeatureModelConverter.class);
-        Mockito.when(converter.getMainPackageAssembler()).thenReturn(Mockito.mock(VaultPackageAssembler.class));
+        try(ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()) {
+            converter.setMainPackageAssembler(Mockito.mock(VaultPackageAssembler.class));
 
-        handler.handle("/jcr_root/apps/asd/config/.empty.xml", archive, entry, converter);
+            handler.handle("/jcr_root/apps/asd/config/.empty.xml", archive, entry, converter);
+        }
     }
 }

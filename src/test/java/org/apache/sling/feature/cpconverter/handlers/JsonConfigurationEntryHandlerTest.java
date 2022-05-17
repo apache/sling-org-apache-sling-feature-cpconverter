@@ -48,9 +48,10 @@ public class JsonConfigurationEntryHandlerTest {
         when(entry.getName()).thenReturn(resourceConfiguration.substring(resourceConfiguration.lastIndexOf('/') + 1));
         when(archive.openInputStream(entry)).thenReturn(getClass().getResourceAsStream(resourceConfiguration.substring(1)));
 
-        ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
+        try(ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()) {
 
-        new JsonConfigurationEntryHandler().handle(resourceConfiguration, archive, entry, converter);
+            new JsonConfigurationEntryHandler().handle(resourceConfiguration, archive, entry, converter);
+        }
     }
 
     @Test
@@ -68,14 +69,15 @@ public class JsonConfigurationEntryHandlerTest {
         FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);
         when(featuresManager.getTargetFeature()).thenReturn(feature);
 
-        ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
-        when(converter.getAclManager()).thenReturn(aclManager);
-        when(converter.getFeaturesManager()).thenReturn(featuresManager);
-        ((DefaultFeaturesManager) featuresManager).setAclManager(aclManager);
+        try(ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()) {
+            converter.setFeaturesManager(featuresManager);
+            converter.setAclManager(aclManager);
+            ((DefaultFeaturesManager) featuresManager).setAclManager(aclManager);
 
-        new JsonConfigurationEntryHandler().handle(resourceConfiguration, archive, entry, converter);
+            new JsonConfigurationEntryHandler().handle(resourceConfiguration, archive, entry, converter);
 
-        verify(aclManager, times(3)).addMapping(any(Mapping.class));
+            verify(aclManager, times(3)).addMapping(any(Mapping.class));
+        }
     }
 
 }

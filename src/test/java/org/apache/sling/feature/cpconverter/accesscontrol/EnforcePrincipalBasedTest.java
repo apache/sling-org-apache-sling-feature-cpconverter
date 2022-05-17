@@ -225,89 +225,109 @@ public class EnforcePrincipalBasedTest {
 
     @Test
     public void testSingleUserMappingInSeed() throws Exception {
-        DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 1, File.createTempFile("foo", "bar"), "*", "*", new HashMap<>(), aclManager);
-        Feature seed = new Feature(ArtifactId.fromMvnId("org:foo:2"));
-        Configuration foo = new Configuration("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl~foo");
-        foo.getProperties().put("user.mapping", new String[]{"org.apache.sling.testbundle:subservice=user1"});
-        seed.getConfigurations().add(foo);
-        Extension extension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, ExtensionState.REQUIRED);
-        extension.setText("create service user user1");
-        seed.getExtensions().add(extension);
-        fm.addSeed(seed);
-
-        RepoPath accessControlledPath = new RepoPath("/content/feature");
-        Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, false);
-
-        String expected = "# origin= source=content-package" + System.lineSeparator() + normalize(
-                "create service user user1 with path " + relativeIntermediatePath + "\n" +
-                        "create path /content/feature\n" +
-                        "set ACL for user1\n" +
-                        "    allow jcr:read on /content/feature\n" +
-                        "end\n");
-
-        String actual = repoinitExtension.getText();
-        assertEquals(expected, actual);
+        final File tempFile = File.createTempFile("foo", "bar");
+        try {
+            DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 1, tempFile, "*", "*", new HashMap<>(), aclManager);
+            Feature seed = new Feature(ArtifactId.fromMvnId("org:foo:2"));
+            Configuration foo = new Configuration("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl~foo");
+            foo.getProperties().put("user.mapping", new String[]{"org.apache.sling.testbundle:subservice=user1"});
+            seed.getConfigurations().add(foo);
+            Extension extension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, ExtensionState.REQUIRED);
+            extension.setText("create service user user1");
+            seed.getExtensions().add(extension);
+            fm.addSeed(seed);
+    
+            RepoPath accessControlledPath = new RepoPath("/content/feature");
+            Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, false);
+    
+            String expected = "# origin= source=content-package" + System.lineSeparator() + normalize(
+                    "create service user user1 with path " + relativeIntermediatePath + "\n" +
+                            "create path /content/feature\n" +
+                            "set ACL for user1\n" +
+                            "    allow jcr:read on /content/feature\n" +
+                            "end\n");
+    
+            String actual = repoinitExtension.getText();
+            assertEquals(expected, actual);    
+        } finally {
+            tempFile.delete();
+        }
     }
 
     @Test
     public void testPrincipalMappingInSeed() throws Exception {
-        DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 1, File.createTempFile("foo", "bar"), "*", "*", new HashMap<>(), aclManager);
-        Feature seed = new Feature(ArtifactId.fromMvnId("org:foo:2"));
-        Configuration foo = new Configuration("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl~foo");
-        foo.getProperties().put("user.mapping", new String[]{"org.apache.sling.testbundle:subservice=[user1]"});
-        seed.getConfigurations().add(foo);
-        Extension extension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, ExtensionState.REQUIRED);
-        extension.setText("create service user user1");
-        seed.getExtensions().add(extension);
-        fm.addSeed(seed);
+        final File tempFile = File.createTempFile("foo", "bar");
+        try {
+            DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 1, tempFile, "*", "*", new HashMap<>(), aclManager);
+            Feature seed = new Feature(ArtifactId.fromMvnId("org:foo:2"));
+            Configuration foo = new Configuration("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl~foo");
+            foo.getProperties().put("user.mapping", new String[]{"org.apache.sling.testbundle:subservice=[user1]"});
+            seed.getConfigurations().add(foo);
+            Extension extension = new Extension(ExtensionType.TEXT, Extension.EXTENSION_NAME_REPOINIT, ExtensionState.REQUIRED);
+            extension.setText("create service user user1");
+            seed.getExtensions().add(extension);
+            fm.addSeed(seed);
 
-        RepoPath accessControlledPath = new RepoPath("/content/feature");
-        Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, false);
+            RepoPath accessControlledPath = new RepoPath("/content/feature");
+            Extension repoinitExtension = getRepoInitExtension(aclManager, accessControlledPath, systemUser, false);
 
-        String expected = "# origin= source=content-package" + System.lineSeparator() + normalize(
-                "create service user user1 with forced path " + remappedIntermediatePath + "\n" +
-                        "set principal ACL for user1\n" +
-                        "    allow jcr:read on /content/feature\n" +
-                        "end\n");
+            String expected = "# origin= source=content-package" + System.lineSeparator() + normalize(
+                    "create service user user1 with forced path " + remappedIntermediatePath + "\n" +
+                            "set principal ACL for user1\n" +
+                            "    allow jcr:read on /content/feature\n" +
+                            "end\n");
 
-        String actual = repoinitExtension.getText();
-        assertEquals(expected, actual);
+            String actual = repoinitExtension.getText();
+            assertEquals(expected, actual);
+        } finally {
+            tempFile.delete();
+        }
     }
 
     @Test
     public void testWhitespaceUserMapping() throws Exception {
-        DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 1, File.createTempFile("foo", "bar"), "*", "*", new HashMap<>(), aclManager);
-        Feature seed = new Feature(ArtifactId.fromMvnId("org:foo:2"));
-        
-        // create a user.mapping configuratian with an empty-mapping
-        Configuration foo = new Configuration("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl~foo");
-        Dictionary<String, Object> props = foo.getProperties();
-        props.put("user.mapping", new String[]{"serviceName:subservice=[user1]","     ","serviceName2:subservice2=[user2]"});
-        seed.getConfigurations().add(foo);
+        final File tempFile = File.createTempFile("foo", "bar");
+        try {
+            DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 1, tempFile, "*", "*", new HashMap<>(), aclManager);
+            Feature seed = new Feature(ArtifactId.fromMvnId("org:foo:2"));
+            
+            // create a user.mapping configuratian with an empty-mapping
+            Configuration foo = new Configuration("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl~foo");
+            Dictionary<String, Object> props = foo.getProperties();
+            props.put("user.mapping", new String[]{"serviceName:subservice=[user1]","     ","serviceName2:subservice2=[user2]"});
+            seed.getConfigurations().add(foo);
 
-        fm.init(ArtifactId.parse("groupId:artifactId:version1.0"));
-        fm.addConfiguration("author", foo, "/path", props);
-        
-        // verify that invalid empty mapping has been stripped (without Exception)
-        String[] result = (String[]) foo.getProperties().get("user.mapping");
-        assertArrayEquals(new String[]{"serviceName:subservice=[user1]","serviceName2:subservice2=[user2]"}, result);
+            fm.init(ArtifactId.parse("groupId:artifactId:version1.0"));
+            fm.addConfiguration("author", foo, "/path", props);
+            
+            // verify that invalid empty mapping has been stripped (without Exception)
+            String[] result = (String[]) foo.getProperties().get("user.mapping");
+            assertArrayEquals(new String[]{"serviceName:subservice=[user1]","serviceName2:subservice2=[user2]"}, result);
+        } finally {
+            tempFile.delete();
+        }
     }
 
     @Test
     public void testEmptyUserMapping() throws Exception {
-        DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 1, File.createTempFile("foo", "bar"), "*", "*", new HashMap<>(), aclManager);
+        final File tempFile = File.createTempFile("foo", "bar");
+        try {
+            DefaultFeaturesManager fm = new DefaultFeaturesManager(true, 1, tempFile, "*", "*", new HashMap<>(), aclManager);
 
-        // create a user.mapping configuratian with an empty-mapping
-        Configuration foo = new Configuration("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl~foo");
-        Dictionary<String, Object> props = foo.getProperties();
-        props.put("user.mapping", new String[]{"serviceName:subservice=[user1]","","serviceName2:subservice2=[user2]"});
+            // create a user.mapping configuratian with an empty-mapping
+            Configuration foo = new Configuration("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl~foo");
+            Dictionary<String, Object> props = foo.getProperties();
+            props.put("user.mapping", new String[]{"serviceName:subservice=[user1]","","serviceName2:subservice2=[user2]"});
 
-        fm.init(ArtifactId.parse("groupId:artifactId:version1.0"));
-        fm.addConfiguration("author", foo, "/path", props);
+            fm.init(ArtifactId.parse("groupId:artifactId:version1.0"));
+            fm.addConfiguration("author", foo, "/path", props);
 
-        // verify that invalid empty mapping has been stripped (without Exception)
-        String[] result = (String[]) foo.getProperties().get("user.mapping");
-        assertArrayEquals(new String[]{"serviceName:subservice=[user1]","serviceName2:subservice2=[user2]"}, result);
+            // verify that invalid empty mapping has been stripped (without Exception)
+            String[] result = (String[]) foo.getProperties().get("user.mapping");
+            assertArrayEquals(new String[]{"serviceName:subservice=[user1]","serviceName2:subservice2=[user2]"}, result);
+        } finally {
+            tempFile.delete();
+        }
     }
 
     @NotNull

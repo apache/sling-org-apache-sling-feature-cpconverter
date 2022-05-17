@@ -175,12 +175,13 @@ public class RepoInitTest {
 
         ((DefaultFeaturesManager) featuresManager).setAclManager(aclManager);
 
-        ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
-        when(converter.getFeaturesManager()).thenReturn(featuresManager);
-        when(converter.getAclManager()).thenReturn(aclManager);
+        try(ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()) {
+            converter.setAclManager(aclManager);
+            converter.setFeaturesManager(featuresManager);
 
-        configurationEntryHandler.handle(path, archive, entry, converter);
-        return featuresManager.getRunMode("publish").getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+            configurationEntryHandler.handle(path, archive, entry, converter);
+            return featuresManager.getRunMode("publish").getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+        }
     }
 
 }

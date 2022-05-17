@@ -24,6 +24,7 @@ import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.artifacts.ArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
@@ -66,6 +67,11 @@ public abstract class AbstractBundleEntryHandlerTest {
         when(converter.getTempDirectory()).thenReturn(tmpFolder.getRoot());
         featuresManager = Mockito.spy(FeaturesManager.class);
         when(converter.getFeaturesManager()).thenReturn(featuresManager);
+    }
+
+    @After
+    public void tearDown() throws IOException {
+        converter.close();
     }
 
 }

@@ -59,17 +59,18 @@ class TestUtils {
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
         FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);
         when(featuresManager.getTargetFeature()).thenReturn(feature);
-        ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
-        when(converter.getFeaturesManager()).thenReturn(featuresManager);
-        when(converter.getAclManager()).thenReturn(aclManager);
-        when(converter.getMainPackageAssembler()).thenReturn(packageAssembler);
+        try(ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()) {
+            converter.setFeaturesManager(featuresManager);
+            converter.setAclManager(aclManager);
+            converter.setMainPackageAssembler(packageAssembler);
 
-        handler.handle(path, archive, entry, converter);
+            handler.handle(path, archive, entry, converter);
 
-        when(packageAssembler.getEntry(anyString())).thenReturn(new File("itdoesnotexist"));
+            when(packageAssembler.getEntry(anyString())).thenReturn(new File("itdoesnotexist"));
 
-        converter.getAclManager().addRepoinitExtension(Collections.singletonList(packageAssembler), featuresManager);
-        return feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+            converter.getAclManager().addRepoinitExtension(Collections.singletonList(packageAssembler), featuresManager);
+            return feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+        }
     }
 
     /**

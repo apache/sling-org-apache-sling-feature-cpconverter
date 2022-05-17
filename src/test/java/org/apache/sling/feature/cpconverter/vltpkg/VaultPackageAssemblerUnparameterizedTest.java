@@ -20,7 +20,6 @@ import java.io.File;
 import java.net.URL;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.junit.Assert;
 import org.junit.Test;
 
