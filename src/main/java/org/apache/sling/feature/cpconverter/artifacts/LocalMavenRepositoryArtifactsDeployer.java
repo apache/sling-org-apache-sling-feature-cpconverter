@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Stores the deployed artifacts in a <a href="https://cwiki.apache.org/confluence/display/MAVENOLD/Repository+Layout+-+Final">local Maven repository layout</a>.
  */
-public final class LocalMavenRepositoryArtifactsDeployer implements ArtifactsDeployer {
+public class LocalMavenRepositoryArtifactsDeployer implements ArtifactsDeployer {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
