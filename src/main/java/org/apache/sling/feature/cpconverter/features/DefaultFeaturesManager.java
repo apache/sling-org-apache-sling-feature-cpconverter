@@ -275,6 +275,10 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
             getAclManager().addRepoinitExtention("seed", repoInitText, "seed", this);
             extractNamespaces(repoInitText, namespaceUriByPrefix);
         }
+        if (seed.getExtensions().getByName("extracted-repo-namespaces") != null) {
+            String repoInitText = seed.getExtensions().getByName("extracted-repo-namespaces").getText();
+            extractNamespaces(repoInitText, namespaceUriByPrefix);
+        }
 
     }
 
