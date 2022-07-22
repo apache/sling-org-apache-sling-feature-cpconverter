@@ -16,20 +16,8 @@
  */
 package org.apache.sling.feature.cpconverter.handlers.slinginitialcontent;
 
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.jackrabbit.util.Text;
-import org.apache.jackrabbit.vault.fs.io.Archive;
-import org.apache.jackrabbit.vault.util.PlatformNameFormat;
-import org.apache.sling.feature.cpconverter.ConverterException;
-import org.apache.sling.feature.cpconverter.vltpkg.DocViewSerializerContentHandlerException;
-import org.apache.sling.feature.cpconverter.vltpkg.SingleFileArchive;
-import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
-import org.apache.sling.jcr.contentloader.ContentReader;
-import org.apache.sling.jcr.contentloader.PathEntry;
-import org.jetbrains.annotations.NotNull;
+import static org.apache.sling.feature.cpconverter.shared.ConverterConstants.SLASH;
 
-import javax.jcr.RepositoryException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -40,7 +28,19 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Set;
 
-import static org.apache.sling.feature.cpconverter.shared.ConverterConstants.SLASH;
+import javax.jcr.RepositoryException;
+
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.jackrabbit.util.Text;
+import org.apache.jackrabbit.vault.fs.io.Archive;
+import org.apache.jackrabbit.vault.util.PlatformNameFormat;
+import org.apache.sling.feature.cpconverter.ConverterException;
+import org.apache.sling.feature.cpconverter.vltpkg.SingleFileArchive;
+import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
+import org.apache.sling.jcr.contentloader.ContentReader;
+import org.apache.sling.jcr.contentloader.PathEntry;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Handles the bundle sling initial content extraction on the jarEntry level.
@@ -105,7 +105,7 @@ class BundleSlingInitialContentJarEntryExtractor {
 
                 } catch (IOException e) {
                     throw new IOException("Can not parse " + file, e);
-                } catch (DocViewSerializerContentHandlerException | RepositoryException e) {
+                } catch (RepositoryException e) {
                     throw new IOException("Can not convert " + file + " to enhanced DocView format", e);
                 }
 
@@ -136,7 +136,6 @@ class BundleSlingInitialContentJarEntryExtractor {
         }
     }
 
-    @NotNull
     private boolean isFileDescriptor(@NotNull Set<SlingInitialContentBundleEntryMetaData> bundleEntries, @NotNull final String contentPackageEntryPath) {
 
         //sometimes we are dealing with double extensions (.json.xml)

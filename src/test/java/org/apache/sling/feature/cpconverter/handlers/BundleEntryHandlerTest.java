@@ -43,7 +43,6 @@ import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter
 import org.apache.sling.feature.cpconverter.artifacts.LocalMavenRepositoryArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
-import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -112,16 +111,10 @@ public final class BundleEntryHandlerTest {
         when(featuresManager.getRunMode(anyString())).thenReturn(feature);
         doCallRealMethod().when(featuresManager).addArtifact(anyString(), any(ArtifactId.class));
 
-        ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
-
         File testDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + "_tst_" + System.currentTimeMillis());
-        File tmpDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + "_tmp_" + System.currentTimeMillis());
-        tmpDirectory.mkdirs();
-        try {
-
-            when(converter.getArtifactsDeployer()).thenReturn(new LocalMavenRepositoryArtifactsDeployer(testDirectory));
-            when(converter.getFeaturesManager()).thenReturn(featuresManager);
-            when(converter.getTempDirectory()).thenReturn(tmpDirectory);
+        try(ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()) {
+            converter.setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(testDirectory));
+            converter.setFeaturesManager(featuresManager);
             bundleEntryHandler.handle(bundleLocation, archive, entry, converter);
 
             assertTrue(new File(testDirectory, "org/apache/felix/org.apache.felix.framework/6.0.1/org.apache.felix.framework-6.0.1.pom").exists());
@@ -133,7 +126,6 @@ public final class BundleEntryHandlerTest {
             assertEquals(startOrder, feature.getBundles().get(0).getStartOrder());
         } finally {
             deleteDirTree(testDirectory);
-            deleteDirTree(tmpDirectory);
         }
     }
 

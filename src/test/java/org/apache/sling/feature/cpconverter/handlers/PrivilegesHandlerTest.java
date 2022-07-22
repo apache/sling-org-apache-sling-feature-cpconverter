@@ -81,23 +81,23 @@ public class PrivilegesHandlerTest {
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
         FeaturesManager featuresManager = spy(DefaultFeaturesManager.class);
         when(featuresManager.getTargetFeature()).thenReturn(feature);
-        ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
-        when(converter.getFeaturesManager()).thenReturn(featuresManager);
-        when(converter.getAclManager()).thenReturn(new DefaultAclManager());
+        try(ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()) {
+            converter.setFeaturesManager(featuresManager);
 
-        handler.handle(path, archive, entry, converter);
+            handler.handle(path, archive, entry, converter);
 
-        converter.getAclManager().addRepoinitExtension(Collections.singletonList(packageAssembler), featuresManager);
+            converter.getAclManager().addRepoinitExtension(Collections.singletonList(packageAssembler), featuresManager);
 
-        Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
-        assertNotNull(repoinitExtension);
-        String str = "register privilege sling:replicate" + System.lineSeparator() +
-                     "register abstract privilege sling:test with ";
-        String txt = repoinitExtension.getText();
-        assertTrue("Expect '"+txt+"' contains '"+str+"'", txt.contains(str));
-        String aggregation1 = "with sling.replicate,jcr.read" + System.lineSeparator();
-        String aggregation2 = "with jcr.read,sling.replicate" + System.lineSeparator();
-        assertTrue(txt.contains(aggregation1) || txt.contains(aggregation2));
+            Extension repoinitExtension = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
+            assertNotNull(repoinitExtension);
+            String str = "register privilege sling:replicate" + System.lineSeparator() +
+                        "register abstract privilege sling:test with ";
+            String txt = repoinitExtension.getText();
+            assertTrue("Expect '"+txt+"' contains '"+str+"'", txt.contains(str));
+            String aggregation1 = "with sling.replicate,jcr.read" + System.lineSeparator();
+            String aggregation2 = "with jcr.read,sling.replicate" + System.lineSeparator();
+            assertTrue(txt.contains(aggregation1) || txt.contains(aggregation2));
+        }
     }
 
 }

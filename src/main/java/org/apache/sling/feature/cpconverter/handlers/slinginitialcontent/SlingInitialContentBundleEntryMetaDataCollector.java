@@ -148,8 +148,8 @@ class SlingInitialContentBundleEntryMetaDataCollector {
         }
     }
 
-    private void safelyWriteOutputStream(@NotNull long compressedSize,
-                                         @NotNull byte[] data,
+    private void safelyWriteOutputStream(long compressedSize,
+                                         byte[] data,
                                          @NotNull InputStream input,
                                          @NotNull OutputStream fos,
                                          boolean shouldClose) throws IOException {

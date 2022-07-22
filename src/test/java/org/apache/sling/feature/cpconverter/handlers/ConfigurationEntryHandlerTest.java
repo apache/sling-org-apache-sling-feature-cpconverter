@@ -158,42 +158,44 @@ public class ConfigurationEntryHandlerTest {
         when(featuresManager.getTargetFeature()).thenReturn(feature);
         doCallRealMethod().when(featuresManager).addConfiguration(anyString(), any(), anyString(), any());
         when(featuresManager.getRunMode(anyString())).thenReturn(feature);
-        ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
-        when(converter.getFeaturesManager()).thenReturn(featuresManager);
-        AclManager aclManager = spy(new DefaultAclManager());
-        when(converter.getAclManager()).thenReturn(aclManager);
-        ((DefaultFeaturesManager) featuresManager).setAclManager(aclManager);
+        try(ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()) {
+            converter.setFeaturesManager(featuresManager);
 
-        configurationEntryHandler.handle(resourceConfiguration, archive, entry, converter);
+            AclManager aclManager = spy(new DefaultAclManager());
+            converter.setAclManager(aclManager);
+            ((DefaultFeaturesManager) featuresManager).setAclManager(aclManager);
 
-        Configurations configurations = featuresManager.getRunMode(expectedRunMode).getConfigurations();
+            configurationEntryHandler.handle(resourceConfiguration, archive, entry, converter);
 
-        assertEquals(expectedConfigurationsSize, configurations.size());
+            Configurations configurations = featuresManager.getRunMode(expectedRunMode).getConfigurations();
 
-        if (this.resourceConfiguration.equals(REPOINIT_TESTCONFIG_PATH)) {
-            assertEquals(EXPECTED_REPOINIT, normalize(featuresManager.getRunMode(expectedRunMode).getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT).getText()));
-        }
+            assertEquals(expectedConfigurationsSize, configurations.size());
 
-        if (expectedConfigurationsSize != 0) {
-            Configuration configuration = configurations.get(0);
-
-            assertTrue(configuration.getPid(), configuration.getPid().startsWith(EXPECTED_PID));
-
-            Dictionary<String,Object> props = configuration.getProperties();
-            if (configuration.getPid().contains(".empty")) {
-                assertTrue(props.isEmpty());
-            } else {
-                assertEquals("Unmatching size: " + props.size(), expectedConfigurationsEntrySize, configuration.getProperties().size());
-                verify(aclManager, times(expectedMappings)).addMapping(any(Mapping.class));
+            if (this.resourceConfiguration.equals(REPOINIT_TESTCONFIG_PATH)) {
+                assertEquals(EXPECTED_REPOINIT, normalize(featuresManager.getRunMode(expectedRunMode).getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT).getText()));
             }
-            // type & value check for typed configuration
-            if (this.resourceConfiguration.equals(TYPED_TESTCONFIG_PATH)) {
-                Writer writer = new StringWriter();
-                ConfigurationJSONWriter.write(writer, configurations);
-                if (enforceServiceMappingByPrincipal) {
-                    assertEquals(EXPECTED_TYPED_CONFIG_WITH_ENFORCED_PRINCIPAL_MAPPING, writer.toString());
+
+            if (expectedConfigurationsSize != 0) {
+                Configuration configuration = configurations.get(0);
+
+                assertTrue(configuration.getPid(), configuration.getPid().startsWith(EXPECTED_PID));
+
+                Dictionary<String,Object> props = configuration.getProperties();
+                if (configuration.getPid().contains(".empty")) {
+                    assertTrue(props.isEmpty());
                 } else {
-                    assertEquals(EXPECTED_TYPED_CONFIG, writer.toString());
+                    assertEquals("Unmatching size: " + props.size(), expectedConfigurationsEntrySize, configuration.getProperties().size());
+                    verify(aclManager, times(expectedMappings)).addMapping(any(Mapping.class));
+                }
+                // type & value check for typed configuration
+                if (this.resourceConfiguration.equals(TYPED_TESTCONFIG_PATH)) {
+                    Writer writer = new StringWriter();
+                    ConfigurationJSONWriter.write(writer, configurations);
+                    if (enforceServiceMappingByPrincipal) {
+                        assertEquals(EXPECTED_TYPED_CONFIG_WITH_ENFORCED_PRINCIPAL_MAPPING, writer.toString());
+                    } else {
+                        assertEquals(EXPECTED_TYPED_CONFIG, writer.toString());
+                    }
                 }
             }
         }

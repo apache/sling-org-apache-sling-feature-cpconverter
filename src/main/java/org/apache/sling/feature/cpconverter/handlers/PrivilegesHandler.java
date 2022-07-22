@@ -22,8 +22,6 @@ import org.apache.jackrabbit.vault.fs.spi.PrivilegeDefinitions;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Objects;
-
 public class PrivilegesHandler extends AbstractRegexEntryHandler {
 
     public PrivilegesHandler() {
@@ -34,7 +32,7 @@ public class PrivilegesHandler extends AbstractRegexEntryHandler {
     public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter) {
         PrivilegeDefinitions privileges = archive.getMetaInf().getPrivileges();
         if (privileges != null) {
-            Objects.requireNonNull(converter.getAclManager()).addPrivilegeDefinitions(privileges);
+            converter.getAclManager().addPrivilegeDefinitions(privileges);
         }
     }
 }

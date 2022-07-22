@@ -155,10 +155,10 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
             try (InputStream strippedBundleInput = bundleSlingInitialContentExtractor.extract(context)) {
                 if (strippedBundleInput != null && slingInitialContentPolicy == ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.EXTRACT_AND_REMOVE) {
                     id = id.changeVersion(id.getVersion() + "-" + ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER);
-                    Objects.requireNonNull(converter.getArtifactsDeployer()).deploy(new InputStreamArtifactWriter(strippedBundleInput), id);
+                    Objects.requireNonNull(converter.getArtifactsDeployer()).deploy(new InputStreamArtifactWriter(strippedBundleInput), runMode, id);
                 } else {
                     try (InputStream originalBundleInput = Files.newInputStream(originalBundleFile)) {
-                        Objects.requireNonNull(converter.getArtifactsDeployer()).deploy(new InputStreamArtifactWriter(originalBundleInput), id);
+                        Objects.requireNonNull(converter.getArtifactsDeployer()).deploy(new InputStreamArtifactWriter(originalBundleInput), runMode, id);
                     }
                 }
             }
@@ -173,86 +173,108 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
         }
     }
 
-    protected @NotNull Artifact extractFeatureArtifact(@NotNull String bundleName, @NotNull JarFile jarFile) throws IOException {
-        String artifactId = null;
+    private @Nullable ArtifactId extractArtifactIdFromPomProperties(@NotNull String bundleName, @NotNull final JarFile jarFile, @NotNull final JarEntry jarEntry) throws IOException {
+        logger.info("Reading '{}' bundle GAV from {}...", bundleName, jarEntry.getName());
+        final Properties properties = new Properties();
+        try (final InputStream input = jarFile.getInputStream(jarEntry)) {
+            properties.load(input);
+        }
+        final String groupId = properties.getProperty(NAME_GROUP_ID);
+        final String artifactId = properties.getProperty(NAME_ARTIFACT_ID);
+        final String version = properties.getProperty(PackageProperties.NAME_VERSION);
+        if ( groupId != null && artifactId != null && version != null ) {
+            return new ArtifactId(groupId, artifactId, version, null, null);
+        }
+        return null;
+    }
+
+    private @Nullable ArtifactId extractArtifactIdFromPom(@NotNull String bundleName, @NotNull final JarFile jarFile, @NotNull final JarEntry jarEntry) {
+        logger.info("Reading '{}' bundle GAV from {}...", bundleName, jarEntry.getName());
+        String path = jarEntry.getName().substring(0, jarEntry.getName().length() - "/pom.xml".length());
+        final String groupId = path.substring("META-INF/maven/".length(), path.lastIndexOf('/'));
+        String artifactId = path.substring(path.lastIndexOf('/') + 1);
         String version = null;
-        String groupId = null;
-        String classifier = null;
+        if (artifactId.indexOf('-') != -1) {
+            version = artifactId.substring(artifactId.indexOf('-'));
+            artifactId = artifactId.substring(0, artifactId.indexOf('-'));
+        } else if (bundleName.indexOf('-') != -1){
+            try {
+                String versionString = bundleName.substring(bundleName.indexOf('-') + 1);
+                if (!parseVersion(versionString).equals(Version.emptyVersion)) {
+                    version = versionString;
+                }
+            } catch (IllegalArgumentException ex) {
+                // Not a version
+            }
+        }
+        if ( groupId != null && artifactId != null && version != null ) {
+            return new ArtifactId(groupId, artifactId, version, null, null);
+        }
+        return null;
+    }
 
+    private @NotNull ArtifactId extractArtifactIdFromSymbolicName(@NotNull final JarFile jarFile) throws IOException {
+        // maybe the included jar is just an OSGi bundle but not a valid Maven artifact
+        String groupId = StringUtils.substringBefore(getCheckedProperty(jarFile.getManifest(), Constants.BUNDLE_SYMBOLICNAME), ";");
+        String artifactId = null;
+
+        // Make sure there are not spaces in the name to adhere to the Maven Group Id specification
+        groupId = groupId.replace(' ', '_').replace(':', '_').replace('/', '_').replace('\\', '_');
+        if (groupId.indexOf('.') != -1) {
+            artifactId = groupId.substring(groupId.lastIndexOf('.') + 1);
+            groupId = groupId.substring(0, groupId.lastIndexOf('.'));
+        }
+        if (artifactId == null || artifactId.isEmpty()) {
+            artifactId = groupId;
+        }
+        final Version osgiVersion = Version.parseVersion(getCheckedProperty(jarFile.getManifest(), Constants.BUNDLE_VERSION));
+        final String version = osgiVersion.getMajor() + "." + osgiVersion.getMinor() + "." + osgiVersion.getMicro() + (osgiVersion.getQualifier().isEmpty() ? "" : "-" + osgiVersion.getQualifier());
+        
+        return new ArtifactId(groupId, artifactId, version, null, null);
+    }
+
+    protected @NotNull Artifact extractFeatureArtifact(@NotNull String bundleName, @NotNull JarFile jarFile) throws IOException {
+        ArtifactId resultId = null;
         for (Enumeration<JarEntry> e = jarFile.entries(); e.hasMoreElements();) {
-            JarEntry jarEntry = e.nextElement();
-            String nextEntryName = jarEntry.getName();
+            final JarEntry jarEntry = e.nextElement();
 
-            if (POM_PROPERTIES_PATTERN.matcher(nextEntryName).matches()) {
-                logger.info("Reading '{}' bundle GAV from {}...", bundleName, nextEntryName);
-                Properties properties = new Properties();
-                try (InputStream input = jarFile.getInputStream(jarEntry)) {
-                    properties.load(input);
-                }
-                groupId = properties.getProperty(NAME_GROUP_ID);
-                artifactId = properties.getProperty(NAME_ARTIFACT_ID);
-                version = properties.getProperty(PackageProperties.NAME_VERSION);
+            if (POM_PROPERTIES_PATTERN.matcher(jarEntry.getName()).matches()) {
+                resultId = extractArtifactIdFromPomProperties(bundleName, jarFile, jarEntry);
 
-            } else if (POM_XML_PATTERN.matcher(nextEntryName).matches()) {
-                logger.info("Reading '{}' bundle GAV from {}...", bundleName, nextEntryName);
-                String path = nextEntryName.substring(0, nextEntryName.length() - "/pom.xml".length());
-                groupId = path.substring("META-INF/maven/".length(), path.lastIndexOf('/'));
-                artifactId = path.substring(path.lastIndexOf('/') + 1);
-                if (artifactId.indexOf('-') != -1) {
-                    version = artifactId.substring(artifactId.indexOf('-'));
-                    artifactId = artifactId.substring(0, artifactId.indexOf('-'));
-                } else if (bundleName.indexOf('-') != -1){
-                    try {
-                        String versionString = bundleName.substring(bundleName.indexOf('-') + 1);
-                        if (!parseVersion(versionString).equals(Version.emptyVersion)) {
-                            version = versionString;
-                        }
-                    } catch (IllegalArgumentException ex) {
-                        // Not a version
-                    }
-                }
+            } else if (POM_XML_PATTERN.matcher(jarEntry.getName()).matches()) {
+                resultId = extractArtifactIdFromPom(bundleName, jarFile, jarEntry);
+
             }
 
-            if (groupId != null && artifactId != null && version != null) {
+            if (resultId != null) {
                 // bundleName is now the bare name without extension
-                String synthesized = artifactId + "-" + version;
+                final String synthesized = resultId.getArtifactId().concat("-").concat(resultId.getVersion());
 
                 // it was the pom.properties  we were looking for
-                if (bundleName.startsWith(synthesized) || bundleName.equals(artifactId)) {
+                if (bundleName.startsWith(synthesized) || bundleName.equals(resultId.getArtifactId())) {
 
                     // check the artifact has a classifier in the bundle file name
                     if (synthesized.length() < bundleName.length()) {
                         String suffix = bundleName.substring(synthesized.length());
                         if (suffix.length() > 1 && suffix.startsWith("-")) {
-                            classifier = suffix.substring(1);
-                            logger.info("Inferred classifier of '{}:{}:{}' to be '{}'", groupId, artifactId, version, classifier);
+                            resultId = resultId.changeClassifier(suffix.substring(1));
+                            logger.info("Inferred classifier of '{}'", resultId.toMvnId());
                         }
                     }
                     // no need to iterate further
                     break;
                 }
             }
+            // resultId should be reset here, however, this will make a lot of tests fail
+            // resultId = null;
         }
 
-
-        if (groupId == null) {
-            // maybe the included jar is just an OSGi bundle but not a valid Maven artifact
-            groupId = StringUtils.substringBefore(getCheckedProperty(jarFile.getManifest(), Constants.BUNDLE_SYMBOLICNAME), ";");
-            // Make sure there are not spaces in the name to adhere to the Maven Group Id specification
-            groupId = groupId.replace(' ', '_').replace(':', '_').replace('/', '_').replace('\\', '_');
-            if (groupId.indexOf('.') != -1) {
-                artifactId = groupId.substring(groupId.lastIndexOf('.') + 1);
-                groupId = groupId.substring(0, groupId.lastIndexOf('.'));
-            }
-            if (artifactId == null || artifactId.isEmpty()) {
-                artifactId = groupId;
-            }
-            Version osgiVersion = Version.parseVersion(getCheckedProperty(jarFile.getManifest(), Constants.BUNDLE_VERSION));
-            version = osgiVersion.getMajor() + "." + osgiVersion.getMinor() + "." + osgiVersion.getMicro() + (osgiVersion.getQualifier().isEmpty() ? "" : "-" + osgiVersion.getQualifier());
+        if (resultId == null) {
+            resultId = extractArtifactIdFromSymbolicName(jarFile);
         }
 
         // create artifact and store symbolic name and version in metadata
-        final Artifact result = new Artifact(new ArtifactId(groupId, artifactId, version, classifier, JAR_TYPE));
+        final Artifact result = new Artifact(resultId.changeType(JAR_TYPE));
         setMetadataFromManifest(jarFile.getManifest(), Constants.BUNDLE_VERSION, result, false);
         setMetadataFromManifest(jarFile.getManifest(), Constants.BUNDLE_SYMBOLICNAME, result, true);
 

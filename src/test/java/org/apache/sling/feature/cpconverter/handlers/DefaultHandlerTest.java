@@ -21,8 +21,6 @@ import org.apache.jackrabbit.vault.util.Constants;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -30,8 +28,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 public class DefaultHandlerTest {
-
-    private static final Logger log = LoggerFactory.getLogger(DefaultHandlerTest.class);
     
     private final VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
     
@@ -52,39 +48,42 @@ public class DefaultHandlerTest {
     public void testHandleInstallHooksTrue() throws Exception {
         Archive archive = mock(Archive.class);
         Archive.Entry entry = mock(Archive.Entry.class);
-        ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
+        try(ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()) {
 
-        DefaultHandler handler = new DefaultHandler(assembler, true);
-        handler.handle("/" + Constants.META_DIR + "/" + Constants.HOOKS_DIR, archive, entry, converter);
-        
-        verifyNoInteractions(assembler, archive, entry, converter);
+            DefaultHandler handler = new DefaultHandler(assembler, true);
+            handler.handle("/" + Constants.META_DIR + "/" + Constants.HOOKS_DIR, archive, entry, converter);
+            
+            verifyNoInteractions(assembler, archive, entry);
+        }
     }
 
     @Test
     public void testHandleInstallHooksFalse() throws Exception {
         Archive archive = mock(Archive.class);
         Archive.Entry entry = mock(Archive.Entry.class);
-        ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
-        String path = "/" + Constants.META_DIR + "/" + Constants.HOOKS_DIR + "/subdir";
+        try(ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()) {
+            String path = "/" + Constants.META_DIR + "/" + Constants.HOOKS_DIR + "/subdir";
 
-        DefaultHandler handler = new DefaultHandler(assembler, false);
-        handler.handle(path, archive, entry, converter);
+            DefaultHandler handler = new DefaultHandler(assembler, false);
+            handler.handle(path, archive, entry, converter);
 
-        verifyNoInteractions(archive, entry, converter);
-        verify(assembler).addEntry(path, archive, entry);
+            verifyNoInteractions(archive, entry);
+            verify(assembler).addEntry(path, archive, entry);
+        }
     }
 
     @Test
     public void testHandleRegularPath() throws Exception {
         Archive archive = mock(Archive.class);
         Archive.Entry entry = mock(Archive.Entry.class);
-        ContentPackage2FeatureModelConverter converter = mock(ContentPackage2FeatureModelConverter.class);
-        String path = "/" + Constants.ROOT_DIR + "/content" + Constants.DOT_CONTENT_XML;
+        try(ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()) {
+            String path = "/" + Constants.ROOT_DIR + "/content" + Constants.DOT_CONTENT_XML;
 
-        DefaultHandler handler = new DefaultHandler(assembler, true);
-        handler.handle(path, archive, entry, converter);
+            DefaultHandler handler = new DefaultHandler(assembler, true);
+            handler.handle(path, archive, entry, converter);
 
-        verifyNoInteractions(archive, entry, converter);
-        verify(assembler).addEntry(path, archive, entry);
+            verifyNoInteractions(archive, entry);
+            verify(assembler).addEntry(path, archive, entry);
+        }
     }
 }

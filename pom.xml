@@ -26,7 +26,7 @@
   </parent>
 
   <artifactId>org.apache.sling.feature.cpconverter</artifactId>
-  <version>1.1.15-SNAPSHOT</version>
+  <version>1.1.17-SNAPSHOT</version>
 
   <name>Apache Sling Content-Package to Feature Model Converter</name>
   <description>Content Package to Feature Model converter tools for Apache Sling</description>
@@ -36,8 +36,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <picocli.version>3.6.0</picocli.version>
     <org.apache.jackrabbit.vault.version>3.6.0</org.apache.jackrabbit.vault.version>
-    <jackrabbit-api.version>2.18.4</jackrabbit-api.version>
-    <jackrabbit-spi-commons.version>2.18.4</jackrabbit-spi-commons.version>
+    <jackrabbit-api.version>1.42.0</jackrabbit-api.version>
+    <jackrabbit-spi-commons.version>2.20.4</jackrabbit-spi-commons.version>
     <mockito-core.version>3.2.0</mockito-core.version>
     <license-maven-plugin.version>1.16</license-maven-plugin.version>
     <appassembler-maven-plugin.version>2.0.0</appassembler-maven-plugin.version>
@@ -79,6 +79,13 @@
       <optional>true</optional>
     </dependency>
 
+    <!-- JetBrains annotations for null-analysis (SLING-7798) -->
+    <dependency>
+      <groupId>org.jetbrains</groupId>
+      <artifactId>annotations</artifactId>
+      <scope>provided</scope>
+    </dependency>
+            
     <!--
      | Content-Package
     -->
@@ -86,6 +93,19 @@
       <groupId>org.apache.jackrabbit.vault</groupId>
       <artifactId>org.apache.jackrabbit.vault</artifactId>
       <version>${org.apache.jackrabbit.vault.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.jackrabbit.vault</groupId>
+      <artifactId>vault-validation</artifactId>
+      <version>${org.apache.jackrabbit.vault.version}</version>
+      <scope>compile</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>stax-utils</groupId>
+      <artifactId>stax-utils</artifactId>
+      <version>snapshot-20040917</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -120,6 +140,12 @@
       <artifactId>org.apache.sling.feature.extension.apiregions</artifactId>
       <version>1.4.4</version>
       <scope>compile</scope>
+      <exclusions><!-- exclude all transitive dependencies (even provided ones for sling-maven-enforcer-rules) -->
+        <exclusion>
+          <artifactId>*</artifactId>
+          <groupId>*</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.sling</groupId>
@@ -138,6 +164,12 @@
       <artifactId>org.apache.felix.utils</artifactId>
       <version>1.11.8</version>
       <scope>compile</scope>
+      <exclusions><!-- exclude all transitive dependencies (even provided ones for sling-maven-enforcer-rules) -->
+        <exclusion>
+          <artifactId>*</artifactId>
+          <groupId>*</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.osgi</groupId>
@@ -157,17 +189,12 @@
       <version>1.2.14</version>
       <scope>compile</scope>
     </dependency>
-    <dependency>
-      <groupId>org.apache.felix</groupId>
-      <artifactId>org.apache.felix.cm.json</artifactId>
-      <version>1.0.6</version>
-      <scope>compile</scope>
-    </dependency>
+    
     <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.annotation.versioning</artifactId>
       <version>1.1.0</version>
-      <scope>compile</scope>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.osgi</groupId>
@@ -187,7 +214,6 @@
       <version>1.0.0</version>
       <scope>compile</scope>
     </dependency>
-
     <!--
      | Handle .config files
     -->
@@ -196,10 +222,28 @@
       <artifactId>org.apache.felix.configadmin</artifactId>
       <version>1.9.22</version>
       <scope>compile</scope>
+      <exclusions><!-- exclude all transitive dependencies (even provided ones for sling-maven-enforcer-rules) -->
+        <exclusion>
+          <artifactId>*</artifactId>
+          <groupId>*</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.felix</groupId>
+      <artifactId>org.apache.felix.cm.json</artifactId>
+      <version>1.0.6</version>
+      <scope>compile</scope>
+      <exclusions><!-- exclude all transitive dependencies (even provided ones for sling-maven-enforcer-rules) -->
+        <exclusion>
+          <artifactId>*</artifactId>
+          <groupId>*</groupId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.jackrabbit</groupId>
-      <artifactId>jackrabbit-api</artifactId>
+      <artifactId>oak-jackrabbit-api</artifactId>
       <version>${jackrabbit-api.version}</version>
       <scope>compile</scope>
     </dependency>
@@ -209,15 +253,30 @@
     <dependency>
       <groupId>org.apache.sling</groupId>
       <artifactId>org.apache.sling.jcr.contentloader</artifactId>
-      <version>2.4.2</version>
+      <version>2.5.2</version>
       <scope>compile</scope>
+      <exclusions>
+          <!-- this is an embedded dependency -->
+          <exclusion>
+              <groupId>net.sf.kxml</groupId>
+              <artifactId>kxml2</artifactId>
+          </exclusion>
+      </exclusions>
     </dependency>
+    <!-- transitive (but provided) dependency of jcr.contentloader -->
     <dependency>
       <groupId>org.apache.sling</groupId>
       <artifactId>org.apache.sling.commons.osgi</artifactId>
-      <version>2.3.0</version>
+      <version>2.4.0</version>
       <scope>compile</scope>
-     </dependency>
+      <exclusions>
+          <!-- exclude provided transitive dependencies sling-maven-enforcer-rules -->
+          <exclusion>
+              <groupId>org.osgi</groupId>
+              <artifactId>org.osgi.compendium</artifactId>
+          </exclusion>
+      </exclusions>
+    </dependency>
     <dependency>
       <groupId>org.apache.sling</groupId>
       <artifactId>org.apache.sling.contentparser.api</artifactId>
@@ -250,19 +309,7 @@
       <version>2.21.3</version>
       <scope>compile</scope>
     </dependency>
-    <dependency>
-      <groupId>org.apache.jackrabbit.vault</groupId>
-      <artifactId>vault-validation</artifactId>
-      <version>3.6.0</version>
-      <scope>compile</scope>
-    </dependency>
 
-    <dependency>
-      <groupId>stax-utils</groupId>
-      <artifactId>stax-utils</artifactId>
-      <version>snapshot-20040917</version>
-      <scope>compile</scope>
-    </dependency>
     
     <!-- https://mvnrepository.com/artifact/org.xmlunit/xmlunit-core -->
     <dependency>
@@ -408,6 +455,70 @@
               <descriptors>
                 <descriptor>${basedir}/src/main/assembly/bin.xml</descriptor>
               </descriptors>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- validate that all necessary dependencies are part of the application -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.sling</groupId>
+            <artifactId>maven-enforcer-rules</artifactId>
+            <version>1.0.0</version>
+          </dependency>
+        </dependencies>
+        <executions>
+          <execution>
+            <id>enforce-complete-runtime-classpath</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireProvidedDependenciesInRuntimeClasspath
+                    implementation="org.apache.sling.maven.enforcer.RequireProvidedDependenciesInRuntimeClasspath">
+                  <excludes>
+                    <exclude>javax.servlet:javax.servlet-api</exclude><!-- not used in the CLI context -->
+                    <exclude>javax.servlet:servlet-api</exclude><!-- not used in the CLI context -->
+                    <exclude>org.apache.felix:org.apache.felix.scr.annotations</exclude><!-- annotations not used at run time -->
+                    <exclude>org.jetbrains:annotations</exclude>
+                    <exclude>com.google.code.findbugs:jsr305</exclude>
+                    <exclude>com.google.code.findbugs:findbugs-annotations</exclude>
+                    <exclude>org.apache.felix:org.apache.felix.healthcheck.annotation</exclude>
+                    <exclude>org.osgi:org.osgi.service.component.annotations</exclude>
+                    <exclude>org.osgi:org.osgi.service.metatype.annotations</exclude>
+                    <exclude>org.osgi:org.osgi.annotation</exclude>
+                    <exclude>org.osgi:org.osgi.annotation.versioning</exclude>
+                    <exclude>org.osgi:osgi.annotation</exclude>
+                    <exclude>org.osgi:org.osgi.annotation.bundle</exclude>
+                    <exclude>org.apache.jackrabbit:jackrabbit-spi2dav</exclude><!-- transitive dep of org.apache.jackrabbit.vault, not used here -->
+                    <exclude>*:txw2</exclude><!-- embedded in vault-core -->
+                    <exclude>*:woodstox-core</exclude><!-- embedded in vault-core -->
+                    <exclude>*:stax2-api</exclude><!-- embedded in vault-core -->
+                    <exclude>*:maven-artifact</exclude><!-- embedded in vault-core -->
+                    <exclude>*:h2</exclude><!-- embedded in vault-core -->
+                    <exclude>org.osgi:osgi.core</exclude><!-- individual OSGi chapter dependencies used instead -->
+                    <exclude>org.osgi:org.osgi.core</exclude><!-- individual OSGi chapter dependencies used instead -->
+                    <exclude>org.apache.felix:org.apache.felix.shell</exclude><!-- transitive provided dep. of jcr contentloader not being used -->
+                    <exclude>org.apache.felix:org.apache.felix.converter</exclude><!-- has been relocated to dependency org.osgi.util.converter -->
+                    <exclude>org.mockito:mockito-core</exclude><!-- incorrectly marked as provided scope prior to https://github.com/apache/sling-org-apache-sling-commons-osgi/commit/2f786f579f9c4afcaa1ff34373e06c168801bbcd -->
+                    <exclude>org.apache.geronimo.specs:geronimo-json_1.0_spec</exclude><!-- covered by backwards-compatible geronime-json_1.1_spec -->
+                    <exclude>biz.aQute.bnd:biz.aQute.bndlib</exclude><!-- only used for its annotations, remove once https://github.com/apache/sling-org-apache-sling-feature-launcher/commit/36b7fe229780b06f81db0a97f2e8e86726a3158c is integrated -->
+                    <exclude>biz.aQute:bndlib</exclude><!-- only used for its annotations, remove once https://github.com/apache/sling-org-apache-sling-jcr-api/commit/95e0761030aa6078ad89f9b3f05d55dce92fe858#diff-9c5fb3d1b7e3b0f54bc5c4182965c4fe1f9023d449017cece3005d3f90e8e4d8 is integrated -->
+                    <exclude>org.apache.jackrabbit:jackrabbit-api</exclude><!-- relocated to org.apache.jackrabbit:oak-jackrabbit-api -->
+                    <exclude>org.apache.sling:org.apache.sling.jcr.base:jar</exclude><!-- transitive dependency of org.apache.sling.jcr.contentloader, not used in this context -->
+                    <exclude>org.apache.sling:org.apache.sling.serviceusermapper</exclude><!-- transitive dependency of org.apache.sling.jcr.contentloader, not used in this context -->
+                    <exclude>org.apache.sling:org.apache.sling.commons.mime</exclude><!-- transitive dependency of org.apache.sling.jcr.contentloader, not used in this context -->
+                    <exclude>org.apache.sling:org.apache.sling.settings</exclude><!-- transitive dependency of org.apache.sling.jcr.contentloader, not used in this context -->
+                    <exclude>org.apache.felix:org.apache.felix.healthcheck.api</exclude><!-- transitive dependency of org.apache.sling.jcr.contentloader, not used in this context -->
+                    <exclude>org.apache.sling:org.apache.sling.jcr.api</exclude><!-- transitive dependency of org.apache.sling.jcr.contentloader, not used in this context -->
+                    <exclude>org.apache.sling:org.apache.sling.api</exclude><!-- transitive dependency of org.apache.sling.jcr.contentloader, not used in this context -->
+                  </excludes>
+                </requireProvidedDependenciesInRuntimeClasspath>
+              </rules>
             </configuration>
           </execution>
         </executions>

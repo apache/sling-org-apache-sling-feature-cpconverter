@@ -48,6 +48,7 @@ import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
+import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.ArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.artifacts.FileArtifactWriter;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
@@ -82,7 +83,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     private EntryHandlersManager handlersManager;
 
-    private AclManager aclManager;
+    private AclManager aclManager = new DefaultAclManager();
 
     private FeaturesManager featuresManager;
 
@@ -197,7 +198,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return this;
     }
 
-    public @Nullable AclManager getAclManager() {
+    public @NotNull AclManager getAclManager() {
         return aclManager;
     }
 
@@ -452,9 +453,9 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                     if (unreferencedArtifactsDeployer == null) {
                         throw new IllegalStateException("ContentTypePackagePolicy PUT_IN_DEDICATED_FOLDER requires a valid deployer ");
                     }
-                    unreferencedArtifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), mvnPackageId);
-                    logger.info("Put converted package of PackageType.CONTENT {} (content-package id: {}) in {} (not referenced in feature model)",
-                            mvnPackageId.getArtifactId(), vaultPackage.getId(), unreferencedArtifactsDeployer.getBaseDirectory());
+                    final String location = unreferencedArtifactsDeployer.deploy(new FileArtifactWriter(contentPackageArchive), runMode, mvnPackageId);
+                    logger.info("Put converted package of PackageType.CONTENT {} (content-package id: {}) at {} (not referenced in feature model)",
+                            mvnPackageId.getArtifactId(), vaultPackage.getId(), location);
                     break;
                 case REFERENCE:
                     deploy(assembler, mvnPackageId, runMode);
@@ -488,7 +489,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             try {
                 File finalContentPackageArchive = assembler.createPackage();
                 // deploy the new content-package to the local mvn bundles dir
-                deployer.deploy(new FileArtifactWriter(finalContentPackageArchive), mvnPackageId);
+                deployer.deploy(new FileArtifactWriter(finalContentPackageArchive), runMode, mvnPackageId);
             } catch (Exception ex) {
                 throw new RuntimeException(ex);
             }
