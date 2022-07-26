@@ -23,7 +23,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -39,6 +41,7 @@ import java.util.Collections;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -59,6 +62,7 @@ import org.apache.sling.feature.Artifact;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.SlingInitialContentPolicy;
+import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.SimpleFolderArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
@@ -535,6 +539,78 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         assertEquals("mysite.core", result.getMetadata().get(Constants.BUNDLE_SYMBOLICNAME));
         assertEquals("1.0.0.SNAPSHOT", result.getMetadata().get(Constants.BUNDLE_VERSION));
     }
+    
+    @Test
+    public void testSlingInitialContentWithTwoNamespaceEntries() throws IOException, ConverterException {
+        setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite.dual-sling-namespace-entries-core-1.0.0-SNAPSHOT.jar");
+        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
+        converter.setEntryHandlersManager(handlersManager);
+        DefaultAclManager aclManager = spy(DefaultAclManager.class);
+        
+        converter.setAclManager(aclManager);
+        Map<String, String> namespaceRegistry = Collections.singletonMap("granite", "http://www.adobe.com/jcr/granite/1.0");
+        when(featuresManager.getNamespaceUriByPrefix()).thenReturn(namespaceRegistry);
+
+        File targetFolder = tmpFolder.newFolder();
+        when(converter.getArtifactsDeployer()).thenReturn(new SimpleFolderArtifactsDeployer(targetFolder));
+        when(converter.isSubContentPackageIncluded("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-dual-nodetype-def.jar-APPLICATION")).thenReturn(true);
+
+        VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
+        Properties props = new Properties();
+        props.setProperty(PackageProperties.NAME_GROUP, "com.mysite");
+        props.setProperty(PackageProperties.NAME_NAME, "mysite.core");
+        props.setProperty(PackageProperties.NAME_VERSION, "1.0.0-SNAPSHOT");
+        when(assembler.getPackageProperties()).thenReturn(props);
+        converter.setMainPackageAssembler(assembler);
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
+
+        handler.setBundleSlingInitialContentExtractor(extractor);
+        handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
+        handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-dual-nodetype-def.jar", archive, entry, converter);
+
+        converter.deployPackages();
+        // verify generated bundle
+        try (JarFile jarFile = new JarFile(new File(targetFolder, "mysite.core-1.0.0-SNAPSHOT-cp2fm-converted.jar"))) {
+            String bundleVersion = jarFile.getManifest().getMainAttributes().getValue(Constants.BUNDLE_VERSION);
+            assertNotNull(bundleVersion);
+            assertNull(jarFile.getManifest().getMainAttributes().getValue("Sling-Initial-Content"));
+            assertEquals("SNAPSHOT_cp2fm-converted", Version.parseVersion(bundleVersion).getQualifier());
+            // make sure the initial content is no longer contained
+            assertNull(jarFile.getEntry("SLING-INF/app-root/"));
+        }
+        // verify generated package
+        try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "mysite.core-apps-1.0.0-SNAPSHOT-cp2fm-converted.zip"));
+             Archive archive = vaultPackage.getArchive()) {
+            archive.open(true);
+            PackageId targetId = PackageId.fromString("com.mysite:mysite.core-apps:1.0.0-SNAPSHOT-cp2fm-converted");
+            assertEquals(targetId, vaultPackage.getId());
+            Entry entry = archive.getEntry("jcr_root/apps/mysite/sling-initial-content-test/my-first-node/.content.xml");
+            assertNotNull("Archive does not contain expected item", entry);
+        }
+        // verify nothing else has been deployed
+        assertEquals(2, targetFolder.list().length);
+        // verify changed id
+        ArgumentCaptor<Artifact> captor = ArgumentCaptor.forClass(Artifact.class);
+        verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
+        final Artifact result = captor.getValue();
+        assertNotNull(result);
+        assertEquals(ArtifactId.fromMvnId("com.mysite:mysite.core:1.0.0-SNAPSHOT-cp2fm-converted"), result.getId());
+        assertEquals("mysite.core", result.getMetadata().get(Constants.BUNDLE_SYMBOLICNAME));
+        assertEquals("1.0.0.SNAPSHOT", result.getMetadata().get(Constants.BUNDLE_VERSION));
+        
+        ArgumentCaptor<String> nodeTypeRegistrationCaptor = ArgumentCaptor.forClass(String.class);
+        verify(aclManager, times(2)).addNodetypeRegistration(nodeTypeRegistrationCaptor.capture());
+        List<String> values = nodeTypeRegistrationCaptor.getAllValues();
+        
+        assertEquals("<my = 'http://namespace.com/my'>\n\n", values.get(0));
+        assertEquals("[my:node] \n" +
+                "\t- title (string)\n" +
+                "\t- description (string)\n" +
+                "  \n", values.get(1));
+
+    }
+
+    
 
     @Test
     public void testSlingInitialContentContainingConfigurationExtractAndRemove() throws Exception {

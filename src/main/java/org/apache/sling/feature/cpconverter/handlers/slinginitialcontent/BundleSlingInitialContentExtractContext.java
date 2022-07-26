@@ -16,10 +16,12 @@
  */
 package org.apache.sling.feature.cpconverter.handlers.slinginitialcontent;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.vltpkg.JcrNamespaceRegistry;
 import org.apache.sling.jcr.contentloader.PathEntry;
+import org.codehaus.plexus.util.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -37,6 +39,8 @@ import java.util.jar.Manifest;
  */
 public class BundleSlingInitialContentExtractContext {
 
+    private static final String SLING_NODETYPES = "Sling-Nodetypes";
+
     private final ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy;
     private final String path;
     private final ArtifactId bundleArtifactId;
@@ -45,7 +49,7 @@ public class BundleSlingInitialContentExtractContext {
     private final String runMode;
     private final Manifest manifest;
     private final JcrNamespaceRegistry namespaceRegistry;
-    private final String slingNodeTypes;
+    private final String[] slingNodeTypes;
     private final List<PathEntry> pathEntryList = new ArrayList<>();
 
     public BundleSlingInitialContentExtractContext(@NotNull ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy,
@@ -67,8 +71,15 @@ public class BundleSlingInitialContentExtractContext {
                         jarFile,
                         converter.getFeaturesManager().getNamespaceUriByPrefix()
                 ).provideRegistryFromBundle();
-        this.slingNodeTypes = this.manifest.getMainAttributes().getValue("Sling-Nodetypes");
-                
+        
+        String nodeTypesString = this.manifest.getMainAttributes().getValue(SLING_NODETYPES);
+        
+        if(StringUtils.isNotBlank(nodeTypesString)){
+            this.slingNodeTypes = StringUtils.split(nodeTypesString, ",") ;
+        }else{
+            this.slingNodeTypes = new String[]{};
+        }
+             
         Iterator<PathEntry> pathEntries = PathEntry.getContentPaths(manifest, -1);
 
         if (pathEntries != null) {
@@ -126,7 +137,6 @@ public class BundleSlingInitialContentExtractContext {
         if(slingNodeTypes == null){
             return false;
         }
-        
-        return jarEntry.getName().equals(slingNodeTypes);
+        return ArrayUtils.contains(slingNodeTypes, jarEntry.getName());
     }
 }
