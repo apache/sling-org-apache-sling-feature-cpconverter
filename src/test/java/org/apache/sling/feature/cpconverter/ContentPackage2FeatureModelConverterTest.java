@@ -66,8 +66,12 @@ import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
+import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
+import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
+import org.apache.sling.repoinit.parser.operations.Operation;
+import org.apache.sling.repoinit.parser.operations.RegisterNodetypes;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -369,6 +373,41 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         }
     }
 
+    @Test
+    public void testNamespaceToRepoInitConversion() throws Exception {
+        URL packageUrl = getClass().getResource("mysite-slinginitialcontent-namespace.all-1.0.0-SNAPSHOT.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+
+        converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
+                    .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
+                    .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                    .setContentTypePackagePolicy(PackagePolicy.PUT_IN_DEDICATED_FOLDER)
+                    .setUnreferencedArtifactsDeployer(new LocalMavenRepositoryArtifactsDeployer( new File(outputDirectory, "mutable-content")))
+                    .setEntryHandlersManager(
+                            new DefaultEntryHandlersManager(Collections.emptyMap(), true,
+                                    ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.EXTRACT_AND_REMOVE, ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT)
+                    )
+                    .convert(packageFile);
+
+        File featureFile = new File(outputDirectory, "mysite.all.json");
+        try (Reader reader = new FileReader(featureFile)) {
+            Feature feature = FeatureJSONReader.read(reader, "content1");
+            Extension repoInit = feature.getExtensions().getByName("repoinit");
+            RepoInitParserService repoInitParserService = new RepoInitParserService();
+            
+            try(Reader repoInitReadder = new StringReader(repoInit.getText())){
+                List<Operation> operations = repoInitParserService.parse(repoInitReadder);
+                
+                boolean found = operations.stream().anyMatch(o -> o instanceof RegisterNodetypes);
+                assertTrue("There must be a register node type extension in the feature model's repoinit", found);
+            }
+            
+        }
+        System.out.println(outputDirectory.getAbsolutePath());
+    }
+            
     @Test
     public void convertContentPackageRemoveInstallHooks() throws Exception {
         URL packageUrl = getClass().getResource("test-with-install-hooks.zip");
