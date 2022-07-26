@@ -141,7 +141,7 @@ class SlingInitialContentBundleEntryMetaDataCollector {
 
                 SlingInitialContentBundleEntryMetaData bundleEntry = createSlingInitialContentBundleEntry(context, targetFile);
                 collectedSlingInitialContentBundleEntries.add(bundleEntry);
-            } else if (jarEntry.getName().endsWith(".cnd")) {
+            } else if (context.isSlingNodeTypesEntry(jarEntry)) {
                 //make sure to register all cnd files to the AclManager, so they get written as RepoInit.
                 try (Reader cndStatements = new InputStreamReader(Objects.requireNonNull(context.getJarFile().getInputStream(jarEntry)))) {
                     context.getConverter().getAclManager().addNodetypeRegistration(IOUtils.toString(cndStatements));

@@ -109,12 +109,6 @@ class BundleSlingInitialContentJarEntryExtractor {
                     throw new IOException("Can not convert " + file + " to enhanced DocView format", e);
                 }
 
-                // remap CND files to make sure they are picked up by the NodeTypesEntryHandler
-                if (context.getNamespaceRegistry().getRegisteredCndSystemIds().contains(file.getName())) {
-                    contentPackageEntryPath = "/META-INF/vault/" + Text.getName(file.getName()) + ".cnd";
-                }
-
-
             }
 
             try (Archive virtualArchive = SingleFileArchive.fromPathOrInputStream(tmpDocViewInputFile, bundleFileInputStream,

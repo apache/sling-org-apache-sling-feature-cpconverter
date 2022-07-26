@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
@@ -44,6 +45,7 @@ public class BundleSlingInitialContentExtractContext {
     private final String runMode;
     private final Manifest manifest;
     private final JcrNamespaceRegistry namespaceRegistry;
+    private final String slingNodeTypes;
     private final List<PathEntry> pathEntryList = new ArrayList<>();
 
     public BundleSlingInitialContentExtractContext(@NotNull ContentPackage2FeatureModelConverter.SlingInitialContentPolicy slingInitialContentPolicy,
@@ -65,7 +67,8 @@ public class BundleSlingInitialContentExtractContext {
                         jarFile,
                         converter.getFeaturesManager().getNamespaceUriByPrefix()
                 ).provideRegistryFromBundle();
-
+        this.slingNodeTypes = this.manifest.getMainAttributes().getValue("Sling-Nodetypes");
+                
         Iterator<PathEntry> pathEntries = PathEntry.getContentPaths(manifest, -1);
 
         if (pathEntries != null) {
@@ -116,5 +119,14 @@ public class BundleSlingInitialContentExtractContext {
     @NotNull
     public List<PathEntry> getPathEntryList() {
         return new ArrayList<>(pathEntryList);
+    }
+
+    @NotNull
+    public boolean isSlingNodeTypesEntry(@NotNull JarEntry jarEntry) {
+        if(slingNodeTypes == null){
+            return false;
+        }
+        
+        return jarEntry.getName().equals(slingNodeTypes);
     }
 }
