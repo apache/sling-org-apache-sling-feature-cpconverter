@@ -57,15 +57,11 @@
       <fileMode>755</fileMode>
       <directoryMode>755</directoryMode>
     </fileSet>
-  </fileSets>
-
-  <dependencySets>
-    <dependencySet>
+    <!-- dependencies (as identified by appassembler) -->
+    <fileSet>
+      <directory>${project.build.directory}/appassembler/lib/</directory>
       <outputDirectory>lib</outputDirectory>
-      <scope>compile</scope>
-      <useTransitiveDependencies>true</useTransitiveDependencies>
-      <useProjectArtifact>true</useProjectArtifact>
-    </dependencySet>
-  </dependencySets>
+    </fileSet>
+  </fileSets>
 
 </assembly>

@@ -63,8 +63,8 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
-      <scope>compile</scope>
-      <!-- make optional to not transitively pollute class loaders -->
+      <!-- make runtime and optional to not transitively pollute compile class loaders -->
+      <scope>runtime</scope>
       <optional>true</optional>
     </dependency>
 
