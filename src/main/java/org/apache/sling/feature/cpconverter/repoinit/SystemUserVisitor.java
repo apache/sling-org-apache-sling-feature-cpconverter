@@ -18,8 +18,8 @@ package org.apache.sling.feature.cpconverter.repoinit;
 
 import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.accesscontrol.EnforceInfo;
-import org.apache.sling.repoinit.parser.impl.WithPathOptions;
 import org.apache.sling.repoinit.parser.operations.CreateServiceUser;
+import org.apache.sling.repoinit.parser.operations.WithPathOptions;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Formatter;
