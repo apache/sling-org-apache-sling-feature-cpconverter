@@ -121,6 +121,10 @@ class SlingInitialContentBundleEntryMetaDataCollector {
             if (jarEntryIsSlingInitialContent(context, jarEntry)) {
 
                 File targetFile = new File(contentPackage2FeatureModelConverter.getTempDirectory(), jarEntry.getName());
+
+                if (!targetFile.toPath().normalize().startsWith(contentPackage2FeatureModelConverter.getTempDirectory().toPath().normalize())) {
+                    throw new RuntimeException("Bad zip entry");
+                }
                 String canonicalDestinationPath = targetFile.getCanonicalPath();
 
 
