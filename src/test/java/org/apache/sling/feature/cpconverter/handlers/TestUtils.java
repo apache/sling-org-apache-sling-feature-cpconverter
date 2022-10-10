@@ -66,7 +66,7 @@ class TestUtils {
 
             handler.handle(path, archive, entry, converter);
 
-            when(packageAssembler.getEntry(anyString())).thenReturn(new File("itdoesnotexist"));
+            when(packageAssembler.getFileEntry(anyString())).thenReturn(new File("itdoesnotexist"));
 
             converter.getAclManager().addRepoinitExtension(Collections.singletonList(packageAssembler), featuresManager);
             return feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);

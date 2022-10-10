@@ -17,6 +17,7 @@
 package org.apache.sling.feature.cpconverter.repoinit.createpath;
 
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
+import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.repoinit.parser.operations.CreatePath;
@@ -44,16 +45,16 @@ public class CreatePathSegmentProcessor {
      * @return
      */
     public static boolean processSegments(@NotNull RepoPath path, @NotNull Collection<VaultPackageAssembler> packageAssemblers, @NotNull CreatePath cp) {
-        StringBuilder platformPath = new StringBuilder();
+        String repositoryPath = "";
         boolean foundType = false;
-        for (String part : path.getSegments()) {
-            String platformName = PlatformNameFormat.getPlatformName(part);
-            platformPath.append(platformPath.toString().isEmpty() ? platformName : "/" + platformName);
+        for (final String part : path.getSegments()) {
+            final String platformName = PlatformNameFormat.getPlatformName(part);
+            repositoryPath = repositoryPath.concat(ConverterConstants.SLASH).concat(platformName);
 
             boolean segmentAdded = false;
             //loop all package assemblers and check if .content.xml is defined
             for (VaultPackageAssembler packageAssembler : packageAssemblers) {
-                File currentContent = packageAssembler.getEntry(platformPath + "/" + DOT_CONTENT_XML);
+                File currentContent = packageAssembler.getFileEntry(repositoryPath.concat(ConverterConstants.SLASH).concat(DOT_CONTENT_XML));
                 if (currentContent.exists() && currentContent.isFile()) {
                     //add segment if jcr:primaryType is defined.
                     segmentAdded = addSegment(cp, part, currentContent);

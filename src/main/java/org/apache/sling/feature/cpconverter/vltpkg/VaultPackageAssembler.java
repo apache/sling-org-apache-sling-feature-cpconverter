@@ -30,6 +30,7 @@ import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryParser;
+import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +61,6 @@ import static org.apache.jackrabbit.vault.util.Constants.META_DIR;
 import static org.apache.jackrabbit.vault.util.Constants.PROPERTIES_XML;
 import static org.apache.jackrabbit.vault.util.Constants.ROOT_DIR;
 import static org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.PACKAGE_CLASSIFIER;
-import static org.apache.sling.feature.cpconverter.shared.ConverterConstants.SLASH;
 import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.getDependencies;
 import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.setDependencies;
 import static org.apache.sling.feature.cpconverter.vltpkg.VaultPackageUtils.toRepositoryPath;
@@ -242,17 +242,15 @@ public class VaultPackageAssembler {
         return new FileOutputStream(target);
     }
 
-    public @NotNull File getEntry(@NotNull String path) {
-        if (!path.startsWith(ROOT_DIR + SLASH)) {
-            if(path.startsWith(SLASH)){
-                path = ROOT_DIR + path;
-            }else{
-                path = ROOT_DIR + SLASH + path;
-            }
-           
-        }
-
-        return new File(storingDirectory, path.replace(SLASH, File.separator));
+    /**
+     * The incoming path must be relative, using slashes as separators, and start 
+     * with a slash. The parts of the relative path must use characters which work
+     * on every platform filesystem.
+     * @param relativePath relative path
+     * @return The file
+     */
+    public @NotNull File getFileEntry(@NotNull String relativePath) {
+        return new File(storingDirectory, ROOT_DIR.concat(relativePath.replace(ConverterConstants.SLASH, File.separator)));
     }
 
     /**

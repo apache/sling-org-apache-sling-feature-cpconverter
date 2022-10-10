@@ -83,8 +83,8 @@ public class AclManagerTest {
         aclManager.addAccessControlEntry("acs-commons-package-replication-status-event-service", newAccessControlEntry(true, "jcr:read,crx:replicate,jcr:removeNode", "/home/users/system"));
 
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
-        when(assembler.getEntry(anyString())).thenReturn(tempDir.toFile());
-        when(assembler.getEntry("_sling_tests/not/.content.xml")).thenReturn(new File(getClass().getResource("_sling_tests/not/.content.xml").getFile()));
+        when(assembler.getFileEntry(anyString())).thenReturn(tempDir.toFile());
+        when(assembler.getFileEntry("/_sling_tests/not/.content.xml")).thenReturn(new File(getClass().getResource("_sling_tests/not/.content.xml").getFile()));
 
 
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
@@ -126,8 +126,8 @@ public class AclManagerTest {
         aclManager.addAccessControlEntry("acs-commons-package-replication-status-event-service", newAccessControlEntry(true, "jcr:read,rep:write,rep:indexDefinitionManagement", "/_sling_tests/not/system/user/path"));
 
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
-        when(assembler.getEntry(anyString())).thenReturn(tempDir.toFile());
-        when(assembler.getEntry("_sling_tests/not/.content.xml")).thenReturn(new File(getClass().getResource("_sling_tests/not/.content.xml").getFile()));
+        when(assembler.getFileEntry(anyString())).thenReturn(tempDir.toFile());
+        when(assembler.getFileEntry("/_sling_tests/not/.content.xml")).thenReturn(new File(getClass().getResource("_sling_tests/not/.content.xml").getFile()));
 
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
 
@@ -161,7 +161,7 @@ public class AclManagerTest {
         aclManager.addAccessControlEntry("acs-commons-on-deploy-scripts-service", newAccessControlEntry(true, "jcr:read,crx:replicate,jcr:removeNode", "/home/users/system"));
 
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
-        when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
+        when(assembler.getFileEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
 
         FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
@@ -180,7 +180,7 @@ public class AclManagerTest {
         aclManager.addAccessControlEntry("sys-usr", newAccessControlEntry(true, "jcr:read", "/content/_cq_tags"));
         aclManager.addAccessControlEntry("sys-usr", newAccessControlEntry(true, "jcr:write", "/content/cq:tags"));
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
-        when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
+        when(assembler.getFileEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
 
         FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
@@ -214,7 +214,7 @@ public class AclManagerTest {
         aclManager.addGroup(new Group("test", new RepoPath("/home/groups/test"),  new RepoPath("/home/groups/test")));
         aclManager.addAccessControlEntry("sys-usr", newAccessControlEntry(true, "jcr:read", "/home/groups/test"));
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
-        when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
+        when(assembler.getFileEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
 
         FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
@@ -232,7 +232,7 @@ public class AclManagerTest {
         aclManager.addGroup(new Group("test", new RepoPath("/home/groups/test"),  new RepoPath("/home/groups/test")));
         aclManager.addAccessControlEntry("sys-usr", newAccessControlEntry(true, "jcr:read", "/content/test"));
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
-        when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
+        when(assembler.getFileEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
 
         FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
@@ -262,7 +262,7 @@ public class AclManagerTest {
         aclManager.addGroup(new Group("test", new RepoPath("/home/groups/test"),  new RepoPath("/home/groups/test")));
         aclManager.addAccessControlEntry("sys-usr", newAccessControlEntry(true, "jcr:read", "/home/groups/test/foo"));
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
-        when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
+        when(assembler.getFileEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
 
         FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
@@ -277,7 +277,7 @@ public class AclManagerTest {
         aclManager.addUser(new User("test", new RepoPath("/home/users/test"),  new RepoPath("/home/users/test")));
         aclManager.addAccessControlEntry("sys-usr", newAccessControlEntry(true, "jcr:read", "/home/users/test/foo"));
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
-        when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
+        when(assembler.getFileEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
 
         FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
@@ -292,7 +292,7 @@ public class AclManagerTest {
         aclManager.addUser(new User("test", new RepoPath("/home/users/test"),  new RepoPath("/home/users/test")));
         aclManager.addAccessControlEntry("sys-usr", newAccessControlEntry(true, "jcr:read", "/content/test"));
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
-        when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
+        when(assembler.getFileEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
 
         FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
@@ -321,7 +321,7 @@ public class AclManagerTest {
         aclManager.addUser(new User("test", new RepoPath("/home/users/test"),  new RepoPath("/home/users/test")));
         aclManager.addAccessControlEntry("sys-usr", newAccessControlEntry(true, "jcr:read", "/home/users/notMatching"));
         VaultPackageAssembler assembler = mock(VaultPackageAssembler.class);
-        when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
+        when(assembler.getFileEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         Feature feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
 
         FeaturesManager fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));

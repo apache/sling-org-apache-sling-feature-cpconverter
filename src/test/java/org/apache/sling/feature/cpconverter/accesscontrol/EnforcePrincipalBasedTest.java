@@ -71,7 +71,7 @@ public class EnforcePrincipalBasedTest {
         tempDir = Files.createTempDirectory(getClass().getSimpleName());
 
         assembler = mock(VaultPackageAssembler.class);
-        when(assembler.getEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
+        when(assembler.getFileEntry(anyString())).thenReturn(new File(System.getProperty("java.io.tmpdir")));
         feature = new Feature(new ArtifactId("org.apache.sling", "org.apache.sling.cp2fm", "0.0.1", null, null));
 
         fm = Mockito.spy(new DefaultFeaturesManager(tempDir.toFile()));
