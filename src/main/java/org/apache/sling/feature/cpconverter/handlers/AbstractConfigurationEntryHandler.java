@@ -56,7 +56,7 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
                 // SLING-10469  - preventing invalid results as the corresponding configuration will be stripped from the resulting package causing the constraints of nt:file not to be satisfied (missing binary)
                 logger.info("{} is only a dir folder next to config - removing.", path);
             } else {
-                String id = extractId(matcher);
+                final String id = extractId(matcher.group("pid"));
                 logger.info("Processing configuration '{}'.", id);
         
                 Dictionary<String, Object> configurationProperties;
@@ -90,27 +90,21 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
         }
     }
 
-    @NotNull
-    private static String extractId(@NotNull Matcher matcher) {
-        String pid = matcher.group("pid");
-
-        int idx = pid.lastIndexOf('/');
+    static @NotNull String extractId(final String match) {
+        // remove optional path segments
+        String pid;
+        int idx = match.lastIndexOf('/');
         if (idx != -1) {
-            pid = pid.substring(idx + 1);
-        }
-        
-        String id;
-        int n = pid.indexOf('~');
-        if (n == -1) {
-            n = pid.indexOf('-');
-        }
-        if (n > 0) {
-            String factoryPid = pid.substring(0, n);
-            id = factoryPid.concat("~").concat(pid.substring(n + 1));
+            pid = match.substring(idx + 1);
         } else {
-            id = pid;
+            pid = match;
         }
-        return id;
+        // check for old format for factory configurations (using dash instead of tilde)
+        idx = pid.indexOf('-');
+        if ( idx != -1 ) {
+            pid = pid.substring(0, idx).concat("~").concat(pid.substring(idx + 1));
+        }
+        return pid;
     }
 
     protected abstract @Nullable Dictionary<String, Object> parseConfiguration(@NotNull String name, @NotNull InputStream input) throws IOException, ConverterException;
