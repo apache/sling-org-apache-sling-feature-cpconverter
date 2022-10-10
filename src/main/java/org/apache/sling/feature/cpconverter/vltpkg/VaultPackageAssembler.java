@@ -252,7 +252,7 @@ public class VaultPackageAssembler {
            
         }
 
-        return new File(storingDirectory, path);
+        return new File(storingDirectory, path.replace(SLASH, File.separator));
     }
 
     /**

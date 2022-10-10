@@ -43,8 +43,6 @@ import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
-import static org.apache.sling.feature.cpconverter.shared.ConverterConstants.SLASH;
-
 /**
  * Handles collecting the metadata for each sling initial content entry, to be used for extraction in another loop
  */
@@ -120,12 +118,12 @@ class SlingInitialContentBundleEntryMetaDataCollector {
         try (InputStream input = new BufferedInputStream(jarFile.getInputStream(jarEntry))) {
             if (jarEntryIsSlingInitialContent(context, jarEntry)) {
 
-                File targetFile = new File(contentPackage2FeatureModelConverter.getTempDirectory(), jarEntry.getName());
+                File targetFile = new File(contentPackage2FeatureModelConverter.getTempDirectory(), jarEntry.getName().replace('/', File.separatorChar));
                 String canonicalDestinationPath = targetFile.getCanonicalPath();
 
 
                 if (!checkIfPathStartsWithOrIsEqual(contentPackage2FeatureModelConverter.getTempDirectory().getCanonicalPath(), canonicalDestinationPath)) {
-                    throw new IOException("Entry is outside of the target directory");
+                    throw new IOException("Entry is outside of the target directory " + canonicalDestinationPath);
                 }
 
                 targetFile.getParentFile().mkdirs();
@@ -196,8 +194,8 @@ class SlingInitialContentBundleEntryMetaDataCollector {
 
     private static boolean checkIfPathStartsWithOrIsEqual(String pathA, String pathB) {
         String fixedPath = pathA;
-        if (!fixedPath.endsWith(SLASH)) {
-            fixedPath = pathA + SLASH;
+        if (!fixedPath.endsWith(File.separator)) {
+            fixedPath = pathA + File.separatorChar;
         }
         return pathB.startsWith(fixedPath) || pathB.equals(pathA);
     }
