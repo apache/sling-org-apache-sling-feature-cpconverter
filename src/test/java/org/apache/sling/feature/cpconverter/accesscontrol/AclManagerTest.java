@@ -345,12 +345,6 @@ public class AclManagerTest {
         assertEquals(expected, actual);
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void testCalculateEnforcedIntermediatePath() throws Exception {
-        DefaultAclManager aclManager = new DefaultAclManager(null, "system");
-        aclManager.calculateEnforcedIntermediatePath("/home/users/system/some/path");
-    }
-
     @Test(expected = ConverterException.class)
     public void testAddRepoinitExtentionInvalidTxt() throws Exception {
         DefaultAclManager aclManager = new DefaultAclManager("/home/users/system/cq:services", "system");
