@@ -390,6 +390,8 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
         String relIntermediate = getRelativeIntermediatePath(intermediatePath);
         if (Text.isDescendantOrEqual(supportedPath, relIntermediate)) {
             return relIntermediate;
+        } else if (Text.isDescendant(relIntermediate, supportedPath)) {
+            return supportedPath;
         } else {
             String parent = Text.getRelativeParent(relIntermediate, 1);
             while (!parent.isEmpty() && !"/".equals(parent)) {
