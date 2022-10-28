@@ -36,8 +36,8 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Holds information about discovered index definitions
  *
- * <p>According to the Oak documentation, indexes are located under a root <tt>/oak:index</tt>, or (lucene indexes only)
- * under arbitrary repository locations, as long as they have an <tt>oak:index</tt> parent node.</p>
+ * <p>According to the Oak documentation, indexes are located under a root {@code /oak:index}, or (lucene indexes only)
+ * under arbitrary repository locations, as long as they have an {@code oak:index} parent node.</p>
  *
  * <p>This class supports non-root indexes but does not attempt to enforce Oak-level invariants, such as which index
  * types support non-root locations.</p>
@@ -84,10 +84,10 @@ public class IndexDefinitions {
      *
      * <p>The returned map has the index parent location as keys and the index definitions as values, for instance:</p>
      *
-     * <pre>
-     *  &sol;oak:index -> [counter, uuid]
-     *  &sol;content&sol;oak:index -> [lucene-2]
-     * </pre>
+     * <ul>
+     *  <li>oak:index -&gt; [counter, uuid]
+     *  <li>content/oak:index -&gt; [lucene-2]
+     * </ul>
      *
      *
      * @return a map of discovered index locations, possibly empty
@@ -106,7 +106,7 @@ public class IndexDefinitions {
      * Returns a name in compact format
      *
      * <p>Maps a fully qualified {@link Name name}, e.g. ['http://jackrabbit.apache.org/oak/ns/1.0','index'] to a compact name
-     * like <tt>oak:index</tt></p>
+     * like {@code oak:index}</p>
      *
      * @param name The name to map
      * @return the compact name

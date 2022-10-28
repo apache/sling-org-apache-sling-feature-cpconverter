@@ -42,9 +42,9 @@ public class Mapping {
         this(spec, false);
     }
 
-        /**
-         * Copied from https://github.com/apache/sling-org-apache-sling-serviceusermapper/blob/master/src/main/java/org/apache/sling/serviceusermapping/Mapping.java
-         */
+    /**
+     * Copied from https://github.com/apache/sling-org-apache-sling-serviceusermapper/blob/master/src/main/java/org/apache/sling/serviceusermapping/Mapping.java
+     */
     public Mapping(@NotNull final String spec, boolean enforceMappingByPrincipal) {
 
         final int colon = spec.indexOf(':');

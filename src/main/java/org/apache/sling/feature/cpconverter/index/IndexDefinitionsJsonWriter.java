@@ -38,7 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Writes index definitions in a JSON format that can be consumed by the <tt>oak-run</tt> tool.
+ * Writes index definitions in a JSON format that can be consumed by the {@code oak-run} tool.
  *
  * @see <a href=
  *  "https://jackrabbit.apache.org/oak/docs/query/oak-run-indexing.html">Oak-Run
@@ -68,7 +68,7 @@ public class IndexDefinitionsJsonWriter {
     }
 
     /**
-     * Writes the index definitions to the specified <tt>out</tt>
+     * Writes the index definitions to the specified {@code out}
      *
      * @param out the output stream to write to
      */

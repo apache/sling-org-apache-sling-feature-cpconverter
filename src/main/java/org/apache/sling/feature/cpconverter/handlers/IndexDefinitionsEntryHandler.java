@@ -42,7 +42,7 @@ import org.xml.sax.InputSource;
 /**
  * Handler for Jackrabbit Oak index definitions
  *
- * <p>This implementation scans content packages for entries stored under <tt>/oak:index</tt>
+ * <p>This implementation scans content packages for entries stored under {@code /oak:index}
  * and exposes them to the {@link IndexManager} for further processing.
  *
  */
