@@ -72,6 +72,7 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import static org.apache.sling.feature.cpconverter.Util.createServiceUserStatement;
 import static org.apache.sling.feature.cpconverter.Util.normalize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -115,6 +116,8 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
         COMMON_NOT_EXPECTED_PATHS.add("jcr_root/home/users/system/_cq_services/demo-cp/qStDu7IQBLa95gURmer1/.content.xml");
         COMMON_NOT_EXPECTED_PATHS.add("jcr_root/home/users/system/_cq_services/demo-cp/qStDu7IQBLa95gURmer1/_rep_principalPolicy.xml");
     }
+    
+    private static final String SUPPORTED_PATH = "/home/users/system/cq:services";
 
     private ContentPackage2FeatureModelConverter converter;
     
@@ -122,23 +125,28 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
     private final AclManager aclManager;
     private final boolean enforcePrincipalBased;
     private final String withRelPath;
+    private final boolean alwaysEnforcePath;
 
     private File outputDirectory;
     private FeaturesManager featuresManager;
 
-    @Parameterized.Parameters(name = "name={2}")
+    @Parameterized.Parameters(name = "name={3}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(
-                new Object[] {ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT, null, "Default system user rel-path"},
-                new Object[] {ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT, "/home/users/system/cq:services", "Default system user rel-path with enforce-principal-based ac-setup"});
+                new Object[] {ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT, null, false, "Default system user rel-path, enforcePath=false"},
+                new Object[] {ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT, null, true, "Default system user rel-path, enforcePath=true"},
+                new Object[] {ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT, SUPPORTED_PATH, false, "Default system user rel-path with enforce-principal-based ac-setup, enforcePath=false"},
+                new Object[] {ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT, SUPPORTED_PATH, true, "Default system user rel-path with enforce-principal-based ac-setup, enforcePath=true"});
     }
 
-    public ConverterUserAndPermissionTest(@NotNull String systemUserRelPath, @Nullable String enforcePrincipalBasedSupportedPath, @NotNull String name) throws Exception {
-        this.aclManager = new DefaultAclManager(enforcePrincipalBasedSupportedPath, systemUserRelPath);
+    public ConverterUserAndPermissionTest(@NotNull String systemUserRelPath, @Nullable String enforcePrincipalBasedSupportedPath, 
+                                          boolean alwaysEnforcePath, @NotNull String name) {
+        this.aclManager = new DefaultAclManager(enforcePrincipalBasedSupportedPath, systemUserRelPath, alwaysEnforcePath);
         this.handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, 
                 ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(), systemUserRelPath);
         this.enforcePrincipalBased = (enforcePrincipalBasedSupportedPath != null);
         this.withRelPath = (enforcePrincipalBased) ? enforcePrincipalBasedSupportedPath.substring(enforcePrincipalBasedSupportedPath.indexOf(systemUserRelPath)) : systemUserRelPath;
+        this.alwaysEnforcePath = alwaysEnforcePath;
     }
 
     @Before
@@ -213,19 +221,19 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
 
         Set<String> notExpected2 = new HashSet<>();
         notExpected1.add("jcr_root/content/_rep_policy.xml");
-                notExpected1.add("jcr_root/var/eventproxy/_rep_policy.xml");
-                        notExpected1.add("jcr_root/content/");
-                                notExpected1.add("jcr_root/var/");
-                                        notExpected1.add("jcr_root/var/eventproxy/");
-                                                notExpected1.add("jcr_root/var/eventproxy/.content.xml");
-                                                        notExpected1.add("jcr_root/home/");
-                                                                notExpected1.add("jcr_root/home/users/");
-                                                                        notExpected1.add("jcr_root/home/users/system/");
-                                                                                notExpected1.add("jcr_root/home/users/system/eventproxy/");
-                                                                                        notExpected1.add("jcr_root/home/users/system/eventproxy/eventproxy-service/");
-                                                                                                notExpected1.add("jcr_root/home/users/system/eventproxy/eventproxy-service/.content.xml");
-                                                                                                        notExpected1.add("jcr_root/home/users/system/eventproxy/eventproxy-service/_rep_policy.xml");
-                                                                                                                notExpected1.add("jcr_root/home/users/system/eventproxy/.content.xml");
+        notExpected1.add("jcr_root/var/eventproxy/_rep_policy.xml");
+        notExpected1.add("jcr_root/content/");
+        notExpected1.add("jcr_root/var/");
+        notExpected1.add("jcr_root/var/eventproxy/");
+        notExpected1.add("jcr_root/var/eventproxy/.content.xml");
+        notExpected1.add("jcr_root/home/");
+        notExpected1.add("jcr_root/home/users/");
+        notExpected1.add("jcr_root/home/users/system/");
+        notExpected1.add("jcr_root/home/users/system/eventproxy/");
+        notExpected1.add("jcr_root/home/users/system/eventproxy/eventproxy-service/");
+        notExpected1.add("jcr_root/home/users/system/eventproxy/eventproxy-service/.content.xml");
+        notExpected1.add("jcr_root/home/users/system/eventproxy/eventproxy-service/_rep_policy.xml");
+        notExpected1.add("jcr_root/home/users/system/eventproxy/.content.xml");
 
         Set<String> expected2 = new HashSet<>();
         expected1.add("META-INF/MANIFEST.MF");
@@ -249,7 +257,7 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
                                 "    end\n"), normalize(repoinit.getText()));
             } else {
                 assertEquals(normalize(
-                        "create service user eventproxy-service with path system/eventproxy\n" +
+                        createServiceUserStatement(alwaysEnforcePath, "eventproxy-service", "system/eventproxy") +
                                 "    create path /content\n" +
                                 "    create path /var/eventproxy(nt:unstructured mixin rep:AccessControllable)\n" +
                                 "    set ACL for eventproxy-service\n" +
@@ -271,7 +279,7 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
                                 "    end\n"), normalize(repoinit.getText()));
             } else {
                 assertEquals(normalize(
-                        "    create service user eventproxy-service2 with path system/eventproxy\n" +
+                        createServiceUserStatement(alwaysEnforcePath, "eventproxy-service2", "system/eventproxy") +
                                 "    set ACL for eventproxy-service2\n" +
                                 "        allow jcr:read,rep:write on home(eventproxy-service2)\n" +
                                 "    end\n"), normalize(repoinit.getText()));
@@ -483,7 +491,10 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
                 return csu.isForcedPath() && csu.getPath().startsWith(withRelPath);
             }));
         } else {
-            assertFalse(createServiceUsers.stream().anyMatch(operation -> ((CreateServiceUser) operation).isForcedPath()));
+            boolean matchingForcedPath = (alwaysEnforcePath) ?
+                    createServiceUsers.stream().allMatch(operation -> ((CreateServiceUser) operation).isForcedPath()) :
+                    createServiceUsers.stream().noneMatch(operation -> ((CreateServiceUser) operation).isForcedPath());
+            assertTrue(matchingForcedPath);
             assertEquals(2, createServiceUsers.stream().filter(operation -> ((CreateServiceUser) operation).getPath().startsWith(withRelPath+"/demo-cp")).count());
         }
         

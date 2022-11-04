@@ -16,6 +16,9 @@
  */
 package org.apache.sling.feature.cpconverter.shared;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 public final class ConverterConstants {
     
     private ConverterConstants() {}
@@ -23,4 +26,8 @@ public final class ConverterConstants {
     public static final String SYSTEM_USER_REL_PATH_DEFAULT = "system";
     
     public static final String SLASH = "/";
+    
+    public static @NotNull String getValidSystemUserPath(@Nullable String intermediatePath) {
+        return (intermediatePath == null || intermediatePath.isEmpty()) ? ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT : intermediatePath;
+    }
 }

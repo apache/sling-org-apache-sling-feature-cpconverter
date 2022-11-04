@@ -56,20 +56,24 @@ public class RepoInitTest {
     private final AbstractConfigurationEntryHandler configurationEntryHandler;
     private final boolean enforcePrincipalBasedAcSetup;
     private final String enforcedPath;
+    private final boolean alwaysForceSystemUserPath;
 
     private final String name;
 
-    @Parameterized.Parameters(name = "name={1}")
+    @Parameterized.Parameters(name = "name={2}")
     public static Collection<Object[]> parameters() {
         return Arrays.asList(
-                new Object[] { true, "Enforce principal-based ac setup" },
-                new Object[] { false, "Don't enforce principal-based ac setup" });
-    };
+                new Object[] { true, false, "Enforce principal-based ac setup, Force system user path = false" },
+                new Object[] { true, true, "Enforce principal-based ac setup, Force system user path = true" },
+                new Object[] { false, false, "Don't enforce principal-based ac setup, Force system user path = false" },
+                new Object[] { false, true, "Don't enforce principal-based ac setup, Force system user path = true" });
+    }
 
-    public RepoInitTest(boolean enforcePrincipalBasedAcSetup, String name) {
+    public RepoInitTest(boolean enforcePrincipalBasedAcSetup, boolean alwaysForceSystemUserPath, String name) {
         this.configurationEntryHandler = new ConfigurationEntryHandler();
         this.enforcePrincipalBasedAcSetup = enforcePrincipalBasedAcSetup;
         this.enforcedPath = (enforcePrincipalBasedAcSetup) ? "/home/users/system/cq:services" : null;
+        this.alwaysForceSystemUserPath = alwaysForceSystemUserPath;
         this.name = name;
     }
 
@@ -165,7 +169,7 @@ public class RepoInitTest {
         doCallRealMethod().when(featuresManager).addConfiguration(anyString(), any(), anyString(), any());
         when(featuresManager.getRunMode(anyString())).thenReturn(feature);
 
-        AclManager aclManager = spy(new DefaultAclManager((enforcePrincipalBasedAcSetup) ? enforcedPath : null, "system"));
+        AclManager aclManager = spy(new DefaultAclManager((enforcePrincipalBasedAcSetup) ? enforcedPath : null, "system", alwaysForceSystemUserPath));
         if (addMappingById) {
             aclManager.addMapping(new Mapping("org.apache.sling.testbundle:sub1=su1"));
             aclManager.addMapping(new Mapping("org.apache.sling.testbundle:sub2=su2"));

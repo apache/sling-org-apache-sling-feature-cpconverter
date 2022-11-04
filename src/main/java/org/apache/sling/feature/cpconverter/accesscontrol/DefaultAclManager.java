@@ -75,6 +75,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     
     private final RepoPath enforcePrincipalBasedSupportedPath;
     private final String systemRelPath;
+    private final boolean alwaysForceSystemUserPath;
 
     private final OperationProcessor processor = new OperationProcessor();
 
@@ -96,15 +97,16 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     private RepoPath userRootPath;
 
     public DefaultAclManager() {
-        this(null, ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
+        this(null, ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT, false);
     }
-
-    public DefaultAclManager(@Nullable String enforcePrincipalBasedSupportedPath, @NotNull String systemRelPath)  {
+    
+    public DefaultAclManager(@Nullable String enforcePrincipalBasedSupportedPath, @NotNull String systemRelPath, boolean alwaysForceSystemUserPath)  {
         if (enforcePrincipalBasedSupportedPath != null && !enforcePrincipalBasedSupportedPath.contains(systemRelPath)) {
             throw new RuntimeException("Relative path for system users "+ systemRelPath + " not included in " + enforcePrincipalBasedSupportedPath);
         }
         this.enforcePrincipalBasedSupportedPath = (enforcePrincipalBasedSupportedPath == null) ? null : new RepoPath(enforcePrincipalBasedSupportedPath);
         this.systemRelPath = systemRelPath;
+        this.alwaysForceSystemUserPath = alwaysForceSystemUserPath;
     }
 
     @Override
@@ -195,7 +197,8 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
                         @Override
                         public void visitCreateServiceUser(CreateServiceUser createServiceUser) {
                             recordSystemUserIds(createServiceUser.getUsername());
-                        }});
+                        }
+                    });
                 }
             } catch (RepoInitParsingException e) {
                 throw new ConverterException(e.getMessage(), e);
@@ -203,7 +206,7 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
             return;
         }
         try (Formatter formatter = new Formatter()) {
-            if (enforcePrincipalBased()) {
+            if (enforcePrincipalBased() || alwaysForceSystemUserPath) {
                 List<Operation> ops = new RepoInitParserService().parse(new StringReader(repoInitText));
                 processor.apply(ops, formatter,this);
             } else {
@@ -222,7 +225,8 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     private void addUsersAndGroups(@NotNull Formatter formatter) throws ConverterException {
         for (SystemUser systemUser : systemUsers) {
             // make sure all system users are created first
-            CreateServiceUser operation = new CreateServiceUser(systemUser.getId(), new WithPathOptions(calculateIntermediatePath(systemUser), enforcePrincipalBased(systemUser)));
+            boolean withForcedPath = (alwaysForceSystemUserPath || enforcePrincipalBased(systemUser));
+            CreateServiceUser operation = new CreateServiceUser(systemUser.getId(), new WithPathOptions(calculateIntermediatePath(systemUser), withForcedPath));
             formatter.format("%s", operation.asRepoInitString());
             if (systemUser.getDisabledReason() != null) {
                 DisableServiceUser disable = new DisableServiceUser(systemUser.getId(), systemUser.getDisabledReason());
@@ -374,6 +378,12 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
             }
         }
         return false;
+    }
+
+    @Override
+    public boolean enforcePath(@NotNull String systemUserId) {
+        // NOTE: defined by a global configuration option and thus the 'systemUserId' is ignored
+        return alwaysForceSystemUserPath;
     }
 
     @Override

@@ -16,6 +16,7 @@
  */
 package org.apache.sling.feature.cpconverter.accesscontrol;
 
+import static org.apache.sling.feature.cpconverter.Util.createServiceUserStatement;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -31,6 +32,7 @@ import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -43,24 +45,43 @@ import org.apache.sling.feature.cpconverter.ConverterException;
 import org.apache.sling.feature.cpconverter.Util;
 import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
+import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.repoinit.parser.RepoInitParser;
 import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
 import org.apache.sling.repoinit.parser.operations.CreatePath;
 import org.apache.sling.repoinit.parser.operations.Operation;
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.mockito.Mockito;
 
+@RunWith(Parameterized.class)
 public class AclManagerTest {
+
+    private final boolean enforcePath;
+
     private AclManager aclManager;
     private Path tempDir;
+    
+    @Parameterized.Parameters(name = "name={1}")
+    public static Collection<Object[]> parameters() {
+        return Arrays.asList(
+                new Object[] {true, "Always enforce system user path = true"},
+                new Object[] {false, "Always enforce system user path = false"});
+    }
 
+    public AclManagerTest(boolean enforcePath, @NotNull String name) {
+        this.enforcePath = enforcePath;
+    }
+    
     @Before
     public void setUp() throws Exception {
-        aclManager = new DefaultAclManager();
+        aclManager = new DefaultAclManager(null, ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT, enforcePath);
         tempDir = Files.createTempDirectory(getClass().getSimpleName());
     }
 
@@ -100,7 +121,7 @@ public class AclManagerTest {
 
         // acs-commons-on-deploy-scripts-service will be missed
         String expected = "# origin= source=content-package" + System.lineSeparator() + Util.normalize(
-                "create service user acs-commons-package-replication-status-event-service with path system\n" +
+                createServiceUserStatement(enforcePath, "acs-commons-package-replication-status-event-service", "system") +
                         "create path /sling:tests/not(nt:unstructured mixin rep:AccessControllable,mix:created)/system/user/path\n" +
                         "set ACL for acs-commons-package-replication-status-event-service\n" + 
                         "    allow jcr:read,rep:write,rep:indexDefinitionManagement on /sling:tests/not/system/user/path\n" +
@@ -142,7 +163,7 @@ public class AclManagerTest {
 
         // aacs-commons-ensure-oak-index-service will be missed
         String expected = "# origin= source=content-package" + System.lineSeparator() + Util.normalize(
-                "create service user acs-commons-package-replication-status-event-service with path system\n" +
+                createServiceUserStatement(enforcePath, "acs-commons-package-replication-status-event-service","system") +
                 "create path /sling:tests/not(nt:unstructured mixin rep:AccessControllable,mix:created)/system/user/path\n" +
                 "set ACL for acs-commons-package-replication-status-event-service\n" +
                 "    allow jcr:read,rep:write,rep:indexDefinitionManagement on /sling:tests/not/system/user/path\n" +
@@ -192,7 +213,7 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         String expected = "# origin= source=content-package" + System.lineSeparator() + Util.normalize(
-                "create service user sys-usr with path system\n" +
+                createServiceUserStatement(enforcePath, "sys-usr", "system") +
                 "create path /content/cq:tags\n"+
                 "set ACL for sys-usr\n" +
                 "    allow jcr:read on /content/cq:tags\n" +
@@ -244,7 +265,7 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         String expected = "# origin= source=content-package" + System.lineSeparator() + Util.normalize(
-                "create service user sys-usr with path system\n" +
+                createServiceUserStatement(enforcePath, "sys-usr", "system") +
                         "create path /content/test\n" +
                         "set ACL for sys-usr\n" +
                         "    allow jcr:read on /content/test\n" +
@@ -304,7 +325,7 @@ public class AclManagerTest {
         assertNotNull(repoinitExtension);
 
         String expected = "# origin= source=content-package" + System.lineSeparator() + Util.normalize(
-                "create service user sys-usr with path system\n" +
+                createServiceUserStatement(enforcePath, "sys-usr", "system") +
                         "create path /content/test\n" +
                         "set ACL for sys-usr\n" +
                         "    allow jcr:read on /content/test\n" +
@@ -336,7 +357,7 @@ public class AclManagerTest {
         // as user-home-path and thus is processed like a regular path (no 'home(uid)' repo-init statement and no exception).\
         // however, no attempt is made to create the path without any available node type information.
         String expected = "# origin= source=content-package" + System.lineSeparator() + Util.normalize(
-                "create service user sys-usr with path system\n" +
+                createServiceUserStatement(enforcePath, "sys-usr", "system") +
                         "set ACL for sys-usr\n" +
                         "    allow jcr:read on /home/users/notMatching\n" +
                         "end\n");
@@ -347,14 +368,14 @@ public class AclManagerTest {
 
     @Test(expected = ConverterException.class)
     public void testAddRepoinitExtentionInvalidTxt() throws Exception {
-        DefaultAclManager aclManager = new DefaultAclManager("/home/users/system/cq:services", "system");
+        DefaultAclManager aclManager = new DefaultAclManager("/home/users/system/cq:services", "system", false);
         aclManager.addRepoinitExtention("test", "some invalid txt", null, mock(FeaturesManager.class));
     }
 
     @Test
     public void testAddRepoinitExtentionEmptyTxt()throws Exception {
         FeaturesManager fm = mock(FeaturesManager.class);
-        DefaultAclManager aclManager = new DefaultAclManager("/home/users/system/cq:services", "system");
+        DefaultAclManager aclManager = new DefaultAclManager("/home/users/system/cq:services", "system", false);
         aclManager.addRepoinitExtention("test", "", null, fm);
 
         verifyNoInteractions(fm);
@@ -363,7 +384,7 @@ public class AclManagerTest {
     @Test
     public void testAddRepoinitExtentionNullTxt() throws Exception {
         FeaturesManager fm = mock(FeaturesManager.class);
-        DefaultAclManager aclManager = new DefaultAclManager("/home/users/system/cq:services", "system");
+        DefaultAclManager aclManager = new DefaultAclManager("/home/users/system/cq:services", "system", false);
         aclManager.addRepoinitExtention("test", null, null, fm);
 
         verifyNoInteractions(fm);

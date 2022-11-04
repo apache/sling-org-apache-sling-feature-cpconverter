@@ -20,6 +20,7 @@ import org.apache.sling.repoinit.parser.RepoInitParser;
 import org.apache.sling.repoinit.parser.RepoInitParsingException;
 import org.apache.sling.repoinit.parser.impl.RepoInitParserService;
 import org.apache.sling.repoinit.parser.operations.Operation;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.StringReader;
 import java.util.Formatter;
@@ -42,6 +43,14 @@ public class Util {
             return normalize(repoinit);
         } catch (RepoInitParsingException e) {
             throw new RuntimeException(e);
+        }
+    }
+    
+    public static @NotNull String createServiceUserStatement(boolean enforcePath, @NotNull String id, @NotNull String intermediatePath) {
+        if (enforcePath) {
+            return "create service user "+id+" with forced path "+intermediatePath+"\n";
+        } else {
+            return "create service user "+id+" with path "+intermediatePath+"\n";
         }
     }
 }
