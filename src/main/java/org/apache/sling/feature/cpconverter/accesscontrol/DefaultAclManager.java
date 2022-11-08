@@ -96,10 +96,32 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
     
     private RepoPath userRootPath;
 
+    /**
+     * Same as {@code DefaultAclManager(null, "system", false)}
+     * @see ConverterConstants#SYSTEM_USER_REL_PATH_DEFAULT
+     */
     public DefaultAclManager() {
         this(null, ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT, false);
     }
-    
+
+    /**
+     * @param enforcePrincipalBasedSupportedPath The supported path if principal-based access control setup for service users should be enforced; {@code null} otherwise.
+     * @param systemRelPath The relative intermediate path used for all system users.
+     * @deprecated Use DefaultAclManager(String,String,boolean) instead
+     */
+    @Deprecated
+    public DefaultAclManager(@Nullable String enforcePrincipalBasedSupportedPath, @NotNull String systemRelPath) {
+        this(enforcePrincipalBasedSupportedPath, systemRelPath, false);
+        log.warn("Deprecated. Please refactor to use DefaultAclManager(String,String,boolean) instead");
+    }
+
+    /**
+     * Creates a new instance of {@code DefaultAclManager}.
+     *
+     * @param enforcePrincipalBasedSupportedPath The supported path if principal-based access control setup for service users should be enforced; {@code null} otherwise.
+     * @param systemRelPath The relative intermediate path used for all system users.
+     * @param alwaysForceSystemUserPath Option to make sure all system users are being created with the specified intermediate path (i.e. translating to 'with forced path' statements in repoinit).
+     */
     public DefaultAclManager(@Nullable String enforcePrincipalBasedSupportedPath, @NotNull String systemRelPath, boolean alwaysForceSystemUserPath)  {
         if (enforcePrincipalBasedSupportedPath != null && !enforcePrincipalBasedSupportedPath.contains(systemRelPath)) {
             throw new RuntimeException("Relative path for system users "+ systemRelPath + " not included in " + enforcePrincipalBasedSupportedPath);
