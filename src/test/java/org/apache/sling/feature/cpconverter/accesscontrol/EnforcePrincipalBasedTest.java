@@ -67,7 +67,7 @@ public class EnforcePrincipalBasedTest {
 
     @Before
     public void setUp() throws Exception {
-        aclManager = new DefaultAclManager("/home/users/system/some/subtree", "system");
+        aclManager = new DefaultAclManager("/home/users/system/some/subtree", "system", false);
         tempDir = Files.createTempDirectory(getClass().getSimpleName());
 
         assembler = mock(VaultPackageAssembler.class);
@@ -91,19 +91,19 @@ public class EnforcePrincipalBasedTest {
 
     @Test(expected = ConverterException.class)
     public void testInvalidSupportedPath() throws Exception {
-        AclManager acMgr = new DefaultAclManager("/an/invalid/supported/path", "invalid");
+        AclManager acMgr = new DefaultAclManager("/an/invalid/supported/path", "invalid", false);
         RepoPath accessControlledPath = new RepoPath("/content/feature");
         getRepoInitExtension(acMgr, accessControlledPath, systemUser, false);
     }
 
     @Test(expected = RuntimeException.class)
     public void testPathMismatch() throws RuntimeException {
-        new DefaultAclManager("/an/invalid/supported/path", "system");
+        new DefaultAclManager("/an/invalid/supported/path", "system", false);
     }
 
     @Test
     public void testResourceBasedConversionWithoutForce() throws Exception {
-        AclManager acMgr = new DefaultAclManager(null, "system") {
+        AclManager acMgr = new DefaultAclManager(null, "system", false) {
             @Override
             protected @Nullable CreatePath getCreatePath(@NotNull RepoPath path, @NotNull List<VaultPackageAssembler> packageAssemblers) {
                 CreatePath cp = new CreatePath(null);

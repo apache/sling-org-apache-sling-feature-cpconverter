@@ -116,6 +116,9 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Option(names= {"--system-user-rel-path"}, description = "Relative path for system user as configured with Apache Jackrabbit Oak", required = false)
     private String systemUserRelPath = ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT;
 
+    @Option(names = { "--enforce-system-user-path" }, description = "If this option is enabled all generated 'create service user' repoinit statements with come with 'forced path' set to make sure the intermediate path matches.", required = false)
+    private boolean alwaysForceSystemUserPath = false;
+
     @Option(names = { "--enforce-servicemapping-by-principal" }, description = "Converts service user mappings with the form 'service:sub=userID' to 'service:sub=[principalname]'. Note, this may result in group membership no longer being resolved upon service login.", required = false)
     private boolean enforceServiceMappingByPrincipal = false;
 
@@ -175,7 +178,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
 
         try {
             try {
-                AclManager aclManager = new DefaultAclManager(enforcePrincipalBasedSupportedPath, systemUserRelPath);
+                AclManager aclManager = new DefaultAclManager(enforcePrincipalBasedSupportedPath, systemUserRelPath, alwaysForceSystemUserPath);
 
                 DefaultFeaturesManager featuresManager = new DefaultFeaturesManager(mergeConfigurations,
                                                                 bundlesStartOrder,

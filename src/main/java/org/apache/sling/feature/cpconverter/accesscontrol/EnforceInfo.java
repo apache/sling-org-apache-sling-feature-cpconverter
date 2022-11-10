@@ -25,8 +25,9 @@ public interface EnforceInfo {
     void recordSystemUserIds(@NotNull String... systemUserIds);
 
     boolean enforcePrincipalBased(@NotNull String systemUserId);
+    
+    boolean enforcePath(@NotNull String systemUserId);
 
     @NotNull
     String calculateEnforcedIntermediatePath(@Nullable String intermediatePath) throws ConverterException;
-
 }
