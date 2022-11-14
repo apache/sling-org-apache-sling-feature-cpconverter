@@ -55,9 +55,12 @@ public class IndexDefinitionsEntryHandlerTest {
         IndexDefinitionsEntryHandler handler = new IndexDefinitionsEntryHandler();
         assertThat(handler.matches("/jcr_root/_oak_index/.content.xml")).isTrue();
         assertThat(handler.matches("/jcr_root/not_oak_index/.content.xml")).isFalse();
+        assertThat(handler.matches("/jcr_root/not_oak_index/stop.txt")).isFalse();
         assertThat(handler.matches("/jcr_root/_oak_index/bar/.content.xml")).isTrue();
         assertThat(handler.matches("/jcr_root/_oak_index/lucene/tika/config.xml")).isTrue();
         assertThat(handler.matches("/jcr_root/_oak_index/.vlt")).isFalse();
+        assertThat(handler.matches("/jcr_root/_oak_index/stop.txt")).isTrue();
+        assertThat(handler.matches("/jcr_root/not_oak_index/.vlt")).isFalse();
         assertThat(handler.matches("/jcr_root/apps/_oak_index/.content.xml")).isTrue();
         assertThat(handler.matches("/jcr_root/apps/.content.xml")).isFalse();
         assertThat(handler.matches("/jcr_root/not_oak_index/.content.xml")).isFalse();
