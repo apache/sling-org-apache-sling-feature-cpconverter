@@ -48,12 +48,18 @@ import org.xml.sax.InputSource;
  */
 public class IndexDefinitionsEntryHandler extends AbstractRegexEntryHandler {
 
+    private static final String[] EXCLUDED_EXTENSIONS = new String[]{
+            "vlt",
+            "gitignore"
+    };
     private static final String PATH_PATTERN = "" +
-            "/jcr_root/" + // jcr_root dir
-            "(.*/)?" + // optional path segment
+            "/jcr_root" + // jcr_root dir
+            "(.*/?)/" + // optional path segment
             PlatformNameFormat.getPlatformName(IndexDefinitions.OAK_INDEX_NAME) +
-            "(.*/)?" + // additional path segments
-            "/.*xml"; // only xml files
+            "(.*/?)" + // additional path segments
+            "/(.*?)\\.(?!(" + //excluding extensions
+            String.join("|", EXCLUDED_EXTENSIONS) +
+            ")$)[^.]+$"; // match everything else
 
     private final class IndexDefinitionsParserHandler implements DocViewParserHandler {
         private final WorkspaceFilter filter;
