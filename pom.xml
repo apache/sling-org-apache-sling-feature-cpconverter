@@ -26,7 +26,7 @@
   </parent>
 
   <artifactId>org.apache.sling.feature.cpconverter</artifactId>
-  <version>1.1.23-SNAPSHOT</version>
+  <version>1.1.24</version>
 
   <name>Apache Sling Content-Package to Feature Model Converter</name>
   <description>Content Package to Feature Model converter tools for Apache Sling</description>
@@ -41,14 +41,14 @@
     <mockito-core.version>3.2.0</mockito-core.version>
     <license-maven-plugin.version>1.16</license-maven-plugin.version>
     <appassembler-maven-plugin.version>2.0.0</appassembler-maven-plugin.version>
-    <project.build.outputTimestamp>1666943734</project.build.outputTimestamp>
+    <project.build.outputTimestamp>1668677011</project.build.outputTimestamp>
   </properties>
 
   <scm>
     <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-feature-cpconverter.git</connection>
     <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-feature-cpconverter.git</developerConnection>
     <url>https://gitbox.apache.org/repos/asf?p=sling-org-apache-sling-feature-cpconverter.git</url>
-    <tag>org.apache.sling.feature.cpconverter-1.1.18</tag>
+    <tag>org.apache.sling.feature.cpconverter-1.1.24</tag>
   </scm>
 
   <dependencies>
