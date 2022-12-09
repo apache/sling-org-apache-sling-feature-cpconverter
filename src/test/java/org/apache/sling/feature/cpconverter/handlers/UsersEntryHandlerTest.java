@@ -17,6 +17,7 @@
 package org.apache.sling.feature.cpconverter.handlers;
 
 import org.apache.sling.feature.Extension;
+import org.apache.sling.feature.ExtensionState;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
@@ -78,7 +79,7 @@ public class UsersEntryHandlerTest {
 
         assertNotNull(repoinitExtension);
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
-        assertTrue(repoinitExtension.isRequired());
+        assertEquals(ExtensionState.REQUIRED, repoinitExtension.getState());
 
         String expected = "# origin= source=content-package" + System.lineSeparator() +
             normalize("create service user asd-share-commons-asd-index-definition-reader-service with path system/asd-share-commons\n");
@@ -97,7 +98,7 @@ public class UsersEntryHandlerTest {
 
         assertNotNull(repoinitExtension);
         assertEquals(ExtensionType.TEXT, repoinitExtension.getType());
-        assertTrue(repoinitExtension.isRequired());
+        assertEquals(ExtensionState.REQUIRED, repoinitExtension.getState());
 
         String expected = "# origin= source=content-package" + System.lineSeparator() +
             normalize("create service user service1 with path system/services\ndisable service user service1 : \"a reason\"\n");
