@@ -165,7 +165,7 @@ public class IndexDefinitionsEntryHandlerTest {
                 .has( Conditions.localName("config.xml") )
                 .has( Conditions.property(NamespaceRegistry.NAMESPACE_JCR, "primaryType", "nt:file", defs) );
 
-        byte[] tikaConfig = defs.getBinary("/oak:index/lucene-custom/tika/config.xml").get();
+        byte[] tikaConfig = defs.getBinary("/oak:index/lucene-custom/tika").get();
         assertIsValidXml(tikaConfig);
     }
 

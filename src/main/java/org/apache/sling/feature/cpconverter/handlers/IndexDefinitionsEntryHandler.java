@@ -126,8 +126,9 @@ public class IndexDefinitionsEntryHandler extends AbstractRegexEntryHandler {
 
                 } else {
                     // binary file, should we attach?
-                    if ( archive.getMetaInf().getFilter().contains(repositoryPath)) {
-                        indexManager.getIndexes().registerBinary(repositoryPath, is);
+                    String binaryParentPath  = repositoryPath.substring(0,repositoryPath.lastIndexOf("/")) ;
+                    if ( archive.getMetaInf().getFilter().contains(binaryParentPath)) {
+                        indexManager.getIndexes().registerBinary(binaryParentPath, is);
                     }
                 }
 
