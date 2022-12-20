@@ -22,7 +22,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Dictionary;
 
-import org.apache.felix.cm.json.Configurations;
+import org.apache.felix.cm.json.io.Configurations;
 import org.jetbrains.annotations.NotNull;
 
 public final class JsonConfigurationEntryHandler extends AbstractConfigurationEntryHandler {

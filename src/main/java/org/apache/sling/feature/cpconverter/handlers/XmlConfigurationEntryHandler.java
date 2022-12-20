@@ -25,7 +25,7 @@ import java.util.function.Function;
 
 import javax.jcr.PropertyType;
 
-import org.apache.felix.cm.json.Configurations;
+import org.apache.felix.cm.json.io.Configurations;
 import org.apache.jackrabbit.util.ISO8601;
 import org.apache.jackrabbit.vault.util.DocViewProperty;
 import org.apache.sling.feature.cpconverter.shared.AbstractJcrNodeParser;

@@ -25,10 +25,10 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import javax.jcr.PropertyType;
-import javax.json.Json;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonValue;
-import javax.json.stream.JsonGenerator;
+import jakarta.json.Json;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonValue;
+import jakarta.json.stream.JsonGenerator;
 
 import org.apache.jackrabbit.util.Base64;
 import org.apache.jackrabbit.vault.util.DocViewNode2;
