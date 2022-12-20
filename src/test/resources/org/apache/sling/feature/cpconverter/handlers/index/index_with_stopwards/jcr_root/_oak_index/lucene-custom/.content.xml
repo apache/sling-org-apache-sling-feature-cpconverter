@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  -->
+<jcr:root xmlns:oak="http://jackrabbit.apache.org/oak/ns/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0"
+    jcr:primaryType="oak:QueryIndexDefinition"
+    async="[async,nrt]"
+    compatVersion="{Long}2"
+    evaluatePathRestrictions="{Boolean}true"
+    includedPaths="[/content/leroymerlin/es]"
+    name="cq:Page"
+    type="lucene">
+    <analyzers jcr:primaryType="nt:unstructured">
+        <default jcr:primaryType="nt:unstructured">
+            <tokenizer
+                    jcr:primaryType="nt:unstructured"
+                    name="Standard"/>
+            <charFilters jcr:primaryType="nt:unstructured">
+                <Mapping
+                        jcr:primaryType="nt:unstructured"
+                        mapping="mapping-ISOLatin1Accent.txt">
+                    <mapping-ISOLatin1Accent.txt/>
+                </Mapping>
+                <HTMLStrip jcr:primaryType="nt:unstructured"/>
+            </charFilters>
+            <filters jcr:primaryType="nt:unstructured">
+                <LowerCase jcr:primaryType="nt:unstructured"/>
+                <Synonym
+                        jcr:primaryType="nt:unstructured"
+                        expand="true"
+                        format="solr"
+                        synonyms="synonyms.txt"
+                        tokenizerFactory="standard">
+                    <synonyms.txt/>
+                </Synonym>
+                <Stop
+                        jcr:primaryType="nt:unstructured"
+                        enablePositionIncrements="true"
+                        ignoreCase="true"
+                        words="stopwords.txt">
+                    <stopwords.txt/>
+                </Stop>
+                <SpanishLightStem jcr:primaryType="nt:unstructured"/>
+                <KeywordMarker
+                        jcr:primaryType="nt:unstructured"
+                        protected="protwords.txt">
+                    <protwords.txt/>
+                </KeywordMarker>
+            </filters>
+        </default>
+    </analyzers>
+</jcr:root>

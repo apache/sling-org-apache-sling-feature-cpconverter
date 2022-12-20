@@ -169,6 +169,62 @@ public class IndexDefinitionsEntryHandlerTest {
         assertIsValidXml(tikaConfig);
     }
 
+    @Test
+    public void handleIndexDefinitionWithStopwordsInAnalyzer() throws IOException, ConverterException, ParserConfigurationException, SAXException {
+        DefaultIndexManager manager = new DefaultIndexManager();
+
+        traverseForIndexing(manager, "index_with_stopwards");
+
+        IndexDefinitions defs = manager.getIndexes();
+        Map<String, List<DocViewNode2>> indexes = defs.getIndexes();
+
+        assertThat(indexes).as("index definitions")
+                .hasSize(1)
+                .containsKey("/oak:index");
+
+        List<DocViewNode2> rootIndexes = indexes.get("/oak:index");
+        assertThat(rootIndexes).as("root indexes")
+                .hasSize(1);
+
+        assertThat(rootIndexes).as("index definitions")
+                .hasSize(1)
+                .element(0)
+                .has(Conditions.localName("lucene-custom"));
+
+        DocViewNode2 luceneCustom = rootIndexes.get(0);
+        assertThat(luceneCustom).as("lucene index definition")
+                .has(Conditions.childWithLocalName("/oak:index/lucene-custom", "analyzers", defs));
+
+        List<DocViewNode2> luceneCustomChildren = defs.getChildren("/oak:index/lucene-custom");
+        assertThat(luceneCustomChildren).as("lucene index definition children")
+                .hasSize(1);
+
+        DocViewNode2 analyzersConfigNode = luceneCustomChildren.stream()
+                .filter( c -> c.getName().getLocalName().equals("analyzers") )
+                .findFirst()
+                .get();
+
+        assertThat(analyzersConfigNode).as("analyzers config node for stop words")
+                .has(Conditions.childWithLocalName("/oak:index/lucene-custom/analyzers/default/filters/Stop","stopwords.txt", defs));
+
+        byte[] stopwordsConfig = defs.getBinary("/oak:index/lucene-custom/analyzers/default/filters/Stop").get();
+        assertThat(stopwordsConfig).as("stopwordsConfig is ").isNotNull();
+
+        assertThat(analyzersConfigNode).as("analyzers config node for prowords")
+                .has(Conditions.childWithLocalName("/oak:index/lucene-custom/analyzers/default/filters/KeywordMarker","protwords.txt", defs));
+
+        byte[] keywordMarkerConfig = defs.getBinary("/oak:index/lucene-custom/analyzers/default/filters/KeywordMarker").get();
+        assertThat(keywordMarkerConfig).as("keywordMarkerConfig is ").isNotNull();
+
+
+        assertThat(analyzersConfigNode).as("analyzers config node dor Synonyms")
+                .has(Conditions.childWithLocalName("/oak:index/lucene-custom/analyzers/default/filters/Synonym","synonyms.txt", defs));
+
+        byte[] synonymConfig = defs.getBinary("/oak:index/lucene-custom/analyzers/default/filters/Synonym").get();
+        assertThat(synonymConfig).as("synonymConfig is ").isNotNull();
+
+    }
+
 
     @Test
     public void handleIndexDefinitionUnderNonRootPath() throws IOException, ConverterException {
