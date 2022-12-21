@@ -177,8 +177,7 @@ public class IndexDefinitionsJsonWriterTest {
         assertThat(configNode).as("config node")
             .hasEntrySatisfying("jcr:resource", Conditions.isJsonObject());
 
-        JsonObject jcrResource = configNode.getJsonObject("jcr:resource");
-        JsonString binaryEntry = jcrResource.getJsonString("jcr:data");
+        JsonString binaryEntry = configNode.getJsonString("jcr:data");
         assertThat(binaryEntry).as("config.xml blob")
             .hasFieldOrPropertyWithValue("string", ":blobid:" + Base64.encode(configXmlFileContents));
     }

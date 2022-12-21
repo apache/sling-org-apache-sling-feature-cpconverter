@@ -131,16 +131,17 @@ public class IndexDefinitionsJsonWriter {
             }
         }
 
+        String nodePath = parentPath + "/" + nodeName;  // NOSONAR - java:S1075 does not apply as this is not a filesystem path
+
         // 3. write nt:data entries for nt:resource children of nt:files
         // in this case, this is the nt:resource node
-        Optional<byte[]> binary = indexDefinitions.getBinary(parentPath);
+        Optional<byte[]> binary = indexDefinitions.getBinary(nodePath);
         if ( binary.isPresent() ) {
             String blobAsString = new String(binary.get(), StandardCharsets.UTF_8);
             write(json, "jcr:data", Collections.singletonList(blobAsString), BLOB_MAPPER);
         };
 
         // 4. write children
-        String nodePath = parentPath + "/" + nodeName;  // NOSONAR - java:S1075 does not apply as this is not a filesystem path
         for ( DocViewNode2 child : indexDefinitions.getChildren(nodePath)) {
             write(json, child, nodePath);
         }

@@ -20,7 +20,7 @@
     async="[async,nrt]"
     compatVersion="{Long}2"
     evaluatePathRestrictions="{Boolean}true"
-    includedPaths="[/content/leroymerlin/es]"
+    includedPaths="[/content/indexTest/es]"
     name="cq:Page"
     type="lucene">
     <analyzers jcr:primaryType="nt:unstructured">

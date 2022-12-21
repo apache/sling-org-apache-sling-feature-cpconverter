@@ -165,7 +165,7 @@ public class IndexDefinitionsEntryHandlerTest {
                 .has( Conditions.localName("config.xml") )
                 .has( Conditions.property(NamespaceRegistry.NAMESPACE_JCR, "primaryType", "nt:file", defs) );
 
-        byte[] tikaConfig = defs.getBinary("/oak:index/lucene-custom/tika").get();
+        byte[] tikaConfig = defs.getBinary("/oak:index/lucene-custom/tika/config.xml").get();
         assertIsValidXml(tikaConfig);
     }
 
@@ -207,25 +207,26 @@ public class IndexDefinitionsEntryHandlerTest {
         assertThat(analyzersConfigNode).as("analyzers config node for stop words")
                 .has(Conditions.childWithLocalName("/oak:index/lucene-custom/analyzers/default/filters/Stop","stopwords.txt", defs));
 
-        byte[] stopwordsConfig = defs.getBinary("/oak:index/lucene-custom/analyzers/default/filters/Stop").get();
+        byte[] stopwordsConfig = defs.getBinary("/oak:index/lucene-custom/analyzers/default/filters/Stop/stopwords.txt").get();
         assertThat(stopwordsConfig).as("stopwordsConfig is ").isNotNull();
+
+        byte[] stopwords_2_Config = defs.getBinary("/oak:index/lucene-custom/analyzers/default/filters/Stop/stopwords_2.txt").get();
+        assertThat(stopwords_2_Config).as("stopwords__2Config is ").isNotNull();
 
         assertThat(analyzersConfigNode).as("analyzers config node for prowords")
                 .has(Conditions.childWithLocalName("/oak:index/lucene-custom/analyzers/default/filters/KeywordMarker","protwords.txt", defs));
 
-        byte[] keywordMarkerConfig = defs.getBinary("/oak:index/lucene-custom/analyzers/default/filters/KeywordMarker").get();
+        byte[] keywordMarkerConfig = defs.getBinary("/oak:index/lucene-custom/analyzers/default/filters/KeywordMarker/protwords.txt").get();
         assertThat(keywordMarkerConfig).as("keywordMarkerConfig is ").isNotNull();
 
 
         assertThat(analyzersConfigNode).as("analyzers config node dor Synonyms")
                 .has(Conditions.childWithLocalName("/oak:index/lucene-custom/analyzers/default/filters/Synonym","synonyms.txt", defs));
 
-        byte[] synonymConfig = defs.getBinary("/oak:index/lucene-custom/analyzers/default/filters/Synonym").get();
+        byte[] synonymConfig = defs.getBinary("/oak:index/lucene-custom/analyzers/default/filters/Synonym/synonyms.txt").get();
         assertThat(synonymConfig).as("synonymConfig is ").isNotNull();
 
     }
-
-
     @Test
     public void handleIndexDefinitionUnderNonRootPath() throws IOException, ConverterException {
 
