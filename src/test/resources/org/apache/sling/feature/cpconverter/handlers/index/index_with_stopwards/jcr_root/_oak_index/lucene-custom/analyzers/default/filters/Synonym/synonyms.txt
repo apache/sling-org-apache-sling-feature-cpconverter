@@ -15,4 +15,4 @@
   limitations under the License.
   -->
 # Synonym mappings can be used for spelling correction too
-tool => herramienta
+tool => synonyms
