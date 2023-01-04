@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -169,7 +170,63 @@ public class IndexDefinitionsEntryHandlerTest {
         assertIsValidXml(tikaConfig);
     }
 
+    @Test
+    public void handleIndexDefinitionWithStopwordsInAnalyzer() throws IOException, ConverterException, ParserConfigurationException, SAXException {
+        DefaultIndexManager manager = new DefaultIndexManager();
 
+        traverseForIndexing(manager, "index_with_stopwards");
+
+        IndexDefinitions defs = manager.getIndexes();
+        Map<String, List<DocViewNode2>> indexes = defs.getIndexes();
+
+        assertThat(indexes).as("index definitions")
+                .hasSize(1)
+                .containsKey("/oak:index");
+
+        List<DocViewNode2> rootIndexes = indexes.get("/oak:index");
+        assertThat(rootIndexes).as("root indexes")
+                .hasSize(1);
+
+        assertThat(rootIndexes).as("index definitions")
+                .hasSize(1)
+                .element(0)
+                .has(Conditions.localName("lucene-custom"));
+
+        DocViewNode2 luceneCustom = rootIndexes.get(0);
+        assertThat(luceneCustom).as("lucene index definition")
+                .has(Conditions.childWithLocalName("/oak:index/lucene-custom", "analyzers", defs));
+
+        List<DocViewNode2> luceneCustomChildren = defs.getChildren("/oak:index/lucene-custom");
+        assertThat(luceneCustomChildren).as("lucene index definition children")
+                .hasSize(1);
+
+        DocViewNode2 analyzersConfigNode = luceneCustomChildren.stream()
+                .filter( c -> c.getName().getLocalName().equals("analyzers") )
+                .findFirst()
+                .get();
+
+        assertThat(analyzersConfigNode).as("analyzers config node for stop words")
+                .has(Conditions.childWithLocalName("/oak:index/lucene-custom/analyzers/default/filters/Stop","stopwords.txt", defs));
+        byte[] stopwordsConfig = defs.getBinary("/oak:index/lucene-custom/analyzers/default/filters/Stop/stopwords.txt").get();
+        assertThat(stopwordsConfig).as("stopwordsConfig is ").isNotNull();
+        assertThat(new String(stopwordsConfig, StandardCharsets.UTF_8)).as("stopwordsConfig contains stopwords").contains("stopword");
+        byte[] stopwords_2_Config = defs.getBinary("/oak:index/lucene-custom/analyzers/default/filters/Stop/stopwords_2.txt").get();
+        assertThat(stopwords_2_Config).as("stopwords__2Config is ").isNotNull();
+        assertThat(new String(stopwords_2_Config, StandardCharsets.UTF_8)).as("stopwordsConfig contains stopword2 ").contains("stopword2");
+
+        assertThat(analyzersConfigNode).as("analyzers config node for prowords")
+                .has(Conditions.childWithLocalName("/oak:index/lucene-custom/analyzers/default/filters/KeywordMarker","protwords.txt", defs));
+        byte[] keywordMarkerConfig = defs.getBinary("/oak:index/lucene-custom/analyzers/default/filters/KeywordMarker/protwords.txt").get();
+        assertThat(keywordMarkerConfig).as("keywordMarkerConfig is ").isNotNull();
+        assertThat(new String(keywordMarkerConfig, StandardCharsets.UTF_8)).as("keywordMarkerConfig contains protwords ").contains("protwords");
+
+        assertThat(analyzersConfigNode).as("analyzers config node dor Synonyms")
+                .has(Conditions.childWithLocalName("/oak:index/lucene-custom/analyzers/default/filters/Synonym","synonyms.txt", defs));
+        byte[] synonymConfig = defs.getBinary("/oak:index/lucene-custom/analyzers/default/filters/Synonym/synonyms.txt").get();
+        assertThat(synonymConfig).as("synonymConfig is ").isNotNull();
+        assertThat(new String(synonymConfig, StandardCharsets.UTF_8)).as("synonymConfig contains synonyms ").contains("synonyms");
+
+    }
     @Test
     public void handleIndexDefinitionUnderNonRootPath() throws IOException, ConverterException {
 
