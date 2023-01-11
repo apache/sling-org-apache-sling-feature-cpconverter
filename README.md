@@ -401,7 +401,7 @@ Everything else, unless users will deploy in the classpath a custom `org.apache.
 
 ### ACL Management
 
-While scanning the input content-package(s), all ACLs entries are handled by the [org.apache.sling.feature.cpconverter.acl.AclManager](./src/main/java/org/apache/sling/feature/cpconverter/acl/AclManager.java) service which is in charge of collecting and computing:
+While scanning the input content-package(s), all ACLs entries are handled by the [org.apache.sling.feature.cpconverter.acl.AclManager](./src/main/java/org/apache/sling/feature/cpconverter/accesscontrol/AclManager.java) service which is in charge of collecting and computing:
 
 * System Users;
 * System Users related ACLs;
@@ -409,7 +409,7 @@ While scanning the input content-package(s), all ACLs entries are handled by the
 * Node types registrations;
 * Any `repoinit` additional instruction.
 
-Default implementation is provided by [org.apache.sling.feature.cpconverter.acl.DefaultAclManager](./src/main/java/org/apache/sling/feature/cpconverter/acl/DefaultAclManager.java).
+Default implementation is provided by [org.apache.sling.feature.cpconverter.acl.DefaultAclManager](./src/main/java/org/apache/sling/feature/cpconverter/accesscontrol/DefaultAclManager.java).
 
 #### Please note
 
