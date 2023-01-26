@@ -16,8 +16,11 @@
  */
 package org.apache.sling.feature.cpconverter.index;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -72,7 +75,7 @@ public class IndexDefinitionsJsonWriter {
      *
      * @param out the output stream to write to
      */
-    public void writeAsJson(@NotNull OutputStream out) {
+    public void writeAsJson(@NotNull OutputStream out) throws IOException {
         try ( JsonGenerator root = Json.createGenerator(out) ) {
             root.writeStartObject();
             for ( Map.Entry<String, List<DocViewNode2>> indexEntry : indexDefinitions.getIndexes().entrySet() )
@@ -82,7 +85,7 @@ public class IndexDefinitionsJsonWriter {
         }
     }
 
-    private void write(JsonGenerator json, DocViewNode2 index, String parentPath) {
+    private void write(JsonGenerator json, DocViewNode2 index, String parentPath) throws IOException {
 
         String nodeName = indexDefinitions.toShortName(index.getName());
         String objectKey = parentPath.equals(IndexDefinitions.OAK_INDEX_PATH) ?
@@ -137,8 +140,12 @@ public class IndexDefinitionsJsonWriter {
         // in this case, this is the nt:resource node
         Optional<byte[]> binary = indexDefinitions.getBinary(nodePath);
         if ( binary.isPresent() ) {
+            json.writeStartObject("jcr:content");
             String blobAsString = new String(binary.get(), StandardCharsets.UTF_8);
+            write(json, "jcr:primaryType", Collections.singletonList("nt:resource"),  s -> Json.createValue("nam:" + s ));
+            write(json, "jcr:mimeType", Collections.singletonList(Files.probeContentType(Paths.get(nodePath))), s -> Json.createValue(s) );
             write(json, "jcr:data", Collections.singletonList(blobAsString), BLOB_MAPPER);
+            json.writeEnd();
         };
 
         // 4. write children
