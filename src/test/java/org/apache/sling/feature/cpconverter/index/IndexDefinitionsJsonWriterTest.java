@@ -39,6 +39,7 @@ import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 import jakarta.json.stream.JsonParser;
 
+import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.spi.NameFactory;
 import org.apache.jackrabbit.spi.commons.name.NameFactoryImpl;
 import org.apache.jackrabbit.util.Base64;
@@ -177,9 +178,10 @@ public class IndexDefinitionsJsonWriterTest {
         assertThat(configNode).as("config node")
             .hasEntrySatisfying("jcr:resource", Conditions.isJsonObject());
 
-        JsonString binaryEntry = configNode.getJsonString("jcr:data");
+        JsonObject configContentNode = configNode.getJsonObject(JcrConstants.JCR_CONTENT);
+        JsonString binaryEntry = configContentNode.getJsonString(JcrConstants.JCR_DATA);
         assertThat(binaryEntry).as("config.xml blob")
-            .hasFieldOrPropertyWithValue("string", ":blobid:" + Base64.encode(configXmlFileContents));
+            .hasFieldOrPropertyWithValue("string", ":blobId:" + Base64.encode(configXmlFileContents));
     }
 
 

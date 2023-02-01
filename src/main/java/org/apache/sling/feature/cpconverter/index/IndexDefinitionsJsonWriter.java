@@ -16,8 +16,11 @@
  */
 package org.apache.sling.feature.cpconverter.index;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +33,7 @@ import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonValue;
 import jakarta.json.stream.JsonGenerator;
 
+import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.util.Base64;
 import org.apache.jackrabbit.vault.util.DocViewNode2;
 import org.apache.jackrabbit.vault.util.DocViewProperty2;
@@ -46,7 +50,7 @@ import org.slf4j.LoggerFactory;
  */
 public class IndexDefinitionsJsonWriter {
 
-    private static final Function<String, JsonValue> BLOB_MAPPER =  s -> Json.createValue(":blobid:" + Base64.encode(s));
+    private static final Function<String, JsonValue> BLOB_MAPPER =  s -> Json.createValue(":blobId:" + Base64.encode(s));
 
     private static final Function<String, JsonValue> SAFE_LONG_MAPPER = new Function<String, JsonValue>() {
 
@@ -72,7 +76,7 @@ public class IndexDefinitionsJsonWriter {
      *
      * @param out the output stream to write to
      */
-    public void writeAsJson(@NotNull OutputStream out) {
+    public void writeAsJson(@NotNull OutputStream out) throws IOException {
         try ( JsonGenerator root = Json.createGenerator(out) ) {
             root.writeStartObject();
             for ( Map.Entry<String, List<DocViewNode2>> indexEntry : indexDefinitions.getIndexes().entrySet() )
@@ -82,7 +86,7 @@ public class IndexDefinitionsJsonWriter {
         }
     }
 
-    private void write(JsonGenerator json, DocViewNode2 index, String parentPath) {
+    private void write(JsonGenerator json, DocViewNode2 index, String parentPath) throws IOException {
 
         String nodeName = indexDefinitions.toShortName(index.getName());
         String objectKey = parentPath.equals(IndexDefinitions.OAK_INDEX_PATH) ?
@@ -137,8 +141,12 @@ public class IndexDefinitionsJsonWriter {
         // in this case, this is the nt:resource node
         Optional<byte[]> binary = indexDefinitions.getBinary(nodePath);
         if ( binary.isPresent() ) {
+            json.writeStartObject(JcrConstants.JCR_CONTENT);
             String blobAsString = new String(binary.get(), StandardCharsets.UTF_8);
-            write(json, "jcr:data", Collections.singletonList(blobAsString), BLOB_MAPPER);
+            write(json, JcrConstants.JCR_PRIMARYTYPE, Collections.singletonList(JcrConstants.NT_RESOURCE),  s -> Json.createValue("nam:" + s ));
+            write(json, JcrConstants.JCR_MIMETYPE,Collections.singletonList(Files.probeContentType(Paths.get(nodePath))), Json::createValue );
+            write(json, JcrConstants.JCR_DATA, Collections.singletonList(blobAsString), BLOB_MAPPER);
+            json.writeEnd();
         };
 
         // 4. write children
