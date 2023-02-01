@@ -33,6 +33,7 @@ import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonValue;
 import jakarta.json.stream.JsonGenerator;
 
+import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.util.Base64;
 import org.apache.jackrabbit.vault.util.DocViewNode2;
 import org.apache.jackrabbit.vault.util.DocViewProperty2;
@@ -49,7 +50,7 @@ import org.slf4j.LoggerFactory;
  */
 public class IndexDefinitionsJsonWriter {
 
-    private static final Function<String, JsonValue> BLOB_MAPPER =  s -> Json.createValue(":blobid:" + Base64.encode(s));
+    private static final Function<String, JsonValue> BLOB_MAPPER =  s -> Json.createValue(":blobId:" + Base64.encode(s));
 
     private static final Function<String, JsonValue> SAFE_LONG_MAPPER = new Function<String, JsonValue>() {
 
@@ -140,11 +141,11 @@ public class IndexDefinitionsJsonWriter {
         // in this case, this is the nt:resource node
         Optional<byte[]> binary = indexDefinitions.getBinary(nodePath);
         if ( binary.isPresent() ) {
-            json.writeStartObject("jcr:content");
+            json.writeStartObject(JcrConstants.JCR_CONTENT);
             String blobAsString = new String(binary.get(), StandardCharsets.UTF_8);
-            write(json, "jcr:primaryType", Collections.singletonList("nt:resource"),  s -> Json.createValue("nam:" + s ));
-            write(json, "jcr:mimeType", Collections.singletonList(Files.probeContentType(Paths.get(nodePath))), s -> Json.createValue(s) );
-            write(json, "jcr:data", Collections.singletonList(blobAsString), BLOB_MAPPER);
+            write(json, JcrConstants.JCR_PRIMARYTYPE, Collections.singletonList(JcrConstants.NT_RESOURCE),  s -> Json.createValue("nam:" + s ));
+            write(json, JcrConstants.JCR_MIMETYPE,Collections.singletonList(Files.probeContentType(Paths.get(nodePath))), Json::createValue );
+            write(json, JcrConstants.JCR_DATA, Collections.singletonList(blobAsString), BLOB_MAPPER);
             json.writeEnd();
         };
 
