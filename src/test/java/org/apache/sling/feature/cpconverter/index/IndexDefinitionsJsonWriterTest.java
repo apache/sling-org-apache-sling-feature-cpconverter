@@ -178,6 +178,13 @@ public class IndexDefinitionsJsonWriterTest {
         assertThat(configNode).as("config node")
             .hasEntrySatisfying("jcr:resource", Conditions.isJsonObject());
 
+        assertThat(configNode).as("config node has " + JcrConstants.JCR_PRIMARYTYPE)
+                .containsKey(JcrConstants.JCR_PRIMARYTYPE);
+
+        JsonString jcrPrimaryType = configNode.getJsonString(JcrConstants.JCR_PRIMARYTYPE);
+        assertThat(jcrPrimaryType.toString()).as("jcrPrimaryType property contains " + JcrConstants.NT_FILE)
+                .contains(JcrConstants.NT_FILE);
+
         JsonObject configContentNode = configNode.getJsonObject(JcrConstants.JCR_CONTENT);
         JsonString binaryEntry = configContentNode.getJsonString(JcrConstants.JCR_DATA);
         assertThat(binaryEntry).as("config.xml blob")

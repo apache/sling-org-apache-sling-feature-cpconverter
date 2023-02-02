@@ -141,6 +141,7 @@ public class IndexDefinitionsJsonWriter {
         // in this case, this is the nt:resource node
         Optional<byte[]> binary = indexDefinitions.getBinary(nodePath);
         if ( binary.isPresent() ) {
+            write(json, JcrConstants.JCR_PRIMARYTYPE, Collections.singletonList(JcrConstants.NT_FILE),  s -> Json.createValue("nam:" + s ));
             json.writeStartObject(JcrConstants.JCR_CONTENT);
             String blobAsString = new String(binary.get(), StandardCharsets.UTF_8);
             write(json, JcrConstants.JCR_PRIMARYTYPE, Collections.singletonList(JcrConstants.NT_RESOURCE),  s -> Json.createValue("nam:" + s ));
