@@ -477,7 +477,7 @@
                     <exclude>com.google.code.findbugs:jsr305</exclude>
                     <exclude>com.google.code.findbugs:findbugs-annotations</exclude>
                     <exclude>org.apache.felix:org.apache.felix.healthcheck.annotation</exclude>
-                    <exclude>rg.osgi:org.osgi.namespace.implementation</exclude>
+                    <exclude>org.osgi:org.osgi.namespace.implementation</exclude>
                     <exclude>org.osgi:org.osgi.service.component.annotations</exclude>
                     <exclude>org.osgi:org.osgi.service.feature</exclude><!-- optional for the featur emodel-->
                     <exclude>org.osgi:org.osgi.service.metatype.annotations</exclude>
