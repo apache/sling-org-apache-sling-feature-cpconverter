@@ -411,6 +411,11 @@ While scanning the input content-package(s), all ACLs entries are handled by the
 
 Default implementation is provided by [org.apache.sling.feature.cpconverter.acl.DefaultAclManager](./src/main/java/org/apache/sling/feature/cpconverter/accesscontrol/DefaultAclManager.java).
 
+When using a seed feature, repoinit instructions will be parsed to extract system user ids. The supported repoinit instructions are the ones known to the Repoinit Parser version 1.7.0, notably missing support for:
+
+- `ensure nodes`
+- `ensure principal ACL`
+
 #### Please note
 
 ACLs are set in the `repoinit` section for detected System Users _only_, all other ACLs will be 1:1 copied in the related `/jcr_root(/home/users/*/)\.content.xml` file, which will contain filtered ACLs.
