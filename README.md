@@ -413,8 +413,10 @@ Default implementation is provided by [org.apache.sling.feature.cpconverter.acl.
 
 When using a seed feature, repoinit instructions will be parsed to extract system user ids. The supported repoinit instructions are the ones known to the Repoinit Parser version 1.7.0, notably missing support for:
 
-- `ensure nodes`
-- `ensure principal ACL`
+- `add mixin` ( Repoinit Parser 1.8.0 )
+- `remove mixin` (Repoinit Parser 1.8.0 )
+- `ensure nodes` (Repoinit Parser 1.9.0 )
+- `ensure principal ACL` (Repoinit Parser 1.9.0 )
 
 #### Please note
 
