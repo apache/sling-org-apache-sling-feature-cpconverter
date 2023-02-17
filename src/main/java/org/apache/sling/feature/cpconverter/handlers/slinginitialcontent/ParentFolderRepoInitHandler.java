@@ -28,6 +28,7 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Formatter;
@@ -41,13 +42,16 @@ import static org.apache.jackrabbit.vault.util.Constants.DOT_CONTENT_XML;
 /**
  * Handles creating the parent folders for sling initial content entries from the bundle
  */
-class ParentFolderRepoInitHandler {
+class ParentFolderRepoInitHandler implements Closeable {
 
     private static final Logger logger = LoggerFactory.getLogger(ParentFolderRepoInitHandler.class);
 
     private final Set<RepoPath> parentFolderPaths = new HashSet<>();
 
-    /**
+    private final Formatter formatter = new Formatter();
+    
+    
+     /**
      * Handles creating the parent folders for sling initial content entries from the bundle
      *
      * @param contentPackageEntryRepositoryPath the actual repository path of the entry
@@ -69,37 +73,37 @@ class ParentFolderRepoInitHandler {
         parentFolderPaths.clear();
     }
 
-    void addRepoinitExtension(@NotNull List<VaultPackageAssembler> assemblers,
-                              @NotNull FeaturesManager featureManager) throws IOException, ConverterException {
-
-        try (Formatter formatter = new Formatter()) {
-            parentFolderPaths.stream()
-                    .filter(entry -> parentFolderPaths.stream()
-                            .noneMatch(other -> !other.equals(
-                                    entry) &&
-                                    other.startsWith(entry)
-                            )
+    void addAssemblersForRepoInitExtension(List<VaultPackageAssembler> assemblers){
+   
+        parentFolderPaths.stream()
+            .filter(entry -> parentFolderPaths.stream()
+                    .noneMatch(other -> !other.equals(
+                            entry) &&
+                            other.startsWith(entry)
                     )
-                    .filter(entry ->
-                            !entry.isRepositoryPath()
-                    )
-                    .map(entry ->
-                            // we want to make sure of all our entries that are repositoryPaths, 
-                            // we create repoinit statements to create the parent folders with proper types.
-                            // if we don't do this we will end up with constraintViolationExceptions.
-                            getCreatePath(entry, assemblers)
-                    )
-                    .filter(Objects::nonNull)
+            )
+            .filter(entry ->
+                    !entry.isRepositoryPath()
+            )
+            .map(entry ->
+                    // we want to make sure of all our entries that are repositoryPaths, 
+                    // we create repoinit statements to create the parent folders with proper types.
+                    // if we don't do this we will end up with constraintViolationExceptions.
+                    getCreatePath(entry, assemblers)
+            )
+            .filter(Objects::nonNull)
 
-                    .forEach(
-                            createPath -> formatter.format("%s", createPath.asRepoInitString())
-                    );
+            .forEach(
+                    createPath -> formatter.format("%s", createPath.asRepoInitString())
+            );
+        
+    }
+    void addRepoinitExtension(@NotNull FeaturesManager featureManager) throws IOException, ConverterException {
+    
+        String text = formatter.toString();
 
-            String text = formatter.toString();
-
-            if (!text.isEmpty()) {
-                featureManager.addOrAppendRepoInitExtension("content-package", text, null);
-            }
+        if (!text.isEmpty()) {
+            featureManager.addOrAppendRepoInitExtension("content-package", text, null);
         }
 
     }
@@ -117,4 +121,8 @@ class ParentFolderRepoInitHandler {
         return cp;
     }
 
+    @Override
+    public void close() throws IOException {
+        formatter.close();
+    }
 }

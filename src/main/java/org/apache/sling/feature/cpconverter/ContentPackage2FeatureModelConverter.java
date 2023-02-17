@@ -328,7 +328,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                     // finally serialize the Feature Model(s) file(s)
 
                     aclManager.addRepoinitExtension(assemblers, featuresManager);
-                    bundleSlingInitialContentExtractor.addRepoInitExtension(assemblers, featuresManager);
+                    bundleSlingInitialContentExtractor.addAssemblersForRepoInitExtension(assemblers);
                     indexManager.addRepoinitExtension(featuresManager);
                     
                     logger.info("Conversion complete!");
@@ -352,6 +352,9 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             }
         }
 
+        bundleSlingInitialContentExtractor.addRepoInitExtension(featuresManager);
+        featuresManager.serialize();
+        
         deployPackages();
         mutableContentsIds.clear();
 
