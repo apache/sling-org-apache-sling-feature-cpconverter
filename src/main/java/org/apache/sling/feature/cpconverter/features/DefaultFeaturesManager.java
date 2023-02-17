@@ -473,7 +473,9 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
 
             runmodeMapper.save();
         }
-      
+        cache.clear();
+        runModesCache.clear();
+        apiRegionExportsCache.clear();
     }
 
     private void serialize(Feature feature, String runMode, RunmodeMapper runmodeMapper) throws IOException {
