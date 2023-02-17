@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,6 +38,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Enumeration;
 import java.util.NavigableSet;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
@@ -57,6 +59,7 @@ class SlingInitialContentBundleEntryMetaDataCollector {
     private static final double THRESHOLD_RATIO = 10;
     private static final int BUFFER = 512;
     private static final long TOOBIG = 0x6400000; // Max size of unzipped data, 100MB
+    static final ClassLoader CL = SlingInitialContentBundleEntryMetaDataCollector.class.getClassLoader();
 
     private final BundleSlingInitialContentExtractContext context;
     private final String basePath;
@@ -66,8 +69,8 @@ class SlingInitialContentBundleEntryMetaDataCollector {
     private final NavigableSet<SlingInitialContentBundleEntryMetaData> defaultContentXmlEntries = new ConcurrentSkipListSet<>();
     private final AtomicLong total = new AtomicLong(0);
     private final JarFile jarFile;
-
-    private final File DEFAULT_NODE_TYPE_XML;
+    
+    private final File defaultContentXmlFile;
     
     SlingInitialContentBundleEntryMetaDataCollector(@NotNull BundleSlingInitialContentExtractContext context,
                                                     @NotNull ContentPackage2FeatureModelConverter contentPackage2FeatureModelConverter,
@@ -77,12 +80,20 @@ class SlingInitialContentBundleEntryMetaDataCollector {
         this.contentPackage2FeatureModelConverter = contentPackage2FeatureModelConverter;
         this.newBundleFile = newBundleFile;
         this.jarFile = context.getJarFile();
+        
+        this.defaultContentXmlFile = new File(this.basePath, "defaultContentXml.xml");
+        writeDefaultXMLFile();
+    }
 
-        try {
-            DEFAULT_NODE_TYPE_XML = new File(SlingInitialContentBundleEntryMetaDataCollector.class.getClassLoader().getResource("default-content.xml").toURI());
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
+    private void writeDefaultXMLFile() {
+        try(OutputStream outputStream = new FileOutputStream(defaultContentXmlFile)){
+            IOUtils.copy(Objects.requireNonNull(CL.getResourceAsStream("default-content.xml")), outputStream);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("Default Content XML file not found in classpath!", e);
+        } catch (IOException e) {
+            throw new RuntimeException("Could not prepare the default content XML file for sling initial content!", e);
         }
+        
     }
 
     /**
@@ -155,7 +166,7 @@ class SlingInitialContentBundleEntryMetaDataCollector {
            ){
             final PathEntry pathEntryValue = getPathEntryFromRepositoryPath(repositoryPath);
             if(pathEntryValue != null){
-                defaultContentXmlEntries.add(new SlingInitialContentBundleEntryMetaData(DEFAULT_NODE_TYPE_XML, pathEntryValue, parentPath + "/" + DOT_CONTENT_XML));
+                defaultContentXmlEntries.add(new SlingInitialContentBundleEntryMetaData(defaultContentXmlFile, pathEntryValue, parentPath + "/" + DOT_CONTENT_XML));
             }
          
         }
