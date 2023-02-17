@@ -28,7 +28,6 @@ import org.jetbrains.annotations.Nullable;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,7 +44,7 @@ import java.util.jar.Manifest;
 /**
  * Extracts the sling initial content from a bundle to an java.io.InputStream.
  */
-public class BundleSlingInitialContentExtractor implements Closeable {
+public class BundleSlingInitialContentExtractor {
 
     protected final AssemblerProvider assemblerProvider = new AssemblerProvider();
     protected final ContentReaderProvider contentReaderProvider = new ContentReaderProvider();
@@ -107,11 +106,8 @@ public class BundleSlingInitialContentExtractor implements Closeable {
         parentFolderRepoInitHandler.reset();
     }
 
-    public void addAssemblersForRepoInitExtension(@NotNull List<VaultPackageAssembler> assemblers){
-        parentFolderRepoInitHandler.addAssemblersForRepoInitExtension( assemblers);
-    }
-    public void addRepoInitExtension(@NotNull FeaturesManager featureManager) throws IOException, ConverterException {
-        parentFolderRepoInitHandler.addRepoinitExtension( featureManager);
+    public void addRepoInitExtension(@NotNull List<VaultPackageAssembler> assemblers, @NotNull FeaturesManager featureManager) throws IOException, ConverterException {
+        parentFolderRepoInitHandler.addRepoinitExtension(assemblers, featureManager);
     }
 
     protected void finalizePackageAssembly(@NotNull BundleSlingInitialContentExtractContext context) throws IOException, ConverterException {
@@ -133,8 +129,4 @@ public class BundleSlingInitialContentExtractor implements Closeable {
         return Files.createTempFile(contentPackage2FeatureModelConverter.getTempDirectory().toPath(), "newBundle", ".jar");
     }
 
-    @Override
-    public void close() throws IOException {
-        parentFolderRepoInitHandler.close();
-    }
 }

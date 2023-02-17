@@ -286,11 +286,9 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
             // analyze sub-content packages in order to filter out
             // possible outdated conflicting packages
             recollectorVaultPackageScanner.traverse(pack);
-
             logger.info("content-package '{}' successfully read!", contentPackage);
 
             aclManager.reset();
-            bundleSlingInitialContentExtractor.reset();
             
         }
 
@@ -328,19 +326,18 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                     // finally serialize the Feature Model(s) file(s)
 
                     aclManager.addRepoinitExtension(assemblers, featuresManager);
-                    bundleSlingInitialContentExtractor.addAssemblersForRepoInitExtension(assemblers);
+                    bundleSlingInitialContentExtractor.addRepoInitExtension(assemblers, featuresManager);
                     indexManager.addRepoinitExtension(featuresManager);
                     
                     logger.info("Conversion complete!");
 
-                    featuresManager.serialize();
+                   
 
                     emitters.stream().forEach(e -> e.endPackage(vaultPackage.getId(), result));
                 }
             } finally {
                 
                 aclManager.reset();
-                bundleSlingInitialContentExtractor.reset();
                 indexManager.reset();
                 assemblers.clear();
 
@@ -351,8 +348,6 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 }
             }
         }
-
-        bundleSlingInitialContentExtractor.addRepoInitExtension(featuresManager);
         featuresManager.serialize();
         
         deployPackages();

@@ -214,8 +214,8 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                     }
                 }
 
-                try (ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation, slingInitialContentPolicy,disablePackageTypeRecalculation); 
-                     BundleSlingInitialContentExtractor bundleSlingInitialContentExtractor = new BundleSlingInitialContentExtractor()) {
+                BundleSlingInitialContentExtractor bundleSlingInitialContentExtractor = new BundleSlingInitialContentExtractor();
+                try (ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation, slingInitialContentPolicy,disablePackageTypeRecalculation)) {
                    
                     converter.setFeaturesManager(featuresManager)
                              .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(artifactsOutputDirectory))
