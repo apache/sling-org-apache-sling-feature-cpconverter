@@ -30,18 +30,24 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Enumeration;
-import java.util.HashSet;
+import java.util.NavigableSet;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+import java.util.stream.Collectors;
+
+import static org.apache.jackrabbit.vault.util.Constants.DOT_CONTENT_XML;
 
 /**
  * Handles collecting the metadata for each sling initial content entry, to be used for extraction in another loop
@@ -56,10 +62,13 @@ class SlingInitialContentBundleEntryMetaDataCollector {
     private final String basePath;
     private final ContentPackage2FeatureModelConverter contentPackage2FeatureModelConverter;
     private final Path newBundleFile;
-    private final Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries = new HashSet<>();
+    private final NavigableSet<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries = new ConcurrentSkipListSet<>();
+    private final NavigableSet<SlingInitialContentBundleEntryMetaData> defaultContentXmlEntries = new ConcurrentSkipListSet<>();
     private final AtomicLong total = new AtomicLong(0);
     private final JarFile jarFile;
 
+    private final File DEFAULT_NODE_TYPE_XML;
+    
     SlingInitialContentBundleEntryMetaDataCollector(@NotNull BundleSlingInitialContentExtractContext context,
                                                     @NotNull ContentPackage2FeatureModelConverter contentPackage2FeatureModelConverter,
                                                     @NotNull Path newBundleFile) {
@@ -68,6 +77,12 @@ class SlingInitialContentBundleEntryMetaDataCollector {
         this.contentPackage2FeatureModelConverter = contentPackage2FeatureModelConverter;
         this.newBundleFile = newBundleFile;
         this.jarFile = context.getJarFile();
+
+        try {
+            DEFAULT_NODE_TYPE_XML = new File(SlingInitialContentBundleEntryMetaDataCollector.class.getClassLoader().getResource("default-content.xml").toURI());
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -106,10 +121,54 @@ class SlingInitialContentBundleEntryMetaDataCollector {
                 }
             }
         }
-
+        
         return collectedSlingInitialContentBundleEntries;
     }
+    
+    Set<SlingInitialContentBundleEntryMetaData> getDefaultContentXmlEntries() throws UnsupportedEncodingException {
+        
+        createDefaultContentXMLFiles();
+        return defaultContentXmlEntries;
+        
+    }
 
+    private void createDefaultContentXMLFiles() throws UnsupportedEncodingException {
+        
+        for(String repositoryPath: collectedSlingInitialContentBundleEntries.stream()
+                .map(SlingInitialContentBundleEntryMetaData::getRepositoryPath)
+                .collect(Collectors.toList())){
+            addDefaultSlingContentXMLAndParents(repositoryPath);
+        }
+    }
+
+    private void addDefaultSlingContentXMLAndParents(String repositoryPath) throws UnsupportedEncodingException {
+
+        if(StringUtils.countMatches(repositoryPath, '/') < 2){
+            //we don't add the primary type of level 1 and 2.
+            return;
+        }
+        
+        String parentPath = StringUtils.substringBeforeLast(repositoryPath, "/");
+        //if we already got an entry with the path defined, we skip ahead.
+        if( !alreadyFound(collectedSlingInitialContentBundleEntries, parentPath) &&
+            !alreadyFound(defaultContentXmlEntries, parentPath)
+           ){
+            final PathEntry pathEntryValue = getPathEntryFromRepositoryPath(repositoryPath);
+            if(pathEntryValue != null){
+                defaultContentXmlEntries.add(new SlingInitialContentBundleEntryMetaData(DEFAULT_NODE_TYPE_XML, pathEntryValue, parentPath + "/" + DOT_CONTENT_XML));
+            }
+         
+        }
+        addDefaultSlingContentXMLAndParents(parentPath);
+        
+    }
+    
+    private boolean alreadyFound(Set<SlingInitialContentBundleEntryMetaData> set, String parentPath){
+        return set.stream()
+                .map(SlingInitialContentBundleEntryMetaData::getRepositoryPath)
+                .anyMatch(parentPath::equals);
+    }
+    
     private void extractFile(JarEntry jarEntry, JarOutputStream bundleOutput) throws IOException {
 
         byte[] data = new byte[BUFFER];
@@ -189,6 +248,21 @@ class SlingInitialContentBundleEntryMetaDataCollector {
         // https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html#file-name-escaping
         String repositoryPath = (target != null ? target : "/") + URLDecoder.decode(entryName.substring(pathEntryValue.getPath().length()), "UTF-8");
         return new SlingInitialContentBundleEntryMetaData(targetFile, pathEntryValue, repositoryPath);
+    }
+    
+
+    private PathEntry getPathEntryFromRepositoryPath(@NotNull String repositoryPath) {
+
+        if(StringUtils.countMatches(repositoryPath, '/') < 2){
+            //we don't add the primary type of level 1 and 2.
+            return null;
+        }
+        
+        Optional<PathEntry> pathEntryOptional = context.getPathEntryList().stream().filter(
+                pathEntry -> checkIfPathStartsWithOrIsEqual(pathEntry.getTarget(), repositoryPath)
+        ).findFirst();
+
+        return pathEntryOptional.orElse(null);
     }
 
 

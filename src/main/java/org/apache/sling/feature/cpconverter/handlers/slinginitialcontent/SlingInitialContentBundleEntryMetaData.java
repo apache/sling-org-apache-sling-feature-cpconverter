@@ -25,7 +25,7 @@ import java.util.Objects;
 /**
  * Holds BundleEntry MetaData.
  */
-class SlingInitialContentBundleEntryMetaData {
+class SlingInitialContentBundleEntryMetaData implements Comparable<SlingInitialContentBundleEntryMetaData> {
 
     private final File targetFile;
     private final PathEntry pathEntry;
@@ -74,4 +74,11 @@ class SlingInitialContentBundleEntryMetaData {
                 "repositoryPath='" + repositoryPath + '\'' +
                 '}';
     }
+
+    @Override
+    public int compareTo(@NotNull SlingInitialContentBundleEntryMetaData o) {
+        return this.repositoryPath.compareTo(o.repositoryPath);
+    }
+    
+    
 }

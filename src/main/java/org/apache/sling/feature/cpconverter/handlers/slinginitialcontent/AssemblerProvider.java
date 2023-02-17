@@ -99,9 +99,9 @@ public class AssemblerProvider {
     private void addPathFilterSetToAssemblerFilter(@NotNull PathEntry pathEntry, @NotNull VaultPackageAssembler assembler) {
         ImportMode importMode;
         if (pathEntry.isOverwrite()) {
-            importMode = ImportMode.UPDATE;
+            importMode = ImportMode.REPLACE;
         } else {
-            importMode = ImportMode.MERGE;
+            importMode = ImportMode.MERGE_PROPERTIES;
         }
 
         DefaultWorkspaceFilter filter = assembler.getFilter();

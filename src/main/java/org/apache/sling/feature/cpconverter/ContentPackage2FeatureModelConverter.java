@@ -328,7 +328,6 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                     // finally serialize the Feature Model(s) file(s)
 
                     aclManager.addRepoinitExtension(assemblers, featuresManager);
-                    bundleSlingInitialContentExtractor.addRepoInitExtension(assemblers, featuresManager);
                     indexManager.addRepoinitExtension(featuresManager);
                     
                     logger.info("Conversion complete!");

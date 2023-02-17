@@ -49,14 +49,11 @@ class BundleSlingInitialContentJarEntryExtractor {
 
     private final AssemblerProvider assemblerProvider;
     private final ContentReaderProvider contentReaderProvider;
-    private final ParentFolderRepoInitHandler parentFolderRepoInitHandler;
 
     BundleSlingInitialContentJarEntryExtractor(@NotNull AssemblerProvider assemblerProvider,
-                                               @NotNull ContentReaderProvider contentReaderProvider,
-                                               @NotNull ParentFolderRepoInitHandler parentFolderRepoInitHandler) {
+                                               @NotNull ContentReaderProvider contentReaderProvider) {
         this.assemblerProvider = assemblerProvider;
         this.contentReaderProvider = contentReaderProvider;
-        this.parentFolderRepoInitHandler = parentFolderRepoInitHandler;
     }
 
     /**
@@ -70,7 +67,8 @@ class BundleSlingInitialContentJarEntryExtractor {
      */
     void extractAndAddToAssembler(@NotNull BundleSlingInitialContentExtractContext context,
                                   @NotNull SlingInitialContentBundleEntryMetaData slingInitialContentBundleEntryMetaData,
-                                  @NotNull Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries) throws IOException, ConverterException {
+                                  @NotNull Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries,
+                                  @NotNull boolean isDefaultContentXmlFile) throws IOException, ConverterException {
 
         String repositoryPath = slingInitialContentBundleEntryMetaData.getRepositoryPath();
         File file = slingInitialContentBundleEntryMetaData.getTargetFile();
@@ -84,7 +82,7 @@ class BundleSlingInitialContentJarEntryExtractor {
             VaultPackageAssembler packageAssembler = assemblerProvider.initPackageAssemblerForPath(context, repositoryPath, pathEntryValue);
 
             final ContentReader contentReader = contentReaderProvider.getContentReaderForEntry(file, pathEntryValue);
-            if (contentReader != null) {
+            if (contentReader != null && !isDefaultContentXmlFile) {
 
                 // convert to docview xml
                 tmpDocViewInputFile = Files.createTempFile(context.getConverter().getTempDirectory().toPath(), "docview", ".xml");
@@ -117,17 +115,21 @@ class BundleSlingInitialContentJarEntryExtractor {
 
             }
 
-            try (Archive virtualArchive = SingleFileArchive.fromPathOrInputStream(tmpDocViewInputFile, bundleFileInputStream,
-                    () -> Files.createTempFile(context.getConverter().getTempDirectory().toPath(), "initial-content", Text.getName(file.getName())), contentPackageEntryPath)) {
-                // in which content package should this end up?
+            //if we are writing in a .content.xml file as default, 
+            // but the .content.xml is already present (written by specifications, then we don't do anything.)
+            if(!(isDefaultContentXmlFile && packageAssembler.alreadyPresent(contentPackageEntryPath))){
+                try (Archive virtualArchive = SingleFileArchive.fromPathOrInputStream(tmpDocViewInputFile, bundleFileInputStream,
+                        () -> Files.createTempFile(context.getConverter().getTempDirectory().toPath(), "initial-content", Text.getName(file.getName())), contentPackageEntryPath)) {
+                    // in which content package should this end up?
 
-                if (tmpDocViewInputFile != null) {
-                    packageAssembler.addEntry(contentPackageEntryPath, tmpDocViewInputFile.toFile());
-                } else {
-                    packageAssembler.addEntry(contentPackageEntryPath, bundleFileInputStream);
+                    if (tmpDocViewInputFile != null) {
+                        packageAssembler.addEntry(contentPackageEntryPath, tmpDocViewInputFile.toFile());
+                    } else {
+                        packageAssembler.addEntry(contentPackageEntryPath, bundleFileInputStream);
+                    }
                 }
-                parentFolderRepoInitHandler.addParentsForPath(contentPackageEntryPath);
             }
+          
 
         } finally {
             if (tmpDocViewInputFile != null) {

@@ -233,6 +233,11 @@ public class VaultPackageAssembler {
         }
     }
 
+    public @NotNull boolean alreadyPresent(@NotNull String path){
+        File target = new File(storingDirectory, path);
+        return target.exists();
+    }
+    
     public @NotNull OutputStream createEntry(@NotNull String path) throws IOException {
         File target = new File(storingDirectory, path);
         if (!target.getParentFile().mkdirs() && !target.getParentFile().isDirectory()) {

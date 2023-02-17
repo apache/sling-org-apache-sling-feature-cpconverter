@@ -18,13 +18,14 @@ package org.apache.sling.feature.cpconverter.handlers;
 
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.jackrabbit.vault.util.Constants.DOT_CONTENT_XML;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.xmlunit.assertj.XmlAssert.assertThat;
@@ -38,17 +39,18 @@ import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.Dictionary;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.jar.JarFile;
+
+import org.apache.jackrabbit.vault.fs.api.ImportMode;
+import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.PackageId;
@@ -62,6 +64,7 @@ import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.SimpleFolderArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
+import org.apache.sling.feature.cpconverter.repoinit.createpath.PrimaryTypeParser;
 import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.junit.Assert;
@@ -86,14 +89,15 @@ import javax.xml.transform.Source;
 @RunWith(MockitoJUnitRunner.class)
 public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntryHandlerTest {
 
+    static final String TYPE_SLING_FOLDER = "sling:Folder";
+    static final String TYPE_CQ_COMPONENT = "cq:Component";
+    static final String TYPE_CQ_CLIENT_LIBRARY_FOLDER = "cq:ClientLibraryFolder";
+    static final String JCR_ROOT = "jcr_root";
     @Captor
     ArgumentCaptor<Dictionary<String, Object>> dictionaryCaptor;
 
     @Captor
     ArgumentCaptor<Configuration> cfgCaptor;
-
-    @Captor
-    ArgumentCaptor<String> repoinitTextCaptor;
     
     @Test
     public void testSlingInitialContent() throws Exception {
@@ -122,8 +126,6 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
         handler.handle("/jcr_root/apps/gav/install/io.wcm.handler.media-1.11.6.jar", archive, entry, converter);
         
-        extractor.addRepoInitExtension(converter.getAssemblers(), featuresManager);
-        
         converter.deployPackages();
         // verify generated bundle
         try (JarFile jarFile = new JarFile(new File(targetFolder, "io.wcm.handler.media-1.11.6-cp2fm-converted.jar"))) {
@@ -142,30 +144,34 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             assertEquals(targetId, vaultPackage.getId());
             Entry entry = archive.getEntry("jcr_root/apps/wcm-io/handler/media/components/global/include/responsiveImageSettings/.content.xml");
             assertNotNull("Archive does not contain expected item", entry);
+            
+            assertNoContentXmlPresent(archive, "");
+            assertNoContentXmlPresent(archive, "/apps");
+            assertContentPrimaryType(archive, "/apps/wcm-io/handler", TYPE_SLING_FOLDER);
+            assertContentPrimaryType(archive, "/apps/wcm-io/handler/media", TYPE_SLING_FOLDER);
+            assertContentPrimaryType(archive, "/apps/wcm-io/handler/media/content", TYPE_SLING_FOLDER);
+            assertContentPrimaryType(archive, "/apps/wcm-io/handler/media/components/granite/form/mediaformatselect", TYPE_CQ_COMPONENT);
+            assertContentPrimaryType(archive, "/apps/wcm-io/handler/media/i18n", TYPE_SLING_FOLDER);
+            assertContentPrimaryType(archive, "/apps/wcm-io/handler/media/components/global/include", TYPE_SLING_FOLDER);
+            assertContentPrimaryType(archive, "/apps/wcm-io/handler/media/components/placeholder", TYPE_SLING_FOLDER);
+            assertContentPrimaryType(archive, "/apps/wcm-io/handler/media/clientlibs/authoring/dialog", TYPE_CQ_CLIENT_LIBRARY_FOLDER);
+            assertContentPrimaryType(archive, "/apps/wcm-io/handler/media/clientlibs/authoring/dialog/css", TYPE_SLING_FOLDER);
+            assertContentPrimaryType(archive, "/apps/wcm-io/handler/media/components/granite/form/fileupload", TYPE_CQ_COMPONENT);
+            assertContentPrimaryType(archive, "/apps/wcm-io/handler/media/clientlibs/authoring/dialog", TYPE_CQ_CLIENT_LIBRARY_FOLDER);
+            assertContentPrimaryType(archive, "/apps/wcm-io/handler/media/clientlibs/authoring/dialog/js", TYPE_SLING_FOLDER);
+            assertContentPrimaryType(archive, "/apps/wcm-io/handler/media/content", TYPE_SLING_FOLDER);
 
-
-            Set<String> expectedCreatePathStatements = new HashSet<>();
-            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/content");
-            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/components/granite/form/mediaformatselect(cq:Component)");
-            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/i18n");
-            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/components/global/include");
-            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/components/placeholder");
-            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/clientlibs/authoring/dialog(cq:ClientLibraryFolder)/css");
-            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/components/granite/form/fileupload(cq:Component)");
-            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/clientlibs/authoring/dialog(cq:ClientLibraryFolder)/js");
-            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/components/granite/datasources/mediaformats");
-            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/docroot/resources/img");
-            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/components/granite/global");
-            expectedCreatePathStatements.add("create path (sling:Folder) /apps/wcm-io/handler/media/components/granite/form/pathfield(cq:Component)");
+            assertContentPrimaryType(archive, "/apps/wcm-io/handler/media/components/granite/datasources/mediaformats", TYPE_SLING_FOLDER);
+            assertContentPrimaryType(archive, "/apps/wcm-io/handler/media/docroot/resources/img", TYPE_SLING_FOLDER);
+            assertContentPrimaryType(archive, "/apps/wcm-io/handler/media/components/granite/global", TYPE_SLING_FOLDER);
+            assertContentPrimaryType(archive, "/apps/wcm-io/handler/media/components/granite/form/pathfield", TYPE_CQ_COMPONENT);
 
        
            
-            verify(featuresManager, times(1)).addOrAppendRepoInitExtension(eq("content-package"), repoinitTextCaptor.capture(), Mockito.isNull());
-
-            for(String expectedCreatePathStatement: expectedCreatePathStatements){
-                assertTrue("Repoinit text does not contain desired create path statement!",StringUtils.contains(repoinitTextCaptor.getValue(), expectedCreatePathStatement));
-            }
+            verify(featuresManager, never()).addOrAppendRepoInitExtension(eq("content-package"), anyString(), Mockito.isNull());
             
+            List<PathFilterSet> filterSets = vaultPackage.getMetaInf().getFilter().getFilterSets();
+            assertEquals(ImportMode.REPLACE, filterSets.get(0).getImportMode());
         }
         // verify nothing else has been deployed
         assertEquals(2, targetFolder.list().length);
@@ -243,7 +249,8 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             String actualXML = IOUtils.toString(archive.getInputSource(jsonFileDescriptorEntry).getByteStream(), UTF_8);
     
             assertThat(actualXML).and(expectedXML).areSimilar();
-
+            List<PathFilterSet> filterSets = vaultPackage.getMetaInf().getFilter().getFilterSets();
+            assertEquals(ImportMode.REPLACE, filterSets.get(0).getImportMode());
         }
     }
 
@@ -283,8 +290,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter);
 
         converter.deployPackages();
-        extractor.addRepoInitExtension(converter.getAssemblers(), featuresManager);
-
+       
         try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "mysite.core-apps-1.0.0-SNAPSHOT-cp2fm-converted.zip"));
              Archive archive = vaultPackage.getArchive()) {
             archive.open(true);
@@ -294,9 +300,14 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             InputStream inputStream = archive.getInputSource(archive.getEntry("jcr_root/apps/myinitialcontentest/test/parent-with-definition/.content.xml")).getByteStream();
             assertNotNull(inputStream);
 
-            //this needs to be defined by repoinit, not the package itself
-            Archive.Entry parentWithoutDefinitionEntry = archive.getEntry("jcr_root/apps/myinitialcontentest/test/parent-with-definition/parent-without-definition/.content.xml");
-            assertNull(parentWithoutDefinitionEntry);
+            //this needs to be defined with a sling initial content
+            assertContentPrimaryType(archive, "/apps/myinitialcontentest/test/parent-with-definition/parent-without-definition", TYPE_SLING_FOLDER);
+            assertContentPrimaryType(archive, "/apps/myinitialcontentest/test/parent-with-definition", "my:parent");
+            assertContentPrimaryType(archive, "/apps/myinitialcontentest/test", TYPE_SLING_FOLDER);
+            assertContentPrimaryType(archive, "/apps/myinitialcontentest", TYPE_SLING_FOLDER);
+            
+            assertNoContentXmlPresent(archive, "");
+            assertNoContentXmlPresent(archive, "/apps");
 
             InputStream someUnstructuredNode = archive.getInputSource(archive.getEntry("jcr_root/apps/myinitialcontentest/test/parent-with-definition/parent-without-definition/someUnstructuredNode/.content.xml")).getByteStream();
             assertNotNull(someUnstructuredNode);
@@ -305,12 +316,14 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
                     "create path (sling:Folder) /content/test/myinitialcontentest2\n" +
                     "create path (sling:Folder) /apps/myinitialcontentest/test/parent-with-definition(my:parent)/parent-without-definition\n";
             
-            verify(featuresManager, times(1)).addOrAppendRepoInitExtension(eq("content-package"), eq(repoinitText), Mockito.isNull());
+            verify(featuresManager, never()).addOrAppendRepoInitExtension(eq("content-package"), eq(repoinitText), Mockito.isNull());
             
+            // test overwrite = true directive
+            List<PathFilterSet> filterSets = vaultPackage.getMetaInf().getFilter().getFilterSets();
+            assertEquals(ImportMode.REPLACE, filterSets.get(0).getImportMode());
         }
 
     }
-    
 
     @Test
     public void testSlingInitialContentWithNodeTypeAndPageJson() throws Exception {
@@ -352,9 +365,17 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             PackageId targetId = PackageId.fromString("com.mysite:mysite.core-apps:1.0.0-SNAPSHOT-cp2fm-converted");
             assertEquals(targetId, vaultPackage.getId());
 
-            assertPageStructureFromEntry(archive, "jcr_root/apps/mysite/components/global", "homepage");
-            assertPageStructureFromEntry(archive, "jcr_root/apps/mysite/components/global", "page", "body.html");
-            assertPageStructureFromEntry(archive, "jcr_root/apps/mysite/components/global", "xfpage","body.html");
+
+            assertNoContentXmlPresent(archive, "");
+            assertNoContentXmlPresent(archive, "/apps");
+            
+            assertContentPrimaryType(archive, "/apps/mysite", TYPE_SLING_FOLDER);
+            assertContentPrimaryType(archive, "/apps/mysite/components", TYPE_SLING_FOLDER);
+            assertContentPrimaryType(archive, "/apps/mysite/components/global", TYPE_SLING_FOLDER);
+            
+            assertPageStructureFromEntry(archive, "/apps/mysite/components/global", "homepage");
+            assertPageStructureFromEntry(archive, "/apps/mysite/components/global", "page", "body.html");
+            assertPageStructureFromEntry(archive, "/apps/mysite/components/global", "xfpage","body.html");
             
             InputStream inputStream = archive.getInputSource(archive.getEntry("jcr_root/apps/mysite/components/global/homepage/.content.xml")).getByteStream();
             
@@ -363,7 +384,8 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
             
             assertThat(expectedXML).and(actualXML).areSimilar();
-         
+            List<PathFilterSet> filterSets = vaultPackage.getMetaInf().getFilter().getFilterSets();
+            assertEquals(ImportMode.REPLACE, filterSets.get(0).getImportMode());
         }
 
     }
@@ -412,25 +434,27 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             assertEquals(targetId, vaultPackage.getId());
 
             //json containing a property: "fancyCharacters": "<&\"'>"
-            assertPageStructureFromEntry(archive,"jcr_root/apps/mysite/components/global", "homepage" );
+            assertPageStructureFromEntry(archive,"/apps/mysite/components/global", "homepage" );
             assertResultingEntry(archive, "homepage");
             
             //xml with custom name element: nodeName and containing a textfile
-            assertPageStructureFromEntry(archive,"jcr_root/apps/mysite/components/global", "nodeName", "testfile.txt" );
+            assertPageStructureFromEntry(archive,"/apps/mysite/components/global", "nodeName", "testfile.txt" );
             assertResultingEntry(archive, "nodeName");
             
             //xml with custom "name" element "xyz"
-            assertPageStructureFromEntry(archive, "jcr_root/apps/mysite/components/global", "xyz");
+            assertPageStructureFromEntry(archive, "/apps/mysite/components/global", "xyz");
             assertResultingEntry(archive, "xyz");
             
             //xml with custom name element: 11&quot;&quot;&gt;&lt;mumbojumbo
             assertResultingEntry(archive, "11mumbojumbo");
-            assertPageStructureFromEntry(archive,"jcr_root/apps/mysite/components/global", "11mumbojumbo" );
+            assertPageStructureFromEntry(archive,"/apps/mysite/components/global", "11mumbojumbo" );
+
+            List<PathFilterSet> filterSets = vaultPackage.getMetaInf().getFilter().getFilterSets();
+            assertEquals(ImportMode.REPLACE, filterSets.get(0).getImportMode());
         }
 
     }
-
-
+    
 
     @Test
     public void testSlingInitialContentWithNumberedEntries() throws Exception {
@@ -475,10 +499,65 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             String actualXML = IOUtils.toString(xmlFile, UTF_8);
 
             assertThat(expectedXML).and(actualXML).areSimilar();
+
+            List<PathFilterSet> filterSets = vaultPackage.getMetaInf().getFilter().getFilterSets();
+            assertEquals(ImportMode.REPLACE, filterSets.get(0).getImportMode());
         }
 
     }
 
+    @Test
+    public void testSlingInitialContentNoOverwrite() throws Exception {
+        setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite.core-1.0.0-SNAPSHOT-overwrite-off.jar");
+        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
+        converter.setEntryHandlersManager(handlersManager);
+        Map<String, String> namespaceRegistry = new HashMap<>();
+
+        namespaceRegistry.put("cq","http://www.day.com/jcr/cq/1.0");
+        namespaceRegistry.put("granite", "http://www.adobe.com/jcr/granite/1.0");
+
+
+        when(featuresManager.getNamespaceUriByPrefix()).thenReturn(namespaceRegistry);
+
+        File targetFolder = tmpFolder.newFolder();
+        when(converter.getArtifactsDeployer()).thenReturn(new SimpleFolderArtifactsDeployer(targetFolder));
+        when(converter.isSubContentPackageIncluded("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar-APPLICATION")).thenReturn(true);
+
+        VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
+        Properties props = new Properties();
+        props.setProperty(PackageProperties.NAME_GROUP, "com.mysite");
+        props.setProperty(PackageProperties.NAME_NAME, "mysite.core");
+        props.setProperty(PackageProperties.NAME_VERSION, "1.0.0-SNAPSHOT");
+        when(assembler.getPackageProperties()).thenReturn(props);
+        converter.setMainPackageAssembler(assembler);
+        converter.setAclManager(new DefaultAclManager());
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
+
+        handler.setBundleSlingInitialContentExtractor(extractor);
+        handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
+        handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter);
+
+        converter.deployPackages();
+
+        // verify generated package
+        try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "mysite.core-apps-1.0.0-SNAPSHOT-cp2fm-converted.zip"));
+             Archive archive = vaultPackage.getArchive()) {
+            archive.open(true);
+            PackageId targetId = PackageId.fromString("com.mysite:mysite.core-apps:1.0.0-SNAPSHOT-cp2fm-converted");
+            assertEquals(targetId, vaultPackage.getId());
+
+
+            assertNoContentXmlPresent(archive, "");
+            assertNoContentXmlPresent(archive, "/apps");
+
+            assertContentPrimaryType(archive, "/apps/myinitialcontentest", TYPE_SLING_FOLDER);
+            assertContentPrimaryType(archive, "/apps/myinitialcontentest/test", TYPE_SLING_FOLDER);
+            assertContentPrimaryType(archive, "/apps/myinitialcontentest/test/parent-with-definition", "my:parent");
+            
+            List<PathFilterSet> filterSets = vaultPackage.getMetaInf().getFilter().getFilterSets();
+            assertEquals(ImportMode.MERGE_PROPERTIES, filterSets.get(0).getImportMode());
+        }
+    }
     @Test
     public void testSlingInitialContentWithNodeType() throws Exception {
         setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite-slinginitialcontent-nodetype-def.jar");
@@ -523,6 +602,9 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             assertEquals(targetId, vaultPackage.getId());
             Entry entry = archive.getEntry("jcr_root/apps/myinitialcontentest/my-first-node/.content.xml");
             assertNotNull("Archive does not contain expected item", entry);
+
+            List<PathFilterSet> filterSets = vaultPackage.getMetaInf().getFilter().getFilterSets();
+            assertEquals(ImportMode.REPLACE, filterSets.get(0).getImportMode());
         }
         // verify nothing else has been deployed
         assertEquals(2, targetFolder.list().length);
@@ -641,15 +723,29 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
     }
 
     private void assertPageStructureFromEntry(Archive archive, String basePath, String pageName, String... files) throws IOException {
-        Entry contentXml = archive.getEntry( basePath + "/" + pageName + "/.content.xml");
+        Entry contentXml = archive.getEntry( JCR_ROOT + basePath + "/" + pageName + "/.content.xml");
         assertNotNull(contentXml);
-        Entry pageXml = archive.getEntry( basePath + "/" + pageName + ".xml");
+        Entry pageXml = archive.getEntry( JCR_ROOT + basePath + "/" + pageName + ".xml");
         assertNull(pageXml);
 
         for(String file: files){
-            Entry expectedEntry = archive.getEntry( basePath + "/" + pageName + "/" + file);
+            Entry expectedEntry = archive.getEntry(JCR_ROOT + basePath + "/" + pageName + "/" + file);
             assertNotNull(expectedEntry);
         }
+    }
+
+    private void assertNoContentXmlPresent(Archive archive, String archivePath) throws IOException {
+        assertNull(archive.getEntry(JCR_ROOT + "/" + archivePath + DOT_CONTENT_XML));
+    }
+
+    private void assertContentPrimaryType(Archive archive, String entryPath, String expectedPrimaryType) throws IOException {
+
+        assertNotNull(archive);
+        Archive.Entry entry = archive.getEntry(JCR_ROOT + entryPath + "/" + DOT_CONTENT_XML);
+        assertNotNull(entry);
+        InputStream byteStream = archive.getInputSource(entry).getByteStream();
+        String actualPrimaryType = new PrimaryTypeParser().parse(byteStream);
+        assertEquals(expectedPrimaryType, actualPrimaryType);
     }
 
 }

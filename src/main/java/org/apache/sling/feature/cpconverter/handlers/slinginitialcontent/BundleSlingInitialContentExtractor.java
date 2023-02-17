@@ -20,7 +20,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.jackrabbit.vault.packaging.PackageType;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.ConverterException;
-import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
 import org.apache.sling.jcr.contentloader.PathEntry;
 import org.jetbrains.annotations.NotNull;
@@ -34,7 +33,6 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -48,7 +46,6 @@ public class BundleSlingInitialContentExtractor {
 
     protected final AssemblerProvider assemblerProvider = new AssemblerProvider();
     protected final ContentReaderProvider contentReaderProvider = new ContentReaderProvider();
-    protected final ParentFolderRepoInitHandler parentFolderRepoInitHandler = new ParentFolderRepoInitHandler();
 
     /**
      * Extract the bundle sling initial content, assemble it into package assemblers into a different package,
@@ -78,14 +75,25 @@ public class BundleSlingInitialContentExtractor {
         SlingInitialContentBundleEntryMetaDataCollector collector =
                 new SlingInitialContentBundleEntryMetaDataCollector(context, contentPackage2FeatureModelConverter, strippedBundleFile);
         Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries = collector.collectFromContextAndWriteTmpFiles();
+        Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentDefaultContentXmlEntries = collector.getDefaultContentXmlEntries();
 
         // now that we got collectedSlingInitialContentBundleEntries ready, we loop it and perform an extract for each entry.
         // then add it into the appropriate vault package assemblers
         BundleSlingInitialContentJarEntryExtractor jarEntryExtractor =
-                new BundleSlingInitialContentJarEntryExtractor(assemblerProvider, contentReaderProvider, parentFolderRepoInitHandler);
+                new BundleSlingInitialContentJarEntryExtractor(assemblerProvider, contentReaderProvider);
 
         for (SlingInitialContentBundleEntryMetaData slingInitialContentBundleEntryMetaData : collectedSlingInitialContentBundleEntries) {
-            jarEntryExtractor.extractAndAddToAssembler(context, slingInitialContentBundleEntryMetaData, collectedSlingInitialContentBundleEntries);
+            jarEntryExtractor.extractAndAddToAssembler(context, 
+                    slingInitialContentBundleEntryMetaData, 
+                    collectedSlingInitialContentBundleEntries, 
+                    false);
+        }
+
+        for (SlingInitialContentBundleEntryMetaData slingInitialContentBundleEntryMetaData : collectedSlingInitialContentDefaultContentXmlEntries) {
+            jarEntryExtractor.extractAndAddToAssembler(context, 
+                    slingInitialContentBundleEntryMetaData, 
+                    collectedSlingInitialContentBundleEntries, 
+                    true);
         }
 
         // add additional content packages to feature model
@@ -103,11 +111,7 @@ public class BundleSlingInitialContentExtractor {
     }
 
     public void reset() {
-        parentFolderRepoInitHandler.reset();
-    }
-
-    public void addRepoInitExtension(@NotNull List<VaultPackageAssembler> assemblers, @NotNull FeaturesManager featureManager) throws IOException, ConverterException {
-        parentFolderRepoInitHandler.addRepoinitExtension(assemblers, featureManager);
+       
     }
 
     protected void finalizePackageAssembly(@NotNull BundleSlingInitialContentExtractContext context) throws IOException, ConverterException {
