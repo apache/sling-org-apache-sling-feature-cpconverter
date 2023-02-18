@@ -65,7 +65,7 @@ public class CreatePathSegmentProcessorTest {
 
 
     @Test
-    public void testMultiPackageReplace() throws IOException {
+    public void testMultiPackageReplaceFilter() throws IOException {
 
 
         VaultPackage vaultPackageA = createVaultPackage("test-a-1.0.zip");
@@ -88,6 +88,33 @@ public class CreatePathSegmentProcessorTest {
         assertSegment(definitions, 4, "css", "sling:OrderedFolder", "rep:AccessControllable");
         
         
+    }
+
+
+    @Test
+    public void testMultiPackageMergeFilter() throws IOException {
+
+
+        VaultPackage vaultPackageA = createVaultPackage("test-a-1.0.zip");
+        VaultPackage vaultPackageC = createVaultPackage("test-c-1.0.zip");
+        CreatePath cp = new CreatePath("sling:Folder");
+        RepoPath repoPath = new RepoPath("/apps/mysite/clientlibs/mysite-all/css");
+
+        prepareVaultPackageAssemblers(vaultPackageA, vaultPackageC);
+
+        CreatePathSegmentProcessor processor = new CreatePathSegmentProcessor(repoPath, packageAssemblers, cp);
+        processor.processSegments();
+
+        System.out.println(cp.asRepoInitString());
+        List<PathSegmentDefinition> definitions = cp.getDefinitions();
+
+        assertSegment(definitions, 0, "apps", "sling:Folder");
+        assertSegment(definitions, 1, "mysite", "sling:Folder");
+        assertSegment(definitions, 2, "clientlibs", "sling:Folder");
+        assertSegment(definitions, 3, "mysite-all", "cq:ClientLibraryFolder");
+        assertSegment(definitions, 4, "css", "sling:Folder", "rep:AccessControllable");
+
+
     }
     
     private void assertSegment(List<PathSegmentDefinition> definitions, int index, String expectedPath, String expectedResourceType, String... mixinTypes){
