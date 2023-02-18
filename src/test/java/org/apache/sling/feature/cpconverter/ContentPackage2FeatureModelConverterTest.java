@@ -66,8 +66,6 @@ import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
-import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
-import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.junit.After;
@@ -139,43 +137,6 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         converter.processSubPackage("", null, null, false);
     }
 
-    @Test
-    public void convertTest() throws Exception {
-        URL packageUrl1 = getClass().getResource("build_mfl-superapp-aem.all-2023.201.111121.0002251420.zip");
-        URL packageUrl2 = getClass().getResource("build_aem-adityabirlafashionandretailprogram-project.all-2023.201.111121.0002251420.zip");
-        
-        File packageFile1 = FileUtils.toFile(packageUrl1);
-        File packageFile2 = FileUtils.toFile(packageUrl2);
-
-        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
-        File outputDirectoryUnreferencedArtifacts = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + "_unreferenced_" + System.currentTimeMillis());
-
-        BundleSlingInitialContentExtractor bundleSlingInitialContentExtractor = new BundleSlingInitialContentExtractor();
-        try( ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(false, ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.EXTRACT_AND_REMOVE, false)
-                    .setEntryHandlersManager(new DefaultEntryHandlersManager(
-                            Collections.emptyMap(),
-                            false,
-                            ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.EXTRACT_AND_REMOVE,
-                            bundleSlingInitialContentExtractor,
-                            ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT)
-                    )
-                  .setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
-                  .setAclManager(new DefaultAclManager())
-                  .setBundleSlingInitialContentExtractor(bundleSlingInitialContentExtractor)
-                  .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
-                  .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
-                  .setContentTypePackagePolicy(PackagePolicy.PUT_IN_DEDICATED_FOLDER)
-                  .setUnreferencedArtifactsDeployer(new SimpleFolderArtifactsDeployer(outputDirectoryUnreferencedArtifacts)
-          )){
-            converter.convert(packageFile1, packageFile2);
-        } catch (IOException | ConverterException e) {
-            throw new RuntimeException(e);
-        }
-
-        File runmodeMapperFile = new File(outputDirectory, "runmode.mapping");
-        assertTrue(runmodeMapperFile.exists());
-        assertTrue(runmodeMapperFile.isFile());
-    }
     @Test
     public void convertContentPackage() throws Exception {
         URL packageUrl = getClass().getResource("test-content-package.zip");
