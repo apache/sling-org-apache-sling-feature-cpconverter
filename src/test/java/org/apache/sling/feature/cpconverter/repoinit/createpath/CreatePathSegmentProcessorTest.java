@@ -44,7 +44,7 @@ public class CreatePathSegmentProcessorTest {
         
         VaultPackage vaultPackage = createVaultPackage("test-a-1.0.zip"); 
         CreatePath cp = new CreatePath("sling:Folder");
-        RepoPath repoPath = new RepoPath("/apps/mysite/clientlibs/mysite-all");
+        RepoPath repoPath = new RepoPath("/apps/mysite/clientlibs/mysite-all/css");
 
         prepareVaultPackageAssemblers(vaultPackage);
     
@@ -56,6 +56,7 @@ public class CreatePathSegmentProcessorTest {
         assertSegment(definitions, 1, "mysite", "sling:Folder");
         assertSegment(definitions, 2, "clientlibs", "sling:Folder");
         assertSegment(definitions, 3, "mysite-all", "cq:ClientLibraryFolder");
+        assertSegment(definitions, 4, "css", "sling:Folder");
     }
     
     private void assertSegment(List<PathSegmentDefinition> definitions, int index, String expectedPath, String expectedResourceType){
