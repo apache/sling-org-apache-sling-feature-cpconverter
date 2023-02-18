@@ -1,6 +1,7 @@
 package org.apache.sling.feature.cpconverter.repoinit.createpath;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
@@ -18,18 +19,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class CreatePathSegmentProcessorTest {
 
     private File testDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
     
-    private Collection<VaultPackageAssembler> packageAssemblers = new ArrayList<>();
+    private Collection<VaultPackageAssembler> packageAssemblers = new LinkedList<>();
     
     private VaultPackage createVaultPackage(String location) throws IOException {
         URL resource = CreatePathSegmentProcessorTest.class.getResource(location);
@@ -58,11 +62,46 @@ public class CreatePathSegmentProcessorTest {
         assertSegment(definitions, 3, "mysite-all", "cq:ClientLibraryFolder");
         assertSegment(definitions, 4, "css", "sling:Folder");
     }
+
+
+    @Test
+    public void testMultiPackageReplace() throws IOException {
+
+
+        VaultPackage vaultPackageA = createVaultPackage("test-a-1.0.zip");
+        VaultPackage vaultPackageB = createVaultPackage("test-b-1.0.zip");
+        CreatePath cp = new CreatePath("sling:Folder");
+        RepoPath repoPath = new RepoPath("/apps/mysite/clientlibs/mysite-all/css");
+
+        prepareVaultPackageAssemblers(vaultPackageA, vaultPackageB);
+
+        CreatePathSegmentProcessor processor = new CreatePathSegmentProcessor(repoPath, packageAssemblers, cp);
+        processor.processSegments();
+        
+        System.out.println(cp.asRepoInitString());
+        List<PathSegmentDefinition> definitions = cp.getDefinitions();
+
+        assertSegment(definitions, 0, "apps", "sling:Folder");
+        assertSegment(definitions, 1, "mysite", "sling:Folder");
+        assertSegment(definitions, 2, "clientlibs", "sling:Folder");
+        assertSegment(definitions, 3, "mysite-all", "cq:ClientLibraryFolder");
+        assertSegment(definitions, 4, "css", "sling:OrderedFolder", "rep:AccessControllable");
+        
+        
+    }
     
-    private void assertSegment(List<PathSegmentDefinition> definitions, int index, String expectedPath, String expectedResourceType){
+    private void assertSegment(List<PathSegmentDefinition> definitions, int index, String expectedPath, String expectedResourceType, String... mixinTypes){
         PathSegmentDefinition pathSegmentDefinition = definitions.get(index);
-        pathSegmentDefinition.getSegment().equals(expectedPath);
-        pathSegmentDefinition.getPrimaryType().equals(expectedResourceType);
+        assertEquals(expectedPath, pathSegmentDefinition.getSegment());
+        assertEquals(expectedResourceType, pathSegmentDefinition.getPrimaryType());
+
+        if(mixinTypes != null){
+            List<String> expectedMixins = Arrays.asList(mixinTypes);
+            assertEquals(expectedMixins, pathSegmentDefinition.getMixins());
+        }else{
+            assertTrue(pathSegmentDefinition.getMixins().isEmpty());
+        }
+        
     }
 
     @NotNull
