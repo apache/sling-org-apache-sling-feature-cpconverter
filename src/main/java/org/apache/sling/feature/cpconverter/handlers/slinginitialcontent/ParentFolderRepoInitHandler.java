@@ -113,7 +113,8 @@ class ParentFolderRepoInitHandler {
         }
 
         CreatePath cp = new CreatePath("sling:Folder");
-        CreatePathSegmentProcessor.processSegments(path, packageAssemblers, cp);
+        CreatePathSegmentProcessor processor = new CreatePathSegmentProcessor(path, packageAssemblers, cp);
+        processor.processSegments();
         return cp;
     }
 

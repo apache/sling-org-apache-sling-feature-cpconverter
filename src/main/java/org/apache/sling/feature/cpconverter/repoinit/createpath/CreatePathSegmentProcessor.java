@@ -33,46 +33,58 @@ import static org.apache.jackrabbit.vault.util.Constants.DOT_CONTENT_XML;
 
 public class CreatePathSegmentProcessor {
 
-    private CreatePathSegmentProcessor() {
+    private final RepoPath path;
+    private final Collection<VaultPackageAssembler> packageAssemblers;
+    private final CreatePath cp;
+    private boolean foundType = false;
+    private String repositoryPath = "";
+
+    public CreatePathSegmentProcessor(@NotNull RepoPath path, 
+                                      @NotNull Collection<VaultPackageAssembler> packageAssemblers, 
+                                      @NotNull CreatePath cp) {
+        this.path = path;
+        this.packageAssemblers = packageAssemblers;
+        this.cp = cp;
     }
 
     /**
      * Process segments of a repopath to createpath, checking packageassemblers for existing primaryType definitions.
-     *
-     * @param path
-     * @param packageAssemblers
-     * @param cp
      * @return
      */
-    public static boolean processSegments(@NotNull RepoPath path, @NotNull Collection<VaultPackageAssembler> packageAssemblers, @NotNull CreatePath cp) {
-        String repositoryPath = "";
-        boolean foundType = false;
+    public boolean processSegments() {
         for (final String part : path.getSegments()) {
-            final String platformName = PlatformNameFormat.getPlatformName(part);
-            repositoryPath = repositoryPath.concat(ConverterConstants.SLASH).concat(platformName);
-
-            boolean segmentAdded = false;
-            //loop all package assemblers and check if .content.xml is defined
-            for (VaultPackageAssembler packageAssembler : packageAssemblers) {
-                File currentContent = packageAssembler.getFileEntry(repositoryPath.concat(ConverterConstants.SLASH).concat(DOT_CONTENT_XML));
-                if (currentContent.exists() && currentContent.isFile()) {
-                    //add segment if jcr:primaryType is defined.
-                    segmentAdded = addSegment(cp, part, currentContent);
-                    if (segmentAdded) {
-                        foundType = true;
-                        break;
-                    }
-                }
-            }
-            if (!segmentAdded) {
-                //use sling:Folder (defined by repo-init runtime module)
-                cp.addSegment(part, null);
-            }
+            repositoryPath = processSegment(part);
         }
         return foundType;
     }
 
-    private static boolean addSegment(@NotNull CreatePath cp, @NotNull String part, @NotNull File currentContent) {
+    @NotNull
+    private String processSegment(String part) {
+        final String platformName = PlatformNameFormat.getPlatformName(part);
+        repositoryPath = repositoryPath.concat(ConverterConstants.SLASH).concat(platformName);
+
+        boolean segmentAdded = false;
+        //loop all package assemblers and check if .content.xml is defined
+        for (VaultPackageAssembler packageAssembler : packageAssemblers) {
+            
+            File currentContent = packageAssembler.getFileEntry(repositoryPath.concat(ConverterConstants.SLASH).concat(DOT_CONTENT_XML));
+            if (currentContent.exists() && currentContent.isFile()) {
+                //add segment if jcr:primaryType is defined.
+                segmentAdded = addSegment(part, currentContent);
+                if (segmentAdded) {
+                    foundType = true;
+                    break;
+                }
+            }
+        }
+        if (!segmentAdded) {
+            //use sling:Folder (defined by repo-init runtime module)
+            cp.addSegment(part, null);
+        }
+        return repositoryPath;
+    }
+
+    private boolean addSegment(@NotNull String part, @NotNull File currentContent) {
         try (FileInputStream input = new FileInputStream(currentContent);
              FileInputStream input2 = new FileInputStream(currentContent)) {
             String primary = new PrimaryTypeParser().parse(input);

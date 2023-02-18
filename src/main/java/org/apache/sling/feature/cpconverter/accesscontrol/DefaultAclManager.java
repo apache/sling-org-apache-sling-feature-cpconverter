@@ -459,7 +459,8 @@ public class DefaultAclManager implements AclManager, EnforceInfo {
         }
         
         CreatePath cp = new CreatePath(null);
-        boolean foundType = CreatePathSegmentProcessor.processSegments(path, packageAssemblers, cp);
+        CreatePathSegmentProcessor createPathProcessor = new CreatePathSegmentProcessor(path, packageAssemblers, cp);
+        boolean foundType = createPathProcessor.processSegments();
         
         if (!foundType && isBelowUserRoot(path)) {
             // if no type information has been detected, don't issue a 'create path' statement for nodes below the 

@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -300,7 +301,9 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
             InputStream someUnstructuredNode = archive.getInputSource(archive.getEntry("jcr_root/apps/myinitialcontentest/test/parent-with-definition/parent-without-definition/someUnstructuredNode/.content.xml")).getByteStream();
             assertNotNull(someUnstructuredNode);
-            
+
+            verify(featuresManager, times(1)).addOrAppendRepoInitExtension(eq("content-package"), anyString(), Mockito.isNull());
+
             String repoinitText = 
                     "create path (sling:Folder) /content/test/myinitialcontentest2\n" +
                     "create path (sling:Folder) /apps/myinitialcontentest/test/parent-with-definition(my:parent)/parent-without-definition\n";
