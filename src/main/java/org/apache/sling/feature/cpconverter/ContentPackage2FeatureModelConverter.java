@@ -326,7 +326,6 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                     // finally serialize the Feature Model(s) file(s)
 
                     aclManager.addRepoinitExtension(assemblers, featuresManager);
-                    bundleSlingInitialContentExtractor.addRepoInitExtension(assemblers, featuresManager);
                     indexManager.addRepoinitExtension(featuresManager);
                     
                     logger.info("Conversion complete!");
@@ -339,7 +338,6 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 
                 aclManager.reset();
                 indexManager.reset();
-                assemblers.clear();
 
                 try {
                     vaultPackage.close();
@@ -348,11 +346,15 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 }
             }
         }
+
+        // add sling initial content repoinit statements to the last feature model
+        bundleSlingInitialContentExtractor.addRepoInitExtension(assemblers, featuresManager);
         featuresManager.serialize();
         
         deployPackages();
         mutableContentsIds.clear();
-
+        assemblers.clear();
+        
         emitters.stream().forEach(PackagesEventsEmitter::end);
     }
 
