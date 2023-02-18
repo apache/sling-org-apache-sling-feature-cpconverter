@@ -43,6 +43,8 @@ import static org.junit.Assert.assertTrue;
 
 public class CreatePathSegmentProcessorTest {
 
+    static final String TYPE_SLING_FOLDER = "sling:Folder";
+    static final String TYPE_CQ_CLIENT_LIBRARY_FOLDER = "cq:ClientLibraryFolder";
     private File testDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
 
     private Collection<VaultPackageAssembler> packageAssemblers = new LinkedList<>();
@@ -59,7 +61,7 @@ public class CreatePathSegmentProcessorTest {
 
 
         VaultPackage vaultPackage = createVaultPackage("test-a-1.0.zip");
-        CreatePath cp = new CreatePath("sling:Folder");
+        CreatePath cp = new CreatePath(TYPE_SLING_FOLDER);
         RepoPath repoPath = new RepoPath("/apps/mysite/clientlibs/mysite-all/css");
 
         prepareVaultPackageAssemblers(vaultPackage);
@@ -68,11 +70,11 @@ public class CreatePathSegmentProcessorTest {
         processor.processSegments();
         List<PathSegmentDefinition> definitions = cp.getDefinitions();
 
-        assertSegment(definitions, 0, "apps", "sling:Folder");
-        assertSegment(definitions, 1, "mysite", "sling:Folder");
-        assertSegment(definitions, 2, "clientlibs", "sling:Folder");
-        assertSegment(definitions, 3, "mysite-all", "cq:ClientLibraryFolder");
-        assertSegment(definitions, 4, "css", "sling:Folder");
+        assertSegment(definitions, 0, "apps", TYPE_SLING_FOLDER);
+        assertSegment(definitions, 1, "mysite", TYPE_SLING_FOLDER);
+        assertSegment(definitions, 2, "clientlibs", TYPE_SLING_FOLDER);
+        assertSegment(definitions, 3, "mysite-all", TYPE_CQ_CLIENT_LIBRARY_FOLDER);
+        assertSegment(definitions, 4, "css", TYPE_SLING_FOLDER);
     }
 
 
@@ -82,7 +84,7 @@ public class CreatePathSegmentProcessorTest {
 
         VaultPackage vaultPackageA = createVaultPackage("test-a-1.0.zip");
         VaultPackage vaultPackageB = createVaultPackage("test-b-1.0.zip");
-        CreatePath cp = new CreatePath("sling:Folder");
+        CreatePath cp = new CreatePath(TYPE_SLING_FOLDER);
         RepoPath repoPath = new RepoPath("/apps/mysite/clientlibs/mysite-all/css");
 
         prepareVaultPackageAssemblers(vaultPackageA, vaultPackageB);
@@ -93,10 +95,10 @@ public class CreatePathSegmentProcessorTest {
         System.out.println(cp.asRepoInitString());
         List<PathSegmentDefinition> definitions = cp.getDefinitions();
 
-        assertSegment(definitions, 0, "apps", "sling:Folder");
-        assertSegment(definitions, 1, "mysite", "sling:Folder");
-        assertSegment(definitions, 2, "clientlibs", "sling:Folder");
-        assertSegment(definitions, 3, "mysite-all", "cq:ClientLibraryFolder");
+        assertSegment(definitions, 0, "apps", TYPE_SLING_FOLDER);
+        assertSegment(definitions, 1, "mysite", TYPE_SLING_FOLDER);
+        assertSegment(definitions, 2, "clientlibs", TYPE_SLING_FOLDER);
+        assertSegment(definitions, 3, "mysite-all", TYPE_CQ_CLIENT_LIBRARY_FOLDER);
         assertSegment(definitions, 4, "css", "sling:OrderedFolder", "rep:AccessControllable");
 
 
@@ -109,7 +111,7 @@ public class CreatePathSegmentProcessorTest {
 
         VaultPackage vaultPackageA = createVaultPackage("test-a-1.0.zip");
         VaultPackage vaultPackageC = createVaultPackage("test-c-1.0.zip");
-        CreatePath cp = new CreatePath("sling:Folder");
+        CreatePath cp = new CreatePath(TYPE_SLING_FOLDER);
         RepoPath repoPath = new RepoPath("/apps/mysite/clientlibs/mysite-all/css");
 
         prepareVaultPackageAssemblers(vaultPackageA, vaultPackageC);
@@ -120,11 +122,11 @@ public class CreatePathSegmentProcessorTest {
         System.out.println(cp.asRepoInitString());
         List<PathSegmentDefinition> definitions = cp.getDefinitions();
 
-        assertSegment(definitions, 0, "apps", "sling:Folder");
-        assertSegment(definitions, 1, "mysite", "sling:Folder");
-        assertSegment(definitions, 2, "clientlibs", "sling:Folder");
-        assertSegment(definitions, 3, "mysite-all", "cq:ClientLibraryFolder");
-        assertSegment(definitions, 4, "css", "sling:Folder", "rep:AccessControllable");
+        assertSegment(definitions, 0, "apps", TYPE_SLING_FOLDER);
+        assertSegment(definitions, 1, "mysite", TYPE_SLING_FOLDER);
+        assertSegment(definitions, 2, "clientlibs", TYPE_SLING_FOLDER);
+        assertSegment(definitions, 3, "mysite-all", TYPE_CQ_CLIENT_LIBRARY_FOLDER);
+        assertSegment(definitions, 4, "css", TYPE_SLING_FOLDER, "rep:AccessControllable");
 
 
     }
