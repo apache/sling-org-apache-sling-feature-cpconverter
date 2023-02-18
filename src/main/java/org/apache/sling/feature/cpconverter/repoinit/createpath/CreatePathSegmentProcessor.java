@@ -16,6 +16,8 @@
  */
 package org.apache.sling.feature.cpconverter.repoinit.createpath;
 
+import org.apache.jackrabbit.vault.fs.api.ImportMode;
+import org.apache.jackrabbit.vault.fs.api.PathFilterSet;
 import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
@@ -27,7 +29,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.apache.jackrabbit.vault.util.Constants.DOT_CONTENT_XML;
 
@@ -39,6 +43,9 @@ public class CreatePathSegmentProcessor {
     private boolean foundType = false;
     private String repositoryPath = "";
 
+    private Map<String,String> primaryTypeMap = new LinkedHashMap<>();
+    private Map<String,List<String>> mixinTypeMap = new LinkedHashMap<>();
+    
     public CreatePathSegmentProcessor(@NotNull RepoPath path, 
                                       @NotNull Collection<VaultPackageAssembler> packageAssemblers, 
                                       @NotNull CreatePath cp) {
@@ -62,29 +69,57 @@ public class CreatePathSegmentProcessor {
     private String processSegment(String part) {
         final String platformName = PlatformNameFormat.getPlatformName(part);
         repositoryPath = repositoryPath.concat(ConverterConstants.SLASH).concat(platformName);
-
-        boolean segmentAdded = false;
+        
         //loop all package assemblers and check if .content.xml is defined
+        collectTypeDataForSegment();
+        addSegment(part);
+        
+        return repositoryPath;
+    }
+    
+    private void addSegment(String part){
+        //add segment if jcr:primaryType is defined.
+        if(primaryTypeMap.containsKey(repositoryPath)){
+            cp.addSegment(
+                    part, 
+                    primaryTypeMap.get(repositoryPath), 
+                    mixinTypeMap.get(repositoryPath)
+            );
+        }else{
+            cp.addSegment(part, null);
+        }
+    }
+
+    private void collectTypeDataForSegment() {
         for (VaultPackageAssembler packageAssembler : packageAssemblers) {
             
-            File currentContent = packageAssembler.getFileEntry(repositoryPath.concat(ConverterConstants.SLASH).concat(DOT_CONTENT_XML));
-            if (currentContent.exists() && currentContent.isFile()) {
-                //add segment if jcr:primaryType is defined.
-                segmentAdded = addSegment(part, currentContent);
-                if (segmentAdded) {
-                    foundType = true;
+            if(primaryTypeMap.containsKey(repositoryPath)){
+                boolean merge = true;
+                for(PathFilterSet set: packageAssembler.getFilter().getFilterSets()){
+                    if(set.covers(repositoryPath) && (set.getImportMode() != ImportMode.MERGE && set.getImportMode() != ImportMode.MERGE_PROPERTIES)){
+                        //found a path with a mode other than merge, proceed to replace the type definitions
+                        merge = false;
+                    }else if(set.covers(repositoryPath)){
+                        // merge is flipped to true again by another filter defined after the previous ones
+                        merge = true;
+                    }
+                }
+                if(merge){
+                    // we already got the path defined by an earlier package. only proceed to replace if the filter is not merge.
                     break;
                 }
             }
+            
+            File currentContent = packageAssembler.getFileEntry(repositoryPath.concat(ConverterConstants.SLASH).concat(DOT_CONTENT_XML));
+            if (currentContent.exists() && currentContent.isFile()) {
+                //collect the primary Data up ahead
+                collectTypeData(repositoryPath, currentContent);
+            }
         }
-        if (!segmentAdded) {
-            //use sling:Folder (defined by repo-init runtime module)
-            cp.addSegment(part, null);
-        }
-        return repositoryPath;
     }
 
-    private boolean addSegment(@NotNull String part, @NotNull File currentContent) {
+    
+    private boolean collectTypeData(String repositoryPath, @NotNull File currentContent) {
         try (FileInputStream input = new FileInputStream(currentContent);
              FileInputStream input2 = new FileInputStream(currentContent)) {
             String primary = new PrimaryTypeParser().parse(input);
@@ -103,7 +138,11 @@ public class CreatePathSegmentProcessor {
                         }
                     }
                 }
-                cp.addSegment(part, primary, mixins);
+
+                primaryTypeMap.put(repositoryPath, primary);
+                mixinTypeMap.put(repositoryPath, mixins);
+                foundType = true;
+                
                 return true;
             }
         } catch (Exception e) {

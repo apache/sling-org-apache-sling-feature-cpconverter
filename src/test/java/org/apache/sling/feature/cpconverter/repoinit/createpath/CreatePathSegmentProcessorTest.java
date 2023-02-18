@@ -74,7 +74,7 @@ public class CreatePathSegmentProcessorTest {
         assertSegment(definitions, 1, "mysite", TYPE_SLING_FOLDER);
         assertSegment(definitions, 2, "clientlibs", TYPE_SLING_FOLDER);
         assertSegment(definitions, 3, "mysite-all", TYPE_CQ_CLIENT_LIBRARY_FOLDER);
-        assertSegment(definitions, 4, "css", TYPE_SLING_FOLDER);
+        assertSegment(definitions, 4, "css", TYPE_SLING_FOLDER, "rep:AccessControllable");
     }
 
 
