@@ -1,13 +1,15 @@
 package org.apache.sling.feature.cpconverter.repoinit.createpath;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
 import org.apache.sling.feature.cpconverter.shared.RepoPath;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
+import org.apache.sling.repoinit.parser.impl.RepoInitParserImpl;
 import org.apache.sling.repoinit.parser.operations.CreatePath;
-import org.codehaus.plexus.util.StringUtils;
+import org.apache.sling.repoinit.parser.operations.PathSegmentDefinition;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
@@ -17,16 +19,18 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class CreatePathSegmentProcessorTest {
 
     private File testDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
     
     private Collection<VaultPackageAssembler> packageAssemblers = new ArrayList<>();
-
-
+    
     private VaultPackage createVaultPackage(String location) throws IOException {
         URL resource = CreatePathSegmentProcessorTest.class.getResource(location);
         File file = FileUtils.toFile(resource);
@@ -35,7 +39,7 @@ public class CreatePathSegmentProcessorTest {
     }
     
     @Test
-    public void testNothingFound() throws IOException {
+    public void testSingularPackage() throws IOException {
 
         
         VaultPackage vaultPackage = createVaultPackage("test-a-1.0.zip"); 
@@ -46,8 +50,18 @@ public class CreatePathSegmentProcessorTest {
     
         CreatePathSegmentProcessor processor = new CreatePathSegmentProcessor(repoPath, packageAssemblers, cp);
         processor.processSegments();
+        List<PathSegmentDefinition> definitions = cp.getDefinitions();
         
-        System.out.println(cp.asRepoInitString());
+        assertSegment(definitions, 0, "apps", "sling:Folder");
+        assertSegment(definitions, 1, "mysite", "sling:Folder");
+        assertSegment(definitions, 2, "clientlibs", "sling:Folder");
+        assertSegment(definitions, 3, "mysite-all", "cq:ClientLibraryFolder");
+    }
+    
+    private void assertSegment(List<PathSegmentDefinition> definitions, int index, String expectedPath, String expectedResourceType){
+        PathSegmentDefinition pathSegmentDefinition = definitions.get(index);
+        pathSegmentDefinition.getSegment().equals(expectedPath);
+        pathSegmentDefinition.getPrimaryType().equals(expectedResourceType);
     }
 
     @NotNull
