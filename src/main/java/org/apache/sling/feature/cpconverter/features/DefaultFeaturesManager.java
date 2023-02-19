@@ -89,7 +89,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private Map<String, Feature> runModes = new HashMap<>();
+    private final Map<String, Feature> runModes = new HashMap<>();
 
     private final VariablesInterpolator interpolator = new SimpleVariablesInterpolator();
 
@@ -99,7 +99,7 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
 
     private final File featureModelsOutputDirectory;
 
-    private Map<String, List<String>> apiRegionExports = new HashMap<>();
+    private final Map<String, List<String>> apiRegionExports = new HashMap<>();
 
     private final String artifactIdOverride;
 
@@ -121,11 +121,6 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
 
     private final Stack<String> packageIds = new Stack<>();
 
-    private final Map<ArtifactId, Feature> cache = new HashMap<>();
-    private final Map<ArtifactId, Map<String, Feature>> runModesCache = new HashMap<>();
-    
-    private final Map<ArtifactId, Map<String, List<String>>> apiRegionExportsCache = new HashMap<>();
-    
     DefaultFeaturesManager() {
         this(new File(""));
     }
@@ -164,9 +159,10 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
 
     @Override
     public void init(@NotNull ArtifactId packageId) {
-        targetFeature = cache.computeIfAbsent(packageId, artifactId -> new Feature(packageId.changeClassifier(null).changeType(SLING_OSGI_FEATURE_TILE_TYPE)));
-        runModes = runModesCache.computeIfAbsent(packageId, artifactId -> new HashMap<>());
-        apiRegionExports = apiRegionExportsCache.computeIfAbsent(packageId, artifactId -> new HashMap<>());
+        targetFeature = new Feature(packageId.changeClassifier(null).changeType(SLING_OSGI_FEATURE_TILE_TYPE));
+
+        runModes.clear();
+        apiRegionExports.clear();
     }
 
     @Override
@@ -456,26 +452,18 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
 
     @Override
     public void serialize() throws IOException {
-        
-        for(ArtifactId id : cache.keySet()){
-            //switch to targeted feature
-            this.init(id);
-            RunmodeMapper runmodeMapper = RunmodeMapper.open(featureModelsOutputDirectory);
+        RunmodeMapper runmodeMapper = RunmodeMapper.open(featureModelsOutputDirectory);
 
-            serialize(targetFeature, null, runmodeMapper);
+        serialize(targetFeature, null, runmodeMapper);
 
-            if (!runModes.isEmpty()) {
-                for (Entry<String, Feature> runmodeEntry : runModes.entrySet()) {
-                    String runmode = runmodeEntry.getKey();
-                    serialize(runmodeEntry.getValue(), runmode, runmodeMapper);
-                }
+        if (!runModes.isEmpty()) {
+            for (Entry<String, Feature> runmodeEntry : runModes.entrySet()) {
+                String runmode = runmodeEntry.getKey();
+                serialize(runmodeEntry.getValue(), runmode, runmodeMapper);
             }
-
-            runmodeMapper.save();
         }
-        cache.clear();
-        runModesCache.clear();
-        apiRegionExportsCache.clear();
+
+        runmodeMapper.save();
     }
 
     private void serialize(Feature feature, String runMode, RunmodeMapper runmodeMapper) throws IOException {

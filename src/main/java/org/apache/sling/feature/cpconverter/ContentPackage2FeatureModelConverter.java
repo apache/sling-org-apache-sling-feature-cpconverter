@@ -77,8 +77,16 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     private final Map<PackageId, String> subContentPackages = new HashMap<>();
 
+    /**
+     * This list is cleared after a package pass.
+     */
     private final List<VaultPackageAssembler> assemblers = new LinkedList<>();
 
+    /**
+     * This list persists assembers across package passes.
+     */
+    private final List<VaultPackageAssembler> persistedAssemblerList = new LinkedList<>();
+    
     private final Map<PackageId, Set<Dependency>> mutableContentsIds = new LinkedHashMap<>();
 
     private EntryHandlersManager handlersManager;
@@ -311,7 +319,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 emitters.stream().forEach(e -> e.startPackage(vaultPackage));
                 setMainPackageAssembler(VaultPackageAssembler.create(this.getTempDirectory(), vaultPackage, removeInstallHooks, disablePackageTypeRecalculation));
                 assemblers.add(getMainPackageAssembler());
-
+               
                 ArtifactId mvnPackageId = toArtifactId(vaultPackage.getId(), vaultPackage.getFile());
 
                 featuresManager.init(mvnPackageId);
@@ -339,6 +347,9 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 aclManager.reset();
                 indexManager.reset();
 
+                persistedAssemblerList.addAll(assemblers);
+                assemblers.clear();
+
                 try {
                     vaultPackage.close();
                 } catch (Exception e) {
@@ -348,12 +359,12 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         }
 
         // add sling initial content repoinit statements to the last feature model
-        bundleSlingInitialContentExtractor.addRepoInitExtension(assemblers, featuresManager);
+        bundleSlingInitialContentExtractor.addRepoInitExtension(persistedAssemblerList, featuresManager);
         featuresManager.serialize();
         
         deployPackages();
         mutableContentsIds.clear();
-        assemblers.clear();
+        persistedAssemblerList.clear();
         
         emitters.stream().forEach(PackagesEventsEmitter::end);
     }
