@@ -244,6 +244,26 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         verifyCreatePathStatement(createPathAppsStatements, expectedStatementCssSegments, expectedStatementPrimaryTypes );
         verifyCreatePathStatement(createPathAppsStatements, expectedStatementJsSegments, expectedStatementPrimaryTypes );
     }
+
+
+    @Test
+    public void convertSlingInitialContentDoubleOverwrite() throws Exception {
+
+        File outputDirectory = testPackagesWithSlingInitialContentMode(
+                "skyops-initialcontent-overwrite-true-primarytypes-undefined.zip",
+                "skyops-initialcontent-overwrite-true-primarytypes-defined-slingfolder.zip",
+                "skyops-initialcontent-overwrite-true-primarytypes-defined.zip"
+        );
+
+        //collect all generated repoinit extensions
+        List<CreatePath> createPathAppsStatements = collectCreatePathStatementsFromFeatureModels(outputDirectory);
+
+        LinkedList<String> expectedStatementCssSegments = createSegmentVerificationLinkedList("apps", "myinitialcontentest","genericmultifield","clientlibs","css");
+        LinkedList<String> expectedStatementJsSegments = createSegmentVerificationLinkedList("apps", "myinitialcontentest","genericmultifield","clientlibs","js");
+        LinkedList<String> expectedStatementPrimaryTypes = createSegmentVerificationLinkedList("sling:Folder","sling:Folder","sling:Folder","sling:Folder","cq:ClientLibraryFolder");
+        verifyCreatePathStatement(createPathAppsStatements, expectedStatementCssSegments, expectedStatementPrimaryTypes );
+        verifyCreatePathStatement(createPathAppsStatements, expectedStatementJsSegments, expectedStatementPrimaryTypes );
+    }
     
     @Test
     public void convertContentPackageDropContentTypePackagePolicy() throws Exception {
@@ -1037,7 +1057,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         for(PathSegmentDefinition segmentDef : foundMatch.getDefinitions()){
             String actualPrimaryType = segmentDef.getPrimaryType();
             String expectedPrimaryType = expectedPrimaryTypesInOrder.get(counter);
-            assertEquals("Mismatch on the primaryTypes on this statement: " + foundMatch + " - expected " + expectedPrimaryType +" and got " + actualPrimaryType, expectedPrimaryType, actualPrimaryType);
+            assertEquals("Mismatch on the primaryTypes on this statement: \n " + foundMatch + "\n  expected " + expectedPrimaryType +" and got " + actualPrimaryType, expectedPrimaryType, actualPrimaryType);
             counter++;
         }
 

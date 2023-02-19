@@ -106,7 +106,7 @@ public class CreatePathSegmentProcessor {
                 }
                 if(merge){
                     // we already got the path defined by an earlier package. only proceed to replace if the filter is not merge.
-                    break;
+                    continue;
                 }
             }
             
