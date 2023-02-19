@@ -22,6 +22,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -66,8 +67,16 @@ import org.apache.sling.feature.cpconverter.features.DefaultFeaturesManager;
 import org.apache.sling.feature.cpconverter.filtering.RegexBasedResourceFilter;
 import org.apache.sling.feature.cpconverter.handlers.DefaultEntryHandlersManager;
 import org.apache.sling.feature.cpconverter.handlers.EntryHandlersManager;
+import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
+import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.DefaultPackagesEventsEmitter;
 import org.apache.sling.feature.io.json.FeatureJSONReader;
+import org.apache.sling.repoinit.parser.impl.ParseException;
+import org.apache.sling.repoinit.parser.impl.RepoInitParserImpl;
+import org.apache.sling.repoinit.parser.operations.CreatePath;
+import org.apache.sling.repoinit.parser.operations.Operation;
+import org.apache.sling.repoinit.parser.operations.PathSegmentDefinition;
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -216,7 +225,26 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             deleteDirTree(outputDirectory);
         }
     }
-
+    
+    @Test
+    public void convertSlingInitialContentTestFollowsOverwrite() throws Exception {
+        
+        File outputDirectory = testPackagesWithSlingInitialContentMode(
+                "skyops-initialcontent-overwrite-false-primarytypes-undefined.zip",
+                "skyops-initialcontent-overwrite-true-primarytypes-defined.zip",
+                "skyops-initialcontent-overwrite-false-primarytypes-defined-slingfolder.zip"
+        );
+        
+        //collect all generated repoinit extensions
+        List<CreatePath> createPathAppsStatements = collectCreatePathStatementsFromFeatureModels(outputDirectory);
+        
+        LinkedList<String> expectedStatementCssSegments = createSegmentVerificationLinkedList("apps", "myinitialcontentest","genericmultifield","clientlibs","css");
+        LinkedList<String> expectedStatementJsSegments = createSegmentVerificationLinkedList("apps", "myinitialcontentest","genericmultifield","clientlibs","js");
+        LinkedList<String> expectedStatementPrimaryTypes = createSegmentVerificationLinkedList("sling:Folder","sling:Folder","sling:Folder","sling:Folder","cq:ClientLibraryFolder");
+        verifyCreatePathStatement(createPathAppsStatements, expectedStatementCssSegments, expectedStatementPrimaryTypes );
+        verifyCreatePathStatement(createPathAppsStatements, expectedStatementJsSegments, expectedStatementPrimaryTypes );
+    }
+    
     @Test
     public void convertContentPackageDropContentTypePackagePolicy() throws Exception {
         URL packageUrl = getClass().getResource("test-content-package.zip");
@@ -915,5 +943,134 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         }
 
         return loadedResources;
+    }
+
+    /**
+     * Execute the package URL's in a cpconverter with sling initial content set to EXTRACT_AND_REMOVE
+     * @param packageUrls
+     * @return outputDirectory root
+     */
+    private File testPackagesWithSlingInitialContentMode(String ... packageUrls){
+
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+        File outputDirectoryUnreferencedArtifacts = new File(outputDirectory, "unreferenced");
+
+        File[] files = Arrays.stream(packageUrls).map(url -> getClass().getResource(url)).map(FileUtils::toFile).toArray(File[]::new);
+
+
+        BundleSlingInitialContentExtractor bundleSlingInitialContentExtractor = new BundleSlingInitialContentExtractor();
+        try( ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(false, ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.EXTRACT_AND_REMOVE, false)
+                .setEntryHandlersManager(new DefaultEntryHandlersManager(
+                        Collections.emptyMap(),
+                        false,
+                        ContentPackage2FeatureModelConverter.SlingInitialContentPolicy.EXTRACT_AND_REMOVE,
+                        bundleSlingInitialContentExtractor,
+                        ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT)
+                )
+                .setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
+                .setAclManager(new DefaultAclManager())
+                .setBundleSlingInitialContentExtractor(bundleSlingInitialContentExtractor)
+                .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
+                .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                .setContentTypePackagePolicy(PackagePolicy.PUT_IN_DEDICATED_FOLDER)
+                .setUnreferencedArtifactsDeployer(new SimpleFolderArtifactsDeployer(outputDirectoryUnreferencedArtifacts)
+                )){
+            converter.convert(files);
+
+        } catch (IOException | ConverterException e) {
+            throw new RuntimeException(e);
+        }
+
+        return outputDirectory;
+
+    }
+    
+    private LinkedList<String> createSegmentVerificationLinkedList(String ... items){
+        LinkedList<String> list = new LinkedList<>();
+        for(String item: items){
+            list.addLast(item);
+        }
+        return list;
+    }
+
+    /**
+     * Verify that a given create path statement only occurs 1 time in the collection of createPaths,and has the correct primaryTypes
+     * 
+     * @param createPaths
+     * @param expectedSegmentsInOrder list of segments in proper order ( for path /apps/mysite/clientlib: 0=apps, 1=mysite, 2=clientlib)
+     * @param expectedPrimaryTypesInOrder list of primaryTypes in proper order (for above path: 0=sling:Folder, 1=sling:Folder, 2=cq:ClientLibraryFolder)
+     */
+    private void verifyCreatePathStatement(List<CreatePath> createPaths, LinkedList<String> expectedSegmentsInOrder, LinkedList<String> expectedPrimaryTypesInOrder){
+
+        // first collect all create path statements that have the exact path (should only be one)
+        CreatePath foundMatch = null;
+
+
+        // first find the match and make sure there is only 1 create path statement corresponding at given path
+        topLoop:
+        for(CreatePath candidate: createPaths){
+
+            if(expectedSegmentsInOrder.size() == candidate.getDefinitions().size()){
+                int counter = 0;
+                for(PathSegmentDefinition segmentDef : candidate.getDefinitions()){
+
+                    String candidateSegment = segmentDef.getSegment();
+                    String expectedSegment = expectedSegmentsInOrder.get(counter);
+
+                    if(!candidateSegment.equals(expectedSegment)){
+                        continue topLoop;
+                    }
+                    counter++;
+                }
+                if(foundMatch != null){
+                    fail("Two create path statements found that match the same path! \n " + candidate+ " \n and \n " + foundMatch );
+                }
+                foundMatch = candidate;
+            }
+
+        }
+
+        assertNotNull("Could not find a create path statement that has path: /" + String.join("/", expectedSegmentsInOrder), foundMatch);
+
+        int counter = 0;
+        // now let's check each segment is defined with the proper primary type
+        for(PathSegmentDefinition segmentDef : foundMatch.getDefinitions()){
+            String actualPrimaryType = segmentDef.getPrimaryType();
+            String expectedPrimaryType = expectedPrimaryTypesInOrder.get(counter);
+            assertEquals("Mismatch on the primaryTypes on this statement: " + foundMatch + " - expected " + expectedPrimaryType +" and got " + actualPrimaryType, expectedPrimaryType, actualPrimaryType);
+            counter++;
+        }
+
+    }
+
+    @NotNull
+    private static List<CreatePath> collectCreatePathStatementsFromFeatureModels(File outputDirectory) throws IOException, ParseException {
+        List<CreatePath> createPathAppsStatements = new ArrayList<>();
+        for(File featureFile: outputDirectory.listFiles((dir, name) -> name.startsWith("aem-skyops"))){
+
+            try (Reader reader = new FileReader(featureFile)) {
+                Feature feature = FeatureJSONReader.read(reader, featureFile.getAbsolutePath());
+
+                Extension repoInit = feature.getExtensions().getByName("repoinit");
+
+                if(repoInit != null){
+                    try(StringReader stringReader = new StringReader(repoInit.getText())){
+                        RepoInitParserImpl parser = new RepoInitParserImpl(stringReader);
+
+                        for(Operation operation : parser.parse()){
+                            if(operation instanceof CreatePath){
+                                CreatePath createPath = (CreatePath) operation;
+
+                                if(createPath.getDefinitions().get(0).getSegment().toString().equals("apps")){
+                                    createPathAppsStatements.add(createPath);
+                                }
+
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return createPathAppsStatements;
     }
 }
