@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -314,7 +315,9 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     private void secondPass(@NotNull Collection<VaultPackage> orderedContentPackages) throws IOException, ConverterException {
         emitters.stream().forEach(PackagesEventsEmitter::start);
 
-        for (VaultPackage vaultPackage : orderedContentPackages) {
+        Iterator<VaultPackage> vaultPackageIterator = orderedContentPackages.iterator();
+        while(vaultPackageIterator.hasNext()){
+            VaultPackage vaultPackage = vaultPackageIterator.next();
             try {
                 emitters.stream().forEach(e -> e.startPackage(vaultPackage));
                 setMainPackageAssembler(VaultPackageAssembler.create(this.getTempDirectory(), vaultPackage, removeInstallHooks, disablePackageTypeRecalculation));
@@ -338,6 +341,11 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                     
                     logger.info("Conversion complete!");
 
+                    //for the last feature, we add the repoinit extensions, because we got all the information
+                    if(!vaultPackageIterator.hasNext()){
+                        bundleSlingInitialContentExtractor.addRepoInitExtension(persistedAssemblerList, featuresManager);
+                    }
+                    featuresManager.serialize();
                    
 
                     emitters.stream().forEach(e -> e.endPackage(vaultPackage.getId(), result));
@@ -357,10 +365,6 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 }
             }
         }
-
-        // add sling initial content repoinit statements to the last feature model
-        bundleSlingInitialContentExtractor.addRepoInitExtension(persistedAssemblerList, featuresManager);
-        featuresManager.serialize();
         
         deployPackages();
         mutableContentsIds.clear();
