@@ -343,6 +343,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
                     //for the last feature, we add the repoinit extensions, because we got all the information
                     if(!vaultPackageIterator.hasNext()){
+                        persistedAssemblerList.addAll(assemblers);
                         bundleSlingInitialContentExtractor.addRepoInitExtension(persistedAssemblerList, featuresManager);
                     }
                     featuresManager.serialize();
@@ -354,8 +355,6 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 
                 aclManager.reset();
                 indexManager.reset();
-
-                persistedAssemblerList.addAll(assemblers);
                 assemblers.clear();
 
                 try {
