@@ -247,6 +247,25 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
 
 
     @Test
+    public void convertSlingInitialContentDoubleOverwriteToSlingFolder() throws Exception {
+
+        File outputDirectory = testPackagesWithSlingInitialContentMode(
+                "skyops-initialcontent-overwrite-true-primarytypes-undefined.zip",
+                "skyops-initialcontent-overwrite-true-primarytypes-defined.zip",
+                "skyops-initialcontent-overwrite-true-primarytypes-defined-slingfolder.zip"
+        );
+
+        //collect all generated repoinit extensions
+        List<CreatePath> createPathAppsStatements = collectCreatePathStatementsFromFeatureModels(outputDirectory);
+
+        LinkedList<String> expectedStatementCssSegments = createSegmentVerificationLinkedList("apps", "myinitialcontentest","genericmultifield","clientlibs","css");
+        LinkedList<String> expectedStatementJsSegments = createSegmentVerificationLinkedList("apps", "myinitialcontentest","genericmultifield","clientlibs","js");
+        LinkedList<String> expectedStatementPrimaryTypes = createSegmentVerificationLinkedList("sling:Folder","sling:Folder","sling:Folder","sling:Folder","sling:Folder");
+        verifyCreatePathStatement(createPathAppsStatements, expectedStatementCssSegments, expectedStatementPrimaryTypes );
+        verifyCreatePathStatement(createPathAppsStatements, expectedStatementJsSegments, expectedStatementPrimaryTypes );
+    }
+    
+    @Test
     public void convertSlingInitialContentDoubleOverwrite() throws Exception {
 
         File outputDirectory = testPackagesWithSlingInitialContentMode(
