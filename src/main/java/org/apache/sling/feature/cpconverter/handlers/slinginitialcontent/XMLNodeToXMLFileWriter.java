@@ -43,7 +43,7 @@ import static org.apache.jackrabbit.vault.util.JcrConstants.NT_UNSTRUCTURED;
 class XMLNodeToXMLFileWriter {
 
     private final XMLNode parentNode;
-    private final XMLEventWriter eventWriter;
+    private final IndentingXMLEventWriter eventWriter;
     private final JcrNamespaceRegistry namespaceRegistry;
     private final XMLEventFactory eventFactory = XMLEventFactory.newInstance();
 
@@ -55,6 +55,7 @@ class XMLNodeToXMLFileWriter {
         this.eventWriter = new IndentingXMLEventWriter(
                 writer
         );
+        this.eventWriter.setNewLine("\n");
         this.namespaceRegistry = namespaceRegistry;
         this.eventWriter.setNamespaceContext(this.namespaceRegistry);
 

@@ -301,9 +301,9 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             InputStream someUnstructuredNode = archive.getInputSource(archive.getEntry("jcr_root/apps/myinitialcontentest/test/parent-with-definition/parent-without-definition/someUnstructuredNode/.content.xml")).getByteStream();
             assertNotNull(someUnstructuredNode);
             
-            String repoinitText = 
-                    "create path (sling:Folder) /content/test/myinitialcontentest2\n" +
-                    "create path (sling:Folder) /apps/myinitialcontentest/test/parent-with-definition(my:parent)/parent-without-definition\n";
+            String repoinitText = String.format(
+                    "create path (sling:Folder) /content/test/myinitialcontentest2%n" +
+                    "create path (sling:Folder) /apps/myinitialcontentest/test/parent-with-definition(my:parent)/parent-without-definition%n");
             
             verify(featuresManager, times(1)).addOrAppendRepoInitExtension(eq("content-package"), eq(repoinitText), Mockito.isNull());
             
@@ -358,8 +358,8 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             
             InputStream inputStream = archive.getInputSource(archive.getEntry("jcr_root/apps/mysite/components/global/homepage/.content.xml")).getByteStream();
             
-            InputSource expectedXML = new InputSource(getClass().getResource("mysite-nodetype-and-page-json-xml-result.xml").openStream());
-            InputSource actualXML = new InputSource(inputStream);
+            String expectedXML = IOUtils.toString(getClass().getResource("mysite-nodetype-and-page-json-xml-result.xml").openStream(), UTF_8);
+            String actualXML = IOUtils.toString(inputStream, UTF_8);
 
             
             assertThat(expectedXML).and(actualXML).areSimilar();

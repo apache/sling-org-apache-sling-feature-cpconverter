@@ -28,11 +28,8 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import javax.jcr.PropertyType;
-import jakarta.json.Json;
-import jakarta.json.JsonArrayBuilder;
-import jakarta.json.JsonValue;
-import jakarta.json.stream.JsonGenerator;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.util.Base64;
 import org.apache.jackrabbit.vault.util.DocViewNode2;
@@ -40,6 +37,11 @@ import org.apache.jackrabbit.vault.util.DocViewProperty2;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import jakarta.json.Json;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonValue;
+import jakarta.json.stream.JsonGenerator;
 
 /**
  * Writes index definitions in a JSON format that can be consumed by the {@code oak-run} tool.
@@ -145,7 +147,7 @@ public class IndexDefinitionsJsonWriter {
             json.writeStartObject(JcrConstants.JCR_CONTENT);
             String blobAsString = new String(binary.get(), StandardCharsets.UTF_8);
             write(json, JcrConstants.JCR_PRIMARYTYPE, Collections.singletonList(JcrConstants.NT_RESOURCE),  s -> Json.createValue("nam:" + s ));
-            write(json, JcrConstants.JCR_MIMETYPE,Collections.singletonList(Files.probeContentType(Paths.get(nodePath))), Json::createValue );
+            write(json, JcrConstants.JCR_MIMETYPE,Collections.singletonList(Files.probeContentType(Paths.get(FilenameUtils.getName(nodePath)))), Json::createValue );
             write(json, JcrConstants.JCR_DATA, Collections.singletonList(blobAsString), BLOB_MAPPER);
             json.writeEnd();
         };
