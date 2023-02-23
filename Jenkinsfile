@@ -16,5 +16,5 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
+@Library('sling@feature/configurable-os') _
 slingOsgiBundleBuild()
