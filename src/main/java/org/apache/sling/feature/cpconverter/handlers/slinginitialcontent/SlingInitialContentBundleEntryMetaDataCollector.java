@@ -28,7 +28,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.file.Files;
@@ -36,6 +38,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.jar.JarEntry;
@@ -136,6 +139,11 @@ class SlingInitialContentBundleEntryMetaDataCollector {
 
                 SlingInitialContentBundleEntryMetaData bundleEntry = createSlingInitialContentBundleEntry(context, targetFile);
                 collectedSlingInitialContentBundleEntries.add(bundleEntry);
+            } else if (context.isSlingNodeTypesEntry(jarEntry)) {
+                //make sure to register all cnd files to the AclManager, so they get written as RepoInit.
+                try (Reader cndStatements = new InputStreamReader(Objects.requireNonNull(context.getJarFile().getInputStream(jarEntry)))) {
+                    context.getConverter().getAclManager().addNodetypeRegistration(IOUtils.toString(cndStatements));
+                }
             } else {
                 //write 'normal' content out to the normal bundle output
                 bundleOutput.putNextEntry(jarEntry);
