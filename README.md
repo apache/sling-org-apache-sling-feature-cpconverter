@@ -422,7 +422,7 @@ When using a seed feature, repoinit instructions will be parsed to extract syste
 
 ACLs are set in the `repoinit` section for detected System Users _only_, all other ACLs will be 1:1 copied in the related `/jcr_root(/home/users/*/)\.content.xml` file, which will contain filtered ACLs.
 
-### Content-Packages events
+### Content-Packages events
 
 SAX-alike events are emitted while processing input (sub-)content-packages, all them are handled by the [org.apache.sling.feature.cpconverter.vltpkg.PackagesEventsEmitter](./src/main/java/org/apache/sling/feature/cpconverter/vltpkg/PackagesEventsEmitter.java).
 
