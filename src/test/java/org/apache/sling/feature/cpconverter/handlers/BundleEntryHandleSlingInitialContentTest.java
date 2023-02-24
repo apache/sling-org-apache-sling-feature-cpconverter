@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -44,11 +45,11 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.jar.JarFile;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
+import javax.xml.transform.Source;
+
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.PackageId;
@@ -74,14 +75,15 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xmlunit.builder.Input;
 import org.xmlunit.diff.ComparisonType;
 import org.xmlunit.diff.DOMDifferenceEngine;
 import org.xmlunit.diff.DifferenceEngine;
 
-import javax.xml.transform.Source;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntryHandlerTest {
@@ -301,9 +303,9 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             InputStream someUnstructuredNode = archive.getInputSource(archive.getEntry("jcr_root/apps/myinitialcontentest/test/parent-with-definition/parent-without-definition/someUnstructuredNode/.content.xml")).getByteStream();
             assertNotNull(someUnstructuredNode);
             
-            String repoinitText = 
-                    "create path (sling:Folder) /content/test/myinitialcontentest2\n" +
-                    "create path (sling:Folder) /apps/myinitialcontentest/test/parent-with-definition(my:parent)/parent-without-definition\n";
+            String repoinitText = String.format(
+                    "create path (sling:Folder) /content/test/myinitialcontentest2%n" +
+                    "create path (sling:Folder) /apps/myinitialcontentest/test/parent-with-definition(my:parent)/parent-without-definition%n");
             
             verify(featuresManager, times(1)).addOrAppendRepoInitExtension(eq("content-package"), eq(repoinitText), Mockito.isNull());
             
@@ -358,11 +360,11 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             
             InputStream inputStream = archive.getInputSource(archive.getEntry("jcr_root/apps/mysite/components/global/homepage/.content.xml")).getByteStream();
             
-            InputSource expectedXML = new InputSource(getClass().getResource("mysite-nodetype-and-page-json-xml-result.xml").openStream());
-            InputSource actualXML = new InputSource(inputStream);
+            String expectedXML = IOUtils.toString(getClass().getResource("mysite-nodetype-and-page-json-xml-result.xml").openStream(), UTF_8);
+            String actualXML = IOUtils.toString(inputStream, UTF_8);
 
             
-            assertThat(expectedXML).and(actualXML).areSimilar();
+            assertThat(expectedXML).and(actualXML).ignoreElementContentWhitespace().ignoreComments().areSimilar();
          
         }
 
@@ -370,6 +372,9 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
     @Test
     public void testSlingInitialContentWithSpecialCharacters() throws Exception {
+        // skip this test on windows - the special chars used in file and property names will not work on windows FS
+        assumeFalse(SystemUtils.IS_OS_WINDOWS);
+
         setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite.core-1.0.0-SNAPSHOT-specialchars-json-inputstream.jar");
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
         converter.setEntryHandlersManager(handlersManager);
