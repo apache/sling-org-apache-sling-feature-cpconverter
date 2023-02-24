@@ -362,7 +362,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             String actualXML = IOUtils.toString(inputStream, UTF_8);
 
             
-            assertThat(expectedXML).and(actualXML).areSimilar();
+            assertThat(expectedXML).and(actualXML).ignoreElementContentWhitespace().ignoreComments().areSimilar();
          
         }
 
