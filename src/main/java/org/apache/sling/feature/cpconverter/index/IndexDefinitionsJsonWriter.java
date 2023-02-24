@@ -33,6 +33,7 @@ import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.util.Base64;
 import org.apache.jackrabbit.vault.util.DocViewNode2;
 import org.apache.jackrabbit.vault.util.DocViewProperty2;
+import org.apache.jackrabbit.vault.util.PlatformNameFormat;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -146,7 +147,7 @@ public class IndexDefinitionsJsonWriter {
             json.writeStartObject(JcrConstants.JCR_CONTENT);
             String blobAsString = new String(binary.get(), StandardCharsets.UTF_8);
             write(json, JcrConstants.JCR_PRIMARYTYPE, Collections.singletonList(JcrConstants.NT_RESOURCE),  s -> Json.createValue("nam:" + s ));
-            write(json, JcrConstants.JCR_MIMETYPE,Collections.singletonList(Files.probeContentType(Paths.get(nodeName))), Json::createValue );
+            write(json, JcrConstants.JCR_MIMETYPE,Collections.singletonList(Files.probeContentType(Paths.get(PlatformNameFormat.getPlatformName(nodeName)))), Json::createValue );
             write(json, JcrConstants.JCR_DATA, Collections.singletonList(blobAsString), BLOB_MAPPER);
             json.writeEnd();
         };
