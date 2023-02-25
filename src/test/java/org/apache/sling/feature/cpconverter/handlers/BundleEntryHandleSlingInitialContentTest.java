@@ -245,7 +245,6 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             String actualXML = IOUtils.toString(archive.getInputSource(jsonFileDescriptorEntry).getByteStream(), UTF_8);
     
             assertThat(actualXML).and(expectedXML).areSimilar();
-
         }
     }
 
@@ -406,9 +405,6 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
         converter.deployPackages();
 
-       
-                
-                
         // verify generated package
         try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "mysite.core-apps-1.0.0-SNAPSHOT-cp2fm-converted.zip"));
              Archive archive = vaultPackage.getArchive()) {
@@ -479,7 +475,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             String expectedXML = IOUtils.toString(getClass().getResourceAsStream("bundle-entry-xmls/include-redirectStatus.xml"), UTF_8);
             String actualXML = IOUtils.toString(xmlFile, UTF_8);
 
-            assertThat(expectedXML).and(actualXML).areSimilar();
+            assertThat(actualXML).and(expectedXML).areSimilar();
         }
 
     }
@@ -624,36 +620,20 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         String expectedXML = IOUtils.toString(expectedXmlFileStream, UTF_8);
         String actualXML = IOUtils.toString(xmlFile, UTF_8);
 
-  
-        Source control = Input.fromString(expectedXML).build();
-        Source test = Input.fromString(actualXML).build();
-        
-        DifferenceEngine diff = new DOMDifferenceEngine();
-        diff.addDifferenceListener((comparison, outcome) -> {
-            
-            if(comparison.getType() == ComparisonType.CHILD_NODELIST_LENGTH){
-                //this comparison is buggy so we can't use it.
-                return;
-            }
-            
-            String actualString = comparison.getTestDetails().getValue().toString();
-            String expectedString = comparison.getControlDetails().getValue().toString();
-            if(!actualString.trim().equals(expectedString.trim())){
-                Assert.fail("difference found in XML: " + actualString + " vs " + expectedString);
-            }
-        });
-        diff.compare(control, test);
+        assertThat(actualXML).and(expectedXML).areSimilar();
     }
 
     private void assertPageStructureFromEntry(Archive archive, String basePath, String pageName, String... files) throws IOException {
-        Entry contentXml = archive.getEntry( basePath + "/" + pageName + "/.content.xml");
-        assertNotNull(contentXml);
+        String entryPath = basePath + "/" + pageName + "/.content.xml";
+        Entry contentXml = archive.getEntry(entryPath);
+        assertNotNull("could not find entry path " + entryPath + " in archive " + archive, contentXml);
         Entry pageXml = archive.getEntry( basePath + "/" + pageName + ".xml");
         assertNull(pageXml);
 
         for(String file: files){
-            Entry expectedEntry = archive.getEntry( basePath + "/" + pageName + "/" + file);
-            assertNotNull(expectedEntry);
+            entryPath = basePath + "/" + pageName + "/" + file;
+            Entry expectedEntry = archive.getEntry(entryPath);
+            assertNotNull("could not find entry path " + entryPath + " in archive " + archive, expectedEntry);
         }
     }
 
