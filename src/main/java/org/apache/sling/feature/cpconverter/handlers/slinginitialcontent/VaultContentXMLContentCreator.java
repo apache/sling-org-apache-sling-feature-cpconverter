@@ -269,13 +269,15 @@ public class VaultContentXMLContentCreator implements ContentCreator {
         createBinary(data, ""); // binary must be created with the name of the nt:file root node
         this.createNode(JcrConstants.JCR_CONTENT, JcrConstants.NT_RESOURCE, null);
 
-        final Calendar calendar = Calendar.getInstance();
+        final Date date;
         // ensure sensible last modification date
         if (lastModified >= 0) {
-            calendar.setTimeInMillis(lastModified);
+            date = new Date(lastModified);
+        } else {
+            date = new Date();
         }
         this.createProperty(JcrConstants.JCR_MIMETYPE, mimeType);
-        this.createProperty(JcrConstants.JCR_LASTMODIFIED, calendar);
+        this.createProperty(JcrConstants.JCR_LASTMODIFIED, date);
         // the data property does not need to be added to the enhanced docview as already derived from the binary file
     }
 
