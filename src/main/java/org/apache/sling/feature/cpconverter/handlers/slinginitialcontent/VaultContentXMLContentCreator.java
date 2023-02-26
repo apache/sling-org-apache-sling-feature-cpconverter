@@ -217,7 +217,8 @@ public class VaultContentXMLContentCreator implements ContentCreator {
             super(e);
         }
 
-        public RepositoryException getCause() {
+        @Override
+        public synchronized RepositoryException getCause() {
             return (RepositoryException) super.getCause();
         }
     }
