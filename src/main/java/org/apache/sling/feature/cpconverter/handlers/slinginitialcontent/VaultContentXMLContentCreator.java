@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigDecimal;
+import java.time.ZoneOffset;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,9 +30,11 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jcr.NamespaceException;
@@ -231,7 +234,7 @@ public class VaultContentXMLContentCreator implements ContentCreator {
         } else if (value instanceof BigDecimal) {
             jcrValue = valueFactory.createValue((BigDecimal)value);
         } else if (value instanceof Date) {
-            Calendar calendar = Calendar.getInstance();
+            Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(ZoneOffset.UTC), Locale.ROOT);
             calendar.setTime((Date)value);
             jcrValue = valueFactory.createValue(calendar);
         } else if (value instanceof Calendar) {
