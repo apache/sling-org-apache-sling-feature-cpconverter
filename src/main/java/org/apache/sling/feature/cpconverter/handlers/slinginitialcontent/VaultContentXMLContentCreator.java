@@ -240,7 +240,7 @@ public class VaultContentXMLContentCreator implements ContentCreator {
             jcrValue = valueFactory.createValue((Boolean)value);
         } else if (value instanceof InputStream) {
             // binaries are always stored outside the docview xml (https://jackrabbit.apache.org/filevault/vaultfs.html#Binary_Properties)
-            String binaryPropertyEntryName = PlatformNameFormat.getPlatformName(name) + ((index != -1) ? index : "") + ".binary";
+            String binaryPropertyEntryName = PlatformNameFormat.getPlatformName(name) + ((index != -1) ? "[" + index + "]" : "") + ".binary";
             createBinary((InputStream)value, SLASH + binaryPropertyEntryName);
             jcrValue = valueFactory.createValue("", PropertyType.BINARY);
         } else {
