@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jcr.NamespaceException;
 import javax.jcr.NamespaceRegistry;
@@ -176,7 +177,7 @@ public class VaultContentXMLContentCreator implements ContentCreator {
     @Override
     public void createProperty(String name, Object value) throws RepositoryException {
         // store binaries outside of docview xml
-        Value jcrValue = createValue(name, value);
+        Value jcrValue = createValue(name, value, -1);
         DocViewProperty2 property = DocViewProperty2.fromValues(npResolver.getQName(name), new Value[] { jcrValue }, jcrValue.getType(), false, false, false);
         currentNodeStack.peek().getProperties().add(property);
     }
@@ -184,9 +185,10 @@ public class VaultContentXMLContentCreator implements ContentCreator {
     @Override
     public void createProperty(String name, Object[] values) throws RepositoryException {
         try {
+            AtomicInteger index = new AtomicInteger();
             Value[] jcrValues = Arrays.stream(values).map(v -> {
                 try {
-                    return createValue(name,v);
+                    return createValue(name,v, index.getAndIncrement());
                 } catch (RepositoryException e) {
                     throw new UncheckedRepositoryException(e);
                 }
@@ -217,7 +219,7 @@ public class VaultContentXMLContentCreator implements ContentCreator {
         }
     }
 
-    private Value createValue(String name, Object value) throws RepositoryException {
+    private Value createValue(String name, Object value, int index) throws RepositoryException {
         ValueFactory valueFactory = ValueFactoryImpl.getInstance();
         final Value jcrValue;
         if (value instanceof String) {
@@ -237,6 +239,9 @@ public class VaultContentXMLContentCreator implements ContentCreator {
         } else if (value instanceof Boolean) {
             jcrValue = valueFactory.createValue((Boolean)value);
         } else if (value instanceof InputStream) {
+            // binaries are always stored outside the docview xml (https://jackrabbit.apache.org/filevault/vaultfs.html#Binary_Properties)
+            String binaryPropertyEntryName = PlatformNameFormat.getPlatformName(name) + ((index != -1) ? index : "") + ".binary";
+            createBinary((InputStream)value, SLASH + binaryPropertyEntryName);
             jcrValue = valueFactory.createValue("", PropertyType.BINARY);
         } else {
             throw new UnsupportedOperationException("Unsupported value type " + value.getClass());
@@ -244,9 +249,9 @@ public class VaultContentXMLContentCreator implements ContentCreator {
         return jcrValue;
     }
 
-    private void createBinary(InputStream value) throws RepositoryException {
+    private void createBinary(InputStream value, String suffix) throws RepositoryException {
         // this is called inside the node of the child
-        String path = "jcr_root/" + currentNodeStack.peek().getPath(npResolver);
+        String path = org.apache.jackrabbit.vault.util.Constants.ROOT_DIR + PlatformNameFormat.getPlatformPath(currentNodeStack.peek().getPath(npResolver)) + suffix;
         try {
             // write binary directly (not during finish)
             packageAssembler.addEntry(path, value);
@@ -258,7 +263,7 @@ public class VaultContentXMLContentCreator implements ContentCreator {
     @Override
     public void createFileAndResourceNode(String name, InputStream data, String mimeType, long lastModified) throws RepositoryException {
         this.createNode(name, JcrConstants.NT_FILE, null);
-        createBinary(data); // binary must be created in the context of the nt:file root node
+        createBinary(data, ""); // binary must be created with the name of the nt:file root node
         this.createNode(JcrConstants.JCR_CONTENT, JcrConstants.NT_RESOURCE, null);
 
         final Calendar calendar = Calendar.getInstance();
