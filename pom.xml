@@ -379,6 +379,7 @@
             <exclude>src/main/resources/META-INF/services/org.apache.sling.feature.cpconverter.handlers.EntryHandler</exclude>
             <exclude>src/main/legal/NOTICE-with-deps</exclude>
             <exclude>src/test/resources/org/apache/sling/feature/cpconverter/handlers/bundle-entry-xmls/**</exclude>
+            <exclude>src/test/resources/org/apache/sling/feature/cpconverter/handlers/escaping-test/**</exclude>
             <exclude>src/test/resources/org/apache/sling/feature/cpconverter/handlers/i18n-jsonfile-xml-descriptor-test/**</exclude>
           </excludes>
         </configuration>
