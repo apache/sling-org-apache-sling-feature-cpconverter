@@ -169,12 +169,14 @@ public class VaultContentXMLContentCreator implements ContentCreator {
 
     @Override
     public void createProperty(String name, int propertyType, String value) throws RepositoryException {
-        currentNodeStack.peek().getProperties().add(new DocViewProperty2(npResolver.getQName(name), value, propertyType));
+        // add explicit type due to https://issues.apache.org/jira/browse/JCRVLT-693
+        currentNodeStack.peek().getProperties().add(new DocViewProperty2(npResolver.getQName(name), value, propertyType == PropertyType.UNDEFINED ? PropertyType.STRING : propertyType));
     }
 
     @Override
     public void createProperty(String name, int propertyType, String[] values) throws RepositoryException {
-        currentNodeStack.peek().getProperties().add(new DocViewProperty2(npResolver.getQName(name), Arrays.asList(values), propertyType));
+        // add explicit type due to https://issues.apache.org/jira/browse/JCRVLT-693
+        currentNodeStack.peek().getProperties().add(new DocViewProperty2(npResolver.getQName(name), Arrays.asList(values), propertyType == PropertyType.UNDEFINED ? PropertyType.STRING : propertyType));
     }
 
     @Override
