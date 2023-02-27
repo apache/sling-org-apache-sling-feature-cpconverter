@@ -45,8 +45,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.jar.JarFile;
 
-import javax.xml.transform.Source;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
@@ -65,7 +63,6 @@ import org.apache.sling.feature.cpconverter.artifacts.SimpleFolderArtifactsDeplo
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
 import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -76,10 +73,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
 import org.xml.sax.SAXException;
-import org.xmlunit.builder.Input;
-import org.xmlunit.diff.ComparisonType;
-import org.xmlunit.diff.DOMDifferenceEngine;
-import org.xmlunit.diff.DifferenceEngine;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -612,6 +605,49 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
                 "com.composum.nodes.commons",
                 "com.composum.nodes.pckgmgr",
                 "com.composum.nodes.pckginstall" }, (String[])dictionaryCaptor.getValue().get("whitelist.bundles"));
+    }
+
+    @Test
+    public void testSlingInitialContentEscapingPropertyValues() throws Exception {
+        setUpArchive("/jcr_root/apps/gav/install/aem-aem632-project.core-0.0.1-SNAPSHOT-escaping.jar", "aem-aem632-project.core-0.0.1-SNAPSHOT-escaping.jar");
+        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
+        converter.setEntryHandlersManager(handlersManager);
+
+        File targetFolder = tmpFolder.newFolder();
+        when(converter.getArtifactsDeployer()).thenReturn(new SimpleFolderArtifactsDeployer(targetFolder));
+        when(converter.isSubContentPackageIncluded("/jcr_root/apps/gav/install/aem-aem632-project.core-0.0.1-SNAPSHOT-escaping.jar-APPLICATION")).thenReturn(true);
+
+        VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
+        Properties props = new Properties();
+        props.setProperty(PackageProperties.NAME_GROUP, "com.aem632");
+        props.setProperty(PackageProperties.NAME_NAME, "aem-aem632-project.core");
+        props.setProperty(PackageProperties.NAME_VERSION, "0.0.1-SNAPSHOT");
+        when(assembler.getPackageProperties()).thenReturn(props);
+        converter.setMainPackageAssembler(assembler);
+        converter.setAclManager(new DefaultAclManager());
+
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
+
+        handler.setBundleSlingInitialContentExtractor(extractor);
+        handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
+        handler.handle("/jcr_root/apps/gav/install/aem-aem632-project.core-0.0.1-SNAPSHOT-escaping.jar", archive, entry, converter);
+
+        extractor.addRepoInitExtension(converter.getAssemblers(), featuresManager);
+
+        converter.deployPackages();
+        // verify generated package
+        try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "aem-aem632-project.core-apps-0.0.1-SNAPSHOT-cp2fm-converted.zip"));
+             Archive archive = vaultPackage.getArchive()) {
+            archive.open(true);
+            PackageId targetId = PackageId.fromString("com.aem632:aem-aem632-project.core-apps:0.0.1-SNAPSHOT-cp2fm-converted");
+            assertEquals(targetId, vaultPackage.getId());
+            Entry entry = archive.getEntry("jcr_root/apps/aem632/core/test/.content.xml");
+            assertNotNull("Archive does not contain expected item", entry);
+
+            String expectedXML = IOUtils.toString(getClass().getResourceAsStream("escaping-test/.content.xml"), UTF_8);
+            String actualXML = IOUtils.toString(archive.getInputSource(entry).getByteStream(), UTF_8);
+            assertThat(actualXML).and(expectedXML).areSimilar();
+        }
     }
 
     private void assertResultingEntry(Archive archive, String entryKey) throws IOException, SAXException {
