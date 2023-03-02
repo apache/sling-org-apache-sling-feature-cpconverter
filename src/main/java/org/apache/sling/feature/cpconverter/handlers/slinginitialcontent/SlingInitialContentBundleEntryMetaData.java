@@ -23,33 +23,45 @@ import java.io.File;
 import java.util.Objects;
 
 /**
- * Holds BundleEntry MetaData.
+ * Holds Initial Content meta data for a single file
  */
 class SlingInitialContentBundleEntryMetaData {
 
-    private final File targetFile;
+    private final File sourceFile;
     private final PathEntry pathEntry;
     private final String repositoryPath;
 
     SlingInitialContentBundleEntryMetaData(
-            @NotNull File targetFile,
+            @NotNull File sourceFile,
             @NotNull PathEntry pathEntry,
             @NotNull String repositoryPath) {
-        this.targetFile = targetFile;
+        this.sourceFile = sourceFile;
         this.pathEntry = pathEntry;
         this.repositoryPath = repositoryPath;
     }
 
+    /**
+     * 
+     * @return the initial content file which is supposed to be installed to {@link #getRepositoryPath()}
+     */
     @NotNull
-    File getTargetFile() {
-        return targetFile;
+    File getSourceFile() {
+        return sourceFile;
     }
 
+    /**
+     * 
+     * @return the path entry covering the file {@link #sourceFile} (maybe for a parent)
+     */
     @NotNull
     PathEntry getPathEntry() {
         return pathEntry;
     }
 
+    /**
+     * 
+     * @return the absolute target repository root path of the initial content inside {@link #sourceFile}
+     */
     @NotNull
     String getRepositoryPath() {
         return repositoryPath;
@@ -65,7 +77,7 @@ class SlingInitialContentBundleEntryMetaData {
 
     @Override
     public int hashCode() {
-        return Objects.hash(targetFile, pathEntry, repositoryPath);
+        return Objects.hash(sourceFile, pathEntry, repositoryPath);
     }
 
     @Override
