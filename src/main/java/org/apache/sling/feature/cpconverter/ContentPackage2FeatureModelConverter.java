@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -397,7 +398,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         VaultPackageAssembler handler = getMainPackageAssembler();
         
         Properties parentProps = handler.getPackageProperties();
-        boolean isContainerPackage = PackageType.CONTAINER.equals(parentProps.get(PackageProperties.NAME_PACKAGE_TYPE));
+        boolean isContainerPackage = PackageType.CONTAINER.equals(PackageType.valueOf(((String)parentProps.get(PackageProperties.NAME_PACKAGE_TYPE)).toUpperCase(Locale.ENGLISH)));
         setMainPackageAssembler(clonedPackage);
         assemblers.add(clonedPackage);
 
