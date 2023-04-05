@@ -541,6 +541,35 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             deleteDirTree(outputDirectory);
         }
     }
+    
+    /** container package containing app package must not result in any dependency from  
+     *  embedded to embedding package 
+    **/
+    
+    @Test
+    public void verifyContainerDependencyHandling() throws Exception {
+        URL packageUrl = getClass().getResource("embedded.package.container-0.0.1.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+
+        try {
+
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
+                    .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
+                    .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                    .convert(packageFile);
+            
+            File contentPackage = new File(outputDirectory, "asd/sample/embedded.test.app/0.0.0/embedded.test.app-0.0.0-cp2fm-converted.zip");
+            VaultPackage vaultPackage = new PackageManagerImpl().open(contentPackage);
+            String dependencies = vaultPackage.getProperties().getProperty(PackageProperties.NAME_DEPENDENCIES);
+            org.apache.jackrabbit.vault.packaging.Dependency dep = org.apache.jackrabbit.vault.packaging.Dependency.fromString(dependencies);
+            assertNull(dep);
+        } finally {
+            deleteDirTree(outputDirectory);
+        }
+    }
+
 
     @Test(expected = ConverterException.class)
     public void doesNotAllowSameConfigurationPidForSameRunmode() throws Exception {
