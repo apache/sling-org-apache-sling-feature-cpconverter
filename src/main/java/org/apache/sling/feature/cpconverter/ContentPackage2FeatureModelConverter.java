@@ -40,6 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.Dependency;
@@ -398,7 +399,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         VaultPackageAssembler handler = getMainPackageAssembler();
         
         Properties parentProps = handler.getPackageProperties();
-        boolean isContainerPackage = PackageType.CONTAINER.equals(PackageType.valueOf(((String)parentProps.get(PackageProperties.NAME_PACKAGE_TYPE)).toUpperCase(Locale.ENGLISH)));
+        String parentTypeStr = (String)parentProps.get(PackageProperties.NAME_PACKAGE_TYPE);
+        boolean isContainerPackage = StringUtils.isNotBlank(parentTypeStr) ? PackageType.CONTAINER.equals(PackageType.valueOf(parentTypeStr.toUpperCase(Locale.ENGLISH))) : false;
         setMainPackageAssembler(clonedPackage);
         assemblers.add(clonedPackage);
 
