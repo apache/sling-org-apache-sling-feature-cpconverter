@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -44,11 +45,9 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.jar.JarFile;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.PackageId;
@@ -64,7 +63,6 @@ import org.apache.sling.feature.cpconverter.artifacts.SimpleFolderArtifactsDeplo
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
 import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -74,14 +72,11 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import org.xmlunit.builder.Input;
-import org.xmlunit.diff.ComparisonType;
-import org.xmlunit.diff.DOMDifferenceEngine;
-import org.xmlunit.diff.DifferenceEngine;
 
-import javax.xml.transform.Source;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntryHandlerTest {
@@ -243,7 +238,6 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             String actualXML = IOUtils.toString(archive.getInputSource(jsonFileDescriptorEntry).getByteStream(), UTF_8);
     
             assertThat(actualXML).and(expectedXML).areSimilar();
-
         }
     }
 
@@ -301,9 +295,9 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             InputStream someUnstructuredNode = archive.getInputSource(archive.getEntry("jcr_root/apps/myinitialcontentest/test/parent-with-definition/parent-without-definition/someUnstructuredNode/.content.xml")).getByteStream();
             assertNotNull(someUnstructuredNode);
             
-            String repoinitText = 
-                    "create path (sling:Folder) /content/test/myinitialcontentest2\n" +
-                    "create path (sling:Folder) /apps/myinitialcontentest/test/parent-with-definition(my:parent)/parent-without-definition\n";
+            String repoinitText = String.format(
+                    "create path (sling:Folder) /content/test/myinitialcontentest2%n" +
+                    "create path (sling:Folder) /apps/myinitialcontentest/test/parent-with-definition(my:parent)/parent-without-definition%n");
             
             verify(featuresManager, times(1)).addOrAppendRepoInitExtension(eq("content-package"), eq(repoinitText), Mockito.isNull());
             
@@ -358,11 +352,11 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             
             InputStream inputStream = archive.getInputSource(archive.getEntry("jcr_root/apps/mysite/components/global/homepage/.content.xml")).getByteStream();
             
-            InputSource expectedXML = new InputSource(getClass().getResource("mysite-nodetype-and-page-json-xml-result.xml").openStream());
-            InputSource actualXML = new InputSource(inputStream);
+            String expectedXML = IOUtils.toString(getClass().getResource("mysite-nodetype-and-page-json-xml-result.xml").openStream(), UTF_8);
+            String actualXML = IOUtils.toString(inputStream, UTF_8);
 
             
-            assertThat(expectedXML).and(actualXML).areSimilar();
+            assertThat(expectedXML).and(actualXML).ignoreElementContentWhitespace().ignoreComments().areSimilar();
          
         }
 
@@ -370,6 +364,9 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
     @Test
     public void testSlingInitialContentWithSpecialCharacters() throws Exception {
+        // skip this test on windows - the special chars used in file and property names will not work on windows FS
+        assumeFalse(SystemUtils.IS_OS_WINDOWS);
+
         setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite.core-1.0.0-SNAPSHOT-specialchars-json-inputstream.jar");
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
         converter.setEntryHandlersManager(handlersManager);
@@ -401,9 +398,6 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
         converter.deployPackages();
 
-       
-                
-                
         // verify generated package
         try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "mysite.core-apps-1.0.0-SNAPSHOT-cp2fm-converted.zip"));
              Archive archive = vaultPackage.getArchive()) {
@@ -474,7 +468,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             String expectedXML = IOUtils.toString(getClass().getResourceAsStream("bundle-entry-xmls/include-redirectStatus.xml"), UTF_8);
             String actualXML = IOUtils.toString(xmlFile, UTF_8);
 
-            assertThat(expectedXML).and(actualXML).areSimilar();
+            assertThat(actualXML).and(expectedXML).areSimilar();
         }
 
     }
@@ -613,42 +607,69 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
                 "com.composum.nodes.pckginstall" }, (String[])dictionaryCaptor.getValue().get("whitelist.bundles"));
     }
 
+    @Test
+    public void testSlingInitialContentEscapingPropertyValues() throws Exception {
+        setUpArchive("/jcr_root/apps/gav/install/aem-aem632-project.core-0.0.1-SNAPSHOT-escaping.jar", "aem-aem632-project.core-0.0.1-SNAPSHOT-escaping.jar");
+        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
+        converter.setEntryHandlersManager(handlersManager);
+
+        File targetFolder = tmpFolder.newFolder();
+        when(converter.getArtifactsDeployer()).thenReturn(new SimpleFolderArtifactsDeployer(targetFolder));
+        when(converter.isSubContentPackageIncluded("/jcr_root/apps/gav/install/aem-aem632-project.core-0.0.1-SNAPSHOT-escaping.jar-APPLICATION")).thenReturn(true);
+
+        VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
+        Properties props = new Properties();
+        props.setProperty(PackageProperties.NAME_GROUP, "com.aem632");
+        props.setProperty(PackageProperties.NAME_NAME, "aem-aem632-project.core");
+        props.setProperty(PackageProperties.NAME_VERSION, "0.0.1-SNAPSHOT");
+        when(assembler.getPackageProperties()).thenReturn(props);
+        converter.setMainPackageAssembler(assembler);
+        converter.setAclManager(new DefaultAclManager());
+
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
+
+        handler.setBundleSlingInitialContentExtractor(extractor);
+        handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
+        handler.handle("/jcr_root/apps/gav/install/aem-aem632-project.core-0.0.1-SNAPSHOT-escaping.jar", archive, entry, converter);
+
+        extractor.addRepoInitExtension(converter.getAssemblers(), featuresManager);
+
+        converter.deployPackages();
+        // verify generated package
+        try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "aem-aem632-project.core-apps-0.0.1-SNAPSHOT-cp2fm-converted.zip"));
+             Archive archive = vaultPackage.getArchive()) {
+            archive.open(true);
+            PackageId targetId = PackageId.fromString("com.aem632:aem-aem632-project.core-apps:0.0.1-SNAPSHOT-cp2fm-converted");
+            assertEquals(targetId, vaultPackage.getId());
+            Entry entry = archive.getEntry("jcr_root/apps/aem632/core/test/.content.xml");
+            assertNotNull("Archive does not contain expected item", entry);
+
+            String expectedXML = IOUtils.toString(getClass().getResourceAsStream("escaping-test/.content.xml"), UTF_8);
+            String actualXML = IOUtils.toString(archive.getInputSource(entry).getByteStream(), UTF_8);
+            assertThat(actualXML).and(expectedXML).areSimilar();
+        }
+    }
+
     private void assertResultingEntry(Archive archive, String entryKey) throws IOException, SAXException {
         InputStream xmlFile = archive.getInputSource(archive.getEntry("jcr_root/apps/mysite/components/global/" + entryKey  +"/.content.xml")).getByteStream();
         InputStream expectedXmlFileStream = getClass().getResourceAsStream("bundle-entry-xmls/" + entryKey + ".xml");
         String expectedXML = IOUtils.toString(expectedXmlFileStream, UTF_8);
         String actualXML = IOUtils.toString(xmlFile, UTF_8);
 
-  
-        Source control = Input.fromString(expectedXML).build();
-        Source test = Input.fromString(actualXML).build();
-        
-        DifferenceEngine diff = new DOMDifferenceEngine();
-        diff.addDifferenceListener((comparison, outcome) -> {
-            
-            if(comparison.getType() == ComparisonType.CHILD_NODELIST_LENGTH){
-                //this comparison is buggy so we can't use it.
-                return;
-            }
-            
-            String actualString = comparison.getTestDetails().getValue().toString();
-            String expectedString = comparison.getControlDetails().getValue().toString();
-            if(!actualString.trim().equals(expectedString.trim())){
-                Assert.fail("difference found in XML: " + actualString + " vs " + expectedString);
-            }
-        });
-        diff.compare(control, test);
+        assertThat(actualXML).and(expectedXML).areSimilar();
     }
 
     private void assertPageStructureFromEntry(Archive archive, String basePath, String pageName, String... files) throws IOException {
-        Entry contentXml = archive.getEntry( basePath + "/" + pageName + "/.content.xml");
-        assertNotNull(contentXml);
+        String entryPath = basePath + "/" + pageName + "/.content.xml";
+        Entry contentXml = archive.getEntry(entryPath);
+        assertNotNull("could not find entry path " + entryPath + " in archive " + archive, contentXml);
         Entry pageXml = archive.getEntry( basePath + "/" + pageName + ".xml");
         assertNull(pageXml);
 
         for(String file: files){
-            Entry expectedEntry = archive.getEntry( basePath + "/" + pageName + "/" + file);
-            assertNotNull(expectedEntry);
+            entryPath = basePath + "/" + pageName + "/" + file;
+            Entry expectedEntry = archive.getEntry(entryPath);
+            assertNotNull("could not find entry path " + entryPath + " in archive " + archive, expectedEntry);
         }
     }
 

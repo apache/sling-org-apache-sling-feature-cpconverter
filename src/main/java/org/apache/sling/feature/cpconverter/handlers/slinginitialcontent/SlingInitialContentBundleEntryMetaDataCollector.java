@@ -51,6 +51,7 @@ class SlingInitialContentBundleEntryMetaDataCollector {
     private static final double THRESHOLD_RATIO = 10;
     private static final int BUFFER = 512;
     private static final long TOOBIG = 0x6400000; // Max size of unzipped data, 100MB
+    private static final String ZIP_ENTRY_SEPARATOR = "/";
 
     private final BundleSlingInitialContentExtractContext context;
     private final String basePath;
@@ -122,7 +123,7 @@ class SlingInitialContentBundleEntryMetaDataCollector {
                 String canonicalDestinationPath = targetFile.getCanonicalPath();
 
 
-                if (!checkIfPathStartsWithOrIsEqual(contentPackage2FeatureModelConverter.getTempDirectory().getCanonicalPath(), canonicalDestinationPath)) {
+                if (!checkIfPathStartsWithOrIsEqual(contentPackage2FeatureModelConverter.getTempDirectory().getCanonicalPath(), canonicalDestinationPath, File.separator)) {
                     throw new IOException("Entry is outside of the target directory " + canonicalDestinationPath);
                 }
 
@@ -174,28 +175,28 @@ class SlingInitialContentBundleEntryMetaDataCollector {
     private boolean jarEntryIsSlingInitialContent(@NotNull BundleSlingInitialContentExtractContext context, @NotNull JarEntry jarEntry) {
         final String entryName = jarEntry.getName();
         return context.getPathEntryList().stream().anyMatch(
-                pathEntry -> checkIfPathStartsWithOrIsEqual(pathEntry.getPath(), entryName)
+                pathEntry -> checkIfPathStartsWithOrIsEqual(pathEntry.getPath(), entryName, ZIP_ENTRY_SEPARATOR)
         );
     }
 
     @NotNull
     private SlingInitialContentBundleEntryMetaData createSlingInitialContentBundleEntry(@NotNull BundleSlingInitialContentExtractContext context,
-                                                                                        @NotNull File targetFile) throws UnsupportedEncodingException {
-        final String entryName = StringUtils.substringAfter(targetFile.getPath(), basePath + "/");
+                                                                                        @NotNull File sourceFile) throws UnsupportedEncodingException {
+        final String entryName = StringUtils.replace(StringUtils.substringAfter(sourceFile.getPath(), basePath + File.separator), File.separator, ZIP_ENTRY_SEPARATOR);
         final PathEntry pathEntryValue = context.getPathEntryList().stream().filter(
-                pathEntry -> checkIfPathStartsWithOrIsEqual(pathEntry.getPath(), entryName)
+                pathEntry -> checkIfPathStartsWithOrIsEqual(pathEntry.getPath(), entryName, ZIP_ENTRY_SEPARATOR)
         ).findFirst().orElseThrow(NullPointerException::new);
         final String target = pathEntryValue.getTarget();
         // https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html#file-name-escaping
         String repositoryPath = (target != null ? target : "/") + URLDecoder.decode(entryName.substring(pathEntryValue.getPath().length()), "UTF-8");
-        return new SlingInitialContentBundleEntryMetaData(targetFile, pathEntryValue, repositoryPath);
+        return new SlingInitialContentBundleEntryMetaData(sourceFile, pathEntryValue, repositoryPath);
     }
 
 
-    private static boolean checkIfPathStartsWithOrIsEqual(String pathA, String pathB) {
+    private static boolean checkIfPathStartsWithOrIsEqual(String pathA, String pathB, String fileSeparator) {
         String fixedPath = pathA;
-        if (!fixedPath.endsWith(File.separator)) {
-            fixedPath = pathA + File.separatorChar;
+        if (!fixedPath.endsWith(fileSeparator)) {
+            fixedPath = pathA + fileSeparator;
         }
         return pathB.startsWith(fixedPath) || pathB.equals(pathA);
     }

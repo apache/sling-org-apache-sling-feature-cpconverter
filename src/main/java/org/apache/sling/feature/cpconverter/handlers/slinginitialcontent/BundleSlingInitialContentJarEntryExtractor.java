@@ -73,7 +73,7 @@ class BundleSlingInitialContentJarEntryExtractor {
                                   @NotNull Set<SlingInitialContentBundleEntryMetaData> collectedSlingInitialContentBundleEntries) throws IOException, ConverterException {
 
         String repositoryPath = slingInitialContentBundleEntryMetaData.getRepositoryPath();
-        File file = slingInitialContentBundleEntryMetaData.getTargetFile();
+        File file = slingInitialContentBundleEntryMetaData.getSourceFile();
         PathEntry pathEntryValue = slingInitialContentBundleEntryMetaData.getPathEntry();
         // all entry paths used by entry handlers start with "/"
         String contentPackageEntryPath = SLASH + org.apache.jackrabbit.vault.util.Constants.ROOT_DIR + PlatformNameFormat.getPlatformPath(repositoryPath);
@@ -92,16 +92,12 @@ class BundleSlingInitialContentJarEntryExtractor {
 
                     repositoryPath = FilenameUtils.removeExtension(repositoryPath);
                     boolean isFileDescriptorEntry = isFileDescriptor(collectedSlingInitialContentBundleEntries, contentPackageEntryPath);
-                    VaultContentXMLContentCreator contentCreator = new VaultContentXMLContentCreator(StringUtils.substringBeforeLast(repositoryPath, "/"), docViewOutput, context.getNamespaceRegistry(), packageAssembler, isFileDescriptorEntry);
-
-
-                    if (file.getName().endsWith(".xml")) {
-                        contentCreator.setIsXmlProcessed();
-                    }
+                    VaultContentXMLContentCreator contentCreator = new VaultContentXMLContentCreator(repositoryPath, docViewOutput, context.getNamespaceRegistry(), packageAssembler, isFileDescriptorEntry);
 
                     contentReader.parse(file.toURI().toURL(), contentCreator);
-                    contentPackageEntryPath = new ContentPackageEntryPathComputer(collectedSlingInitialContentBundleEntries, contentPackageEntryPath, contentCreator).compute();
+                    // finish is not always called through the ContentReader unfortunately
                     contentCreator.finish();
+                    contentPackageEntryPath = contentCreator.getContentPackageEntryPath();
 
                 } catch (IOException e) {
                     throw new IOException("Can not parse " + file, e);
