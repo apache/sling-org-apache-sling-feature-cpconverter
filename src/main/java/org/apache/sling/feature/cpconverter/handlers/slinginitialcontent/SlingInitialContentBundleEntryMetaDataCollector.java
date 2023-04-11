@@ -50,7 +50,6 @@ class SlingInitialContentBundleEntryMetaDataCollector {
 
     private static final double THRESHOLD_RATIO = 10;
     private static final int BUFFER = 512;
-    private static final long TOOBIG = 0x6400000; // Max size of unzipped data, 100MB
     private static final String ZIP_ENTRY_SEPARATOR = "/";
 
     private final BundleSlingInitialContentExtractContext context;
@@ -101,10 +100,7 @@ class SlingInitialContentBundleEntryMetaDataCollector {
                 if (!jarEntry.isDirectory()) {
                     extractFile(jarEntry, bundleOutput);
                 }
-
-                if (total.get() + BUFFER > TOOBIG) {
-                    throw new IllegalStateException("File being unzipped is too big.");
-                }
+                
             }
         }
 
@@ -154,7 +150,7 @@ class SlingInitialContentBundleEntryMetaDataCollector {
                                          boolean shouldClose) throws IOException {
         int count;
         BufferedOutputStream dest = new BufferedOutputStream(fos, BUFFER);
-        while (total.get() + BUFFER <= TOOBIG && (count = input.read(data, 0, BUFFER)) != -1) {
+        while ((count = input.read(data, 0, BUFFER)) != -1) {
             dest.write(data, 0, count);
             total.addAndGet(count);
 
