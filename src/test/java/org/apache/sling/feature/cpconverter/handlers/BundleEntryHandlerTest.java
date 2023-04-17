@@ -115,7 +115,7 @@ public final class BundleEntryHandlerTest {
         try(ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()) {
             converter.setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(testDirectory));
             converter.setFeaturesManager(featuresManager);
-            bundleEntryHandler.handle(bundleLocation, archive, entry, converter);
+            bundleEntryHandler.handle(bundleLocation, archive, entry, converter, null);
 
             assertTrue(new File(testDirectory, "org/apache/felix/org.apache.felix.framework/6.0.1/org.apache.felix.framework-6.0.1.pom").exists());
             assertTrue(new File(testDirectory, "org/apache/felix/org.apache.felix.framework/6.0.1/org.apache.felix.framework-6.0.1.jar").exists());

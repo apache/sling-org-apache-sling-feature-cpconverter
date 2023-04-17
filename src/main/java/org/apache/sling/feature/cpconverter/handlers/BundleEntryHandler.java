@@ -24,7 +24,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.jar.JarEntry;
@@ -32,7 +36,9 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.felix.utils.manifest.Clause;
@@ -44,6 +50,7 @@ import org.apache.sling.feature.Artifact;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.ConverterException;
+import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.RunmodePolicy;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.SlingInitialContentPolicy;
 import org.apache.sling.feature.cpconverter.artifacts.InputStreamArtifactWriter;
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
@@ -86,11 +93,12 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
     public void handle(@NotNull String path,
            @NotNull Archive archive, 
            @NotNull Entry entry, 
-           @NotNull ContentPackage2FeatureModelConverter converter) throws IOException, ConverterException {
+           @NotNull ContentPackage2FeatureModelConverter converter,
+           String runMode) throws IOException, ConverterException {
         logger.info("Processing bundle {}...", entry.getName());
 
         Matcher matcher = getPattern().matcher(path);
-        String runMode = null;
+        
         Integer startLevel = null;
         // we are pretty sure it matches, here
         if (!matcher.matches()) {
@@ -105,11 +113,38 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
             throw new ConverterException("OSGi bundles are only considered if placed below a folder called 'install', but the bundle at '"+ path + "' is placed outside!");
         }
 
-        
-        runMode = matcher.group("runmode");
-        if (runMode != null) {
-            // there is a specified RunMode
-            logger.debug("Runmode {} was extracted from path {}", runMode, path);
+        // determine runmodestring for current path
+        String runModeMatch = matcher.group("runmode");
+
+        String targetRunmode;
+        if  (RunmodePolicy.PREPEND_INHERITED.equals(converter.getRunmodePolicy())) {
+            final List<String> runModes = new ArrayList<>();
+            final List<String> inheritedRunModes = runMode == null ? Collections.emptyList() : Arrays.asList(StringUtils.split(runMode, '.'));
+
+            runModes.addAll(inheritedRunModes);
+            // append found runmodes without duplicates (legacy behavior direct_only established by appending to empty List)
+            if (StringUtils.isNotEmpty(runModeMatch)) {
+                // there is a specified RunMode
+                logger.debug("Runmode {} was extracted from path {}", runModeMatch, path);
+                List<String> newRunModes = Arrays.asList(StringUtils.split(runModeMatch, '.'));
+
+                // add only new RunModes that are not already present
+                List<String> newRunModesList = newRunModes.stream()
+                                                          .filter(mode -> !runModes.contains(mode))
+                                                          .collect(Collectors.toList());
+
+                // identify diverging list of runmodes between parent & direct definition as diverging criteria between runmode policies
+                if(!runModes.isEmpty() && !CollectionUtils.isEqualCollection(newRunModes, inheritedRunModes)) {
+                    logger.info("Found diverging runmodes list {} diverging from defined runmodes on the parent {}", newRunModes.toString(), inheritedRunModes.toString());
+                }
+
+                runModes.addAll(newRunModesList);
+            }
+            targetRunmode = String.join(".", runModes);
+
+        } else {
+            //legacy behavior - direct_only - just use the directly defined runmodes
+            targetRunmode = runModeMatch;
         }
 
         final String value = matcher.group("startlevel");
@@ -138,7 +173,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
                 InputStream input = Objects.requireNonNull(archive.openInputStream(entry))) {
                 IOUtils.copy(input, output);
             }
-            processBundleInputStream(path, tmpBundleJar, bundleName, runMode, startLevel, converter);
+            processBundleInputStream(path, tmpBundleJar, bundleName, targetRunmode, startLevel, converter);
         } finally {
             Files.delete(tmpBundleJar);
         }

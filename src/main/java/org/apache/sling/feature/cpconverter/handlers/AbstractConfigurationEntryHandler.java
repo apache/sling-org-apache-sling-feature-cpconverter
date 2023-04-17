@@ -18,15 +18,23 @@ package org.apache.sling.feature.cpconverter.handlers;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Dictionary;
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.ConverterException;
+import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.RunmodePolicy;
 import org.apache.sling.feature.cpconverter.features.FeaturesManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -45,11 +53,13 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
     }
 
     @Override
-    public final void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter) throws IOException, ConverterException {
+    public final void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter, String runMode) throws IOException, ConverterException {
 
         Matcher matcher = getPattern().matcher(path);
         
-        String runMode;
+        String targetRunmode;
+        
+        
         // we are pretty sure it matches, here
         if (matcher.matches()) {
             if (matcher.group("dir") != null) {
@@ -74,12 +84,41 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
                     throw new ConverterException("OSGi configuration are only considered if placed below a folder called 'config', but the configuration at '"+ path + "' is placed outside!");
                 }
                 
-                // there is a specified RunMode
-                runMode = matcher.group("runmode");
+                // determine runmodestring for current path
+                String runModeMatch = matcher.group("runmode");
+                if  (RunmodePolicy.PREPEND_INHERITED.equals(converter.getRunmodePolicy())) {
+                    final List<String> runModes = new ArrayList<>();
+                    final List<String> inheritedRunModes = runMode == null ? Collections.emptyList() : Arrays.asList(StringUtils.split(runMode, '.'));
+
+                    runModes.addAll(inheritedRunModes);
+                    // append found runmodes without duplicates (legacy behavior direct_only established by appending to empty List)
+                    if (StringUtils.isNotEmpty(runModeMatch)) {
+                        // there is a specified RunMode
+                        logger.debug("Runmode {} was extracted from path {}", runModeMatch, path);
+                        List<String> newRunModes = Arrays.asList(StringUtils.split(runModeMatch, '.'));
+
+                        // add only new RunModes that are not already present
+                        List<String> newRunModesList = newRunModes.stream()
+                                                                  .filter(mode -> !runModes.contains(mode))
+                                                                  .collect(Collectors.toList());
+
+                        // identify diverging list of runmodes between parent & direct definition as diverging criteria between runmode policies
+                        if(!runModes.isEmpty() && !CollectionUtils.isEqualCollection(newRunModes, inheritedRunModes)) {
+                            logger.info("Found diverging runmodes list {} diverging from defined runmodes on the parent {}", newRunModes.toString(), inheritedRunModes.toString());
+                        }
+
+                        runModes.addAll(newRunModesList);
+                    }
+                    targetRunmode = String.join(".", runModes);
+
+                } else {
+                    //legacy behavior - direct_only - just use the directly defined runmodes
+                    targetRunmode = runModeMatch;
+                }
     
                 FeaturesManager featuresManager = Objects.requireNonNull(converter.getFeaturesManager());
                 final Configuration cfg = new Configuration(id);
-                featuresManager.addConfiguration(runMode, cfg, path, configurationProperties);
+                featuresManager.addConfiguration(targetRunmode, cfg, path, configurationProperties);
             }
         } else {
             throw new IllegalStateException("Something went terribly wrong: pattern '"

@@ -28,7 +28,7 @@ public interface EntryHandler {
 
     boolean matches(@NotNull String path);
 
-    void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter) 
+    void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter, String runMode) 
     throws IOException, ConverterException;
 
     default EntryHandler withConfig(@NotNull String config) {

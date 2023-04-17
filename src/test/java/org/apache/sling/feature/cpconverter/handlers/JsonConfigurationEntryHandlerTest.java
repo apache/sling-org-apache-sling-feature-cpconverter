@@ -50,7 +50,7 @@ public class JsonConfigurationEntryHandlerTest {
 
         try(ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()) {
 
-            new JsonConfigurationEntryHandler().handle(resourceConfiguration, archive, entry, converter);
+            new JsonConfigurationEntryHandler().handle(resourceConfiguration, archive, entry, converter, null);
         }
     }
 
@@ -74,7 +74,7 @@ public class JsonConfigurationEntryHandlerTest {
             converter.setAclManager(aclManager);
             ((DefaultFeaturesManager) featuresManager).setAclManager(aclManager);
 
-            new JsonConfigurationEntryHandler().handle(resourceConfiguration, archive, entry, converter);
+            new JsonConfigurationEntryHandler().handle(resourceConfiguration, archive, entry, converter, null);
 
             verify(aclManager, times(3)).addMapping(any(Mapping.class));
         }

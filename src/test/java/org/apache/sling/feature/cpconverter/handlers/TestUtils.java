@@ -64,7 +64,7 @@ class TestUtils {
             converter.setAclManager(aclManager);
             converter.setMainPackageAssembler(packageAssembler);
 
-            handler.handle(path, archive, entry, converter);
+            handler.handle(path, archive, entry, converter, null);
 
             when(packageAssembler.getFileEntry(anyString())).thenReturn(new File("itdoesnotexist"));
 

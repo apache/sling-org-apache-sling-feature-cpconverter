@@ -276,12 +276,12 @@ public class IndexDefinitionsEntryHandlerTest {
 
                 new BaseVaultPackageScanner(true) {
                     @Override
-                    protected void onFile(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry)
+                    protected void onFile(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, String runMode)
                             throws IOException, ConverterException {
                         if ( handler.matches(path) )
-                            handler.handle(path, archive, entry, converter);
+                            handler.handle(path, archive, entry, converter, null);
                     }
-                }.traverse(new ZipVaultPackage(archive, true));
+                }.traverse(new ZipVaultPackage(archive, true), null);
             }
 
         }

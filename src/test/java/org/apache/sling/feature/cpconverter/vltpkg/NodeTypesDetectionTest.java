@@ -52,7 +52,7 @@ public class NodeTypesDetectionTest {
                 detectedCndFiles.add(cndPattern.pattern());
             }
 
-        }.traverse(packageFile, true);
+        }.traverse(packageFile, true, null);
 
         assertFalse(detectedCndFiles.isEmpty());
         assertEquals(1, detectedCndFiles.size());

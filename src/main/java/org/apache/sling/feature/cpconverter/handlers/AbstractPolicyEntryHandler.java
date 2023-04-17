@@ -48,7 +48,7 @@ abstract class AbstractPolicyEntryHandler extends AbstractRegexEntryHandler {
     }
 
     @Override
-    public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Archive.Entry entry, @NotNull ContentPackage2FeatureModelConverter converter)
+    public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Archive.Entry entry, @NotNull ContentPackage2FeatureModelConverter converter, String runMode)
             throws IOException {
         String resourcePath;
         Matcher matcher = getPattern().matcher(path);

@@ -58,11 +58,11 @@ public abstract class BaseVaultPackageScanner {
         return packageManager.open(vaultPackage, strictValidation);
     }
 
-    public final void traverse(@NotNull File vaultPackageFile, boolean closeOnTraversed) throws IOException, ConverterException {
+    public final void traverse(@NotNull File vaultPackageFile, boolean closeOnTraversed, String runMode) throws IOException, ConverterException {
         VaultPackage vaultPackage = null;
         try {
             vaultPackage = open(vaultPackageFile);
-            traverse(vaultPackage);
+            traverse(vaultPackage, runMode);
         } finally {
             if (closeOnTraversed) {
                 if (vaultPackage != null) {
@@ -72,7 +72,7 @@ public abstract class BaseVaultPackageScanner {
         }
     }
 
-    public final void traverse(@NotNull VaultPackage vaultPackage) throws IOException, ConverterException {
+    public final void traverse(@NotNull VaultPackage vaultPackage, String runMode) throws IOException, ConverterException {
         requireNonNull(vaultPackage, "Impossible to process a null vault package");
 
         PackageProperties properties = vaultPackage.getProperties();
@@ -88,20 +88,20 @@ public abstract class BaseVaultPackageScanner {
             archive.open(strictValidation);
 
             Entry root = archive.getRoot();
-            traverse(null, archive, root);
+            traverse(null, archive, root, runMode);
         } finally {
             archive.close();
         }
     }
 
-    private void traverse(@Nullable String path, @NotNull Archive archive, @NotNull Entry entry) throws IOException, ConverterException {
+    private void traverse(@Nullable String path, @NotNull Archive archive, @NotNull Entry entry, String runMode) throws IOException, ConverterException {
         String entryPath = newPath(path, entry.getName());
 
         if (entry.isDirectory()) {
             onDirectory(entryPath, archive, entry);
 
             for (Entry child : entry.getChildren()) {
-                traverse(entryPath, archive, child);
+                traverse(entryPath, archive, child, runMode);
             }
 
             return;
@@ -109,7 +109,7 @@ public abstract class BaseVaultPackageScanner {
 
         logger.debug("Processing entry {}...", entryPath);
 
-        onFile(entryPath, archive, entry);
+        onFile(entryPath, archive, entry, runMode);
 
         logger.debug("Entry {} successfully processed.", entryPath);
     }
@@ -126,7 +126,7 @@ public abstract class BaseVaultPackageScanner {
         // do nothing by default
     }
 
-    protected void onFile(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry) throws IOException, ConverterException {
+    protected void onFile(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, String runMode) throws IOException, ConverterException {
         // do nothing by default
     }
 

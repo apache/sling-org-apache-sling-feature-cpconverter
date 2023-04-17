@@ -55,10 +55,10 @@ public final class RecollectorVaultPackageScanner extends BaseVaultPackageScanne
     }
 
     @Override
-    protected void onFile(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry) throws IOException, ConverterException {
+    protected void onFile(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, String runMode) throws IOException, ConverterException {
         for (EntryHandler handler : handlers) {
             if (handler.matches(path)) {
-                handler.handle(path, archive, entry, converter);
+                handler.handle(path, archive, entry, converter, runMode);
             }
         }
     }

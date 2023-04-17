@@ -183,7 +183,7 @@ public class RepoInitTest {
             converter.setAclManager(aclManager);
             converter.setFeaturesManager(featuresManager);
 
-            configurationEntryHandler.handle(path, archive, entry, converter);
+            configurationEntryHandler.handle(path, archive, entry, converter, null);
             return featuresManager.getRunMode("publish").getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
         }
     }
