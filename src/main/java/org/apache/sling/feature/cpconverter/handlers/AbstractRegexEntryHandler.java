@@ -16,8 +16,17 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.RunmodePolicy;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,5 +53,40 @@ abstract class AbstractRegexEntryHandler implements EntryHandler {
     protected final @NotNull Pattern getPattern() {
         return pattern;
     }
+
+    protected String extractTargetRunmode(String path, ContentPackage2FeatureModelConverter converter,
+            String runMode, String runModeMatch) {
+                String targetRunmode;
+                if  (RunmodePolicy.PREPEND_INHERITED.equals(converter.getRunmodePolicy())) {
+                    final List<String> runModes = new ArrayList<>();
+                    final List<String> inheritedRunModes = runMode == null ? Collections.emptyList() : Arrays.asList(StringUtils.split(runMode, '.'));
+            
+                    runModes.addAll(inheritedRunModes);
+                    // append found runmodes without duplicates (legacy behavior direct_only established by appending to empty List)
+                    if (StringUtils.isNotEmpty(runModeMatch)) {
+                        // there is a specified RunMode
+                        logger.debug("Runmode {} was extracted from path {}", runModeMatch, path);
+                        List<String> newRunModes = Arrays.asList(StringUtils.split(runModeMatch, '.'));
+            
+                        // add only new RunModes that are not already present
+                        List<String> newRunModesList = newRunModes.stream()
+                                                                  .filter(mode -> !runModes.contains(mode))
+                                                                  .collect(Collectors.toList());
+            
+                        // identify diverging list of runmodes between parent & direct definition as diverging criteria between runmode policies
+                        if(!runModes.isEmpty() && !CollectionUtils.isEqualCollection(newRunModes, inheritedRunModes)) {
+                            logger.info("Found diverging runmodes list {} diverging from defined runmodes on the parent {}", newRunModes.toString(), inheritedRunModes.toString());
+                        }
+            
+                        runModes.addAll(newRunModesList);
+                    }
+                    targetRunmode = String.join(".", runModes);
+            
+                } else {
+                    //legacy behavior - direct_only - just use the directly defined runmodes
+                    targetRunmode = runModeMatch;
+                }
+                return targetRunmode;
+            }
 
 }
