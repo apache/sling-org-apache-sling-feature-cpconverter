@@ -52,6 +52,14 @@ import jakarta.json.stream.JsonGenerator;
  */
 public class IndexDefinitionsJsonWriter {
 
+    private static final Function<String, JsonValue> STRING_MAPPER =  s -> {
+        // don't generate unnecessary 'str:' prefixes, see https://github.com/apache/jackrabbit-oak/blob/838780a7aaf9775ad0bf7b6be65c1a1619e65eb7/oak-store-spi/src/main/java/org/apache/jackrabbit/oak/json/JsonSerializer.java#L269-L291 
+        if ( s.length() > 3 && s.charAt(3) == ':' )
+            return Json.createValue("str:" + s );
+
+        return Json.createValue(s);
+    };
+
     private static final Function<String, JsonValue> BLOB_MAPPER =  s -> Json.createValue(":blobId:" + Base64.encode(s));
 
     private static final Function<String, JsonValue> SAFE_LONG_MAPPER = new Function<String, JsonValue>() {
@@ -105,7 +113,7 @@ public class IndexDefinitionsJsonWriter {
             switch ( property.getType() ) {
                 case PropertyType.STRING:
                 case PropertyType.UNDEFINED:
-                    write(json, propertyName, property.getStringValues(), s -> Json.createValue("str:" + s ));
+                    write(json, propertyName, property.getStringValues(), STRING_MAPPER);
                     break;
                 case PropertyType.LONG:
                     write(json, propertyName, property.getStringValues(), SAFE_LONG_MAPPER );

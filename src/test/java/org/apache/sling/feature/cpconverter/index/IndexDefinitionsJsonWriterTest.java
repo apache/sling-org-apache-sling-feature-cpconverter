@@ -33,11 +33,6 @@ import java.util.List;
 
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.PropertyType;
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonString;
-import jakarta.json.JsonValue;
-import jakarta.json.stream.JsonParser;
 
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.spi.NameFactory;
@@ -48,6 +43,12 @@ import org.apache.jackrabbit.vault.util.DocViewProperty2;
 import org.assertj.core.api.Condition;
 import org.junit.Before;
 import org.junit.Test;
+
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
+import jakarta.json.stream.JsonParser;
 
 public class IndexDefinitionsJsonWriterTest {
 
@@ -75,6 +76,7 @@ public class IndexDefinitionsJsonWriterTest {
 
         Collection<DocViewProperty2> fooProps = new ArrayList<>();
         fooProps.add(new DocViewProperty2(nameFactory.create("{}type"), "property"));
+        fooProps.add(new DocViewProperty2(nameFactory.create("{}comment"), "foo:bar"));
         fooProps.add(new DocViewProperty2(nameFactory.create(NamespaceRegistry.NAMESPACE_JCR, "primaryType"), OAK_PREFIX+":QueryIndexDefinition"));
         fooProps.add(new DocViewProperty2(nameFactory.create("{}reindex"), Boolean.FALSE.toString(), PropertyType.BOOLEAN));
         fooProps.add(new DocViewProperty2(nameFactory.create("{}reindexCount"), "1", PropertyType.LONG));
@@ -97,8 +99,9 @@ public class IndexDefinitionsJsonWriterTest {
 
         JsonObject fooIndex = root.getJsonObject("/oak:index/foo");
         assertThat(fooIndex).as("foo index")
-            .hasSize(4)
-            .contains(entry("type", Json.createValue("str:property")))
+            .hasSize(5)
+            .contains(entry("type", Json.createValue("property")))
+            .contains(entry("comment", Json.createValue("str:foo:bar")))
             .contains(entry("jcr:primaryType", Json.createValue("nam:oak:QueryIndexDefinition")))
             .contains(entry("reindex", JsonObject.FALSE))
             .contains(entry("reindexCount", Json.createValue(1)));
