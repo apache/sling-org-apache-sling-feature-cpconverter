@@ -54,7 +54,7 @@ abstract class AbstractRegexEntryHandler implements EntryHandler {
         return pattern;
     }
 
-    protected String extractTargetRunmode(String path, ContentPackage2FeatureModelConverter converter,
+    protected String extractTargetRunMode(String path, ContentPackage2FeatureModelConverter converter,
             String runMode, String runModeMatch) {
                 String targetRunmode;
                 if  (RunModePolicy.PREPEND_INHERITED.equals(converter.getRunModePolicy())) {

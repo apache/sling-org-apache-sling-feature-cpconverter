@@ -587,11 +587,11 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                     .setRunModePolicy(RunModePolicy.PREPEND_INHERITED)
                     .convert(packageFile);
             
-            File runmodeMapperFile = new File(outputDirectory, "runmode.mapping");
-            assertTrue(runmodeMapperFile.exists());
-            assertTrue(runmodeMapperFile.isFile());
+            File runModeMapperFile = new File(outputDirectory, "runmode.mapping");
+            assertTrue(runModeMapperFile.exists());
+            assertTrue(runModeMapperFile.isFile());
             Properties runModes = new Properties();
-            try (FileInputStream input = new FileInputStream(runmodeMapperFile)) {
+            try (FileInputStream input = new FileInputStream(runModeMapperFile)) {
                 runModes.load(input);
             }
             assertFalse(runModes.isEmpty());
@@ -649,11 +649,11 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                     .setRunModePolicy(RunModePolicy.DIRECT_ONLY)
                     .convert(packageFile);
             
-            File runmodeMapperFile = new File(outputDirectory, "runmode.mapping");
-            assertTrue(runmodeMapperFile.exists());
-            assertTrue(runmodeMapperFile.isFile());
+            File runModeMapperFile = new File(outputDirectory, "runmode.mapping");
+            assertTrue(runModeMapperFile.exists());
+            assertTrue(runModeMapperFile.isFile());
             Properties runModes = new Properties();
-            try (FileInputStream input = new FileInputStream(runmodeMapperFile)) {
+            try (FileInputStream input = new FileInputStream(runModeMapperFile)) {
                 runModes.load(input);
             }
             assertFalse(runModes.isEmpty());

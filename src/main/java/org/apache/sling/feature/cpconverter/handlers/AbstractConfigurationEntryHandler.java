@@ -48,7 +48,7 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
 
         Matcher matcher = getPattern().matcher(path);
         
-        String targetRunmode;
+        String targetRunMode;
         
         // we are pretty sure it matches, here
         if (matcher.matches()) {
@@ -76,12 +76,12 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
                 
                 // determine run mode string for current path
                 String runModeMatch = matcher.group("runmode");
-                targetRunmode = extractTargetRunmode(path, converter, runMode,
+                targetRunMode = extractTargetRunMode(path, converter, runMode,
                     runModeMatch);
                 
                 FeaturesManager featuresManager = Objects.requireNonNull(converter.getFeaturesManager());
                 final Configuration cfg = new Configuration(id);
-                featuresManager.addConfiguration(targetRunmode, cfg, path, configurationProperties);
+                featuresManager.addConfiguration(targetRunMode, cfg, path, configurationProperties);
             }
         } else {
             throw new IllegalStateException("Something went terribly wrong: pattern '"

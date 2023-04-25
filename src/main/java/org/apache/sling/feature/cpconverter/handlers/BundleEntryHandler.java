@@ -109,7 +109,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
         // determine run mode string for current path
         String runModeMatch = matcher.group("runmode");
 
-        String targetRunmode = extractTargetRunmode(path, converter, runMode,
+        String targetRunMode = extractTargetRunMode(path, converter, runMode,
             runModeMatch);
 
         final String value = matcher.group("startlevel");
@@ -138,7 +138,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
                 InputStream input = Objects.requireNonNull(archive.openInputStream(entry))) {
                 IOUtils.copy(input, output);
             }
-            processBundleInputStream(path, tmpBundleJar, bundleName, targetRunmode, startLevel, converter);
+            processBundleInputStream(path, tmpBundleJar, bundleName, targetRunMode, startLevel, converter);
         } finally {
             Files.delete(tmpBundleJar);
         }
