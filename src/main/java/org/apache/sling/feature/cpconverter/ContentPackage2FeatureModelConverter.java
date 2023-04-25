@@ -121,11 +121,11 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     public enum RunModePolicy {
         /**
-         * Only path within containing package is considered for runmode evaluation
+         * Only path within containing package is considered for run mode evaluation 
          */
         DIRECT_ONLY,
         /**
-         * For nesting of multiple levels, runmode constraints are inherited down and prepended 
+         * For nesting of multiple levels, run mode constraints are inherited down and prepended 
          */
         PREPEND_INHERITED
     }
