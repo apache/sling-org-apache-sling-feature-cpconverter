@@ -57,12 +57,12 @@ abstract class AbstractRegexEntryHandler implements EntryHandler {
     protected String extractTargetRunmode(String path, ContentPackage2FeatureModelConverter converter,
             String runMode, String runModeMatch) {
                 String targetRunmode;
-                if  (RunModePolicy.PREPEND_INHERITED.equals(converter.getRunmodePolicy())) {
+                if  (RunModePolicy.PREPEND_INHERITED.equals(converter.getRunModePolicy())) {
                     final List<String> runModes = new ArrayList<>();
                     final List<String> inheritedRunModes = runMode == null ? Collections.emptyList() : Arrays.asList(StringUtils.split(runMode, '.'));
             
                     runModes.addAll(inheritedRunModes);
-                    // append found runmodes without duplicates (legacy behavior direct_only established by appending to empty List)
+                    // append found run modes without duplicates (legacy behavior direct_only established by appending to empty List)
                     if (StringUtils.isNotEmpty(runModeMatch)) {
                         // there is a specified RunMode
                         logger.debug("Runmode {} was extracted from path {}", runModeMatch, path);
@@ -73,10 +73,10 @@ abstract class AbstractRegexEntryHandler implements EntryHandler {
                                                                   .filter(mode -> !runModes.contains(mode))
                                                                   .collect(Collectors.toList());
             
-                        // identify diverging list of runmodes between parent & direct definition as diverging criteria between runmode policies
+                        // identify diverging list of run modes between parent & direct definition as diverging criteria between run mode policies
                         if(!runModes.isEmpty() && !CollectionUtils.isEqualCollection(newRunModes, inheritedRunModes)) {
-                            logger.info("Found diverging runmodes list {} diverging from defined runmodes on the parent {}", newRunModes, inheritedRunModes);
-                            logger.info("Effective runmodes: {}", runModes);
+                            logger.info("Found diverging run modes list {} diverging from defined run modes on the parent {}", newRunModes, inheritedRunModes);
+                            logger.info("Effective run modes: {}", runModes);
                         }
             
                         runModes.addAll(newRunModesList);
@@ -84,7 +84,7 @@ abstract class AbstractRegexEntryHandler implements EntryHandler {
                     targetRunmode = String.join(".", runModes);
             
                 } else {
-                    //legacy behavior - direct_only - just use the directly defined runmodes
+                    //legacy behavior - direct_only - just use the directly defined run modes
                     targetRunmode = runModeMatch;
                 }
                 return targetRunmode;

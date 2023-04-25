@@ -106,7 +106,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
             throw new ConverterException("OSGi bundles are only considered if placed below a folder called 'install', but the bundle at '"+ path + "' is placed outside!");
         }
 
-        // determine runmodestring for current path
+        // determine run mode string for current path
         String runModeMatch = matcher.group("runmode");
 
         String targetRunmode = extractTargetRunmode(path, converter, runMode,

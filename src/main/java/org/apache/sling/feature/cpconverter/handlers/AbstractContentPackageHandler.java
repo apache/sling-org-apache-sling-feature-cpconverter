@@ -85,7 +85,7 @@ public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHa
 
 
         String targetRunmode;
-        // determine runmodestring for current path
+        // determine run mode string for current path
         String runModeMatch = matcher.group(1);
         targetRunmode = extractTargetRunmode(path, converter, runMode,
             runModeMatch);

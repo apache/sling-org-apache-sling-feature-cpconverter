@@ -584,7 +584,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
                     .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
-                    .setRunmodePolicy(RunModePolicy.PREPEND_INHERITED)
+                    .setRunModePolicy(RunModePolicy.PREPEND_INHERITED)
                     .convert(packageFile);
             
             File runmodeMapperFile = new File(outputDirectory, "runmode.mapping");
@@ -646,7 +646,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
                     .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
-                    .setRunmodePolicy(RunModePolicy.DIRECT_ONLY)
+                    .setRunModePolicy(RunModePolicy.DIRECT_ONLY)
                     .convert(packageFile);
             
             File runmodeMapperFile = new File(outputDirectory, "runmode.mapping");

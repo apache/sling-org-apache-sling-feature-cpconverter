@@ -117,7 +117,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     private IndexManager indexManager = new DefaultIndexManager();
 
-    private RunModePolicy runmodePolicy = RunModePolicy.DIRECT_ONLY;
+    private RunModePolicy runModePolicy = RunModePolicy.DIRECT_ONLY;
 
     public enum RunModePolicy {
         /**
@@ -174,12 +174,12 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         this(strictValidation, slingInitialContentPolicy, disablePackageTypeRecalculation, RunModePolicy.DIRECT_ONLY);
     }
     
-    public ContentPackage2FeatureModelConverter(boolean strictValidation, @NotNull SlingInitialContentPolicy slingInitialContentPolicy, boolean disablePackageTypeRecalculation, @NotNull RunModePolicy runmodePolicy) throws IOException {
+    public ContentPackage2FeatureModelConverter(boolean strictValidation, @NotNull SlingInitialContentPolicy slingInitialContentPolicy, boolean disablePackageTypeRecalculation, @NotNull RunModePolicy runModePolicy) throws IOException {
         super(strictValidation);
         this.disablePackageTypeRecalculation = disablePackageTypeRecalculation;
         this.recollectorVaultPackageScanner = new RecollectorVaultPackageScanner(this, this.packageManager, strictValidation, subContentPackages, slingInitialContentPolicy);
         this.tmpDirectory = Files.createTempDirectory("cp2fm-converter").toFile();
-        this.runmodePolicy = runmodePolicy;
+        this.runModePolicy = runModePolicy;
     }
 
     public @NotNull ContentPackage2FeatureModelConverter setEntryHandlersManager(@Nullable EntryHandlersManager handlersManager) {
@@ -261,13 +261,13 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return this;
     }
     
-    public @NotNull ContentPackage2FeatureModelConverter setRunmodePolicy(@NotNull RunModePolicy runmodePolicy) {
-        this.runmodePolicy = runmodePolicy;
+    public @NotNull ContentPackage2FeatureModelConverter setRunModePolicy(@NotNull RunModePolicy runModePolicy) {
+        this.runModePolicy = runModePolicy;
         return this;
     }
 
-    public RunModePolicy getRunmodePolicy() {
-        return this.runmodePolicy;
+    public RunModePolicy getRunModePolicy() {
+        return this.runModePolicy;
     }
     
     public @Nullable IndexManager getIndexManager() {

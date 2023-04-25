@@ -74,7 +74,7 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
                     throw new ConverterException("OSGi configuration are only considered if placed below a folder called 'config', but the configuration at '"+ path + "' is placed outside!");
                 }
                 
-                // determine runmodestring for current path
+                // determine run mode string for current path
                 String runModeMatch = matcher.group("runmode");
                 targetRunmode = extractTargetRunmode(path, converter, runMode,
                     runModeMatch);

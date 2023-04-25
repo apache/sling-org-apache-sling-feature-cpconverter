@@ -257,7 +257,8 @@ During the conversion process, all these formats will be parsed and then added i
 
 ### Run Modes
 
-As shown above, run modes in the path lead the tool to create a dedicated _Apache Sling Feature_ model file containing all interested OSGi configurations/bundles.
+As shown above, run modes in the path lead the tool to create a dedicated _Apache Sling Feature_ model file containing all interested OSGi configurations/bundles. Run modes are determined according to the RunModePolicy which by default for backwards compatiblity reasons is DIRECT_ONLY.
+For DIRECT_ONLY only the direct path leading up to the artifact, while PREPEND_INHERITED makes sure that run modes are inherited downwards and deduplicated (only new ones added)
 
 ### Known limitations
 
@@ -543,6 +544,13 @@ Apache Sling Content Package to Sling Feature converter
       --remove-install-hooks
                             Removes both internal and external hooks from processed
                               packages
+      --run-mode-policy=<runModePolicy>
+                            Determines how to determine the final run mode of an
+                              artifact. DIRECT_ONLY uses only the run modes of the
+                              containing path while PREPEND_INHERITED inherits the
+                              run modes affecting the parent package. Valid values:
+                              DIRECT_ONLY, PREPEND_INHERITED.
+                              Default: DIRECT_ONLY
       --seed-feature=<seedFeature>
                             A url pointing to a feature that can be assumed to be
                               around when the conversion result will be used
