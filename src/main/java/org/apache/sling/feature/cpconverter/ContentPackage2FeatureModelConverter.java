@@ -117,9 +117,9 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     private IndexManager indexManager = new DefaultIndexManager();
 
-    private RunmodePolicy runmodePolicy = RunmodePolicy.DIRECT_ONLY;
+    private RunModePolicy runmodePolicy = RunModePolicy.DIRECT_ONLY;
 
-    public enum RunmodePolicy {
+    public enum RunModePolicy {
         /**
          * Only path within containing package is considered for runmode evaluation
          */
@@ -171,10 +171,10 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     }
 
     public ContentPackage2FeatureModelConverter(boolean strictValidation, @NotNull SlingInitialContentPolicy slingInitialContentPolicy, boolean disablePackageTypeRecalculation) throws IOException {
-        this(strictValidation, slingInitialContentPolicy, disablePackageTypeRecalculation, RunmodePolicy.DIRECT_ONLY);
+        this(strictValidation, slingInitialContentPolicy, disablePackageTypeRecalculation, RunModePolicy.DIRECT_ONLY);
     }
     
-    public ContentPackage2FeatureModelConverter(boolean strictValidation, @NotNull SlingInitialContentPolicy slingInitialContentPolicy, boolean disablePackageTypeRecalculation, @NotNull RunmodePolicy runmodePolicy) throws IOException {
+    public ContentPackage2FeatureModelConverter(boolean strictValidation, @NotNull SlingInitialContentPolicy slingInitialContentPolicy, boolean disablePackageTypeRecalculation, @NotNull RunModePolicy runmodePolicy) throws IOException {
         super(strictValidation);
         this.disablePackageTypeRecalculation = disablePackageTypeRecalculation;
         this.recollectorVaultPackageScanner = new RecollectorVaultPackageScanner(this, this.packageManager, strictValidation, subContentPackages, slingInitialContentPolicy);
@@ -261,12 +261,12 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return this;
     }
     
-    public @NotNull ContentPackage2FeatureModelConverter setRunmodePolicy(@NotNull RunmodePolicy runmodePolicy) {
+    public @NotNull ContentPackage2FeatureModelConverter setRunmodePolicy(@NotNull RunModePolicy runmodePolicy) {
         this.runmodePolicy = runmodePolicy;
         return this;
     }
 
-    public RunmodePolicy getRunmodePolicy() {
+    public RunModePolicy getRunmodePolicy() {
         return this.runmodePolicy;
     }
     

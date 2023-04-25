@@ -30,7 +30,7 @@ import java.util.TimeZone;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
 import org.apache.sling.feature.cpconverter.ConverterException;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.RunmodePolicy;
+import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.RunModePolicy;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.SlingInitialContentPolicy;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
@@ -147,8 +147,8 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
     @Option(names = { "--sling-initial-content-policy" }, description = "Determines what to do with Sling-Initial-Content found in embedded bundles. Valid values: ${COMPLETION-CANDIDATES}.", required = false, showDefaultValue = Visibility.ALWAYS)
     private SlingInitialContentPolicy slingInitialContentPolicy = SlingInitialContentPolicy.KEEP;
     
-    @Option(names = { "--runmode-policy" }, description = "Determines how to determine the final runmode of an artifac. Valid values: ${COMPLETION-CANDIDATES}.", required = false, showDefaultValue = Visibility.ALWAYS)
-    private RunmodePolicy runmodePolicy = RunmodePolicy.DIRECT_ONLY;
+    @Option(names = { "--runmode-policy" }, description = "Determines how to determine the final run mode of an artifact. DIRECT_ONLY uses only the run modes of the containing path while PREPEND_INHERITED inherits the run modes affecting the parent package. Valid values: ${COMPLETION-CANDIDATES}.", required = false, showDefaultValue = Visibility.ALWAYS)
+    private RunModePolicy runModePolicy = RunModePolicy.DIRECT_ONLY;
 
     @Override
     public void run() {
@@ -218,7 +218,7 @@ public final class ContentPackage2FeatureModelConverterLauncher implements Runna
                     }
                 }
 
-                try (ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation, slingInitialContentPolicy, disablePackageTypeRecalculation, runmodePolicy)) {
+                try (ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter(strictValidation, slingInitialContentPolicy, disablePackageTypeRecalculation, runModePolicy)) {
                     BundleSlingInitialContentExtractor bundleSlingInitialContentExtractor = new BundleSlingInitialContentExtractor();
                     converter.setFeaturesManager(featuresManager)
                              .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(artifactsOutputDirectory))

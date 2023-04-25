@@ -50,7 +50,6 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
         
         String targetRunmode;
         
-        
         // we are pretty sure it matches, here
         if (matcher.matches()) {
             if (matcher.group("dir") != null) {

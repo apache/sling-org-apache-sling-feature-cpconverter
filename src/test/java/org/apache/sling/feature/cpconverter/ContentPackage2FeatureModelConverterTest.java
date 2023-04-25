@@ -60,7 +60,7 @@ import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.PackagePolicy;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.RunmodePolicy;
+import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.RunModePolicy;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.LocalMavenRepositoryArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.artifacts.SimpleFolderArtifactsDeployer;
@@ -584,7 +584,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
                     .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
-                    .setRunmodePolicy(RunmodePolicy.PREPEND_INHERITED)
+                    .setRunmodePolicy(RunModePolicy.PREPEND_INHERITED)
                     .convert(packageFile);
             
             File runmodeMapperFile = new File(outputDirectory, "runmode.mapping");
@@ -646,7 +646,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
                     .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
-                    .setRunmodePolicy(RunmodePolicy.DIRECT_ONLY)
+                    .setRunmodePolicy(RunModePolicy.DIRECT_ONLY)
                     .convert(packageFile);
             
             File runmodeMapperFile = new File(outputDirectory, "runmode.mapping");
