@@ -279,7 +279,7 @@ public class IndexDefinitionsEntryHandlerTest {
                     protected void onFile(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, String runMode)
                             throws IOException, ConverterException {
                         if ( handler.matches(path) )
-                            handler.handle(path, archive, entry, converter, null);
+                            handler.handle(path, archive, entry, converter);
                     }
                 }.traverse(new ZipVaultPackage(archive, true), null);
             }

@@ -37,7 +37,7 @@ public class BundleEntryHandlerGAVTest extends AbstractBundleEntryHandlerTest {
     @Test
     public void testGAV() throws Exception {
         setUpArchive("/jcr_root/apps/gav/install/core-1.0.0-SNAPSHOT.jar", "core-1.0.0-SNAPSHOT.jar");
-        handler.handle("/jcr_root/apps/gav/install/core-1.0.0-SNAPSHOT.jar", archive, entry, converter, null);
+        handler.handle("/jcr_root/apps/gav/install/core-1.0.0-SNAPSHOT.jar", archive, entry, converter);
         ArgumentCaptor<Artifact> captor = ArgumentCaptor.forClass(Artifact.class);
         Mockito.verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
         final Artifact result = captor.getValue();
@@ -50,7 +50,7 @@ public class BundleEntryHandlerGAVTest extends AbstractBundleEntryHandlerTest {
     @Test
     public void testGAVwithPom() throws Exception{
         setUpArchive("/jcr_root/apps/gav/install/org.osgi.service.jdbc-1.0.0.jar", "org.osgi.service.jdbc-1.0.0.jar");
-        handler.handle("/jcr_root/apps/gav/install/org.osgi.service.jdbc-1.0.0.jar", archive, entry, converter, null);
+        handler.handle("/jcr_root/apps/gav/install/org.osgi.service.jdbc-1.0.0.jar", archive, entry, converter);
         ArgumentCaptor<Artifact> captor = ArgumentCaptor.forClass(Artifact.class);
         Mockito.verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
         final Artifact result = captor.getValue();
@@ -63,7 +63,7 @@ public class BundleEntryHandlerGAVTest extends AbstractBundleEntryHandlerTest {
     @Test
     public void testNoGAV() throws Exception {
         setUpArchive("/jcr_root/apps/gav/install/org.osgi.service.jdbc-1.0.0-nogav.jar", "org.osgi.service.jdbc-1.0.0-nogav.jar");
-        handler.handle("/jcr_root/apps/gav/install/org.osgi.service.jdbc-1.0.0-nogav.jar", archive, entry, converter, null);
+        handler.handle("/jcr_root/apps/gav/install/org.osgi.service.jdbc-1.0.0-nogav.jar", archive, entry, converter);
         ArgumentCaptor<Artifact> captor = ArgumentCaptor.forClass(Artifact.class);
         Mockito.verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
         final Artifact result = captor.getValue();
@@ -76,7 +76,7 @@ public class BundleEntryHandlerGAVTest extends AbstractBundleEntryHandlerTest {
     @Test
     public void testNoGAVNoMeta() throws Exception {
         setUpArchive("/jcr_root/apps/gav/install/peaberry.jar", "peaberry.jar");
-        handler.handle("/jcr_root/apps/gav/install/peaberry.jar", archive, entry, converter, null);
+        handler.handle("/jcr_root/apps/gav/install/peaberry.jar", archive, entry, converter);
         ArgumentCaptor<Artifact> captor = ArgumentCaptor.forClass(Artifact.class);
         Mockito.verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
         final Artifact result = captor.getValue();
@@ -90,6 +90,6 @@ public class BundleEntryHandlerGAVTest extends AbstractBundleEntryHandlerTest {
     public void testBundleBelowConfigFolderWithEnforcement() throws Exception {
         handler.setEnforceBundlesBelowInstallFolder(true);
         when(entry.getName()).thenReturn("mybundle.jar");
-        assertThrows(ConverterException.class, () -> { handler.handle("/jcr_root/apps/myapp/config/mybundle.jar", null, entry, null, null); });
+        assertThrows(ConverterException.class, () -> { handler.handle("/jcr_root/apps/myapp/config/mybundle.jar", null, entry, null); });
     }
 }

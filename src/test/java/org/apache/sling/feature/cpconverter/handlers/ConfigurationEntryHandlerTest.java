@@ -165,7 +165,7 @@ public class ConfigurationEntryHandlerTest {
             converter.setAclManager(aclManager);
             ((DefaultFeaturesManager) featuresManager).setAclManager(aclManager);
 
-            configurationEntryHandler.handle(resourceConfiguration, archive, entry, converter, null);
+            configurationEntryHandler.handle(resourceConfiguration, archive, entry, converter);
 
             Configurations configurations = featuresManager.getRunMode(expectedRunMode).getConfigurations();
 

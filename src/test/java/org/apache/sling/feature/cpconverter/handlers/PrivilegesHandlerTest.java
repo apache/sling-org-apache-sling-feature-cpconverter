@@ -84,7 +84,7 @@ public class PrivilegesHandlerTest {
         try(ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()) {
             converter.setFeaturesManager(featuresManager);
 
-            handler.handle(path, archive, entry, converter, null);
+            handler.handle(path, archive, entry, converter);
 
             converter.getAclManager().addRepoinitExtension(Collections.singletonList(packageAssembler), featuresManager);
 

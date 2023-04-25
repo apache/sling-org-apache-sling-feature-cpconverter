@@ -73,7 +73,7 @@ public class ConfigEntryHandlerTest {
 
         try(ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()) {
             converter.setFeaturesManager(featuresManager);
-            new ConfigurationEntryHandler().handle(resourceConfiguration, archive, entry, converter, null);
+            new ConfigurationEntryHandler().handle(resourceConfiguration, archive, entry, converter);
 
             verifyConfiguration(expected);
     
@@ -119,7 +119,7 @@ public class ConfigEntryHandlerTest {
                     return new Hashtable<String, Object>(){{put("foo", "bar");}};
                 }
             };
-            handler.handle("/jcr_root/apps/foo/bar/config/baz/blub.cfg", archive, entry, converter, null);
+            handler.handle("/jcr_root/apps/foo/bar/config/baz/blub.cfg", archive, entry, converter);
 
             ArgumentCaptor<Configuration> cfgCaptor = ArgumentCaptor.forClass(Configuration.class);
 
@@ -139,7 +139,7 @@ public class ConfigEntryHandlerTest {
         Mockito.when(archive.openInputStream(entry)).thenReturn(new ByteArrayInputStream(new byte[0]));
         try(ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()) {
             assertThrows(ConverterException.class, () -> {
-                handler.handle("/jcr_root/apps/myapp/install/myconfig.config", archive, entry, converter, null);
+                handler.handle("/jcr_root/apps/myapp/install/myconfig.config", archive, entry, converter);
             });
         }
     }
@@ -154,7 +154,7 @@ public class ConfigEntryHandlerTest {
         try(ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()) {
             converter.setMainPackageAssembler(Mockito.mock(VaultPackageAssembler.class));
 
-            handler.handle("/jcr_root/apps/asd/config/.empty.xml", archive, entry, converter, null);
+            handler.handle("/jcr_root/apps/asd/config/.empty.xml", archive, entry, converter);
         }
     }
 }

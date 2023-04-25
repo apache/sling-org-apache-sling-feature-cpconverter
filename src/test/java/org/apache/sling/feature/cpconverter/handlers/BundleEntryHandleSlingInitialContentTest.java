@@ -115,7 +115,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         
         handler.setBundleSlingInitialContentExtractor(extractor);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
-        handler.handle("/jcr_root/apps/gav/install/io.wcm.handler.media-1.11.6.jar", archive, entry, converter, null);
+        handler.handle("/jcr_root/apps/gav/install/io.wcm.handler.media-1.11.6.jar", archive, entry, converter);
         
         extractor.addRepoInitExtension(converter.getAssemblers(), featuresManager);
         
@@ -204,7 +204,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
         handler.setBundleSlingInitialContentExtractor(extractor);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
-        handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter, null);
+        handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter);
 
         converter.deployPackages();
 
@@ -274,7 +274,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
         handler.setBundleSlingInitialContentExtractor(extractor);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
-        handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter, null);
+        handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter);
 
         converter.deployPackages();
         extractor.addRepoInitExtension(converter.getAssemblers(), featuresManager);
@@ -335,7 +335,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
         handler.setBundleSlingInitialContentExtractor(extractor);        
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
-        handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter, null);
+        handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter);
 
         converter.deployPackages();
 
@@ -394,7 +394,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
         handler.setBundleSlingInitialContentExtractor(extractor);        
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
-        handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter, null);
+        handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter);
 
         converter.deployPackages();
 
@@ -455,7 +455,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
         handler.setBundleSlingInitialContentExtractor(extractor);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
-        handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter, null);
+        handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter);
 
         converter.deployPackages();
         
@@ -497,7 +497,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
         handler.setBundleSlingInitialContentExtractor(extractor);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
-        handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter, null);
+        handler.handle("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", archive, entry, converter);
 
         converter.deployPackages();
         // verify generated bundle
@@ -548,7 +548,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
         handler.setBundleSlingInitialContentExtractor(extractor);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
-        handler.handle("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", archive, entry, converter, null);
+        handler.handle("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", archive, entry, converter);
         // modified bundle
         ArgumentCaptor<Artifact> captor = ArgumentCaptor.forClass(Artifact.class);
         verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
@@ -586,7 +586,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
         handler.setBundleSlingInitialContentExtractor(extractor);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_KEEP);
-        handler.handle("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", archive, entry, converter, null);
+        handler.handle("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", archive, entry, converter);
         // original bundle
         ArgumentCaptor<Artifact> captor = ArgumentCaptor.forClass(Artifact.class);
         verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
@@ -630,7 +630,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
         handler.setBundleSlingInitialContentExtractor(extractor);
         handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_REMOVE);
-        handler.handle("/jcr_root/apps/gav/install/aem-aem632-project.core-0.0.1-SNAPSHOT-escaping.jar", archive, entry, converter, null);
+        handler.handle("/jcr_root/apps/gav/install/aem-aem632-project.core-0.0.1-SNAPSHOT-escaping.jar", archive, entry, converter);
 
         extractor.addRepoInitExtension(converter.getAssemblers(), featuresManager);
 

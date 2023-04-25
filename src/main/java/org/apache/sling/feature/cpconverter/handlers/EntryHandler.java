@@ -28,8 +28,13 @@ public interface EntryHandler {
 
     boolean matches(@NotNull String path);
 
+    default void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter) 
+            throws IOException, ConverterException {
+        handle(path, archive, entry, converter, null);
+    }
+
     void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter, String runMode) 
-    throws IOException, ConverterException;
+            throws IOException, ConverterException;
 
     default EntryHandler withConfig(@NotNull String config) {
         return this;

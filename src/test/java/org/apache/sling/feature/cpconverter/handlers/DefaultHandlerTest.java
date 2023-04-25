@@ -51,7 +51,7 @@ public class DefaultHandlerTest {
         try(ContentPackage2FeatureModelConverter converter = new ContentPackage2FeatureModelConverter()) {
 
             DefaultHandler handler = new DefaultHandler(assembler, true);
-            handler.handle("/" + Constants.META_DIR + "/" + Constants.HOOKS_DIR, archive, entry, converter, null);
+            handler.handle("/" + Constants.META_DIR + "/" + Constants.HOOKS_DIR, archive, entry, converter);
             
             verifyNoInteractions(assembler, archive, entry);
         }
@@ -65,7 +65,7 @@ public class DefaultHandlerTest {
             String path = "/" + Constants.META_DIR + "/" + Constants.HOOKS_DIR + "/subdir";
 
             DefaultHandler handler = new DefaultHandler(assembler, false);
-            handler.handle(path, archive, entry, converter, null);
+            handler.handle(path, archive, entry, converter);
 
             verifyNoInteractions(archive, entry);
             verify(assembler).addEntry(path, archive, entry);
@@ -80,7 +80,7 @@ public class DefaultHandlerTest {
             String path = "/" + Constants.ROOT_DIR + "/content" + Constants.DOT_CONTENT_XML;
 
             DefaultHandler handler = new DefaultHandler(assembler, true);
-            handler.handle(path, archive, entry, converter, null);
+            handler.handle(path, archive, entry, converter);
 
             verifyNoInteractions(archive, entry);
             verify(assembler).addEntry(path, archive, entry);
