@@ -84,15 +84,15 @@ public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHa
         }
 
 
-        String targetRunmode;
+        String targetRunMode;
         // determine run mode string for current path
         String runModeMatch = matcher.group(1);
-        targetRunmode = extractTargetRunMode(path, converter, runMode,
+        targetRunMode = extractTargetRunMode(path, converter, runMode,
             runModeMatch);
         
         boolean isEmbeddedPackage = EMBEDDED_PACKAGE_PATTERN.matcher(path).matches();
         try (VaultPackage vaultPackage = converter.open(temporaryContentPackage)) {
-            processSubPackage(path, targetRunmode, vaultPackage, converter, isEmbeddedPackage);
+            processSubPackage(path, targetRunMode, vaultPackage, converter, isEmbeddedPackage);
         }
 
         logger.info("Sub-content package '{}' processing is over", entry.getName());
