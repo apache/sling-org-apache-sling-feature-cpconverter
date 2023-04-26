@@ -117,6 +117,19 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
     private IndexManager indexManager = new DefaultIndexManager();
 
+    private RunModePolicy runModePolicy = RunModePolicy.DIRECT_ONLY;
+
+    public enum RunModePolicy {
+        /**
+         * Only path within containing package is considered for run mode evaluation 
+         */
+        DIRECT_ONLY,
+        /**
+         * For nesting of multiple levels, run mode constraints are inherited down and prepended 
+         */
+        PREPEND_INHERITED
+    }
+    
     public enum PackagePolicy {
         /**
          * References the content package in the feature model and deploys via the {@link ContentPackage2FeatureModelConverter#artifactsDeployer}
@@ -158,10 +171,15 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     }
 
     public ContentPackage2FeatureModelConverter(boolean strictValidation, @NotNull SlingInitialContentPolicy slingInitialContentPolicy, boolean disablePackageTypeRecalculation) throws IOException {
+        this(strictValidation, slingInitialContentPolicy, disablePackageTypeRecalculation, RunModePolicy.DIRECT_ONLY);
+    }
+    
+    public ContentPackage2FeatureModelConverter(boolean strictValidation, @NotNull SlingInitialContentPolicy slingInitialContentPolicy, boolean disablePackageTypeRecalculation, @NotNull RunModePolicy runModePolicy) throws IOException {
         super(strictValidation);
         this.disablePackageTypeRecalculation = disablePackageTypeRecalculation;
         this.recollectorVaultPackageScanner = new RecollectorVaultPackageScanner(this, this.packageManager, strictValidation, subContentPackages, slingInitialContentPolicy);
         this.tmpDirectory = Files.createTempDirectory("cp2fm-converter").toFile();
+        this.runModePolicy = runModePolicy;
     }
 
     public @NotNull ContentPackage2FeatureModelConverter setEntryHandlersManager(@Nullable EntryHandlersManager handlersManager) {
@@ -242,7 +260,16 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         this.removeInstallHooks = removeInstallHook;
         return this;
     }
+    
+    public @NotNull ContentPackage2FeatureModelConverter setRunModePolicy(@NotNull RunModePolicy runModePolicy) {
+        this.runModePolicy = runModePolicy;
+        return this;
+    }
 
+    public RunModePolicy getRunModePolicy() {
+        return this.runModePolicy;
+    }
+    
     public @Nullable IndexManager getIndexManager() {
         return indexManager;
     }
@@ -287,7 +314,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
             // analyze sub-content packages in order to filter out
             // possible outdated conflicting packages
-            recollectorVaultPackageScanner.traverse(pack);
+            recollectorVaultPackageScanner.traverse(pack, null);
 
             logger.info("content-package '{}' successfully read!", contentPackage);
 
@@ -322,7 +349,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
 
                 logger.info("Converting content-package '{}'...", vaultPackage.getId());
 
-                traverse(vaultPackage);
+                traverse(vaultPackage, null);
 
                 // retrieve the resulting zip-content-package and deploy it to the local mvn bundles dir.
                 try (VaultPackage result = processContentPackageArchive(getMainPackageAssembler(), null)) {
@@ -405,7 +432,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         assemblers.add(clonedPackage);
 
         // scan the detected package, first
-        traverse(vaultPackage);
+        traverse(vaultPackage, runMode);
         
         //set dependency to parent package if the parent package is an application package & subpackage is embedded
         if (isEmbeddedPackage && !isContainerPackage) {
@@ -503,7 +530,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         return subContentPackages.containsValue(path);
     }
 
-    private void process(@NotNull String entryPath, @NotNull Archive archive, @Nullable Entry entry) throws IOException, ConverterException {
+    private void process(@NotNull String entryPath, @NotNull Archive archive, @Nullable Entry entry, String runMode) throws IOException, ConverterException {
         if (resourceFilter != null && resourceFilter.isFilteredOut(entryPath)) {
             throw new ConverterException("Path '"
                     + entryPath
@@ -523,7 +550,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
                 throw new IllegalArgumentException("Archive '" + archive.getMetaInf().getPackageProperties().getId() + "' does not contain entry with path '" + entryPath + "'");
             }
         }
-        entryHandler.handle(entryPath, archive, entry, this);
+        entryHandler.handle(entryPath, archive, entry, this, runMode);
         if (!getMainPackageAssembler().recordEntryPath(entryPath)) {
             logger.warn("Duplicate entry path {}", entryPath);
         }
@@ -535,9 +562,9 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
     }
 
     @Override
-    protected void onFile(@NotNull String entryPath, @NotNull Archive archive, @NotNull Entry entry) throws IOException, ConverterException {
+    protected void onFile(@NotNull String entryPath, @NotNull Archive archive, @NotNull Entry entry, String runMode) throws IOException, ConverterException {
         try {
-            process(entryPath, archive, entry);
+            process(entryPath, archive, entry, runMode);
         } catch (ConverterException ex) {
             throw new ConverterException("ConverterException occured on path " + entryPath + " with message: " + ex.getMessage(), ex);
         } catch (IOException ex) {

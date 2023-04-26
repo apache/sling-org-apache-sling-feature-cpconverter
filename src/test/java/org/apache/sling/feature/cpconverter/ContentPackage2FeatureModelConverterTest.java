@@ -52,6 +52,7 @@ import org.apache.jackrabbit.vault.packaging.VaultPackage;
 import org.apache.jackrabbit.vault.packaging.impl.PackageManagerImpl;
 import org.apache.sling.feature.ArtifactId;
 import org.apache.sling.feature.Artifacts;
+import org.apache.sling.feature.Bundles;
 import org.apache.sling.feature.Configuration;
 import org.apache.sling.feature.Configurations;
 import org.apache.sling.feature.Extension;
@@ -59,6 +60,7 @@ import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Feature;
 import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.PackagePolicy;
+import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.RunModePolicy;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.LocalMavenRepositoryArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.artifacts.SimpleFolderArtifactsDeployer;
@@ -569,6 +571,125 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             deleteDirTree(outputDirectory);
         }
     }
+    
+    
+    @Test
+    public void verifyRunModesInheritedWithInheritanceOn() throws Exception {
+        URL packageUrl = getClass().getResource("runmodenesting-0.0.1.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+
+        try {
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
+                    .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
+                    .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                    .setRunModePolicy(RunModePolicy.PREPEND_INHERITED)
+                    .convert(packageFile);
+            
+            File runModeMapperFile = new File(outputDirectory, "runmode.mapping");
+            assertTrue(runModeMapperFile.exists());
+            assertTrue(runModeMapperFile.isFile());
+            Properties runModes = new Properties();
+            try (FileInputStream input = new FileInputStream(runModeMapperFile)) {
+                runModes.load(input);
+            }
+            assertFalse(runModes.isEmpty());
+            assertTrue(runModes.containsKey("(default)"));
+            assertEquals("runmodetest_parentcontainer-author.json", runModes.getProperty("author"));
+            
+            // general
+            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer.json"), "asd.sample:embedded.test.app:zip:cp2fm-converted:0.0.0", false);
+            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer.json"), "my_packages:test_a:zip:cp2fm-converted:1.0", false);
+            assertBundleEntry(new File(outputDirectory, "runmodetest_parentcontainer.json"), "io.wcm:io.wcm.handler.media:1.11.6", false);
+            
+            // author
+            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer-author.json"), "asd.sample:embedded.test.app:zip:cp2fm-converted:0.0.0", true);
+            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer-author.json"), "my_packages:test_a:zip:cp2fm-converted:1.0", true);
+            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer-author.json"), "my_packages:test_b:zip:cp2fm-converted:1.0", true);
+            assertBundleEntry(new File(outputDirectory, "runmodetest_parentcontainer-author.json"), "io.wcm:io.wcm.handler.media:1.11.6", true);
+            assertBundleEntry(new File(outputDirectory, "runmodetest_parentcontainer-author.json"), "io.wcm:io.wcm.handler.link:1.7.02", true);
+            
+            // publish
+            assertFalse(new File(outputDirectory, "runmodetest_parentcontainer-publish.json").exists());
+            
+            // author.publish (for cp converter those are not mutually exclusive)
+            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer-author.publish.json"), "my_packages:test_c:zip:cp2fm-converted:1.0", true);
+            assertBundleEntry(new File(outputDirectory, "runmodetest_parentcontainer-author.publish.json"), "com.composum.nodes:composum-nodes-config:2.5.3", true);
+            assertConfigEntry(new File(outputDirectory, "runmodetest_parentcontainer-author.publish.json"), "org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~c", true);
+
+            
+            //author.dev
+            assertConfigEntry(new File(outputDirectory, "runmodetest_parentcontainer-author.dev.json"), "org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~d", true);
+            assertConfigEntry(new File(outputDirectory, "runmodetest_parentcontainer-author.dev.json"), "org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~f", true);
+
+            //author.prod
+            assertConfigEntry(new File(outputDirectory, "runmodetest_parentcontainer-author.prod.json"), "org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~e", true);
+            
+            // dev
+            assertFalse(new File(outputDirectory, "runmodetest_parentcontainer-dev.json").exists());
+            
+        } finally {
+            deleteDirTree(outputDirectory);
+        }
+    }
+
+    
+    @Test
+    public void verifyRunModesInheritedWithInheritanceOff() throws Exception {
+        URL packageUrl = getClass().getResource("runmodenesting-0.0.1.zip");
+        File packageFile = FileUtils.toFile(packageUrl);
+
+        File outputDirectory = new File(System.getProperty("java.io.tmpdir"), getClass().getName() + '_' + System.currentTimeMillis());
+
+        try {
+            converter.setFeaturesManager(new DefaultFeaturesManager(true, 5, outputDirectory, null, null, new HashMap<>(), new DefaultAclManager()))
+                    .setBundlesDeployer(new LocalMavenRepositoryArtifactsDeployer(outputDirectory))
+                    .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
+                    .setRunModePolicy(RunModePolicy.DIRECT_ONLY)
+                    .convert(packageFile);
+            
+            File runModeMapperFile = new File(outputDirectory, "runmode.mapping");
+            assertTrue(runModeMapperFile.exists());
+            assertTrue(runModeMapperFile.isFile());
+            Properties runModes = new Properties();
+            try (FileInputStream input = new FileInputStream(runModeMapperFile)) {
+                runModes.load(input);
+            }
+            assertFalse(runModes.isEmpty());
+            assertTrue(runModes.containsKey("(default)"));
+            assertEquals("runmodetest_parentcontainer-author.json", runModes.getProperty("author"));
+            
+            // general
+            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer.json"), "asd.sample:embedded.test.app:zip:cp2fm-converted:0.0.0", false);
+            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer.json"), "my_packages:test_a:zip:cp2fm-converted:1.0", true);
+            assertBundleEntry(new File(outputDirectory, "runmodetest_parentcontainer.json"), "io.wcm:io.wcm.handler.media:1.11.6", true);
+            
+            // author
+            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer-author.json"), "asd.sample:embedded.test.app:zip:cp2fm-converted:0.0.0", true);
+            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer-author.json"), "my_packages:test_a:zip:cp2fm-converted:1.0", false);
+            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer-author.json"), "my_packages:test_b:zip:cp2fm-converted:1.0", true);
+            assertBundleEntry(new File(outputDirectory, "runmodetest_parentcontainer-author.json"), "io.wcm:io.wcm.handler.link:1.7.02", true);
+            // publish
+            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer-publish.json"), "my_packages:test_c:zip:cp2fm-converted:1.0", true);
+            assertBundleEntry(new File(outputDirectory, "runmodetest_parentcontainer-publish.json"), "com.composum.nodes:composum-nodes-config:2.5.3", true);
+            
+            // author.publish (for cp converter those are not mutually exclusive)
+            assertFalse(new File(outputDirectory, "runmodetest_parentcontainer-author.publish.json").exists());
+            
+           //author.dev
+            assertConfigEntry(new File(outputDirectory, "runmodetest_parentcontainer-author.dev.json"), "org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~d", true);
+            
+            //author.prod
+            assertConfigEntry(new File(outputDirectory, "runmodetest_parentcontainer-author.prod.json"), "org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~e", true);
+        
+            //dev
+            assertConfigEntry(new File(outputDirectory, "runmodetest_parentcontainer-dev.json"), "org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~f", true);
+        } finally {
+            deleteDirTree(outputDirectory);
+        }
+    }
+
 
 
     @Test(expected = ConverterException.class)
@@ -686,6 +807,52 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             assertEquals(region, regionJO.getString("name"));
             JsonArray exports = regionJO.getJsonArray("exports");
             assertTrue(exports == null || exports.isEmpty());
+        }
+    }
+    
+    private static void assertContentPackage(File featureFile, String packageCoordinates, boolean isPresent) throws IOException {
+        try (Reader reader = new FileReader(featureFile)) {
+            Feature feature = FeatureJSONReader.read(reader, featureFile.getAbsolutePath());
+
+            Extension contentPackages = feature.getExtensions().getByName("content-packages");
+            assertEquals(ExtensionType.ARTIFACTS, contentPackages.getType());
+            Artifacts artifacts = contentPackages.getArtifacts();
+            ArtifactId aId = ArtifactId.fromMvnId(packageCoordinates);
+            if (isPresent) {
+                assertTrue("Missing package from featurefile", artifacts.containsExact(aId));
+            } else {
+                assertFalse("Package not expected in featurefile", artifacts.containsExact(aId));
+            }
+            
+        }
+    }
+    
+    private static void assertConfigEntry(File featureFile, String pid, boolean isPresent) throws IOException {
+        try (Reader reader = new FileReader(featureFile)) {
+            Feature feature = FeatureJSONReader.read(reader, featureFile.getAbsolutePath());
+
+            Configurations configs  = feature.getConfigurations();
+            if (isPresent) {
+                assertTrue("Missing Configuration from featurefile", configs.getConfiguration(pid) != null);
+            } else {
+                assertFalse("Configuration not expected in featurefile", configs.getConfiguration(pid) == null);
+            }
+            
+        }
+    }
+    
+    private static void assertBundleEntry(File featureFile, String bundleCoordinates, boolean isPresent) throws IOException {
+        try (Reader reader = new FileReader(featureFile)) {
+            Feature feature = FeatureJSONReader.read(reader, featureFile.getAbsolutePath());
+
+            Bundles bundles = feature.getBundles();
+            ArtifactId aId = ArtifactId.fromMvnId(bundleCoordinates);
+            if (isPresent) {
+                assertTrue("Missing Bundle from featurefile", bundles.containsExact(aId));
+            } else {
+                assertFalse("Bundle not expected in featurefile", bundles.containsExact(aId));
+            }
+            
         }
     }
 

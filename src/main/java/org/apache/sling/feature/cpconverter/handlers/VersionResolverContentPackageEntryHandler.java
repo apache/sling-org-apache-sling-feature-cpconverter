@@ -71,7 +71,7 @@ public final class VersionResolverContentPackageEntryHandler extends AbstractCon
             subContentPackages.put(currentId, path);
 
             // iteratively traverse the sub(-sub)*content-packages
-            scanner.traverse(contentPackage);
+            scanner.traverse(contentPackage, runMode);
         }
     }
 

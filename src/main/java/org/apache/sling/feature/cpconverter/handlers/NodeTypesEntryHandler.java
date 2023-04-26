@@ -54,7 +54,7 @@ public class NodeTypesEntryHandler extends AbstractRegexEntryHandler {
     }
 
     @Override
-    public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter)
+    public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter, String runMode)
             throws IOException, ConverterException {
         try (Reader cndStatements = new InputStreamReader(Objects.requireNonNull(archive.openInputStream(entry)))) {
             converter.getAclManager().addNodetypeRegistration(IOUtils.toString(cndStatements));

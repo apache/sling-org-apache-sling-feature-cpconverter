@@ -86,11 +86,12 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
     public void handle(@NotNull String path,
            @NotNull Archive archive, 
            @NotNull Entry entry, 
-           @NotNull ContentPackage2FeatureModelConverter converter) throws IOException, ConverterException {
+           @NotNull ContentPackage2FeatureModelConverter converter,
+           String runMode) throws IOException, ConverterException {
         logger.info("Processing bundle {}...", entry.getName());
 
         Matcher matcher = getPattern().matcher(path);
-        String runMode = null;
+        
         Integer startLevel = null;
         // we are pretty sure it matches, here
         if (!matcher.matches()) {
@@ -105,12 +106,11 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
             throw new ConverterException("OSGi bundles are only considered if placed below a folder called 'install', but the bundle at '"+ path + "' is placed outside!");
         }
 
-        
-        runMode = matcher.group("runmode");
-        if (runMode != null) {
-            // there is a specified RunMode
-            logger.debug("Runmode {} was extracted from path {}", runMode, path);
-        }
+        // determine run mode string for current path
+        String runModeMatch = matcher.group("runmode");
+
+        String targetRunMode = extractTargetRunMode(path, converter, runMode,
+            runModeMatch);
 
         final String value = matcher.group("startlevel");
         if (value != null) {
@@ -138,7 +138,7 @@ public class BundleEntryHandler extends AbstractRegexEntryHandler {
                 InputStream input = Objects.requireNonNull(archive.openInputStream(entry))) {
                 IOUtils.copy(input, output);
             }
-            processBundleInputStream(path, tmpBundleJar, bundleName, runMode, startLevel, converter);
+            processBundleInputStream(path, tmpBundleJar, bundleName, targetRunMode, startLevel, converter);
         } finally {
             Files.delete(tmpBundleJar);
         }

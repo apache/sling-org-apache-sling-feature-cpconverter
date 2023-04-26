@@ -46,7 +46,7 @@ public class DefaultHandler implements EntryHandler {
     }
 
     @Override
-    public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Archive.Entry entry, @NotNull ContentPackage2FeatureModelConverter converter)
+    public void handle(@NotNull String path, @NotNull Archive archive, @NotNull Archive.Entry entry, @NotNull ContentPackage2FeatureModelConverter converter, String runMode)
             throws IOException {
         if (removeInstallHooks && path.startsWith(INSTALL_HOOK_ROOT)) {
             log.info("Skipping install hook {} from original package", path);

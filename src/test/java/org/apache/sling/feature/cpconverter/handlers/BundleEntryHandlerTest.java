@@ -131,7 +131,7 @@ public final class BundleEntryHandlerTest {
 
     @Parameters
     public static Collection<Object[]> data() {
-        final BundleEntryHandler bundleEntryHandler = new BundleEntryHandler();
+        final AbstractRegexEntryHandler bundleEntryHandler = new BundleEntryHandler();
 
         return Arrays.asList(new Object[][] {
                 { "/jcr_root/apps/asd/install/test-framework-no-pom.jar", bundleEntryHandler, 20 },

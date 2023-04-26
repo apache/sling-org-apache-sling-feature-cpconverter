@@ -23,7 +23,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
@@ -44,7 +43,7 @@ public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHa
     }
 
     @Override
-    public final void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter)
+    public final void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter, String runMode)
             throws IOException, ConverterException {
         logger.info("Processing sub-content package '{}'...", entry.getName());
 
@@ -74,7 +73,7 @@ public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHa
         }
 
         Matcher matcher = getPattern().matcher(path);
-        String runMode = null;
+
         // we are pretty sure it matches, here
         if (!matcher.matches()) {
             throw new IllegalStateException("Something went terribly wrong: pattern '"
@@ -84,15 +83,16 @@ public abstract class AbstractContentPackageHandler extends AbstractRegexEntryHa
                                             + "' but it does not, currently");
         }
 
-        runMode = matcher.group(1);
-        if (runMode != null) {
-            // there is a specified RunMode
-            logger.debug("Runmode {} was extracted from path {}", runMode, path);
-        }
 
+        String targetRunMode;
+        // determine run mode string for current path
+        String runModeMatch = matcher.group(1);
+        targetRunMode = extractTargetRunMode(path, converter, runMode,
+            runModeMatch);
+        
         boolean isEmbeddedPackage = EMBEDDED_PACKAGE_PATTERN.matcher(path).matches();
         try (VaultPackage vaultPackage = converter.open(temporaryContentPackage)) {
-            processSubPackage(path, runMode, vaultPackage, converter, isEmbeddedPackage);
+            processSubPackage(path, targetRunMode, vaultPackage, converter, isEmbeddedPackage);
         }
 
         logger.info("Sub-content package '{}' processing is over", entry.getName());

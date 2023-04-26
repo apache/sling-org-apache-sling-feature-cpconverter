@@ -21,7 +21,6 @@ import java.io.InputStream;
 import java.util.Dictionary;
 import java.util.Objects;
 import java.util.regex.Matcher;
-
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.sling.feature.Configuration;
@@ -45,11 +44,12 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
     }
 
     @Override
-    public final void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter) throws IOException, ConverterException {
+    public final void handle(@NotNull String path, @NotNull Archive archive, @NotNull Entry entry, @NotNull ContentPackage2FeatureModelConverter converter, String runMode) throws IOException, ConverterException {
 
         Matcher matcher = getPattern().matcher(path);
         
-        String runMode;
+        String targetRunMode;
+        
         // we are pretty sure it matches, here
         if (matcher.matches()) {
             if (matcher.group("dir") != null) {
@@ -74,12 +74,14 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
                     throw new ConverterException("OSGi configuration are only considered if placed below a folder called 'config', but the configuration at '"+ path + "' is placed outside!");
                 }
                 
-                // there is a specified RunMode
-                runMode = matcher.group("runmode");
-    
+                // determine run mode string for current path
+                String runModeMatch = matcher.group("runmode");
+                targetRunMode = extractTargetRunMode(path, converter, runMode,
+                    runModeMatch);
+                
                 FeaturesManager featuresManager = Objects.requireNonNull(converter.getFeaturesManager());
                 final Configuration cfg = new Configuration(id);
-                featuresManager.addConfiguration(runMode, cfg, path, configurationProperties);
+                featuresManager.addConfiguration(targetRunMode, cfg, path, configurationProperties);
             }
         } else {
             throw new IllegalStateException("Something went terribly wrong: pattern '"
