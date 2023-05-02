@@ -103,7 +103,7 @@ abstract class AbstractConfigurationEntryHandler extends AbstractRegexEntryHandl
         }
         // check for old format for factory configurations (using dash instead of tilde)
         idx = pid.indexOf('-');
-        if ( idx != -1 ) {
+        if ( idx != -1 && pid.indexOf('~') == -1 ) {
             pid = pid.substring(0, idx).concat("~").concat(pid.substring(idx + 1));
         }
         return pid;

@@ -27,5 +27,6 @@ public class AbstractConfigurationEntryHandlerTest {
         assertEquals("org.apache.sling.Component", AbstractConfigurationEntryHandler.extractId("apath/org.apache.sling.Component"));
         assertEquals("org.apache.sling.Component~factory", AbstractConfigurationEntryHandler.extractId("org.apache.sling.Component~factory"));
         assertEquals("org.apache.sling.Component~factory", AbstractConfigurationEntryHandler.extractId("org.apache.sling.Component-factory"));
+        assertEquals("org.apache.sling.Component~factory-a", AbstractConfigurationEntryHandler.extractId("org.apache.sling.Component~factory-a"));
     }
 }
