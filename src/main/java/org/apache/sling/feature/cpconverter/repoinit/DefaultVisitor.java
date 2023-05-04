@@ -17,6 +17,7 @@
 package org.apache.sling.feature.cpconverter.repoinit;
 
 import org.apache.sling.repoinit.parser.operations.AddGroupMembers;
+import org.apache.sling.repoinit.parser.operations.AddMixins;
 import org.apache.sling.repoinit.parser.operations.CreateGroup;
 import org.apache.sling.repoinit.parser.operations.CreatePath;
 import org.apache.sling.repoinit.parser.operations.CreateUser;
@@ -27,6 +28,8 @@ import org.apache.sling.repoinit.parser.operations.DeleteGroup;
 import org.apache.sling.repoinit.parser.operations.DeleteServiceUser;
 import org.apache.sling.repoinit.parser.operations.DeleteUser;
 import org.apache.sling.repoinit.parser.operations.DisableServiceUser;
+import org.apache.sling.repoinit.parser.operations.EnsureAclPrincipalBased;
+import org.apache.sling.repoinit.parser.operations.EnsureNodes;
 import org.apache.sling.repoinit.parser.operations.RegisterNamespace;
 import org.apache.sling.repoinit.parser.operations.RegisterNodetypes;
 import org.apache.sling.repoinit.parser.operations.RegisterPrivilege;
@@ -34,6 +37,7 @@ import org.apache.sling.repoinit.parser.operations.RemoveAcePaths;
 import org.apache.sling.repoinit.parser.operations.RemoveAcePrincipalBased;
 import org.apache.sling.repoinit.parser.operations.RemoveAcePrincipals;
 import org.apache.sling.repoinit.parser.operations.RemoveGroupMembers;
+import org.apache.sling.repoinit.parser.operations.RemoveMixins;
 import org.apache.sling.repoinit.parser.operations.SetAclPrincipalBased;
 import org.apache.sling.repoinit.parser.operations.SetProperties;
 import org.jetbrains.annotations.NotNull;
@@ -79,8 +83,18 @@ class DefaultVisitor extends NoOpVisitor {
     }
 
     @Override
+    public void visitEnsureAclPrincipalBased(EnsureAclPrincipalBased ensureAclPrincipalBased) {
+        formatter.format("%s", ensureAclPrincipalBased.asRepoInitString());
+    }
+
+    @Override
     public void visitCreatePath(CreatePath createPath) {
         formatter.format("%s", createPath.asRepoInitString());
+    }
+    
+    @Override
+    public void visitEnsureNodes(EnsureNodes en) {
+        formatter.format("%s", en.asRepoInitString());
     }
 
     @Override
@@ -130,6 +144,16 @@ class DefaultVisitor extends NoOpVisitor {
 
     @Override
     public void visitDeleteAclPrincipalBased(DeleteAclPrincipalBased s) {
+        formatter.format("%s", s.asRepoInitString());
+    }
+
+    @Override
+    public void visitAddMixins(AddMixins s) {
+        formatter.format("%s", s.asRepoInitString());
+    }
+
+    @Override
+    public void visitRemoveMixins(RemoveMixins s) {
         formatter.format("%s", s.asRepoInitString());
     }
 

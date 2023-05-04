@@ -17,6 +17,7 @@
 package org.apache.sling.feature.cpconverter.repoinit;
 
 import org.apache.sling.repoinit.parser.operations.AddGroupMembers;
+import org.apache.sling.repoinit.parser.operations.AddMixins;
 import org.apache.sling.repoinit.parser.operations.CreateGroup;
 import org.apache.sling.repoinit.parser.operations.CreatePath;
 import org.apache.sling.repoinit.parser.operations.CreateServiceUser;
@@ -28,6 +29,8 @@ import org.apache.sling.repoinit.parser.operations.DeleteGroup;
 import org.apache.sling.repoinit.parser.operations.DeleteServiceUser;
 import org.apache.sling.repoinit.parser.operations.DeleteUser;
 import org.apache.sling.repoinit.parser.operations.DisableServiceUser;
+import org.apache.sling.repoinit.parser.operations.EnsureAclPrincipalBased;
+import org.apache.sling.repoinit.parser.operations.EnsureNodes;
 import org.apache.sling.repoinit.parser.operations.OperationVisitor;
 import org.apache.sling.repoinit.parser.operations.RegisterNamespace;
 import org.apache.sling.repoinit.parser.operations.RegisterNodetypes;
@@ -36,6 +39,7 @@ import org.apache.sling.repoinit.parser.operations.RemoveAcePaths;
 import org.apache.sling.repoinit.parser.operations.RemoveAcePrincipalBased;
 import org.apache.sling.repoinit.parser.operations.RemoveAcePrincipals;
 import org.apache.sling.repoinit.parser.operations.RemoveGroupMembers;
+import org.apache.sling.repoinit.parser.operations.RemoveMixins;
 import org.apache.sling.repoinit.parser.operations.SetAclPaths;
 import org.apache.sling.repoinit.parser.operations.SetAclPrincipalBased;
 import org.apache.sling.repoinit.parser.operations.SetAclPrincipals;
@@ -80,6 +84,10 @@ public abstract class NoOpVisitor implements OperationVisitor {
     }
 
     @Override
+    public void visitEnsureAclPrincipalBased(EnsureAclPrincipalBased ensureAclPrincipalBased) {
+    }
+
+    @Override
     public void visitRemoveAcePrincipal(RemoveAcePrincipals s) {
     }
 
@@ -93,6 +101,10 @@ public abstract class NoOpVisitor implements OperationVisitor {
 
     @Override
     public void visitCreatePath(CreatePath createPath) {
+    }
+
+    @Override
+    public void visitEnsureNodes(EnsureNodes en) {
     }
 
     @Override
@@ -133,5 +145,13 @@ public abstract class NoOpVisitor implements OperationVisitor {
 
     @Override
     public void visitDeleteAclPrincipalBased(DeleteAclPrincipalBased s) {
+    }
+
+    @Override
+    public void visitAddMixins(AddMixins s) {
+    }
+
+    @Override
+    public void visitRemoveMixins(RemoveMixins s) {
     }
 }
