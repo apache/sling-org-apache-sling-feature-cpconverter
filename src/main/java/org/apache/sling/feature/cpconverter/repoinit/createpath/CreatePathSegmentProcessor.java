@@ -98,7 +98,7 @@ public class CreatePathSegmentProcessor {
             throw new RuntimeException("A fatal error occurred while parsing the '"
                     + currentContent
                     + "' file, see nested exceptions: "
-                    + e, e);
+                    + e);
         }
         return false;
     }

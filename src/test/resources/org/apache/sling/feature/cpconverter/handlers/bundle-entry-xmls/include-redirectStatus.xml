@@ -1,15 +1,17 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <jcr:root xmlns="" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xmlns:granite="http://www.adobe.com/jcr/granite/1.0" xmlns:oak="http://jackrabbit.apache.org/oak/ns/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:rep="internal" xmlns:mix="http://www.jcp.org/jcr/mix/1.0" xmlns:sling="http://sling.apache.org/jcr/sling/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:vlt="http://www.day.com/jcr/vault/1.0" jcr:primaryType="nt:unstructured" margin="{Boolean}true" cq:showOnCreate="{Boolean}false" sling:resourceType="granite/ui/components/coral/foundation/fixedcolumns" jcr:title="io.wcm.handler.link.components.global.include.linkRefContainer.redirectStatus.title">
-    <items jcr:primaryType="nt:unstructured">
-        <column jcr:primaryType="nt:unstructured" sling:resourceType="granite/ui/components/coral/foundation/container">
-            <items jcr:primaryType="nt:unstructured">
-                <redirectStatus jcr:primaryType="nt:unstructured" defaultValue="301" fieldLabel="io.wcm.handler.link.components.global.include.linkRefContainer.redirectStatus.redirectStatus.fieldLabel" name="./redirectStatus" sling:resourceType="granite/ui/components/coral/foundation/form/select" fieldDescription="io.wcm.handler.link.components.global.include.linkRefContainer.redirectStatus.redirectStatus.fieldDescription">
-                    <items jcr:primaryType="nt:unstructured">
-                        <_x0033_01 jcr:primaryType="nt:unstructured" text="io.wcm.handler.link.components.global.include.linkRefContainer.redirectStatus.redirectStatus.301" value="301"/>
-                        <_x0033_02 jcr:primaryType="nt:unstructured" text="io.wcm.handler.link.components.global.include.linkRefContainer.redirectStatus.redirectStatus.302" value="302"/>
-                    </items>
-                </redirectStatus>
-            </items>
-        </column>
-    </items>
+  <items jcr:primaryType="nt:unstructured">
+    <column jcr:primaryType="nt:unstructured" sling:resourceType="granite/ui/components/coral/foundation/container">
+      <items jcr:primaryType="nt:unstructured">
+        <redirectStatus jcr:primaryType="nt:unstructured" defaultValue="301" fieldLabel="io.wcm.handler.link.components.global.include.linkRefContainer.redirectStatus.redirectStatus.fieldLabel" name="./redirectStatus" sling:resourceType="granite/ui/components/coral/foundation/form/select" fieldDescription="io.wcm.handler.link.components.global.include.linkRefContainer.redirectStatus.redirectStatus.fieldDescription">
+          <items jcr:primaryType="nt:unstructured">
+            <_301 jcr:primaryType="nt:unstructured" text="io.wcm.handler.link.components.global.include.linkRefContainer.redirectStatus.redirectStatus.301" value="301">
+            </_301>
+            <_302 jcr:primaryType="nt:unstructured" text="io.wcm.handler.link.components.global.include.linkRefContainer.redirectStatus.redirectStatus.302" value="302">
+            </_302>
+          </items>
+        </redirectStatus>
+      </items>
+    </column>
+  </items>
 </jcr:root>

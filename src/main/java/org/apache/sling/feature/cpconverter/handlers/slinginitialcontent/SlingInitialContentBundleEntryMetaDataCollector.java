@@ -181,15 +181,15 @@ class SlingInitialContentBundleEntryMetaDataCollector {
 
     @NotNull
     private SlingInitialContentBundleEntryMetaData createSlingInitialContentBundleEntry(@NotNull BundleSlingInitialContentExtractContext context,
-                                                                                        @NotNull File sourceFile) throws UnsupportedEncodingException {
-        final String entryName = StringUtils.replace(StringUtils.substringAfter(sourceFile.getPath(), basePath + File.separator), File.separator, ZIP_ENTRY_SEPARATOR);
+                                                                                        @NotNull File targetFile) throws UnsupportedEncodingException {
+        final String entryName = StringUtils.replace(StringUtils.substringAfter(targetFile.getPath(), basePath + File.separator), File.separator, ZIP_ENTRY_SEPARATOR);
         final PathEntry pathEntryValue = context.getPathEntryList().stream().filter(
                 pathEntry -> checkIfPathStartsWithOrIsEqual(pathEntry.getPath(), entryName, ZIP_ENTRY_SEPARATOR)
         ).findFirst().orElseThrow(NullPointerException::new);
         final String target = pathEntryValue.getTarget();
         // https://sling.apache.org/documentation/bundles/content-loading-jcr-contentloader.html#file-name-escaping
         String repositoryPath = (target != null ? target : "/") + URLDecoder.decode(entryName.substring(pathEntryValue.getPath().length()), "UTF-8");
-        return new SlingInitialContentBundleEntryMetaData(sourceFile, pathEntryValue, repositoryPath);
+        return new SlingInitialContentBundleEntryMetaData(targetFile, pathEntryValue, repositoryPath);
     }
 
 

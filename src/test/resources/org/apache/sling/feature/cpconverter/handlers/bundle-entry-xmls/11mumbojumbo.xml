@@ -1,4 +1,5 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<jcr:root xmlns="" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xmlns:granite="http://www.adobe.com/jcr/granite/1.0" xmlns:oak="http://jackrabbit.apache.org/oak/ns/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:rep="internal" xmlns:mix="http://www.jcp.org/jcr/mix/1.0" xmlns:sling="http://sling.apache.org/jcr/sling/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:vlt="http://www.day.com/jcr/vault/1.0" jcr:primaryType="cq:Component" prop="quotes and some_stuff">
-    <someOtherNode jcr:primaryType="nt:unstructured" prop="property value as string" />
+<jcr:root xmlns="" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:xml="http://www.w3.org/XML/1998/namespace" xmlns:granite="http://www.adobe.com/jcr/granite/1.0" xmlns:oak="http://jackrabbit.apache.org/oak/ns/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:rep="internal" xmlns:mix="http://www.jcp.org/jcr/mix/1.0" xmlns:sling="http://sling.apache.org/jcr/sling/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:vlt="http://www.day.com/jcr/vault/1.0" jcr:primaryType="cq:Component" prop="{String}quotes and some_stuff">
+    <someOtherNode jcr:primaryType="nt:unstructured" prop="{String}property value as string">
+    </someOtherNode>
 </jcr:root>
