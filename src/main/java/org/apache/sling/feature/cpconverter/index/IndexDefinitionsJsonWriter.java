@@ -29,6 +29,7 @@ import java.util.function.Function;
 
 import javax.jcr.PropertyType;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.util.Base64;
 import org.apache.jackrabbit.vault.util.DocViewNode2;
@@ -103,7 +104,7 @@ public class IndexDefinitionsJsonWriter {
                 IndexDefinitions.OAK_INDEX_PATH + "/" + nodeName : nodeName;
 
         // return if index properties in empty.
-        if ( index.getProperties().size() == 0 ) {
+        if ( CollectionUtils.isEmpty(index.getProperties())) {
             return;
         }
         // 1. start object
