@@ -102,6 +102,10 @@ public class IndexDefinitionsJsonWriter {
         String objectKey = parentPath.equals(IndexDefinitions.OAK_INDEX_PATH) ?
                 IndexDefinitions.OAK_INDEX_PATH + "/" + nodeName : nodeName;
 
+        // return if index properties in empty.
+        if ( index.getProperties().size() == 0 ) {
+            return;
+        }
         // 1. start object
         json.writeStartObject(objectKey);
 

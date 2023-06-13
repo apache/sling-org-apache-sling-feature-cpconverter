@@ -108,6 +108,39 @@ public class IndexDefinitionsJsonWriterTest {
     }
 
     @Test
+    public void propertyIndexDefinitionWithEmptyNodes() throws IOException {
+
+        Collection<DocViewProperty2> fooProps = new ArrayList<>();
+        fooProps.add(new DocViewProperty2(nameFactory.create("{}type"), "property"));
+        fooProps.add(new DocViewProperty2(nameFactory.create("{}comment"), "foo:bar"));
+        fooProps.add(new DocViewProperty2(nameFactory.create(NamespaceRegistry.NAMESPACE_JCR, "primaryType"), OAK_PREFIX+":QueryIndexDefinition"));
+        fooProps.add(new DocViewProperty2(nameFactory.create("{}reindex"), Boolean.FALSE.toString(), PropertyType.BOOLEAN));
+        fooProps.add(new DocViewProperty2(nameFactory.create("{}reindexCount"), "1", PropertyType.LONG));
+
+        definitions.addNode("/oak:index", new DocViewNode2(nameFactory.create("{}foo"), fooProps));
+
+        Collection<DocViewProperty2> barProps = new ArrayList<>();
+        barProps.add(new DocViewProperty2(nameFactory.create("{}type"), "property"));
+        barProps.add(new DocViewProperty2(nameFactory.create(NamespaceRegistry.NAMESPACE_JCR, "primaryType"), OAK_PREFIX+":QueryIndexDefinition"));
+        barProps.add(new DocViewProperty2(nameFactory.create("{}reindex"), Boolean.TRUE.toString(), PropertyType.BOOLEAN));
+        barProps.add(new DocViewProperty2(nameFactory.create("{}reindexCount"), "25", PropertyType.LONG));
+
+        definitions.addNode("/oak:index", new DocViewNode2(nameFactory.create("{}bar"), barProps));
+
+        //creating oak index with empty node properties.
+        Collection<DocViewProperty2> maiProps = new ArrayList<>();
+        definitions.addNode("/oak:index", new DocViewNode2(nameFactory.create("{}mai"),maiProps));
+
+        JsonObject root = generateAndParse(definitions);
+        // should be two instead of three
+        assertThat(root).as("indexDefinitions")
+                .hasSize(2)
+                .hasEntrySatisfying("/oak:index/foo", Conditions.isJsonObject())
+                .hasEntrySatisfying("/oak:index/bar", Conditions.isJsonObject())
+                .doesNotContainKey("/oak:index/mai");
+    }
+
+    @Test
     public void invalidLongPropertyIsAccepted() throws IOException {
 
         Collection<DocViewProperty2> fooProps = new ArrayList<>();
