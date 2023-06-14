@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.spi.Name;
 import org.apache.jackrabbit.vault.util.DocViewNode2;
@@ -60,6 +61,7 @@ public class IndexDefinitions {
 
             // prevent duplicates
             if ( currentChild.getName().equals(node.getName() )) {
+
                 // new node holds less information. There should not be a scenario where we need to
                 // merge properties.
                 if ( node.getProperties().size() <= currentChild.getProperties().size() ) {
@@ -73,6 +75,11 @@ public class IndexDefinitions {
         // remove node marked as placeholder
         if ( existing != null ) {
             currentChildren.remove(existing);
+        }
+        if ( CollectionUtils.isEmpty(node.getProperties())
+                && node.getName()!= null
+                && !(node.getName().toString().contains(".txt")) ){
+            return;
         }
 
         // add new node

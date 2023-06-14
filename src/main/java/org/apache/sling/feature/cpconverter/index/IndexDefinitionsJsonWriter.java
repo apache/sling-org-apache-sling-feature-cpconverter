@@ -29,7 +29,6 @@ import java.util.function.Function;
 
 import javax.jcr.PropertyType;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.jackrabbit.JcrConstants;
 import org.apache.jackrabbit.util.Base64;
 import org.apache.jackrabbit.vault.util.DocViewNode2;
@@ -103,10 +102,6 @@ public class IndexDefinitionsJsonWriter {
         String objectKey = parentPath.equals(IndexDefinitions.OAK_INDEX_PATH) ?
                 IndexDefinitions.OAK_INDEX_PATH + "/" + nodeName : nodeName;
 
-        // return if index properties in empty.
-        if ( CollectionUtils.isEmpty(index.getProperties())) {
-            return;
-        }
         // 1. start object
         json.writeStartObject(objectKey);
 
