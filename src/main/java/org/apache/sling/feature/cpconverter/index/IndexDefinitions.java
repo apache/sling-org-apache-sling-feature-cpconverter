@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -61,7 +62,6 @@ public class IndexDefinitions {
 
             // prevent duplicates
             if ( currentChild.getName().equals(node.getName() )) {
-
                 // new node holds less information. There should not be a scenario where we need to
                 // merge properties.
                 if ( node.getProperties().size() <= currentChild.getProperties().size() ) {
@@ -76,9 +76,9 @@ public class IndexDefinitions {
         if ( existing != null ) {
             currentChildren.remove(existing);
         }
+        // if node properties are null and there is no binaries for node exists.
         if ( CollectionUtils.isEmpty(node.getProperties())
-                && node.getName()!= null
-                && !(node.getName().toString().contains(".txt")) ){
+                && binaries.get(Paths.get(parentPath, node.getName().getLocalName()).toString()) == null ){
             return;
         }
 
