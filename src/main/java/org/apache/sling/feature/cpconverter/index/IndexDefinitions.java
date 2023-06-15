@@ -60,7 +60,8 @@ public class IndexDefinitions {
         DocViewNode2 existing = null;
         // if node properties are null and there is no binaries for node exists.
         if ( CollectionUtils.isEmpty(node.getProperties())
-                && binaries.get(Paths.get(parentPath, node.getName().getLocalName()).toString()) == null ){
+                && ( binaries.get(parentPath + "/" + node.getName().getLocalName()) == null
+                    || node.getName().getLocalName().contains(".xml"))){
             return;
         }
         for ( DocViewNode2 currentChild : currentChildren ) {
