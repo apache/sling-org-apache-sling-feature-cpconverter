@@ -58,6 +58,11 @@ public class IndexDefinitions {
     public void addNode(@NotNull String parentPath, @NotNull DocViewNode2 node) {
         List<DocViewNode2> currentChildren = children.computeIfAbsent(parentPath, k -> new ArrayList<>());
         DocViewNode2 existing = null;
+        // if node properties are null and there is no binaries for node exists.
+        if ( CollectionUtils.isEmpty(node.getProperties())
+                && binaries.get(Paths.get(parentPath, node.getName().getLocalName()).toString()) == null ){
+            return;
+        }
         for ( DocViewNode2 currentChild : currentChildren ) {
 
             // prevent duplicates
@@ -75,11 +80,6 @@ public class IndexDefinitions {
         // remove node marked as placeholder
         if ( existing != null ) {
             currentChildren.remove(existing);
-        }
-        // if node properties are null and there is no binaries for node exists.
-        if ( CollectionUtils.isEmpty(node.getProperties())
-                && binaries.get(Paths.get(parentPath, node.getName().getLocalName()).toString()) == null ){
-            return;
         }
 
         // add new node
