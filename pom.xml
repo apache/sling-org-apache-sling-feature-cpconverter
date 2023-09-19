@@ -470,7 +470,7 @@
             </goals>
             <configuration>
               <rules>
-                <requireProvidedDependenciesInRuntimeClasspath implementation="org.apache.sling.maven.enforcer.RequireProvidedDependenciesInRuntimeClasspath">
+                <requireProvidedDependenciesInRuntimeClasspath>
                   <excludes>
                     <exclude>javax.servlet:javax.servlet-api</exclude><!-- not used in the CLI context -->
                     <exclude>javax.servlet:servlet-api</exclude><!-- not used in the CLI context -->
@@ -516,6 +516,13 @@
             </configuration>
           </execution>
         </executions>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.sling</groupId>
+            <artifactId>maven-enforcer-rules</artifactId>
+            <version>1.2.0</version>
+          </dependency>
+        </dependencies>
       </plugin>
     </plugins>
   </build>
