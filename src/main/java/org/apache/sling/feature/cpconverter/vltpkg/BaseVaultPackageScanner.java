@@ -100,8 +100,17 @@ public abstract class BaseVaultPackageScanner {
         if (entry.isDirectory()) {
             onDirectory(entryPath, archive, entry);
 
+            //traverse all subdirectory first like stopwords/charfilter
             for (Entry child : entry.getChildren()) {
-                traverse(entryPath, archive, child, runMode);
+                if(child.isDirectory()) {
+                    traverse(entryPath, archive, child, runMode);
+                }
+            }
+            //traverse all files after that so that binaries all already has entries for stopwords/charfilter txt files.
+            for (Entry child : entry.getChildren()) {
+                if(!child.isDirectory()) {
+                    traverse(entryPath, archive, child, runMode);
+                }
             }
 
             return;

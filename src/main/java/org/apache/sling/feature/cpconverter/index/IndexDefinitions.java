@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.jackrabbit.spi.Name;
 import org.apache.jackrabbit.vault.util.DocViewNode2;
@@ -56,6 +57,12 @@ public class IndexDefinitions {
     public void addNode(@NotNull String parentPath, @NotNull DocViewNode2 node) {
         List<DocViewNode2> currentChildren = children.computeIfAbsent(parentPath, k -> new ArrayList<>());
         DocViewNode2 existing = null;
+
+        if ( CollectionUtils.isEmpty(node.getProperties())
+                && ( binaries.get(parentPath + "/" + node.getName().getLocalName()) == null
+                || node.getName().getLocalName().contains(".xml"))){
+            return;
+        }
         for ( DocViewNode2 currentChild : currentChildren ) {
 
             // prevent duplicates
