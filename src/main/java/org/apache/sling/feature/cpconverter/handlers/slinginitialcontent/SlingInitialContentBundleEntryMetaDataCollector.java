@@ -16,12 +16,6 @@
  */
 package org.apache.sling.feature.cpconverter.handlers.slinginitialcontent;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
-import org.apache.sling.jcr.contentloader.PathEntry;
-import org.jetbrains.annotations.NotNull;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -42,6 +36,13 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter;
+import org.apache.sling.jcr.contentloader.PathEntry;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Handles collecting the metadata for each sling initial content entry, to be used for extraction in another loop
@@ -103,7 +104,8 @@ class SlingInitialContentBundleEntryMetaDataCollector {
                 }
 
                 if (total.get() + BUFFER > TOOBIG) {
-                    throw new IllegalStateException("File being unzipped is too big.");
+                    throw new IllegalStateException("Sling-InitialContent: File content being unzipped is too big "
+                            + "(>" +  FileUtils.byteCountToDisplaySize(TOOBIG) + "): " + context.getPath());
                 }
             }
         }
