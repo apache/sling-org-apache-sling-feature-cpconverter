@@ -104,7 +104,7 @@ class SlingInitialContentBundleEntryMetaDataCollector {
                 }
 
                 if (total.get() + BUFFER > TOOBIG) {
-                    throw new IllegalStateException("Sling-InitialContent: File content being unzipped is too big "
+                    throw new IllegalStateException("Sling-Initial-Content: File content being unzipped is too big "
                             + "(>" +  FileUtils.byteCountToDisplaySize(TOOBIG) + "): " + context.getPath());
                 }
             }
