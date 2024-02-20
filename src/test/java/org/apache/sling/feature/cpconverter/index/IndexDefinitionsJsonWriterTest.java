@@ -195,6 +195,67 @@ public class IndexDefinitionsJsonWriterTest {
     }
 
     @Test
+    public void luceneIndexDefinitionWithTikaConfigWithJcrContent() throws IOException {
+
+        String configXmlFileContents = "<properties/>";
+
+        // lucene index
+        Collection<DocViewProperty2> luceneProps = new ArrayList<>();
+        luceneProps.add(new DocViewProperty2(nameFactory.create("{}type"), "lucene"));
+        luceneProps.add(new DocViewProperty2(nameFactory.create(NamespaceRegistry.NAMESPACE_JCR, "primaryType"), OAK_PREFIX+":QueryIndexDefinition"));
+        luceneProps.add(new DocViewProperty2(nameFactory.create("{}reindex"), Boolean.FALSE.toString(), PropertyType.BOOLEAN));
+        luceneProps.add(new DocViewProperty2(nameFactory.create("{}reindexCount"), "1", PropertyType.LONG));
+        luceneProps.add(new DocViewProperty2(nameFactory.create("{}includePropertyTypes"), Arrays.asList("String", "Binary"), PropertyType.STRING));
+
+        definitions.addNode("/oak:index", new DocViewNode2(nameFactory.create("{}lucene"), luceneProps));
+
+        // index rules node
+        List<DocViewProperty2> indexRulesProps = Collections.singletonList(new DocViewProperty2(nameFactory.create(NamespaceRegistry.NAMESPACE_JCR, "primaryType"), "nt:unstructured"));
+
+        definitions.addNode("/oak:index/lucene", new DocViewNode2(nameFactory.create("{}indexRules"), indexRulesProps));
+
+        // tika node
+        List<DocViewProperty2> tikaProps = Collections.singletonList(new DocViewProperty2(nameFactory.create(NamespaceRegistry.NAMESPACE_JCR, "primaryType"), "nt:unstructured"));
+
+        definitions.addNode("/oak:index/lucene", new DocViewNode2(nameFactory.create("{}tika"), tikaProps));
+
+        // tika config.xml node
+        List<DocViewProperty2> configXmlProps = Collections.singletonList(new DocViewProperty2(nameFactory.create(NamespaceRegistry.NAMESPACE_JCR, "primaryType"), "nt:file"));
+
+        definitions.addNode("/oak:index/lucene/tika", new DocViewNode2(nameFactory.create("{}config.xml"), configXmlProps));
+        definitions.registerBinary("/oak:index/lucene/tika/config.xml", new ByteArrayInputStream(configXmlFileContents.getBytes(StandardCharsets.UTF_8)));
+        definitions.addNode("/oak:index/lucene/tika/config.xml", new DocViewNode2(nameFactory.create("{}"+JcrConstants.JCR_CONTENT), luceneProps));
+
+
+        JsonObject root = generateAndParse(definitions);
+        System.out.println(root);
+
+        assertThat(root).as("root index")
+                .hasEntrySatisfying("/oak:index/lucene", Conditions.isJsonObject());
+
+        JsonObject lucene = root.getJsonObject("/oak:index/lucene");
+        assertThat(lucene).as("lucene index")
+                .hasEntrySatisfying("tika", Conditions.isJsonObject());
+
+        JsonObject tika = lucene.getJsonObject("tika");
+        assertThat(tika).as("tika node index")
+                .hasEntrySatisfying("config.xml", Conditions.isJsonObject());
+
+        JsonObject configNode = tika.getJsonObject("config.xml");
+        assertThat(configNode).as("config node has " + JcrConstants.JCR_PRIMARYTYPE)
+                .containsKey(JcrConstants.JCR_PRIMARYTYPE);
+
+        JsonString jcrPrimaryType = configNode.getJsonString(JcrConstants.JCR_PRIMARYTYPE);
+        assertThat(jcrPrimaryType.toString()).as("jcrPrimaryType property contains " + JcrConstants.NT_FILE)
+                .contains(JcrConstants.NT_FILE);
+
+        JsonObject configContentNode = configNode.getJsonObject(JcrConstants.JCR_CONTENT);
+        JsonString binaryEntry = configContentNode.getJsonString(JcrConstants.JCR_DATA);
+        assertThat(binaryEntry).as("config.xml blob")
+                .hasFieldOrPropertyWithValue("string", ":blobId:" + Base64.encode(configXmlFileContents));
+    }
+
+    @Test
     public void propertyIndexDefinitionWithEmptyNodes() throws IOException {
 
         Collection<DocViewProperty2> fooProps = new ArrayList<>();
