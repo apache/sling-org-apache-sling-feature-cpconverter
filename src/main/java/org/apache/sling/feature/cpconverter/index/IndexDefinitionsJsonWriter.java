@@ -158,10 +158,17 @@ public class IndexDefinitionsJsonWriter {
             write(json, JcrConstants.JCR_MIMETYPE,Collections.singletonList(Files.probeContentType(Paths.get(PlatformNameFormat.getPlatformName(nodeName)))), Json::createValue );
             write(json, JcrConstants.JCR_DATA, Collections.singletonList(blobAsString), BLOB_MAPPER);
             json.writeEnd();
-        };
+        }
 
         // 4. write children
         for ( DocViewNode2 child : indexDefinitions.getChildren(nodePath)) {
+
+            if( binary.isPresent()){
+                String childNodeName = indexDefinitions.toShortName(child.getName());
+                if(childNodeName.equalsIgnoreCase(JcrConstants.JCR_CONTENT)) {
+                    continue;
+                }
+            }
             write(json, child, nodePath);
         }
 
