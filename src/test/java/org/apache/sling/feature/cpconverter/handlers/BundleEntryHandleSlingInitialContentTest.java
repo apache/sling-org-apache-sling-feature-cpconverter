@@ -48,6 +48,7 @@ import java.util.jar.JarFile;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
+import org.apache.jackrabbit.vault.fs.api.VaultInputSource;
 import org.apache.jackrabbit.vault.fs.io.Archive;
 import org.apache.jackrabbit.vault.fs.io.Archive.Entry;
 import org.apache.jackrabbit.vault.packaging.PackageId;
@@ -63,6 +64,8 @@ import org.apache.sling.feature.cpconverter.artifacts.SimpleFolderArtifactsDeplo
 import org.apache.sling.feature.cpconverter.handlers.slinginitialcontent.BundleSlingInitialContentExtractor;
 import org.apache.sling.feature.cpconverter.shared.ConverterConstants;
 import org.apache.sling.feature.cpconverter.vltpkg.VaultPackageAssembler;
+import org.hamcrest.CoreMatchers;
+import org.hamcrest.MatcherAssert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -605,6 +608,47 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
                 "com.composum.nodes.commons",
                 "com.composum.nodes.pckgmgr",
                 "com.composum.nodes.pckginstall" }, (String[])dictionaryCaptor.getValue().get("whitelist.bundles"));
+    }
+    
+    @Test
+    public void testSlingInitialContentWithMissingNamespaceDeclaration() throws Exception {
+        String embeddedEntryPath = "/jcr_root/apps/mysite-packages/application/install/mysite.core-1.0.0-SNAPSHOT.jar";
+        
+        setUpArchive(embeddedEntryPath, "mysite.core-1.0.0-SNAPSHOT.jar");
+        
+        DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
+        File targetFolder = tmpFolder.newFolder();
+        when(converter.getArtifactsDeployer()).thenReturn(new SimpleFolderArtifactsDeployer(targetFolder));
+        converter.setEntryHandlersManager(handlersManager);
+        when(converter.isSubContentPackageIncluded(embeddedEntryPath+"-APPLICATION")).thenReturn(true);
+        VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
+        Properties props = new Properties();
+        props.setProperty(PackageProperties.NAME_GROUP, "org.apache.sling");
+        props.setProperty(PackageProperties.NAME_NAME, "testSlingInitialContentWithMissingNamespaceDeclaration");
+        props.setProperty(PackageProperties.NAME_VERSION, "1.0-SNAPSHOT");
+        when(assembler.getPackageProperties()).thenReturn(props);
+        converter.setMainPackageAssembler(assembler);
+        converter.setAclManager(new DefaultAclManager());
+        BundleSlingInitialContentExtractor extractor = new BundleSlingInitialContentExtractor();
+
+        handler.setBundleSlingInitialContentExtractor(extractor);
+        handler.setSlingInitialContentPolicy(SlingInitialContentPolicy.EXTRACT_AND_KEEP);
+        handler.handle(embeddedEntryPath, archive, entry, converter);
+        
+        converter.deployPackages();
+        
+        // original bundle
+        ArgumentCaptor<Artifact> captor = ArgumentCaptor.forClass(Artifact.class);
+        verify(featuresManager).addArtifact(Mockito.isNull(), captor.capture(), Mockito.isNull());
+        
+        // verify generated package
+        try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "mysite.core-apps-1.0.0-SNAPSHOT-cp2fm-converted.zip"));
+             Archive archive = vaultPackage.getArchive()) {
+            archive.open(true);
+
+            VaultInputSource inputSource = archive.getInputSource(archive.getEntry("jcr_root/apps/myinitialcontentest/test/my-first-node/.content.xml"));
+            MatcherAssert.assertThat(inputSource, CoreMatchers.notNullValue());
+        }
     }
 
     @Test
