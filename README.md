@@ -573,7 +573,7 @@ Apache Sling Content Package to Sling Feature converter
                             The output directory where the artifacts will be
                               deployed.
   -b, --bundles-start-order=<bundlesStartOrder>
-                            The default start level in which to start detected bundles.
+                            The default start order in which to start detected bundles.
   -D, --define=<String=String>
                             Define a system property
   -e, --exports-to-region=<exportsToRegion>
