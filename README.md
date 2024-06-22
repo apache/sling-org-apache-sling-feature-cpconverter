@@ -262,10 +262,10 @@ For DIRECT_ONLY only the direct path leading up to the artifact, while PREPEND_I
 Run modes are supported for both OSGi configurations and OSGi bundles.
 The run mode is extracted from the group named `runmode` from the bundles path applied to the regular expression `/jcr_root/(?:apps|libs)/.+/(?<foldername>install|config)(?:\\.(?<runmode>[^/]+))?/(?:(?<startlevel>[0-9]+)/)?.+\\.jar`. For OSGi configuration the following regular expression is used: `/jcr_root/(?:apps|libs)/.+/(?<foldername>config|install)(\\.(?<runmode>[^/]+))?(.*)/(?<pid>[^\\/]*)\\." + extension + ("(?<dir>.dir(/\\.content\\.xml)?)?$`.
 
-### Start Level
+### Start Level/Order
 
-For bundles the start level can also be configured.
-The start level is extracted from the group named `startlevel` from the bundles path applied to the regular expression `/jcr_root/(?:apps|libs)/.+/(?<foldername>install|config)(?:\\.(?<runmode>[^/]+))?/(?:(?<startlevel>[0-9]+)/)?.+\\.jar`. If there is no start level specific in the path name, the default start level is used.
+For bundles the start order can also be configured.
+The start order is extracted from the group named `startlevel` from the bundles path applied to the regular expression `/jcr_root/(?:apps|libs)/.+/(?<foldername>install|config)(?:\\.(?<runmode>[^/]+))?/(?:(?<startlevel>[0-9]+)/)?.+\\.jar`. If there is no start level specified in the path name, the default start order (given via CLI parameter ` --bundles-start-order`) is used.
 
 ### Known limitations
 
@@ -573,7 +573,7 @@ Apache Sling Content Package to Sling Feature converter
                             The output directory where the artifacts will be
                               deployed.
   -b, --bundles-start-order=<bundlesStartOrder>
-                            The order to start detected bundles.
+                            The default start level in which to start detected bundles.
   -D, --define=<String=String>
                             Define a system property
   -e, --exports-to-region=<exportsToRegion>
