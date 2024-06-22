@@ -258,7 +258,14 @@ During the conversion process, all these formats will be parsed and then added i
 ### Run Modes
 
 As shown above, run modes in the path lead the tool to create a dedicated _Apache Sling Feature_ model file containing all interested OSGi configurations/bundles. Run modes are determined according to the RunModePolicy which by default for backwards compatiblity reasons is DIRECT_ONLY.
-For DIRECT_ONLY only the direct path leading up to the artifact, while PREPEND_INHERITED makes sure that run modes are inherited downwards and deduplicated (only new ones added)
+For DIRECT_ONLY only the direct path leading up to the artifact, while PREPEND_INHERITED makes sure that run modes are inherited downwards and deduplicated (only new ones added).
+Run modes are supported for both OSGi configurations and OSGi bundles.
+The run mode is extracted from the group named `runmode` from the bundles path applied to the regular expression `/jcr_root/(?:apps|libs)/.+/(?<foldername>install|config)(?:\\.(?<runmode>[^/]+))?/(?:(?<startlevel>[0-9]+)/)?.+\\.jar`. For OSGi configuration the following regular expression is used: `/jcr_root/(?:apps|libs)/.+/(?<foldername>config|install)(\\.(?<runmode>[^/]+))?(.*)/(?<pid>[^\\/]*)\\." + extension + ("(?<dir>.dir(/\\.content\\.xml)?)?$`.
+
+### Start Level/Order
+
+For bundles the start order can also be configured.
+The start order is extracted from the group named `startlevel` from the bundles path applied to the regular expression `/jcr_root/(?:apps|libs)/.+/(?<foldername>install|config)(?:\\.(?<runmode>[^/]+))?/(?:(?<startlevel>[0-9]+)/)?.+\\.jar`. If there is no start level specified in the path name, the default start order (given via CLI parameter ` --bundles-start-order`) is used.
 
 ### Known limitations
 
@@ -566,7 +573,7 @@ Apache Sling Content Package to Sling Feature converter
                             The output directory where the artifacts will be
                               deployed.
   -b, --bundles-start-order=<bundlesStartOrder>
-                            The order to start detected bundles.
+                            The default start order in which to start detected bundles.
   -D, --define=<String=String>
                             Define a system property
   -e, --exports-to-region=<exportsToRegion>
