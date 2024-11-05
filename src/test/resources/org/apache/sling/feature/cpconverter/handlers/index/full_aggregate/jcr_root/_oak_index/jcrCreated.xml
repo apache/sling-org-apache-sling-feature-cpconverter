@@ -15,9 +15,49 @@
   See the License for the specific language governing permissions and
   limitations under the License.
   -->
-<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:oak="http://jackrabbit.apache.org/oak/ns/1.0"
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:oak="http://jackrabbit.apache.org/oak/ns/1.0" xmlns:sling="http://sling.apache.org/jcr/sling/1.0"
     jcr:primaryType="oak:QueryIndexDefinition"
     propertyNames="{Name}[jcr:created]"
+    async="async"
+    includePropertyTypes="[String,Binary]"
     reindex="{Boolean}false"
-    reindexCount="{Long}1"
-    type="property"/>
+    reindexCount="{Long}3"
+    seed="{Long}8337987644672197141"
+    type="lucene">
+    <indexRules jcr:primaryType="nt:unstructured">
+        <nt:base
+            jcr:primaryType="nt:unstructured"
+            includePropertyTypes="[String,Binary]">
+            <properties jcr:primaryType="nt:unstructured">
+                <sling:alias
+                    jcr:primaryType="nt:unstructured"
+                    index="{Boolean}false"
+                    name="sling:alias"/>
+                <jcr:lastmodifiedby
+                    jcr:primaryType="nt:unstructured"
+                    index="{Boolean}false"
+                    name="jcr:lastmodifiedby"/>
+                <sling:resourcetype
+                    jcr:primaryType="nt:unstructured"
+                    index="{Boolean}false"
+                    name="sling:resourcetype"/>
+                <jcr:createdby
+                    jcr:primaryType="nt:unstructured"
+                    index="{Boolean}false"
+                    name="jcr:createdby"/>
+                <sling:vanitypath
+                    jcr:primaryType="nt:unstructured"
+                    index="{Boolean}false"
+                    name="sling:vanitypath"/>
+                <prop0
+                    jcr:primaryType="nt:unstructured"
+                    analyzed="{Boolean}true"
+                    isRegexp="{Boolean}true"
+                    name="^[^\\/]*$"
+                    nodeScopeIndex="{Boolean}true"
+                    propertyIndex="{Boolean}false"
+                    useInExcerpt="{Boolean}true"/>
+            </properties>
+        </nt:base>
+    </indexRules>
+</jcr:root>

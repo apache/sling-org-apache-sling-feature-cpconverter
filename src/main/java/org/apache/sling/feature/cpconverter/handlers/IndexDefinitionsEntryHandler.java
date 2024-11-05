@@ -24,9 +24,6 @@ import java.util.Optional;
 
 import javax.jcr.RepositoryException;
 
-import org.apache.jackrabbit.spi.Name;
-import org.apache.jackrabbit.spi.NameFactory;
-import org.apache.jackrabbit.spi.commons.name.NameFactoryImpl;
 import org.apache.jackrabbit.util.Text;
 import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
 import org.apache.jackrabbit.vault.fs.io.Archive;
@@ -79,55 +76,23 @@ public class IndexDefinitionsEntryHandler extends AbstractRegexEntryHandler {
         
     }
     
-    private final class IndexDefinitionsParserHandler implements DocViewParserHandler {
+    private static boolean isOakIndexDefinitionAsFullCoverageAggregate(@NotNull String repositoryPath,
+            @NotNull Archive archive, @NotNull Entry entry) throws IOException, XmlParseException {
         
-        private final WorkspaceFilter filter;
-        private IndexDefinitions definitions;
-
-        public IndexDefinitionsParserHandler(WorkspaceFilter filter, IndexDefinitions definitions) {
-            this.filter = filter;
-            this.definitions = definitions;
-        }
-
-        @Override
-        public void startDocViewNode(@NotNull final String nodePath, @NotNull final DocViewNode2 docViewNode,
-                @NotNull final Optional<DocViewNode2> parentDocViewNode, final int line, final int column)
-                throws IOException, RepositoryException {
+        if ( !repositoryPath.endsWith(EXTENSION_XML) )
+            return false;
+        
+        DocViewParser parser = new DocViewParser(new SimpleNamespaceResolver());
+        
+        try (InputStream isCheck = archive.openInputStream(entry)) {
+            IndexDefinitionAsFullCoverageDetectorParserHandler parserHandler = new IndexDefinitionAsFullCoverageDetectorParserHandler(repositoryPath);
             
-            DocViewNode2 effectiveNode = docViewNode;
-            String effectivePath = nodePath;
-            String primaryType = docViewNode.getPrimaryType().orElse(null);
+            parser.parse(repositoryPath, new InputSource(isCheck), parserHandler);
             
-            // SLING-12469 - support index definitions serialized as full coverage aggregates
-            if ( NODETYPE_OAK_QUERY_INDEX_DEFINITION.equals(primaryType)
-                    && nodePath.endsWith(EXTENSION_XML)) {
-                effectivePath = removeXmlExtension(nodePath);
-                
-                NameFactory nameFactory = NameFactoryImpl.getInstance();
-                
-                final Name oldName = docViewNode.getName();
-                Name newName = nameFactory.create(oldName.getNamespaceURI(), removeXmlExtension(oldName.getLocalName()));
-                effectiveNode = new DocViewNode2(newName, docViewNode.getIndex(), docViewNode.getProperties());
-            }
-
-            if ( effectivePath.contains(IndexDefinitions.OAK_INDEX_PATH) && filter.contains(effectivePath) ) {
-                definitions.addNode(Text.getRelativeParent(effectivePath, 1), effectiveNode);
-            }
-        }
-
-        @Override
-        public void endDocViewNode(@NotNull String nodePath, @NotNull DocViewNode2 docViewNode,
-                @NotNull Optional<DocViewNode2> parentDocViewNode, int line, int column)
-                throws IOException, RepositoryException {
-            // nothing to do
-        }
-
-        @Override
-        public void startPrefixMapping(String prefix, String uri) {
-            definitions.registerPrefixMapping(prefix, uri);
+            return parserHandler.isIsIndexDefinitionAsFullCoverage();
         }
     }
-
+    
     public IndexDefinitionsEntryHandler() {
         super(PATH_PATTERN);
     }
@@ -155,10 +120,14 @@ public class IndexDefinitionsEntryHandler extends AbstractRegexEntryHandler {
                 }
                 if ( isDocView ) {
                     DocViewParser parser = new DocViewParser(new SimpleNamespaceResolver());
+                    
+                    // SLING-12469 - support index definitions serialized as full coverage aggregates
+                    if (isOakIndexDefinitionAsFullCoverageAggregate(repositoryPath, archive, entry)) {
+                        repositoryPath = removeXmlExtension(repositoryPath);
+                    }
                     IndexDefinitionsParserHandler handler = new IndexDefinitionsParserHandler(archive.getMetaInf().getFilter(), indexManager.getIndexes());
-
+                    
                     parser.parse(repositoryPath, inputSource, handler);
-
                 } else {
                     // binary file, should we attach?
                     if ( archive.getMetaInf().getFilter().contains(repositoryPath)) {
@@ -173,5 +142,73 @@ public class IndexDefinitionsEntryHandler extends AbstractRegexEntryHandler {
         }
 
         converter.getMainPackageAssembler().addEntry(path, archive, entry);
+    }
+    
+
+    static class DocViewParserHandlerAdapter implements DocViewParserHandler {
+
+        @Override
+        public void startDocViewNode(@NotNull String nodePath, @NotNull DocViewNode2 docViewNode,
+                @NotNull Optional<DocViewNode2> parentDocViewNode, int line, int column)
+                throws IOException, RepositoryException {
+            // override as needed
+        }
+
+        @Override
+        public void endDocViewNode(@NotNull String nodePath, @NotNull DocViewNode2 docViewNode,
+                @NotNull Optional<DocViewNode2> parentDocViewNode, int line, int column)
+                throws IOException, RepositoryException {
+            // override as needed
+        }
+    }
+    
+    static class IndexDefinitionsParserHandler extends DocViewParserHandlerAdapter {
+        
+        private final WorkspaceFilter filter;
+        private IndexDefinitions definitions;
+
+        public IndexDefinitionsParserHandler(WorkspaceFilter filter, IndexDefinitions definitions) {
+            this.filter = filter;
+            this.definitions = definitions;
+        }
+
+        @Override
+        public void startDocViewNode(@NotNull String nodePath, @NotNull DocViewNode2 docViewNode,
+                @NotNull Optional<DocViewNode2> parentDocViewNode, int line, int column)
+                throws IOException, RepositoryException {
+            
+            if ( nodePath.contains(IndexDefinitions.OAK_INDEX_PATH) && filter.contains(nodePath) ) {
+                definitions.addNode(Text.getRelativeParent(nodePath, 1), docViewNode);
+            }
+        }
+
+        @Override
+        public void startPrefixMapping(String prefix, String uri) {
+            definitions.registerPrefixMapping(prefix, uri);
+        }
+    }
+    
+    static final class IndexDefinitionAsFullCoverageDetectorParserHandler extends DocViewParserHandlerAdapter {
+        private final @NotNull String repositoryPath;
+        private boolean isIndexDefinitionAsFullCoverage;
+
+        private IndexDefinitionAsFullCoverageDetectorParserHandler(@NotNull String repositoryPath) {
+            this.repositoryPath = repositoryPath;
+        }
+
+        @Override
+        public void startDocViewNode(@NotNull String nodePath, @NotNull DocViewNode2 docViewNode,
+                @NotNull Optional<DocViewNode2> parentDocViewNode, int line, int column)
+                throws IOException, RepositoryException {
+            boolean isTopLevelDocViewNode = nodePath.equals(repositoryPath);
+            boolean isOakQueryIndexDefinition = docViewNode.getPrimaryType().orElse("").equals(NODETYPE_OAK_QUERY_INDEX_DEFINITION);
+            if ( isTopLevelDocViewNode   && isOakQueryIndexDefinition) { // top-level node
+                isIndexDefinitionAsFullCoverage = true;
+            }
+        }
+        public boolean isIsIndexDefinitionAsFullCoverage() {
+            return isIndexDefinitionAsFullCoverage;
+        }
+        
     }
 }

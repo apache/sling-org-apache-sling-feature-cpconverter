@@ -275,7 +275,8 @@ public class IndexDefinitionsEntryHandlerTest {
             .hasSize(1)
             .element(0)
                 .has( Conditions.localName("jcrCreated") )
-                .has( Conditions.property("type", "property") );
+                .has( Conditions.property("type", "lucene") )
+                .has( Conditions.childWithLocalName("/oak:index/jcrCreated", "indexRules", defs));
     }
 
     private void assertIsValidXml(byte[] tikeConfig) throws ParserConfigurationException, SAXException, IOException {
