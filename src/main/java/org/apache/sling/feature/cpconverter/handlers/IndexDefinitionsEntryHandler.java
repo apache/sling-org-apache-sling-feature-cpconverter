@@ -16,12 +16,17 @@
  */
 package org.apache.sling.feature.cpconverter.handlers;
 
+import static java.lang.String.format;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
 
 import javax.jcr.RepositoryException;
 
+import org.apache.jackrabbit.spi.Name;
+import org.apache.jackrabbit.spi.NameFactory;
+import org.apache.jackrabbit.spi.commons.name.NameFactoryImpl;
 import org.apache.jackrabbit.util.Text;
 import org.apache.jackrabbit.vault.fs.api.WorkspaceFilter;
 import org.apache.jackrabbit.vault.fs.io.Archive;
@@ -61,7 +66,21 @@ public class IndexDefinitionsEntryHandler extends AbstractRegexEntryHandler {
             String.join("|", EXCLUDED_EXTENSIONS) +
             ")$)[^.]+$"; // match everything else
 
+    private static final String EXTENSION_XML = ".xml";
+    
+    // we hardcode the node type name to avoid a dependency on oak-core
+    private static final String NODETYPE_OAK_QUERY_INDEX_DEFINITION = "oak:QueryIndexDefinition";
+    
+    private static final String removeXmlExtension(String input) {
+        if ( !input.endsWith(EXTENSION_XML) )
+            throw new IllegalArgumentException(format("Input string '%s' does not end in '%s'", input, EXTENSION_XML));
+        
+        return input.substring(0, input.length() - EXTENSION_XML.length());
+        
+    }
+    
     private final class IndexDefinitionsParserHandler implements DocViewParserHandler {
+        
         private final WorkspaceFilter filter;
         private IndexDefinitions definitions;
 
@@ -71,12 +90,28 @@ public class IndexDefinitionsEntryHandler extends AbstractRegexEntryHandler {
         }
 
         @Override
-        public void startDocViewNode(@NotNull String nodePath, @NotNull DocViewNode2 docViewNode,
-                @NotNull Optional<DocViewNode2> parentDocViewNode, int line, int column)
+        public void startDocViewNode(@NotNull final String nodePath, @NotNull final DocViewNode2 docViewNode,
+                @NotNull final Optional<DocViewNode2> parentDocViewNode, final int line, final int column)
                 throws IOException, RepositoryException {
+            
+            DocViewNode2 effectiveNode = docViewNode;
+            String effectivePath = nodePath;
+            String primaryType = docViewNode.getPrimaryType().orElse(null);
+            
+            // SLING-12469 - support index definitions serialized as full coverage aggregates
+            if ( NODETYPE_OAK_QUERY_INDEX_DEFINITION.equals(primaryType)
+                    && nodePath.endsWith(EXTENSION_XML)) {
+                effectivePath = removeXmlExtension(nodePath);
+                
+                NameFactory nameFactory = NameFactoryImpl.getInstance();
+                
+                final Name oldName = docViewNode.getName();
+                Name newName = nameFactory.create(oldName.getNamespaceURI(), removeXmlExtension(oldName.getLocalName()));
+                effectiveNode = new DocViewNode2(newName, docViewNode.getIndex(), docViewNode.getProperties());
+            }
 
-            if ( nodePath.contains(IndexDefinitions.OAK_INDEX_PATH) && filter.contains(nodePath) ) {
-                definitions.addNode(Text.getRelativeParent(nodePath, 1), docViewNode);
+            if ( effectivePath.contains(IndexDefinitions.OAK_INDEX_PATH) && filter.contains(effectivePath) ) {
+                definitions.addNode(Text.getRelativeParent(effectivePath, 1), effectiveNode);
             }
         }
 
