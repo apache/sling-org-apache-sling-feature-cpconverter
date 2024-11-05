@@ -128,6 +128,7 @@ public class IndexDefinitionsEntryHandler extends AbstractRegexEntryHandler {
                     IndexDefinitionsParserHandler handler = new IndexDefinitionsParserHandler(archive.getMetaInf().getFilter(), indexManager.getIndexes());
 
                     parser.parse(repositoryPath, inputSource, handler);
+
                 } else {
                     // binary file, should we attach?
                     if ( archive.getMetaInf().getFilter().contains(repositoryPath)) {
@@ -143,7 +144,6 @@ public class IndexDefinitionsEntryHandler extends AbstractRegexEntryHandler {
 
         converter.getMainPackageAssembler().addEntry(path, archive, entry);
     }
-    
 
     static class DocViewParserHandlerAdapter implements DocViewParserHandler {
 
