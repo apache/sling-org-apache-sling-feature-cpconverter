@@ -92,7 +92,7 @@ public class IndexDefinitionsEntryHandler extends AbstractRegexEntryHandler {
             return parserHandler.isIsIndexDefinitionAsFullCoverage();
         }
     }
-    
+
     public IndexDefinitionsEntryHandler() {
         super(PATH_PATTERN);
     }
@@ -126,7 +126,7 @@ public class IndexDefinitionsEntryHandler extends AbstractRegexEntryHandler {
                         repositoryPath = removeXmlExtension(repositoryPath);
                     }
                     IndexDefinitionsParserHandler handler = new IndexDefinitionsParserHandler(archive.getMetaInf().getFilter(), indexManager.getIndexes());
-                    
+
                     parser.parse(repositoryPath, inputSource, handler);
                 } else {
                     // binary file, should we attach?
