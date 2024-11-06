@@ -255,6 +255,29 @@ public class IndexDefinitionsEntryHandlerTest {
 
         traverseForIndexing(manager, "index_missing_namespaces");
     }
+    
+    @Test
+    public void handleIndexDefinitionsAsFullAggregates() throws IOException, ConverterException {
+
+        DefaultIndexManager manager = new DefaultIndexManager();
+
+        traverseForIndexing(manager, "full_aggregate");
+
+        IndexDefinitions defs = manager.getIndexes();
+        Map<String, List<DocViewNode2>> indexes = defs.getIndexes();
+
+        assertThat(indexes).as("index definitions")
+            .hasSize(1)
+            .containsKey("/oak:index");
+
+       List<DocViewNode2> rootIndexes = indexes.get("/oak:index");
+       assertThat(rootIndexes).as("root oak indexes")
+            .hasSize(1)
+            .element(0)
+                .has( Conditions.localName("jcrCreated") )
+                .has( Conditions.property("type", "lucene") )
+                .has( Conditions.childWithLocalName("/oak:index/jcrCreated", "indexRules", defs));
+    }
 
     private void assertIsValidXml(byte[] tikeConfig) throws ParserConfigurationException, SAXException, IOException {
 
