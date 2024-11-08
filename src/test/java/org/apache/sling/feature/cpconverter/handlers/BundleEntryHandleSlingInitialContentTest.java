@@ -35,7 +35,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.Dictionary;
 import java.util.HashMap;
@@ -74,9 +73,8 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.Version;
 import org.xml.sax.SAXException;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntryHandlerTest {
@@ -208,7 +206,6 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
         converter.deployPackages();
 
-        Type typeOfHashMap = new TypeToken<Map<String, String>>() { }.getType();
         // verify generated package
         try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "mysite.core-apps-1.0.0-SNAPSHOT-cp2fm-converted.zip"));
              Archive archive = vaultPackage.getArchive()) {
@@ -223,10 +220,8 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
             Reader actualJsonFileContents = new InputStreamReader(archive.getInputSource(jsonFileEntry).getByteStream(), UTF_8);
             Reader expectedJsonFileContents = new InputStreamReader(getClass().getResourceAsStream("i18n-jsonfile-xml-descriptor-test/en.json"), UTF_8);
             
-            Gson GSON =  new GsonBuilder().create();
-
-            Map<String,String> actualJson = GSON.fromJson(actualJsonFileContents, typeOfHashMap);
-            Map<String,String> expectedJson = GSON.fromJson(expectedJsonFileContents, typeOfHashMap);
+            JsonObject actualJson = Json.createReader(actualJsonFileContents).readObject();
+            JsonObject expectedJson = Json.createReader(expectedJsonFileContents).readObject();
             
             assertEquals(expectedJson, actualJson);
             //compare XML
