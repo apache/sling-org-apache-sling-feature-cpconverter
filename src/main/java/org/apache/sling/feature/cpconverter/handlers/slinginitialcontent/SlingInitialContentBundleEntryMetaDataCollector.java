@@ -125,9 +125,13 @@ class SlingInitialContentBundleEntryMetaDataCollector {
                 
                 // Validate that the file is actually unpacking into the temp directory
                 if (!targetFile.toPath().normalize().startsWith(contentPackage2FeatureModelConverter.getTempDirectory().toPath().normalize())) {
-                    throw new IOException(String.format("unpacking %s would write into the directory %s outside the specified temp path",
+                    throw new IOException(String.format("unpacking %s (of %s) would write into the directory %s outside the specified "
+                            + "temp path %s, thus terminating the operation",
                             jarEntry.getName(),
-                            targetFile.toPath().normalize()));
+                            jarFile.getName(),
+                            targetFile.toPath().normalize(),
+                            contentPackage2FeatureModelConverter.getTempDirectory().getAbsolutePath()
+                            ));
                 }
                 String canonicalDestinationPath = targetFile.getCanonicalPath();
 
