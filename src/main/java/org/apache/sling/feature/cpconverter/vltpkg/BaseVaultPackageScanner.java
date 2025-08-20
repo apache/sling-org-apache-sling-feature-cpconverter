@@ -53,9 +53,14 @@ public abstract class BaseVaultPackageScanner {
         this.strictValidation = strictValidation;
     }
 
-    public @NotNull VaultPackage open(@NotNull File vaultPackage) throws IOException, ConverterException {
-        requireNonNull(vaultPackage, "Impossible to process a null vault package");
-        return packageManager.open(vaultPackage, strictValidation);
+    public @NotNull VaultPackage open(@NotNull File vaultPackagePath) throws IOException, ConverterException {
+        requireNonNull(vaultPackagePath, "Impossible to process a null vault package");
+        VaultPackage vaultPackage = packageManager.open(vaultPackagePath, strictValidation);
+        if (!vaultPackage.isValid()) {
+            vaultPackage.close();
+            throw new ConverterException("The package " + vaultPackagePath.getAbsolutePath() + " is not valid (does not contain a mandatory filter).");
+        }
+        return vaultPackage;
     }
 
     public final void traverse(@NotNull File vaultPackageFile, boolean closeOnTraversed, String runMode) throws IOException, ConverterException {
