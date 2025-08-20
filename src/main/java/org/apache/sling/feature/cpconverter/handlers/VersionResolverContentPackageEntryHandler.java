@@ -62,7 +62,7 @@ public final class VersionResolverContentPackageEntryHandler extends AbstractCon
                 subContentPackages.remove(olderId);
             }
         } else {
-            logger.info("There were not other version of {}:{} content-package", currentId.getGroup(), currentId.getName());
+            logger.info("There were no other versions of content-package: {}:{}", currentId.getGroup(), currentId.getName());
 
             addPackage = true;
         }
