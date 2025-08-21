@@ -35,12 +35,14 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Properties;
 import java.util.zip.ZipFile;
-
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -58,9 +60,9 @@ import org.apache.sling.feature.Configurations;
 import org.apache.sling.feature.Extension;
 import org.apache.sling.feature.ExtensionType;
 import org.apache.sling.feature.Feature;
-import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.PackagePolicy;
 import org.apache.sling.feature.cpconverter.ContentPackage2FeatureModelConverter.RunModePolicy;
+import org.apache.sling.feature.cpconverter.accesscontrol.AclManager;
 import org.apache.sling.feature.cpconverter.accesscontrol.DefaultAclManager;
 import org.apache.sling.feature.cpconverter.artifacts.LocalMavenRepositoryArtifactsDeployer;
 import org.apache.sling.feature.cpconverter.artifacts.SimpleFolderArtifactsDeployer;
@@ -73,6 +75,10 @@ import org.apache.sling.feature.io.json.FeatureJSONReader;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
 
 public class ContentPackage2FeatureModelConverterTest extends AbstractConverterTest {
 
@@ -927,8 +933,8 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
         File[] contentPackages = load("test-content-package.zip", "test-content-package-2.zip");
         converter.firstPass(contentPackages);
 
-        assertTrue(converter.isSubContentPackageIncluded("/jcr_root/etc/packages/asd/test-content-0.2.zip"));
-        assertFalse(converter.isSubContentPackageIncluded("/jcr_root/etc/packages/asd/test-content.zip"));
+        assertTrue(converter.isSubContentPackageIncluded(new PackageId("asd/sample", "Asd.Retail.ui.content", "0.0.2")));
+        assertFalse(converter.isSubContentPackageIncluded(new PackageId("asd/sample", "Asd.Retail.ui.content", "0.0.1")));
     }
 
     @Test
