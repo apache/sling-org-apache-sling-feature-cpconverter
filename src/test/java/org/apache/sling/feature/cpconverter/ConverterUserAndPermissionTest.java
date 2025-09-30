@@ -244,7 +244,7 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
         expected1.add("jcr_root/var/eventproxy/.content.xml");
         verifyContentPackage(converted2, notExpected2, expected2);
 
-        try (FileReader reader = new FileReader(new File(outputDirectory, "content.json"))) {
+        try (FileReader reader = new FileReader(new File(outputDirectory, "b-content.json"))) {
             Feature feature = FeatureJSONReader.read(reader, "content1");
             Extension repoinit = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
             if (enforcePrincipalBased) {
@@ -268,7 +268,7 @@ public class ConverterUserAndPermissionTest  extends AbstractConverterTest {
             }
         }
 
-        try (FileReader reader = new FileReader(new File(outputDirectory, "content2.json"))) {
+        try (FileReader reader = new FileReader(new File(outputDirectory, "a-content2.json"))) {
             Feature feature = FeatureJSONReader.read(reader, "content2");
             Extension repoinit = feature.getExtensions().getByName(Extension.EXTENSION_NAME_REPOINIT);
             if (enforcePrincipalBased) {

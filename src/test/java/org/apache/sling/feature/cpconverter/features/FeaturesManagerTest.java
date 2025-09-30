@@ -90,7 +90,7 @@ public class FeaturesManagerTest {
 
         featuresManager.serialize();
 
-        try (InputStream in = new FileInputStream(new File(tempDir.toFile(), "b.json"))) {
+        try (InputStream in = new FileInputStream(new File(tempDir.toFile(), "g-b.json"))) {
             JsonParser p = Json.createParser(in);
             JsonObject jo = p.getObject();
 
@@ -113,7 +113,7 @@ public class FeaturesManagerTest {
         }
 
         // Runmode file:
-        try (InputStream in = new FileInputStream(new File(tempDir.toFile(), "b-rm1.json"))) {
+        try (InputStream in = new FileInputStream(new File(tempDir.toFile(), "g-b-rm1.json"))) {
             JsonParser p = Json.createParser(in);
             JsonObject jo = p.getObject();
 
@@ -148,7 +148,7 @@ public class FeaturesManagerTest {
 
         featuresManager.serialize();
 
-        try (InputStream in = new FileInputStream(new File(tempDir.toFile(), "a.json"))) {
+        try (InputStream in = new FileInputStream(new File(tempDir.toFile(), "g-a.json"))) {
             JsonParser p = Json.createParser(in);
             JsonObject jo = p.getObject();
 
@@ -171,7 +171,7 @@ public class FeaturesManagerTest {
         }
 
         // Runmode file:
-        try (InputStream in = new FileInputStream(new File(tempDir.toFile(), "a-rm1.json"))) {
+        try (InputStream in = new FileInputStream(new File(tempDir.toFile(), "g-a-rm1.json"))) {
             JsonParser p = Json.createParser(in);
             JsonObject jo = p.getObject();
 

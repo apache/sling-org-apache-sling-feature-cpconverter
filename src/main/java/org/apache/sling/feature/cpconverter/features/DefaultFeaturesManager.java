@@ -450,6 +450,26 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
         feature.getExtensions().add(apiRegions);
     }
 
+    /**
+     * 
+     * @param featureId
+     * @param prefix
+     * @return a filename for the given featureId and optional prefix excluding the .json extension
+     */
+    static String getFeatureFileName(@NotNull ArtifactId featureId, @Nullable String prefix) {
+        StringBuilder fileNameBuilder = new StringBuilder()
+                .append((prefix != null) ? prefix : "")
+                .append(featureId.getGroupId())
+                .append('-')
+                .append(featureId.getArtifactId());
+
+        String classifier = featureId.getClassifier();
+        if (classifier != null && !classifier.isEmpty()) {
+            fileNameBuilder.append('-').append(classifier);
+        }
+        return fileNameBuilder.toString();
+    }
+
     @Override
     public void serialize() throws IOException {
         RunmodeMapper runmodeMapper = RunmodeMapper.open(featureModelsOutputDirectory);
@@ -469,23 +489,13 @@ public class DefaultFeaturesManager implements FeaturesManager, PackagesEventsEm
     private void serialize(Feature feature, String runMode, RunmodeMapper runmodeMapper) throws IOException {
         addAPIRegions(feature, apiRegionExports.get(runMode));
 
-        StringBuilder fileNameBuilder = new StringBuilder()
-                .append((prefix != null) ? prefix : "")
-                .append(feature.getId().getArtifactId());
-
-        String classifier = feature.getId().getClassifier();
-        if (classifier != null && !classifier.isEmpty()) {
-            fileNameBuilder.append('-').append(classifier);
-        }
+        String fileName = getFeatureFileName(feature.getId(), prefix);
 
         if (properties != null) {
-            properties.put("filename", fileNameBuilder.toString());
+            properties.put("filename", fileName);
         }
 
-        fileNameBuilder.append(JSON_FILE_EXTENSION);
-
-        String fileName = fileNameBuilder.toString();
-
+        fileName = fileName + JSON_FILE_EXTENSION;
         File targetFile = new File(featureModelsOutputDirectory, fileName);
         if (!targetFile.getParentFile().exists()) {
             targetFile.getParentFile().mkdirs();

@@ -154,7 +154,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                     .convert(packageFile);
 
             verifyFeatureFile(outputDirectory,
-                            "asd.retail.all.json",
+                            "asd.sample-asd.retail.all.json",
                             "asd.sample:asd.retail.all:slingosgifeature:0.0.1",
                             Collections.singletonList("org.apache.felix:org.apache.felix.framework:6.0.1"),
                             Collections.singletonList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
@@ -163,13 +163,13 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                                             "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1",
                                             "asd.sample:asd.retail.all:zip:cp2fm-converted:0.0.1"));
             verifyFeatureFile(outputDirectory,
-                            "asd.retail.all-author.json",
+                            "asd.sample-asd.retail.all-author.json",
                             "asd.sample:asd.retail.all:slingosgifeature:author:0.0.1",
                             Collections.singletonList("org.apache.sling:org.apache.sling.api:2.20.0"),
                             Collections.emptyList(),
                             Collections.emptyList());
             verifyFeatureFile(outputDirectory,
-                            "asd.retail.all-publish.json",
+                            "asd.sample-asd.retail.all-publish.json",
                             "asd.sample:asd.retail.all:slingosgifeature:publish:0.0.1",
                             Collections.singletonList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
                             Collections.singletonList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
@@ -185,9 +185,9 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             }
             assertFalse(runModes.isEmpty());
             assertTrue(runModes.containsKey("(default)"));
-            assertEquals("asd.retail.all.json", runModes.getProperty("(default)"));
-            assertEquals("asd.retail.all-author.json", runModes.getProperty("author"));
-            assertEquals("asd.retail.all-publish.json", runModes.getProperty("publish"));
+            assertEquals("asd.sample-asd.retail.all.json", runModes.getProperty("(default)"));
+            assertEquals("asd.sample-asd.retail.all-author.json", runModes.getProperty("author"));
+            assertEquals("asd.sample-asd.retail.all-publish.json", runModes.getProperty("publish"));
 
             verifyContentPackage(new File(outputDirectory, "asd/Asd.Retail.config/0.0.1/Asd.Retail.config-0.0.1-cp2fm-converted.zip"),
                                 "META-INF/vault/settings.xml",
@@ -235,19 +235,19 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                     .convert(packageFile);
 
             verifyFeatureFile(outputDirectory,
-                            "asd.retail.all.json",
+                            "asd.sample-asd.retail.all.json",
                             "asd.sample:asd.retail.all:slingosgifeature:0.0.1",
                             Collections.singletonList("org.apache.felix:org.apache.felix.framework:6.0.1"),
                             Collections.singletonList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
                             Arrays.asList("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1", "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1"));
             verifyFeatureFile(outputDirectory,
-                            "asd.retail.all-author.json",
+                            "asd.sample-asd.retail.all-author.json",
                             "asd.sample:asd.retail.all:slingosgifeature:author:0.0.1",
                             Collections.singletonList("org.apache.sling:org.apache.sling.api:2.20.0"),
                             Collections.emptyList(),
                             Collections.emptyList());
             verifyFeatureFile(outputDirectory,
-                            "asd.retail.all-publish.json",
+                            "asd.sample-asd.retail.all-publish.json",
                             "asd.sample:asd.retail.all:slingosgifeature:publish:0.0.1",
                             Collections.singletonList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
                             Collections.singletonList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
@@ -263,9 +263,9 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             }
             assertFalse(runModes.isEmpty());
             assertTrue(runModes.containsKey("(default)"));
-            assertEquals("asd.retail.all.json", runModes.getProperty("(default)"));
-            assertEquals("asd.retail.all-author.json", runModes.getProperty("author"));
-            assertEquals("asd.retail.all-publish.json", runModes.getProperty("publish"));
+            assertEquals("asd.sample-asd.retail.all.json", runModes.getProperty("(default)"));
+            assertEquals("asd.sample-asd.retail.all-author.json", runModes.getProperty("author"));
+            assertEquals("asd.sample-asd.retail.all-publish.json", runModes.getProperty("publish"));
 
             verifyContentPackage(new File(outputDirectory, "asd/Asd.Retail.config/0.0.1/Asd.Retail.config-0.0.1-cp2fm-converted.zip"),
                                 "META-INF/vault/settings.xml",
@@ -306,20 +306,20 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                     .convert(packageFile);
 
             verifyFeatureFile(outputDirectory,
-                            "asd.retail.all.json",
+                            "asd.sample-asd.retail.all.json",
                             "asd.sample:asd.retail.all:slingosgifeature:0.0.1",
                             Collections.singletonList("org.apache.felix:org.apache.felix.framework:6.0.1"),
                             Collections.singletonList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
                             Arrays.asList("asd.sample:asd.retail.apps:zip:cp2fm-converted:0.0.1",
                                     "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1"));
             verifyFeatureFile(outputDirectory,
-                            "asd.retail.all-author.json",
+                            "asd.sample-asd.retail.all-author.json",
                             "asd.sample:asd.retail.all:slingosgifeature:author:0.0.1",
                             Collections.singletonList("org.apache.sling:org.apache.sling.api:2.20.0"),
                             Collections.emptyList(),
                             Collections.emptyList());
             verifyFeatureFile(outputDirectory,
-                            "asd.retail.all-publish.json",
+                            "asd.sample-asd.retail.all-publish.json",
                             "asd.sample:asd.retail.all:slingosgifeature:publish:0.0.1",
                             Collections.singletonList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
                             Collections.singletonList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
@@ -335,9 +335,9 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             }
             assertFalse(runModes.isEmpty());
             assertTrue(runModes.containsKey("(default)"));
-            assertEquals("asd.retail.all.json", runModes.getProperty("(default)"));
-            assertEquals("asd.retail.all-author.json", runModes.getProperty("author"));
-            assertEquals("asd.retail.all-publish.json", runModes.getProperty("publish"));
+            assertEquals("asd.sample-asd.retail.all.json", runModes.getProperty("(default)"));
+            assertEquals("asd.sample-asd.retail.all-author.json", runModes.getProperty("author"));
+            assertEquals("asd.sample-asd.retail.all-publish.json", runModes.getProperty("publish"));
 
             verifyContentPackage(new File(outputDirectory, "asd/Asd.Retail.config/0.0.1/Asd.Retail.config-0.0.1-cp2fm-converted.zip"),
                     "META-INF/vault/settings.xml",
@@ -441,7 +441,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                      .setEmitter(DefaultPackagesEventsEmitter.open(outDir))
                      .convert(cpFile);
 
-            File featureFile = new File(outDir, "test_c.json");
+            File featureFile = new File(outDir, "my_packages-test_c.json");
             try (Reader reader = new FileReader(featureFile)) {
                 Feature feature = FeatureJSONReader.read(reader, featureFile.getAbsolutePath());
 
@@ -596,38 +596,38 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             }
             assertFalse(runModes.isEmpty());
             assertTrue(runModes.containsKey("(default)"));
-            assertEquals("runmodetest_parentcontainer-author.json", runModes.getProperty("author"));
+            assertEquals("asd.sample-runmodetest_parentcontainer-author.json", runModes.getProperty("author"));
             
             // general
-            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer.json"), "asd.sample:embedded.test.app:zip:cp2fm-converted:0.0.0", false);
-            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer.json"), "my_packages:test_a:zip:cp2fm-converted:1.0", false);
-            assertBundleEntry(new File(outputDirectory, "runmodetest_parentcontainer.json"), "io.wcm:io.wcm.handler.media:1.11.6", false);
+            assertContentPackage(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer.json"), "asd.sample:embedded.test.app:zip:cp2fm-converted:0.0.0", false);
+            assertContentPackage(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer.json"), "my_packages:test_a:zip:cp2fm-converted:1.0", false);
+            assertBundleEntry(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer.json"), "io.wcm:io.wcm.handler.media:1.11.6", false);
             
             // author
-            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer-author.json"), "asd.sample:embedded.test.app:zip:cp2fm-converted:0.0.0", true);
-            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer-author.json"), "my_packages:test_a:zip:cp2fm-converted:1.0", true);
-            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer-author.json"), "my_packages:test_b:zip:cp2fm-converted:1.0", true);
-            assertBundleEntry(new File(outputDirectory, "runmodetest_parentcontainer-author.json"), "io.wcm:io.wcm.handler.media:1.11.6", true);
-            assertBundleEntry(new File(outputDirectory, "runmodetest_parentcontainer-author.json"), "io.wcm:io.wcm.handler.link:1.7.02", true);
+            assertContentPackage(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-author.json"), "asd.sample:embedded.test.app:zip:cp2fm-converted:0.0.0", true);
+            assertContentPackage(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-author.json"), "my_packages:test_a:zip:cp2fm-converted:1.0", true);
+            assertContentPackage(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-author.json"), "my_packages:test_b:zip:cp2fm-converted:1.0", true);
+            assertBundleEntry(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-author.json"), "io.wcm:io.wcm.handler.media:1.11.6", true);
+            assertBundleEntry(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-author.json"), "io.wcm:io.wcm.handler.link:1.7.02", true);
             
             // publish
-            assertFalse(new File(outputDirectory, "runmodetest_parentcontainer-publish.json").exists());
+            assertFalse(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-publish.json").exists());
             
             // author.publish (for cp converter those are not mutually exclusive)
-            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer-author.publish.json"), "my_packages:test_c:zip:cp2fm-converted:1.0", true);
-            assertBundleEntry(new File(outputDirectory, "runmodetest_parentcontainer-author.publish.json"), "com.composum.nodes:composum-nodes-config:2.5.3", true);
-            assertConfigEntry(new File(outputDirectory, "runmodetest_parentcontainer-author.publish.json"), "org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~c", true);
+            assertContentPackage(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-author.publish.json"), "my_packages:test_c:zip:cp2fm-converted:1.0", true);
+            assertBundleEntry(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-author.publish.json"), "com.composum.nodes:composum-nodes-config:2.5.3", true);
+            assertConfigEntry(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-author.publish.json"), "org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~c", true);
 
             
             //author.dev
-            assertConfigEntry(new File(outputDirectory, "runmodetest_parentcontainer-author.dev.json"), "org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~d", true);
-            assertConfigEntry(new File(outputDirectory, "runmodetest_parentcontainer-author.dev.json"), "org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~f", true);
+            assertConfigEntry(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-author.dev.json"), "org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~d", true);
+            assertConfigEntry(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-author.dev.json"), "org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~f", true);
 
             //author.prod
-            assertConfigEntry(new File(outputDirectory, "runmodetest_parentcontainer-author.prod.json"), "org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~e", true);
+            assertConfigEntry(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-author.prod.json"), "org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~e", true);
             
             // dev
-            assertFalse(new File(outputDirectory, "runmodetest_parentcontainer-dev.json").exists());
+            assertFalse(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-dev.json").exists());
             
         } finally {
             deleteDirTree(outputDirectory);
@@ -658,33 +658,33 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             }
             assertFalse(runModes.isEmpty());
             assertTrue(runModes.containsKey("(default)"));
-            assertEquals("runmodetest_parentcontainer-author.json", runModes.getProperty("author"));
+            assertEquals("asd.sample-runmodetest_parentcontainer-author.json", runModes.getProperty("author"));
             
             // general
-            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer.json"), "asd.sample:embedded.test.app:zip:cp2fm-converted:0.0.0", false);
-            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer.json"), "my_packages:test_a:zip:cp2fm-converted:1.0", true);
-            assertBundleEntry(new File(outputDirectory, "runmodetest_parentcontainer.json"), "io.wcm:io.wcm.handler.media:1.11.6", true);
+            assertContentPackage(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer.json"), "asd.sample:embedded.test.app:zip:cp2fm-converted:0.0.0", false);
+            assertContentPackage(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer.json"), "my_packages:test_a:zip:cp2fm-converted:1.0", true);
+            assertBundleEntry(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer.json"), "io.wcm:io.wcm.handler.media:1.11.6", true);
             
             // author
-            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer-author.json"), "asd.sample:embedded.test.app:zip:cp2fm-converted:0.0.0", true);
-            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer-author.json"), "my_packages:test_a:zip:cp2fm-converted:1.0", false);
-            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer-author.json"), "my_packages:test_b:zip:cp2fm-converted:1.0", true);
-            assertBundleEntry(new File(outputDirectory, "runmodetest_parentcontainer-author.json"), "io.wcm:io.wcm.handler.link:1.7.02", true);
+            assertContentPackage(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-author.json"), "asd.sample:embedded.test.app:zip:cp2fm-converted:0.0.0", true);
+            assertContentPackage(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-author.json"), "my_packages:test_a:zip:cp2fm-converted:1.0", false);
+            assertContentPackage(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-author.json"), "my_packages:test_b:zip:cp2fm-converted:1.0", true);
+            assertBundleEntry(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-author.json"), "io.wcm:io.wcm.handler.link:1.7.02", true);
             // publish
-            assertContentPackage(new File(outputDirectory, "runmodetest_parentcontainer-publish.json"), "my_packages:test_c:zip:cp2fm-converted:1.0", true);
-            assertBundleEntry(new File(outputDirectory, "runmodetest_parentcontainer-publish.json"), "com.composum.nodes:composum-nodes-config:2.5.3", true);
+            assertContentPackage(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-publish.json"), "my_packages:test_c:zip:cp2fm-converted:1.0", true);
+            assertBundleEntry(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-publish.json"), "com.composum.nodes:composum-nodes-config:2.5.3", true);
             
             // author.publish (for cp converter those are not mutually exclusive)
-            assertFalse(new File(outputDirectory, "runmodetest_parentcontainer-author.publish.json").exists());
+            assertFalse(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-author.publish.json").exists());
             
            //author.dev
-            assertConfigEntry(new File(outputDirectory, "runmodetest_parentcontainer-author.dev.json"), "org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~d", true);
+            assertConfigEntry(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-author.dev.json"), "org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~d", true);
             
             //author.prod
-            assertConfigEntry(new File(outputDirectory, "runmodetest_parentcontainer-author.prod.json"), "org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~e", true);
+            assertConfigEntry(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-author.prod.json"), "org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~e", true);
         
             //dev
-            assertConfigEntry(new File(outputDirectory, "runmodetest_parentcontainer-dev.json"), "org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~f", true);
+            assertConfigEntry(new File(outputDirectory, "asd.sample-runmodetest_parentcontainer-dev.json"), "org.apache.jackrabbit.oak.spi.security.authentication.external.impl.DefaultSyncHandler~f", true);
         } finally {
             deleteDirTree(outputDirectory);
         }
@@ -784,9 +784,9 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
             .setEmitter(DefaultPackagesEventsEmitter.open(outDir))
             .convert(cpFile);
 
-            assertAPIRegion(new File(outDir, "asd.retail.all.json"), "a.b.c");
-            assertAPIRegion(new File(outDir, "asd.retail.all-author.json"), "a.b.c");
-            assertAPIRegion(new File(outDir, "asd.retail.all-publish.json"), "a.b.c");
+            assertAPIRegion(new File(outDir, "asd.sample-asd.retail.all.json"), "a.b.c");
+            assertAPIRegion(new File(outDir, "asd.sample-asd.retail.all-author.json"), "a.b.c");
+            assertAPIRegion(new File(outDir, "asd.sample-asd.retail.all-publish.json"), "a.b.c");
         } finally {
             deleteDirTree(outDir);
         }
@@ -872,7 +872,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                     .convert(packageFile);
 
             verifyFeatureFile(outputDirectory,
-                            "asd.retail.all.json",
+                            "asd.sample-asd.retail.all.json",
                             "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0:${project.version}",
                             Collections.singletonList("org.apache.felix:org.apache.felix.framework:6.0.1"),
                             Collections.singletonList("org.apache.sling.commons.log.LogManager.factory.config~asd-retail"),
@@ -881,13 +881,13 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                                             "asd:Asd.Retail.config:zip:cp2fm-converted:0.0.1",
                                             "asd.sample:asd.retail.all:zip:cp2fm-converted:0.0.1"));
             verifyFeatureFile(outputDirectory,
-                            "asd.retail.all-author.json",
+                            "asd.sample-asd.retail.all-author.json",
                             "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0-author:${project.version}",
                             Collections.singletonList("org.apache.sling:org.apache.sling.api:2.20.0"),
                             Collections.emptyList(),
                             Collections.emptyList());
             verifyFeatureFile(outputDirectory,
-                            "asd.retail.all-publish.json",
+                            "asd.sample-asd.retail.all-publish.json",
                             "${project.groupId}:${project.artifactId}:slingosgifeature:asd.test.all-1.0.0-publish:${project.version}",
                             Collections.singletonList("org.apache.sling:org.apache.sling.models.api:1.3.8"),
                             Collections.singletonList("org.apache.sling.serviceusermapping.impl.ServiceUserMapperImpl.amended~asd-retail"),
@@ -944,7 +944,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .convert(contentPackages[0]);
 
-            File featureFile = new File(outputDirectory, "test_a.json");
+            File featureFile = new File(outputDirectory, "my_packages-test_a.json");
             try (Reader reader = new FileReader(featureFile)) {
                 Feature feature = FeatureJSONReader.read(reader, featureFile.getAbsolutePath());
 
@@ -990,10 +990,10 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .convert(contentPackages);
 
-            Feature a = getFeature(outputDirectory, "test_a.json");
+            Feature a = getFeature(outputDirectory, "my_packages-test_a.json");
             assertNull(a.getExtensions().getByName("content-packages"));
 
-            Feature b = getFeature(outputDirectory, "test_b.json");
+            Feature b = getFeature(outputDirectory, "my_packages-test_b.json");
             assertNotNull(b.getExtensions().getByName("content-packages"));
             Artifacts artifacts = b.getExtensions().getByName("content-packages").getArtifacts();
             assertFalse(artifacts.isEmpty());
@@ -1025,7 +1025,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                     .setEmitter(DefaultPackagesEventsEmitter.open(outputDirectory))
                     .convert(contentPackages);
 
-            Feature sub = getFeature(outputDirectory, "test_sub.json");
+            Feature sub = getFeature(outputDirectory, "my_packages-test_sub.json");
 
             assertNotNull(sub.getExtensions().getByName("content-packages"));
             Artifacts artifacts = sub.getExtensions().getByName("content-packages").getArtifacts();
@@ -1086,7 +1086,7 @@ public class ContentPackage2FeatureModelConverterTest extends AbstractConverterT
                     .convert(contentPackages);
 
             
-            Feature feature = getFeature(outputDirectory, "test_generated_package.json");
+            Feature feature = getFeature(outputDirectory, "test-test_generated_package.json");
             Configurations confs = feature.getConfigurations();
             assertNotNull(confs.getConfiguration("org.apache.sling.installer.provider.jcr.impl.JcrInstaller"));
 
