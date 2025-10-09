@@ -412,8 +412,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         requireNonNull(path, "Impossible to process a null vault package");
         requireNonNull(vaultPackage, "Impossible to process a null vault package");
 
-        if (!isSubContentPackageIncluded(path)) {
-            logger.info("Sub content-package {} is filtered out, so it won't be processed.", path);
+        if (!isSubContentPackageIncluded(vaultPackage.getId())) {
+            logger.info("Sub content-package {} at path {} is filtered out, so it won't be processed.", vaultPackage.getId(), path);
             return;
         }
 
@@ -526,8 +526,8 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         });
     }
 
-    public boolean isSubContentPackageIncluded(@NotNull String path) {
-        return subContentPackages.containsValue(path);
+    public boolean isSubContentPackageIncluded(@NotNull PackageId id) {
+        return subContentPackages.containsKey(id);
     }
 
     private void process(@NotNull String entryPath, @NotNull Archive archive, @Nullable Entry entry, String runMode) throws IOException, ConverterException {
