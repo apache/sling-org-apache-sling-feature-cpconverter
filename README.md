@@ -257,7 +257,7 @@ During the conversion process, all these formats will be parsed and then added i
 
 ### Run Modes
 
-As shown above, run modes in the path lead the tool to create a dedicated _Apache Sling Feature_ model file containing all interested OSGi configurations/bundles. Run modes are determined according to the RunModePolicy which by default for backwards compatiblity reasons is DIRECT_ONLY.
+As shown above, run modes in the path lead the tool to create a dedicated _Apache Sling Feature_ model file containing all interested OSGi configurations/bundles. Run modes are determined according to the RunModePolicy which by default for backwards compatibility reasons is DIRECT_ONLY.
 For DIRECT_ONLY only the direct path leading up to the artifact, while PREPEND_INHERITED makes sure that run modes are inherited downwards and deduplicated (only new ones added).
 Run modes are supported for both OSGi configurations and OSGi bundles.
 The run mode is extracted from the group named `runmode` from the bundles path applied to the regular expression `/jcr_root/(?:apps|libs)/.+/(?<foldername>install|config)(?:\\.(?<runmode>[^/]+))?/(?:(?<startlevel>[0-9]+)/)?.+\\.jar`. For OSGi configuration the following regular expression is used: `/jcr_root/(?:apps|libs)/.+/(?<foldername>config|install)(\\.(?<runmode>[^/]+))?(.*)/(?<pid>[^\\/]*)\\." + extension + ("(?<dir>.dir(/\\.content\\.xml)?)?$`.
