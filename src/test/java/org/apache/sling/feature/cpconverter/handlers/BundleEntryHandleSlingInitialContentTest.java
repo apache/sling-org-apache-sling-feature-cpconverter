@@ -90,6 +90,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
     
     @Test
     public void testSlingInitialContent() throws Exception {
+        PackageId targetId = PackageId.fromString("io.wcm:io.wcm.handler.media-apps:1.11.6-cp2fm-converted");
         setUpArchive("/jcr_root/apps/gav/install/io.wcm.handler.media-1.11.6.jar", "io.wcm.handler.media-1.11.6.jar");
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
         converter.setEntryHandlersManager(handlersManager);
@@ -98,7 +99,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
         File targetFolder = tmpFolder.newFolder();
         when(converter.getArtifactsDeployer()).thenReturn(new SimpleFolderArtifactsDeployer(targetFolder));
-        when(converter.isSubContentPackageIncluded("/jcr_root/apps/gav/install/io.wcm.handler.media-1.11.6.jar-APPLICATION")).thenReturn(true);
+        when(converter.isSubContentPackageIncluded(targetId)).thenReturn(true);
 
         VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
         Properties props = new Properties();
@@ -131,7 +132,6 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "io.wcm.handler.media-apps-1.11.6-cp2fm-converted.zip"));
              Archive archive = vaultPackage.getArchive()) {
             archive.open(true);
-            PackageId targetId = PackageId.fromString("io.wcm:io.wcm.handler.media-apps:1.11.6-cp2fm-converted");
             assertEquals(targetId, vaultPackage.getId());
             Entry entry = archive.getEntry("jcr_root/apps/wcm-io/handler/media/components/global/include/responsiveImageSettings/.content.xml");
             assertNotNull("Archive does not contain expected item", entry);
@@ -175,6 +175,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
     @Test
     public void testJsonI18nWithXMLFolderDescriptors() throws Exception {
+        PackageId targetId = PackageId.fromString("com.mysite:mysite.core-apps:1.0.0-SNAPSHOT-cp2fm-converted");
         setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite.core-1.0.0-SNAPSHOT-i18n-xml-folderdescriptor.jar");
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
         converter.setEntryHandlersManager(handlersManager);
@@ -188,7 +189,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
         File targetFolder = tmpFolder.newFolder();
         when(converter.getArtifactsDeployer()).thenReturn(new SimpleFolderArtifactsDeployer(targetFolder));
-        when(converter.isSubContentPackageIncluded("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar-APPLICATION")).thenReturn(true);
+        when(converter.isSubContentPackageIncluded(targetId)).thenReturn(true);
 
         VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
         Properties props = new Properties();
@@ -210,7 +211,6 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "mysite.core-apps-1.0.0-SNAPSHOT-cp2fm-converted.zip"));
              Archive archive = vaultPackage.getArchive()) {
             archive.open(true);
-            PackageId targetId = PackageId.fromString("com.mysite:mysite.core-apps:1.0.0-SNAPSHOT-cp2fm-converted");
             assertEquals(targetId, vaultPackage.getId());
 
             Entry jsonFileEntry = archive.getEntry("/jcr_root/apps/myinitialcontentest/test/i18n/en.json");
@@ -239,6 +239,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
     @Test
     public void testSlingInitialContentWithNodeTypeAndNoDefinedParent() throws Exception {
+        PackageId targetId = PackageId.fromString("com.mysite:mysite.core-apps:1.0.0-SNAPSHOT-cp2fm-converted");
         setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite.core-1.0.0-SNAPSHOT-slinginitialcontent-test.jar");
         
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
@@ -253,7 +254,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
         File targetFolder = tmpFolder.newFolder();
         when(converter.getArtifactsDeployer()).thenReturn(new SimpleFolderArtifactsDeployer(targetFolder));
-        when(converter.isSubContentPackageIncluded("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar-APPLICATION")).thenReturn(true);
+        when(converter.isSubContentPackageIncluded(targetId)).thenReturn(true);
 
         VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
         Properties props = new Properties();
@@ -277,7 +278,6 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "mysite.core-apps-1.0.0-SNAPSHOT-cp2fm-converted.zip"));
              Archive archive = vaultPackage.getArchive()) {
             archive.open(true);
-            PackageId targetId = PackageId.fromString("com.mysite:mysite.core-apps:1.0.0-SNAPSHOT-cp2fm-converted");
             assertEquals(targetId, vaultPackage.getId());
             
             InputStream inputStream = archive.getInputSource(archive.getEntry("jcr_root/apps/myinitialcontentest/test/parent-with-definition/.content.xml")).getByteStream();
@@ -303,6 +303,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
     @Test
     public void testSlingInitialContentWithNodeTypeAndPageJson() throws Exception {
+        PackageId targetId = PackageId.fromString("com.mysite:mysite.core-apps:1.0.0-SNAPSHOT-cp2fm-converted");
         setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite.core-1.0.0-SNAPSHOT-pagejson.jar");
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
         converter.setEntryHandlersManager(handlersManager);
@@ -316,7 +317,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
         File targetFolder = tmpFolder.newFolder();
         when(converter.getArtifactsDeployer()).thenReturn(new SimpleFolderArtifactsDeployer(targetFolder));
-        when(converter.isSubContentPackageIncluded("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar-APPLICATION")).thenReturn(true);
+        when(converter.isSubContentPackageIncluded(targetId)).thenReturn(true);
 
         VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
         Properties props = new Properties();
@@ -338,7 +339,6 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "mysite.core-apps-1.0.0-SNAPSHOT-cp2fm-converted.zip"));
              Archive archive = vaultPackage.getArchive()) {
             archive.open(true);
-            PackageId targetId = PackageId.fromString("com.mysite:mysite.core-apps:1.0.0-SNAPSHOT-cp2fm-converted");
             assertEquals(targetId, vaultPackage.getId());
 
             assertPageStructureFromEntry(archive, "jcr_root/apps/mysite/components/global", "homepage");
@@ -362,6 +362,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         // skip this test on windows - the special chars used in file and property names will not work on windows FS
         assumeFalse(SystemUtils.IS_OS_WINDOWS);
 
+        PackageId targetId = PackageId.fromString("com.mysite:mysite.core-apps:1.0.0-SNAPSHOT-cp2fm-converted");
         setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite.core-1.0.0-SNAPSHOT-specialchars-json-inputstream.jar");
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
         converter.setEntryHandlersManager(handlersManager);
@@ -375,7 +376,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
         File targetFolder = tmpFolder.newFolder();
         when(converter.getArtifactsDeployer()).thenReturn(new SimpleFolderArtifactsDeployer(targetFolder));
-        when(converter.isSubContentPackageIncluded("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar-APPLICATION")).thenReturn(true);
+        when(converter.isSubContentPackageIncluded(targetId)).thenReturn(true);
 
         VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
         Properties props = new Properties();
@@ -397,7 +398,6 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "mysite.core-apps-1.0.0-SNAPSHOT-cp2fm-converted.zip"));
              Archive archive = vaultPackage.getArchive()) {
             archive.open(true);
-            PackageId targetId = PackageId.fromString("com.mysite:mysite.core-apps:1.0.0-SNAPSHOT-cp2fm-converted");
             assertEquals(targetId, vaultPackage.getId());
 
             //json containing a property: "fancyCharacters": "<&\"'>"
@@ -423,6 +423,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
     @Test
     public void testSlingInitialContentWithNumberedEntries() throws Exception {
+        PackageId targetId = PackageId.fromString("io.wcm:io.wcm.handler.link-apps:1.7.0-cp2fm-converted");
         setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "io.wcm.handler.link-1.7.02.jar");
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager(Collections.emptyMap(), false, SlingInitialContentPolicy.KEEP, new BundleSlingInitialContentExtractor(), ConverterConstants.SYSTEM_USER_REL_PATH_DEFAULT);
         converter.setEntryHandlersManager(handlersManager);
@@ -436,7 +437,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
         File targetFolder = tmpFolder.newFolder();
         when(converter.getArtifactsDeployer()).thenReturn(new SimpleFolderArtifactsDeployer(targetFolder));
-        when(converter.isSubContentPackageIncluded("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar-APPLICATION")).thenReturn(true);
+        when(converter.isSubContentPackageIncluded(targetId)).thenReturn(true);
 
         VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
         Properties props = new Properties();
@@ -470,6 +471,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
     @Test
     public void testSlingInitialContentWithNodeType() throws Exception {
+        PackageId targetId = PackageId.fromString("com.mysite:mysite.core-apps:1.0.0-SNAPSHOT-cp2fm-converted");
         setUpArchive("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar", "mysite-slinginitialcontent-nodetype-def.jar");
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
         converter.setEntryHandlersManager(handlersManager);
@@ -479,7 +481,7 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
         File targetFolder = tmpFolder.newFolder();
         when(converter.getArtifactsDeployer()).thenReturn(new SimpleFolderArtifactsDeployer(targetFolder));
-        when(converter.isSubContentPackageIncluded("/jcr_root/apps/mysite/install/mysite-slinginitialcontent-nodetype-def.jar-APPLICATION")).thenReturn(true);
+        when(converter.isSubContentPackageIncluded(targetId)).thenReturn(true);
 
         VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
         Properties props = new Properties();
@@ -508,7 +510,6 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "mysite.core-apps-1.0.0-SNAPSHOT-cp2fm-converted.zip")); 
             Archive archive = vaultPackage.getArchive()) {
             archive.open(true);
-            PackageId targetId = PackageId.fromString("com.mysite:mysite.core-apps:1.0.0-SNAPSHOT-cp2fm-converted");
             assertEquals(targetId, vaultPackage.getId());
             Entry entry = archive.getEntry("jcr_root/apps/myinitialcontentest/my-first-node/.content.xml");
             assertNotNull("Archive does not contain expected item", entry);
@@ -527,10 +528,11 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
     @Test
     public void testSlingInitialContentContainingConfigurationExtractAndRemove() throws Exception {
+        PackageId targetId = PackageId.fromString("com.composum.nodes:composum-nodes-config-apps:2.5.3-cp2fm-converted");
         setUpArchive("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", "composum-nodes-config-2.5.3.jar");
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
         converter.setEntryHandlersManager(handlersManager);
-        when(converter.isSubContentPackageIncluded("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar-APPLICATION")).thenReturn(true);
+        when(converter.isSubContentPackageIncluded(targetId)).thenReturn(true);
         VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
         Properties props = new Properties();
         props.setProperty(PackageProperties.NAME_GROUP, "io.wcm");
@@ -565,10 +567,11 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
     @Test
     public void testSlingInitialContentContainingConfigurationExtractAndKeep() throws Exception {
+        PackageId targetId = PackageId.fromString("com.composum.nodes:composum-nodes-config-apps:2.5.3-cp2fm-converted");
         setUpArchive("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar", "composum-nodes-config-2.5.3.jar");
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
         converter.setEntryHandlersManager(handlersManager);
-        when(converter.isSubContentPackageIncluded("/jcr_root/apps/gav/install/composum-nodes-config-2.5.3.jar-APPLICATION")).thenReturn(true);
+        when(converter.isSubContentPackageIncluded(targetId)).thenReturn(true);
         VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
         Properties props = new Properties();
         props.setProperty(PackageProperties.NAME_GROUP, "io.wcm");
@@ -604,13 +607,14 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
 
     @Test
     public void testSlingInitialContentEscapingPropertyValues() throws Exception {
+        PackageId targetId = PackageId.fromString("com.aem632:aem-aem632-project.core-apps:0.0.1-SNAPSHOT-cp2fm-converted");
         setUpArchive("/jcr_root/apps/gav/install/aem-aem632-project.core-0.0.1-SNAPSHOT-escaping.jar", "aem-aem632-project.core-0.0.1-SNAPSHOT-escaping.jar");
         DefaultEntryHandlersManager handlersManager = new DefaultEntryHandlersManager();
         converter.setEntryHandlersManager(handlersManager);
 
         File targetFolder = tmpFolder.newFolder();
         when(converter.getArtifactsDeployer()).thenReturn(new SimpleFolderArtifactsDeployer(targetFolder));
-        when(converter.isSubContentPackageIncluded("/jcr_root/apps/gav/install/aem-aem632-project.core-0.0.1-SNAPSHOT-escaping.jar-APPLICATION")).thenReturn(true);
+        when(converter.isSubContentPackageIncluded(targetId)).thenReturn(true);
 
         VaultPackageAssembler assembler = Mockito.mock(VaultPackageAssembler.class);
         Properties props = new Properties();
@@ -634,7 +638,6 @@ public class BundleEntryHandleSlingInitialContentTest extends AbstractBundleEntr
         try (VaultPackage vaultPackage = new PackageManagerImpl().open(new File(targetFolder, "aem-aem632-project.core-apps-0.0.1-SNAPSHOT-cp2fm-converted.zip"));
              Archive archive = vaultPackage.getArchive()) {
             archive.open(true);
-            PackageId targetId = PackageId.fromString("com.aem632:aem-aem632-project.core-apps:0.0.1-SNAPSHOT-cp2fm-converted");
             assertEquals(targetId, vaultPackage.getId());
             Entry entry = archive.getEntry("jcr_root/apps/aem632/core/test/.content.xml");
             assertNotNull("Archive does not contain expected item", entry);
