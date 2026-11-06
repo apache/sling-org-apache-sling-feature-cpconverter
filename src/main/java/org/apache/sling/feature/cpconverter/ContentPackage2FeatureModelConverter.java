@@ -566,7 +566,7 @@ public class ContentPackage2FeatureModelConverter extends BaseVaultPackageScanne
         try {
             process(entryPath, archive, entry, runMode);
         } catch (ConverterException ex) {
-            throw new ConverterException("ConverterException occured on path " + entryPath + " with message: " + ex.getMessage(), ex);
+            throw new ConverterException("ConverterException occurred on path " + entryPath + " with message: " + ex.getMessage(), ex);
         } catch (IOException ex) {
             throw new IOException("IOException occured on path " + entryPath + " with message: " + ex.getMessage(), ex);
         }
